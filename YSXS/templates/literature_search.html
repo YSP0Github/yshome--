@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+
+{% block title %}智能文献深搜 - 云凇学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .smart-shell { max-width: 1220px; margin: 0 auto; }
+    .smart-hero {
+        background:
+            radial-gradient(circle at top left, rgba(255,255,255,.16), transparent 24%),
+            linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #0f766e 100%);
+        box-shadow: 0 24px 54px rgba(15,23,42,.18);
+    }
+    .smart-panel { background: rgba(255,255,255,.96); border: 1px solid rgba(226,232,240,.92); box-shadow: 0 18px 36px rgba(15,23,42,.06); }
+    .smart-result { background: rgba(255,255,255,.98); border: 1px solid rgba(226,232,240,.94); box-shadow: 0 14px 32px rgba(15,23,42,.06); }
+    .smart-result:hover { transform: translateY(-2px); box-shadow: 0 22px 40px rgba(15,23,42,.09); border-color: rgba(96,165,250,.42); }
+    .smart-stat { background: rgba(248,250,252,.92); border: 1px solid rgba(226,232,240,.84); }
+    .smart-hero-stat { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(4px); }
+    .smart-form-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+    .smart-field-label { display: block; font-size: .92rem; color: rgba(239,246,255,.92); margin-bottom: .55rem; font-weight: 600; }
+    .smart-source-chip { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .95rem; border-radius: .95rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); font-size: .92rem; color: #eff6ff; transition: all .18s ease; }
+    .smart-source-chip:hover { background: rgba(255,255,255,.14); }
+    .smart-source-chip input { accent-color: #60a5fa; }
+    .smart-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .8rem; border-radius: 999px; border: 1px solid rgba(191,219,254,.9); background: rgba(239,246,255,.8); color: #1d4ed8; font-size: .84rem; font-weight: 600; }
+    .smart-source-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .78rem; border-radius: 999px; border: 1px solid rgba(191,219,254,.9); background: rgba(239,246,255,.8); color: #1d4ed8; font-size: .78rem; font-weight: 700; }
+    .smart-existing-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .78rem; border-radius: 999px; border: 1px solid rgba(167,243,208,.95); background: rgba(236,253,245,.86); color: #047857; font-size: .78rem; font-weight: 700; }
+    .smart-cite-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .78rem; border-radius: 999px; border: 1px solid rgba(253,230,138,.9); background: rgba(254,252,232,.92); color: #b45309; font-size: .78rem; font-weight: 700; }
+    .smart-link-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(148,163,184,.42); color: #334155; background: rgba(255,255,255,.78); font-weight: 600; }
+    .smart-link-btn:hover { color: #2563eb; border-color: rgba(59,130,246,.4); }
+    .smart-import-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(16,185,129,.26); background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; font-weight: 700; box-shadow: 0 10px 22px rgba(16,185,129,.16); }
+    .smart-import-btn:hover { background: linear-gradient(135deg, #047857 0%, #059669 100%); }
+    .smart-doc-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(37,99,235,.2); background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; }
+    .smart-doc-btn:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); }
+    .smart-score { min-width: 96px; text-align: right; }
+    .smart-score-card { min-width: 118px; border-radius: 1.2rem; padding: 1rem .95rem; background: linear-gradient(180deg, rgba(239,246,255,.92) 0%, rgba(255,255,255,.98) 100%); border: 1px solid rgba(191,219,254,.75); }
+    .smart-abstract-card { background: linear-gradient(180deg, rgba(248,250,252,.96) 0%, rgba(255,255,255,.98) 100%); border: 1px solid rgba(226,232,240,.92); }
+    .smart-ai-reason { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); border: 1px solid rgba(191,219,254,.75); }
+    .smart-summary-rendered { line-height: 1.9; word-break: break-word; }
+    .smart-summary-rendered h3,
+    .smart-summary-rendered h4,
+    .smart-summary-rendered h5,
+    .smart-summary-rendered h6 { color: #0f172a; margin-top: 1rem; margin-bottom: .5rem; }
+    .smart-summary-panel { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); border: 1px solid rgba(191,219,254,.8); }
+    .smart-summary-collapsible { position: relative; }
+    .smart-summary-body { overflow: hidden; transition: max-height .25s ease; }
+    .smart-summary-fade { position: absolute; left: 0; right: 0; bottom: 2.4rem; height: 4.25rem; background: linear-gradient(180deg, rgba(248,250,252,0) 0%, rgba(248,250,252,.96) 100%); pointer-events: none; }
+    .smart-summary-toggle { margin-top: .85rem; display: inline-flex; align-items: center; gap: .45rem; color: #2563eb; font-size: .92rem; font-weight: 600; }
+    .smart-summary-toggle:hover { color: #1d4ed8; }
+    .smart-loading-panel { background: rgba(255,255,255,.96); border: 1px solid rgba(191,219,254,.72); box-shadow: 0 18px 38px rgba(15,23,42,.08); }
+    .smart-loading-spinner {
+        width: 3.2rem; height: 3.2rem; border-radius: 9999px;
+        border: 3px solid rgba(191,219,254,.7); border-top-color: #2563eb;
+        animation: smart-spin .8s linear infinite;
+    }
+    @keyframes smart-spin { to { transform: rotate(360deg); } }
+    .smart-hero textarea,
+    .smart-hero input,
+    .smart-hero select {
+        color: #0f172a !important;
+        background: rgba(255,255,255,.96) !important;
+        caret-color: #2563eb;
+    }
+    .smart-hero textarea::placeholder,
+    .smart-hero input::placeholder {
+        color: #94a3b8 !important;
+    }
+    .smart-hero textarea:focus,
+    .smart-hero input:focus,
+    .smart-hero select:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(191,219,254,.45);
+    }
+    body.dark-theme .smart-panel,
+    body.auto-theme.auto-dark .smart-panel,
+    body.dark-theme .smart-result,
+    body.auto-theme.auto-dark .smart-result { background: rgba(15,23,42,.9); border-color: rgba(51,65,85,.9); box-shadow: 0 20px 40px rgba(2,6,23,.34); }
+    body.dark-theme .smart-result:hover,
+    body.auto-theme.auto-dark .smart-result:hover { border-color: rgba(96,165,250,.42); box-shadow: 0 24px 44px rgba(2,6,23,.42); }
+    body.dark-theme .smart-stat,
+    body.auto-theme.auto-dark .smart-stat { background: rgba(15,23,42,.78); border-color: rgba(51,65,85,.82); }
+    body.dark-theme .smart-hero-stat,
+    body.auto-theme.auto-dark .smart-hero-stat,
+    body.dark-theme .smart-form-card,
+    body.auto-theme.auto-dark .smart-form-card { background: rgba(15,23,42,.14); border-color: rgba(255,255,255,.12); }
+    body.dark-theme .smart-source-chip,
+    body.auto-theme.auto-dark .smart-source-chip { background: rgba(15,23,42,.22); border-color: rgba(148,163,184,.28); color: #e2e8f0; }
+    body.dark-theme .smart-chip,
+    body.auto-theme.auto-dark .smart-chip,
+    body.dark-theme .smart-source-badge,
+    body.auto-theme.auto-dark .smart-source-badge { background: rgba(30,41,59,.88); border-color: rgba(96,165,250,.34); color: #93c5fd; }
+    body.dark-theme .smart-existing-badge,
+    body.auto-theme.auto-dark .smart-existing-badge { background: rgba(6,78,59,.24); border-color: rgba(52,211,153,.32); color: #6ee7b7; }
+    body.dark-theme .smart-cite-badge,
+    body.auto-theme.auto-dark .smart-cite-badge { background: rgba(120,53,15,.24); border-color: rgba(251,191,36,.35); color: #fcd34d; }
+    body.dark-theme .smart-link-btn,
+    body.auto-theme.auto-dark .smart-link-btn { background: rgba(15,23,42,.68); border-color: rgba(71,85,105,.9); color: #e2e8f0; }
+    body.dark-theme .smart-link-btn:hover,
+    body.auto-theme.auto-dark .smart-link-btn:hover { color: #93c5fd; border-color: rgba(96,165,250,.7); }
+    body.dark-theme .smart-import-btn,
+    body.auto-theme.auto-dark .smart-import-btn { box-shadow: 0 12px 26px rgba(16,185,129,.14); }
+    body.dark-theme .smart-score-card,
+    body.auto-theme.auto-dark .smart-score-card,
+    body.dark-theme .smart-abstract-card,
+    body.auto-theme.auto-dark .smart-abstract-card,
+    body.dark-theme .smart-ai-reason,
+    body.auto-theme.auto-dark .smart-ai-reason,
+    body.dark-theme .smart-summary-panel,
+    body.auto-theme.auto-dark .smart-summary-panel { background: rgba(15,23,42,.78); border-color: rgba(51,65,85,.86); }
+    body.dark-theme .smart-summary-rendered h3,
+    body.dark-theme .smart-summary-rendered h4,
+    body.dark-theme .smart-summary-rendered h5,
+    body.dark-theme .smart-summary-rendered h6,
+    body.auto-theme.auto-dark .smart-summary-rendered h3,
+    body.auto-theme.auto-dark .smart-summary-rendered h4,
+    body.auto-theme.auto-dark .smart-summary-rendered h5,
+    body.auto-theme.auto-dark .smart-summary-rendered h6 { color: #f8fafc; }
+    body.dark-theme .smart-summary-fade,
+    body.auto-theme.auto-dark .smart-summary-fade { background: linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,.96) 100%); }
+    body.dark-theme .smart-summary-toggle,
+    body.auto-theme.auto-dark .smart-summary-toggle { color: #93c5fd; }
+    body.dark-theme .smart-loading-panel,
+    body.auto-theme.auto-dark .smart-loading-panel { background: rgba(15,23,42,.92); border-color: rgba(51,65,85,.86); box-shadow: 0 22px 44px rgba(2,6,23,.38); }
+    body.dark-theme .smart-loading-spinner,
+    body.auto-theme.auto-dark .smart-loading-spinner { border-color: rgba(51,65,85,.92); border-top-color: #60a5fa; }
+    body.dark-theme .smart-hero textarea,
+    body.dark-theme .smart-hero input,
+    body.dark-theme .smart-hero select,
+    body.auto-theme.auto-dark .smart-hero textarea,
+    body.auto-theme.auto-dark .smart-hero input,
+    body.auto-theme.auto-dark .smart-hero select {
+        color: #e2e8f0 !important;
+        background: rgba(15,23,42,.82) !important;
+        border: 1px solid rgba(96,165,250,.28) !important;
+    }
+    body.dark-theme .smart-hero textarea::placeholder,
+    body.dark-theme .smart-hero input::placeholder,
+    body.auto-theme.auto-dark .smart-hero textarea::placeholder,
+    body.auto-theme.auto-dark .smart-hero input::placeholder {
+        color: #94a3b8 !important;
+    }
+    @media (max-width: 768px) {
+        .smart-score { min-width: 0; text-align: left; }
+        .smart-score-card { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set payload = search_payload or {} %}
+{% set results = payload.get('results', []) if payload else [] %}
+{% set profile = payload.get('profile', {}) if payload else {} %}
+{% set stats = payload.get('stats', {}) if payload else {} %}
+{% set errors = payload.get('errors', []) if payload else [] %}
+
+<div class="smart-shell px-4 py-8">
+    <section class="smart-hero rounded-3xl text-white p-6 md:p-8 lg:p-10 mb-7">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div class="xl:col-span-8">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm font-semibold mb-4">
+                    <i class="fa fa-compass"></i>智能文献深搜
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">按问题而不是只按关键词找文献</h1>
+                <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
+                    支持手动输入一句研究问题，由 AI 提炼检索短语，再跨 OpenAlex / Crossref / arXiv / NASA ADS 搜索并综合相关性、被引、来源质量进行排序。
+                </p>
+                <form id="literature-search-form" method="get" action="{{ url_for('literature_search_home') }}" class="smart-form-card mt-6 space-y-4 rounded-3xl p-4 md:p-5">
+                    <div>
+                        <label class="smart-field-label">研究问题 / 检索需求</label>
+                        <textarea name="q" rows="3" class="w-full rounded-2xl border-0 bg-white/95 text-slate-900 placeholder-slate-400 px-4 py-4 text-base shadow-lg" placeholder="例如：帮我找月球深部结构与 Apollo 月震再处理相关、质量较高、近 5 年值得优先读的论文">{{ query_text }}</textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="smart-field-label">结果数量</label>
+                            <input type="number" name="max_results" min="5" max="50" value="{{ max_results }}" class="w-full rounded-xl border-0 bg-white/95 text-slate-900 px-4 py-3">
+                        </div>
+                        <div>
+                            <label class="smart-field-label">回溯天数</label>
+                            <input type="number" name="lookback_days" min="30" max="3650" value="{{ lookback_days }}" class="w-full rounded-xl border-0 bg-white/95 text-slate-900 px-4 py-3">
+                        </div>
+                        <div>
+                            <label class="smart-field-label">排序策略</label>
+                            <select name="sort_mode" class="w-full rounded-xl border-0 bg-white/95 text-slate-900 px-4 py-3">
+                                <option value="balanced" {% if sort_mode == 'balanced' %}selected{% endif %}>综合平衡</option>
+                                <option value="quality" {% if sort_mode == 'quality' %}selected{% endif %}>偏重质量</option>
+                                <option value="relevance" {% if sort_mode == 'relevance' %}selected{% endif %}>偏重相关性</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="literature-search-submit" type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-blue-700 font-semibold shadow-lg">
+                                <i class="fa fa-search"></i>开始深搜
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        {% for key,label in source_options.items() %}
+                        <label class="smart-source-chip">
+                            <input type="checkbox" name="sources" value="{{ key }}" {% if key in selected_sources %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4 rounded-2xl border border-blue-100 bg-white/70 px-4 py-4 text-sm text-slate-600 leading-7">
+                        <div class="font-semibold text-slate-800 mb-2">高价值增强源（仅展示 / 跳转）</div>
+                        {% if enhancement_sources and enhancement_sources[0].priority_track %}
+                        <div class="mb-2 text-xs font-semibold text-emerald-600">已按当前研究方向优先排序。</div>
+                        {% endif %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for source in enhancement_sources %}
+                            <a href="{{ source.homepage }}" target="_blank" rel="noopener noreferrer" class="smart-chip">{{ source.label }}</a>
+                            {% endfor %}
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">这些来源当前不参与后台自动抓取，但会在结果页提供快速复查入口。</p>
+                    </div>
+                </form>
+            </div>
+            <div class="xl:col-span-4 grid grid-cols-2 gap-3">
+                <div class="smart-hero-stat rounded-2xl p-4"><div class="text-xs text-blue-50/80">AI 检索词提炼</div><div class="text-3xl font-black mt-1">{{ '已启用' if ai_enabled else '回退规则' }}</div></div>
+                <div class="smart-hero-stat rounded-2xl p-4"><div class="text-xs text-blue-50/80">本次结果</div><div class="text-3xl font-black mt-1">{{ stats.get('result_count', 0) }}</div></div>
+                <div class="smart-hero-stat rounded-2xl p-4"><div class="text-xs text-blue-50/80">跨源原始候选</div><div class="text-3xl font-black mt-1">{{ stats.get('raw_count', 0) }}</div></div>
+                <div class="smart-hero-stat rounded-2xl p-4"><div class="text-xs text-blue-50/80">去重后候选</div><div class="text-3xl font-black mt-1">{{ stats.get('deduped_count', 0) }}</div></div>
+            </div>
+        </div>
+    </section>
+
+    <div id="literature-search-content">
+        {% include "literature_search_result_fragment.html" %}
+    </div>
+</div>
+<script type="application/json" id="literature-search-auto-start">{{ {
+    'enabled': auto_start_search,
+    'q': query_text,
+    'selected_sources': selected_sources,
+    'max_results': max_results,
+    'lookback_days': lookback_days,
+    'sort_mode': sort_mode,
+    'has_payload': search_payload is not none,
+    'has_error': search_error is not none,
+} | tojson }}</script>
+{% endblock %}
+{% block extra_js %}
+<script>
+    function apiUrl(path) {
+        return window.withBasePath ? window.withBasePath(path) : path;
+    }
+
+    async function readJsonResponse(response) {
+        const rawText = await response.text();
+        if (!rawText) return {};
+        try { return JSON.parse(rawText); } catch (error) { return { error: rawText }; }
+    }
+
+    function setButtonLoading(button, html) {
+        if (!button) return;
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = html;
+    }
+
+    function restoreButton(button) {
+        if (!button) return;
+        button.disabled = false;
+        if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+    }
+
+    function getSearchResultPayload(resultId) {
+        const node = document.getElementById(`search-result-payload-${resultId}`);
+        if (!node) return null;
+        try {
+            return JSON.parse(node.textContent || '{}');
+        } catch (error) {
+            return null;
+        }
+    }
+
+    const searchForm = document.getElementById('literature-search-form');
+    const searchSubmitButton = document.getElementById('literature-search-submit');
+    const searchContent = document.getElementById('literature-search-content');
+
+    function getSearchLoadingPanel() {
+        return document.getElementById('literature-search-loading');
+    }
+
+    function getSearchLoadingStep() {
+        return document.getElementById('literature-search-loading-step');
+    }
+
+    function showSearchSubmitLoading(stepText = '') {
+        if (searchSubmitButton) {
+            setButtonLoading(searchSubmitButton, '<i class="fa fa-spinner fa-spin"></i> 后台处理中...');
+        }
+        const searchLoadingPanel = getSearchLoadingPanel();
+        const searchResultsSection = document.getElementById('literature-search-results');
+        const searchResultsTitle = document.getElementById('literature-search-results-title');
+        const searchResultsCount = document.getElementById('literature-search-results-count');
+        const searchEmptyState = document.getElementById('literature-search-empty-state');
+        const loadingStep = getSearchLoadingStep();
+        if (searchLoadingPanel) searchLoadingPanel.classList.remove('hidden');
+        if (loadingStep && stepText) loadingStep.textContent = stepText;
+        if (searchEmptyState) searchEmptyState.classList.add('hidden');
+        if (searchResultsCount) searchResultsCount.classList.add('hidden');
+        if (searchResultsTitle) searchResultsTitle.textContent = '正在进行智能深搜';
+        document.querySelectorAll('.smart-panel.border.border-red-200').forEach((node) => node.classList.add('hidden'));
+        if (searchResultsSection) searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function hideSearchSubmitLoading() {
+        restoreButton(searchSubmitButton);
+        const panel = getSearchLoadingPanel();
+        if (panel) panel.classList.add('hidden');
+    }
+
+    function setupSearchCollapsibleSummary(root) {
+        if (!root) return;
+        const body = root.querySelector('.smart-summary-body');
+        const fade = root.querySelector('[data-search-summary-fade]');
+        const toggle = root.querySelector('[data-search-summary-toggle]');
+        if (!body || !toggle) return;
+        const collapsedHeight = 260;
+        const needsCollapse = body.scrollHeight > collapsedHeight + 24;
+        if (!needsCollapse) {
+            body.style.maxHeight = 'none';
+            fade?.classList.add('hidden');
+            toggle.classList.add('hidden');
+            root.dataset.state = 'expanded';
+            return;
+        }
+        if (!root.dataset.state) root.dataset.state = 'collapsed';
+        const expanded = root.dataset.state === 'expanded';
+        body.style.maxHeight = expanded ? `${body.scrollHeight}px` : `${collapsedHeight}px`;
+        fade?.classList.toggle('hidden', expanded);
+        toggle.classList.remove('hidden');
+        const icon = toggle.querySelector('i');
+        const label = toggle.querySelector('span');
+        if (icon) icon.className = expanded ? 'fa fa-angle-up' : 'fa fa-angle-down';
+        if (label) label.textContent = expanded ? '收起' : '展开全文';
+        toggle.onclick = () => {
+            root.dataset.state = root.dataset.state === 'expanded' ? 'collapsed' : 'expanded';
+            setupSearchCollapsibleSummary(root);
+        };
+    }
+
+    function updateSearchSummary(resultId, summaryHtml, updatedAt = '') {
+        document.querySelectorAll(`[data-search-summary-content="${resultId}"]`).forEach((node) => {
+            node.innerHTML = summaryHtml || '';
+        });
+        document.querySelectorAll(`[data-search-summary-updated="${resultId}"]`).forEach((node) => {
+            node.textContent = updatedAt || '';
+        });
+        document.querySelectorAll(`[data-search-summary-box="${resultId}"]`).forEach((node) => {
+            node.classList.remove('hidden');
+        });
+        requestAnimationFrame(() => {
+            document.querySelectorAll(`[data-search-summary-box="${resultId}"] [data-search-collapsible]`).forEach((node) => {
+                delete node.dataset.state;
+                setupSearchCollapsibleSummary(node);
+            });
+        });
+    }
+
+    function persistSearchSummaryPayload(resultId, summaryText = '', updatedAt = '') {
+        const payload = getSearchResultPayload(resultId);
+        if (!payload) return;
+        payload.summary = summaryText || '';
+        payload.summary_updated_at = updatedAt || '';
+        const node = document.getElementById(`search-result-payload-${resultId}`);
+        if (node) node.textContent = JSON.stringify(payload);
+    }
+
+    function updateSearchImportButtons(resultId, docId) {
+        document.querySelectorAll(`.search-import-btn[data-result-id="${resultId}"]`).forEach((button) => {
+            button.dataset.docId = docId || '';
+            button.classList.remove('smart-import-btn');
+            button.classList.add('smart-doc-btn');
+            button.innerHTML = '<i class="fa fa-book"></i>查看系统内文献';
+            button.dataset.originalHtml = button.innerHTML;
+        });
+    }
+
+    function bindLiteratureSearchActions() {
+        document.querySelectorAll('[data-search-collapsible]').forEach(setupSearchCollapsibleSummary);
+        document.querySelectorAll('.search-summary-btn').forEach((button) => {
+            if (button.dataset.bound) return;
+            button.dataset.bound = '1';
+            button.addEventListener('click', async () => {
+            const resultId = button.dataset.resultId;
+            const payload = getSearchResultPayload(resultId);
+            if (!payload) return;
+            setButtonLoading(button, '<i class="fa fa-spinner fa-spin"></i> 正在总结');
+            try {
+                const response = await fetch(apiUrl('/api/literature-search/summary'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.getCSRFToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await readJsonResponse(response);
+                if (!response.ok) throw new Error(data.error || 'AI 总结失败');
+                updateSearchSummary(resultId, data.summary_html || '', data.updated_at || '');
+                persistSearchSummaryPayload(resultId, data.summary || '', data.updated_at || '');
+            } catch (error) {
+                alert(error.message || 'AI 总结失败');
+            } finally {
+                restoreButton(button);
+            }
+            });
+        });
+
+        document.querySelectorAll('.search-import-btn').forEach((button) => {
+            if (button.dataset.bound) return;
+            button.dataset.bound = '1';
+            button.addEventListener('click', async () => {
+            if (button.dataset.docId) {
+                window.location.href = apiUrl(`/document/${button.dataset.docId}`);
+                return;
+            }
+            const resultId = button.dataset.resultId;
+            const payload = getSearchResultPayload(resultId);
+            if (!payload) return;
+            setButtonLoading(button, '<i class="fa fa-spinner fa-spin"></i> 正在导入');
+            try {
+                const response = await fetch(apiUrl('/api/literature-search/import'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.getCSRFToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await readJsonResponse(response);
+                if (!response.ok) throw new Error(data.error || '导入失败');
+                if (data.doc_id) {
+                    updateSearchImportButtons(resultId, data.doc_id);
+                    const payloadNode = getSearchResultPayload(resultId);
+                    if (payloadNode) {
+                        payloadNode.existing_document_id = data.doc_id;
+                        const node = document.getElementById(`search-result-payload-${resultId}`);
+                        if (node) node.textContent = JSON.stringify(payloadNode);
+                    }
+                }
+            } catch (error) {
+                alert(error.message || '导入失败');
+            } finally {
+                restoreButton(button);
+            }
+            });
+        });
+    }
+
+    async function pollLiteratureSearchJob(jobId) {
+        for (let attempt = 0; attempt < 120; attempt += 1) {
+            const response = await fetch(apiUrl(`/api/literature-search/status/${jobId}`), {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await readJsonResponse(response);
+            if (!response.ok) throw new Error(data.error || '智能深搜任务状态获取失败');
+            if (data.step) showSearchSubmitLoading(data.step);
+            if (data.status === 'succeeded' || data.status === 'failed') {
+                if (searchContent && data.html) searchContent.innerHTML = data.html;
+                hideSearchSubmitLoading();
+                bindLiteratureSearchActions();
+                return data;
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+        }
+        throw new Error('智能深搜耗时较长，请稍后刷新页面查看。');
+    }
+
+    async function startLiteratureSearchJob() {
+        if (!searchForm) return;
+        const formData = new FormData(searchForm);
+        const payload = {
+            q: String(formData.get('q') || '').trim(),
+            max_results: String(formData.get('max_results') || ''),
+            lookback_days: String(formData.get('lookback_days') || ''),
+            sort_mode: String(formData.get('sort_mode') || 'balanced'),
+            sources: formData.getAll('sources'),
+        };
+        if (!payload.q) return;
+        showSearchSubmitLoading('系统正在创建智能深搜任务...');
+        const response = await fetch(apiUrl('/api/literature-search/start'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.getCSRFToken(),
+            },
+            body: JSON.stringify(payload),
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) {
+            hideSearchSubmitLoading();
+            throw new Error(data.error || '智能深搜任务创建失败');
+        }
+        return pollLiteratureSearchJob(data.job_id);
+    }
+
+    window.addEventListener('resize', () => {
+        document.querySelectorAll('[data-search-collapsible]').forEach(setupSearchCollapsibleSummary);
+    });
+
+    searchForm?.addEventListener('submit', (event) => {
+        const queryField = searchForm.querySelector('textarea[name="q"]');
+        const queryText = (queryField?.value || '').trim();
+        if (!queryText) return;
+        event.preventDefault();
+        startLiteratureSearchJob().catch((error) => {
+            hideSearchSubmitLoading();
+            alert(error.message || '智能深搜失败');
+        });
+    });
+
+    bindLiteratureSearchActions();
+
+    const literatureSearchAutoStart = (() => {
+        const node = document.getElementById('literature-search-auto-start');
+        if (!node) return null;
+        try { return JSON.parse(node.textContent || 'null'); } catch (error) { return null; }
+    })();
+    if (literatureSearchAutoStart && literatureSearchAutoStart.enabled && !literatureSearchAutoStart.has_payload && !literatureSearchAutoStart.has_error) {
+        startLiteratureSearchJob().catch((error) => {
+            hideSearchSubmitLoading();
+            alert(error.message || '智能深搜失败');
+        });
+    }
+</script>
+{% endblock %}

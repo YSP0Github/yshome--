@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}使用指南{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-5xl text-slate-800">
+    <div class="bg-white shadow rounded-2xl p-6 mb-8">
+        <h1 class="text-2xl font-semibold text-blue-700 mb-4">云凇学术 · 功能指南</h1>
+        <p class="text-slate-600 leading-relaxed">
+            本页概述平台提供的核心能力、操作流程与常见位置，方便新用户快速上手。
+            下方“部署与运行说明”仅对超级管理员可见。
+        </p>
+    </div>
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-slate-800 mb-3">1. 核心功能</h2>
+        <ul class="list-disc pl-6 space-y-2 text-slate-600">
+            <li><strong>文献管理：</strong>上传 PDF / Office 文件，自动解析标题、作者、摘要与关键词，可自定义分类、标签、文献类型并支持批量导入导出。</li>
+            <li><strong>智能检索：</strong>多条件搜索、分类/年份筛选、排序与引用格式导出（GB/T、APA、MLA、BibTeX）。</li>
+            <li><strong>收藏与分享：</strong>收藏重要文献、生成公共分享页、导出引用格式；最近浏览与常用分类自动记录。</li>
+            <li><strong>用户体系：</strong>登录注册、头像上传、角色区分（普通用户/管理员/超级管理员），可一键切换主题与默认视图。</li>
+            <li><strong>后台管理：</strong>管理员可管理用户、上传记录、授权码，查看运行监控（在线人数、带宽、请求日志），配置安全策略与上传限制。</li>
+        </ul>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-slate-800 mb-3">2. 使用流程</h2>
+        <ol class="list-decimal pl-6 space-y-3 text-slate-600">
+            <li><strong>登录账号：</strong>使用管理员下发的账号或授权码登录；首次登录可在“个人资料”中完善昵称、头像与密码。</li>
+             <li><strong>上传文献：</strong>点击“添加文献”，选择文件后检查解析结果(
+                <strong style="color: #520202; padding: 2px 4px; border-radius: 2px;">
+                    "上传文献" 接口的自动解析结果尚无法做到100%准确，建议手动检查并补全相关信息
+                </strong>
+                )，补充分类、标签、文献类型并勾选版权声明即可提交。批量上传支持拖入多文件逐个编辑。</li> 
+            <li><strong>检索与阅读：</strong>在首页或搜索框输入关键词，可结合分类、年份、标签等条件筛选；点击文献标题进入详情页查看摘要、引用信息及附件。</li>
+            <li><strong>收藏与共享：</strong>在文献详情页可收藏、导出引用格式、生成分享链接或下载附件。</li>
+            <li><strong>管理员入口：</strong>拥有管理员权限的账号，可在右上角菜单进入“系统设置”“用户管理”“生成授权码”等后台页面。</li>
+        </ol>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-slate-800 mb-3">3. 引用导出 & 第三方导入</h2>
+        <p class="text-slate-600 mb-4">所有用户都可以在文献卡片点击“引用”按钮，弹窗底部提供以下一键导出选项，适配常见文献管理软件：</p>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                <p class="font-semibold text-slate-700 mb-1">BibTeX (.bib)</p>
+                <p class="text-sm text-slate-600">适用于 LaTeX、Zotero、Mendeley，在目标工具中选择“Import → BibTeX”。</p>
+            </div>
+            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                <p class="font-semibold text-slate-700 mb-1">EndNote (.enw)</p>
+                <p class="text-sm text-slate-600">EndNote 中执行 “File → Import → File”，格式选择 “EndNote Import”。</p>
+            </div>
+            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                <p class="font-semibold text-slate-700 mb-1">RefMan (.ris) / NoteExpress (.net) / NoteFirst (.txt)</p>
+                <p class="text-sm text-slate-600">都基于 RIS 结构，可在 NoteExpress、NoteFirst、RefMan 中选择 “导入 RIS” 直接导入。</p>
+            </div>
+            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                <p class="font-semibold text-slate-700 mb-1">Zotero (.json)</p>
+                <p class="text-sm text-slate-600">提供 Zotero JSON 包，执行 “文件 → 导入 → Zotero JSON” 即可批量写入。</p>
+            </div>
+        </div>
+        <p class="text-sm text-amber-600 mt-3">
+            <i class="fa fa-info-circle mr-1"></i> 导入失败通常与重复 DOI 有关，可在云凇学术中删除重复条目或改用其他格式重新导出。
+        </p>
+    </section>
+
+
+    {% if current_user.is_authenticated and current_user.role == 'super admin' %}
+    <section class="bg-indigo-50 border border-indigo-100 rounded-2xl shadow-inner p-6 mb-6">
+
+        <h2 class="text-xl font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+            <i class="fa fa-shield text-indigo-500"></i> 4. 部署与运行说明（超级管理员可见）
+        </h2>
+        <div class="space-y-4 text-slate-700">
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">常见位置</h3>
+                <ul class="list-disc pl-6 ">
+                    <li>上传文件存储：<code>{{ upload_dir }}</code></li>
+                    <li>应用日志：<code>{{ log_path }}</code></li>
+                    <li>头像文件：<code>{{ avatar_path }}</code></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">环境变量</h3>
+                <ul class="list-disc pl-6">
+                    <li><code>YSXS_URL_PREFIX=/YSXS</code>（部署在子路径时必填）</li>
+                    <li><code>YSXS_DATABASE_URI=sqlite:////home/YSP/var/ysxs/ysxs.db</code> 或其他数据库 URI</li>
+                    <li><code>YSXS_UPLOAD_DIR=/home/YSP/var/ysxs/uploads</code>（上传目录需可写）</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">systemd 服务示例</h3>
+                <pre class="bg-slate-900 text-slate-100 text-sm rounded-lg p-4 overflow-x-auto"><code>[Service]
+User=YSP
+WorkingDirectory=/home/YSP/yshome
+Environment="YSXS_DATABASE_URI=sqlite:////home/YSP/var/ysxs/ysxs.db"
+Environment="YSXS_UPLOAD_DIR=/home/YSP/var/ysxs/uploads"
+ExecStart=/home/YSP/miniconda3/envs/YSZJ/bin/gunicorn -w 2 -b 127.0.0.1:5050 YSXS.app:app
+Restart=always</code></pre>
+                <p>修改后执行 <code>sudo systemctl daemon-reload && sudo systemctl restart ysxs-gunicorn</code>。</p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">Nginx 关键配置</h3>
+                <ul class="list-disc pl-6">
+                    <li><code>proxy_pass http://127.0.0.1:5050/YSXS/;</code> 并设置 <code>X-Forwarded-Prefix=/YSXS</code>。</li>
+                    <li><code>client_max_body_size 50m;</code>（允许大文件解析与上传）。</li>
+                    <li>静态资源 <code>/YSXS/static/</code> 建议使用 <code>alias /home/YSP/yshome/YSXS/static/</code>。</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">数据库初始化</h3>
+                <pre class="bg-slate-900 text-slate-100 text-sm rounded-lg p-4 overflow-x-auto"><code>export FLASK_APP=YSXS.app
+flask db upgrade
+python -m scripts.check_doc_types
+python -m scripts.create_super_admin</code></pre>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-900 mb-1">排障入口</h3>
+                <ul class="list-disc pl-6">
+                    <li>Gunicorn 日志：<code>journalctl -u ysxs-gunicorn -f</code></li>
+                    <li>应用日志：<code>tail -f ~/yshome/YSXS/logs/app.log</code></li>
+                    <li>Nginx 日志：<code>/var/log/nginx/error.log</code></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

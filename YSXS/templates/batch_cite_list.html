@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}批量引用列表 - 云凇学术{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">批量引用列表</h2>
+            <p class="text-sm text-slate-500 mt-1">当前共 {{ documents|length }} 篇文献</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button id="open-format-modal"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2">
+                <i class="fa fa-sliders"></i>
+                <span>当前格式：<span id="current-format-label">GB/T 7714</span></span>
+            </button>
+            <button id="export-batch-btn"
+                    class="px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                <i class="fa fa-download"></i> 导出引用
+            </button>
+            <a href="{{ url_for('export_batch_cite', fmt='bibtex') }}"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2">
+                <i class="fa fa-download"></i> 导出 BibTeX
+            </a>
+            <a href="{{ url_for('export_batch_cite', fmt='ris') }}"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2">
+                <i class="fa fa-download"></i> 导出 RIS
+            </a>
+        </div>
+    </div>
+
+    {% if not documents %}
+        <div class="text-center py-12 bg-slate-50 rounded-lg">
+            <i class="fa fa-bookmark-o text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">批量引用列表为空</p>
+            <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline mt-2 inline-block">返回文献列表</a>
+        </div>
+    {% else %}
+
+    <!-- 引用格式选择 Modal -->
+    <div id="format-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">选择 / 管理引用格式</h3>
+                <button id="close-format-modal" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4">
+                <div id="format-list" class="space-y-2">
+                    <!-- 格式选项将通过 JavaScript 动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="flex flex-col gap-3 mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div id="selected-counter" class="text-sm text-slate-600">已选择 0 篇</div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="remove-selected-btn"
+                            class="px-4 py-2 text-sm bg-red-500 text-white rounded-lg opacity-60 cursor-not-allowed transition"
+                            disabled>
+                        <i class="fa fa-trash mr-1.5"></i>移除选中
+                    </button>
+                    <button id="clear-batch-btn"
+                            class="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition">
+                        <i class="fa fa-times-circle mr-1.5"></i>清空列表
+                    </button>
+                    <button id="copy-markdown-btn"
+                            class="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition flex items-center gap-2">
+                        <i class="fa fa-copy"></i>复制 Markdown 列表
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-4 py-3 w-12">
+                        <input type="checkbox" id="select-all-checkbox"
+                               class="form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300">
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">标题</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">作者</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">期刊/会议</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">年份</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">加入时间</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                {% for doc in documents %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <input type="checkbox"
+                                   class="batch-row-checkbox form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300"
+                                   data-doc-id="{{ doc.id }}">
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <a href="{{ url_for('document_detail', doc_id=doc.id) }}"
+                               class="text-blue-600 hover:text-blue-900">
+                                {{ doc.title }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ doc.authors }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ doc.journal }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ doc.year }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ doc.added_at }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="remove-from-batch text-red-600 hover:text-red-900"
+                                    data-doc-id="{{ doc.id }}">
+                                移除
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="batch-doc-data" type="application/json">{{ documents | tojson }}</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = (typeof window.getCSRFToken === 'function' && window.getCSRFToken()) || (csrfMeta ? csrfMeta.getAttribute('content') : '');
+    
+    // ========== 格式管理相关 ==========
+    const formatModal = document.getElementById('format-modal');
+    const openFormatModalBtn = document.getElementById('open-format-modal');
+    const closeFormatModalBtn = document.getElementById('close-format-modal');
+    const formatList = document.getElementById('format-list');
+    const currentFormatLabel = document.getElementById('current-format-label');
+    const exportBatchBtn = document.getElementById('export-batch-btn');
+    
+    let selectedFormatKey = null;
+    let formats = [];
+    let exportInProgress = false;
+
+    // 加载引用格式
+    async function loadFormats() {
+        try {
+            const res = await fetch('/api/citation-formats');
+            if (!res.ok) throw new Error('加载格式失败');
+            const data = await res.json();
+            
+            // API 返回 {system: [...], custom: [...]} 格式
+            const systemFormats = Array.isArray(data) ? data : (data.system || []);
+            const customFormats = data.custom || [];
+            formats = [...systemFormats, ...customFormats];
+            
+            renderFormatList();
+            if (formats.length > 0 && !selectedFormatKey) {
+                selectedFormatKey = formats[0].key;
+                currentFormatLabel.textContent = formats[0].name;
+            }
+        } catch (err) {
+            console.error('加载引用格式失败:', err);
+            alert('加载引用格式失败，请刷新页面重试');
+        }
+    }
+
+    // 渲染格式列表
+    function renderFormatList() {
+        formatList.innerHTML = formats.map(fmt => `
+            <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-blue-50 cursor-pointer transition">
+                <input type="radio" name="format" value="${fmt.key}" class="format-radio" ${selectedFormatKey === fmt.key ? 'checked' : ''}>
+                <div class="flex-1">
+                    <div class="font-medium text-slate-800">${fmt.name}</div>
+                    ${fmt.description ? `<div class="text-sm text-slate-500">${fmt.description}</div>` : ''}
+                </div>
+            </label>
+        `).join('');
+
+        // 添加格式选择事件监听
+        formatList.querySelectorAll('.format-radio').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                selectedFormatKey = e.target.value;
+                const selected = formats.find(f => f.key === selectedFormatKey);
+                if (selected) {
+                    currentFormatLabel.textContent = selected.name;
+                }
+            });
+        });
+    }
+
+    openFormatModalBtn?.addEventListener('click', () => {
+        formatModal.classList.remove('hidden');
+    });
+
+    closeFormatModalBtn?.addEventListener('click', () => {
+        formatModal.classList.add('hidden');
+    });
+
+    formatModal?.addEventListener('click', (e) => {
+        if (e.target === formatModal) {
+            formatModal.classList.add('hidden');
+        }
+    });
+
+    // 导出批量引用
+    exportBatchBtn?.addEventListener('click', async () => {
+        if (exportInProgress) return;
+
+        const docCheckboxes = Array.from(document.querySelectorAll('.batch-row-checkbox'));
+        const selectedDocs = docCheckboxes.filter(cb => cb.checked).map(cb => parseInt(cb.getAttribute('data-doc-id')));
+
+        if (selectedDocs.length === 0) {
+            alert('请先勾选需要导出的文献');
+            return;
+        }
+
+        if (!selectedFormatKey) {
+            alert('请先选择引用格式');
+            return;
+        }
+
+        exportInProgress = true;
+        exportBatchBtn.disabled = true;
+        exportBatchBtn.classList.add('opacity-70', 'cursor-wait');
+
+        try {
+            const res = await fetch('/api/citation-formats/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    doc_ids: selectedDocs,
+                    format_key: selectedFormatKey
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || '导出失败');
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // 从 Content-Disposition 获取文件名
+            const disposition = res.headers.get('Content-Disposition');
+            let filename = 'citations.txt';
+            if (disposition) {
+                const match = disposition.match(/filename\*?=(?:"([^"]*)"|([^;\s]*))/);
+                if (match) {
+                    filename = decodeURIComponent(match[1] || match[2]);
+                }
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            alert('导出成功！');
+            formatModal.classList.add('hidden');
+        } catch (err) {
+            alert(err.message || '导出失败，请稍后重试');
+        } finally {
+            exportInProgress = false;
+            exportBatchBtn.disabled = false;
+            exportBatchBtn.classList.remove('opacity-70', 'cursor-wait');
+        }
+    });
+
+    // ========== 原有功能 ==========
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const rowCheckboxes = Array.from(document.querySelectorAll('.batch-row-checkbox'));
+    const removeSelectedBtn = document.getElementById('remove-selected-btn');
+    const clearBatchBtn = document.getElementById('clear-batch-btn');
+    const copyMarkdownBtn = document.getElementById('copy-markdown-btn');
+    const selectedCounter = document.getElementById('selected-counter');
+    const selectedIds = new Set();
+    const docDataEl = document.getElementById('batch-doc-data');
+    let docData = [];
+    try {
+        docData = docDataEl ? JSON.parse(docDataEl.textContent || '[]') : [];
+    } catch (err) {
+        console.warn('解析批量文献数据失败', err);
+    }
+
+    function updateSelectionUI() {
+        const count = selectedIds.size;
+        if (selectedCounter) {
+            selectedCounter.textContent = `已选择 ${count} 篇`;
+        }
+        if (removeSelectedBtn) {
+            if (count === 0) {
+                removeSelectedBtn.disabled = true;
+                removeSelectedBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            } else {
+                removeSelectedBtn.disabled = false;
+                removeSelectedBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+        }
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = count > 0 && count === rowCheckboxes.length;
+            selectAllCheckbox.indeterminate = count > 0 && count < rowCheckboxes.length;
+        }
+    }
+
+    function toggleRowSelection(checkbox) {
+        const docId = checkbox.getAttribute('data-doc-id');
+        if (!docId) return;
+        if (checkbox.checked) {
+            selectedIds.add(docId);
+        } else {
+            selectedIds.delete(docId);
+        }
+        updateSelectionUI();
+    }
+
+    selectAllCheckbox?.addEventListener('change', () => {
+        const checked = selectAllCheckbox.checked;
+        rowCheckboxes.forEach(cb => {
+            cb.checked = checked;
+            const docId = cb.getAttribute('data-doc-id');
+            if (!docId) return;
+            if (checked) {
+                selectedIds.add(docId);
+            } else {
+                selectedIds.delete(docId);
+            }
+        });
+        updateSelectionUI();
+    });
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => toggleRowSelection(cb));
+    });
+
+    async function removeDocs(docIds) {
+        for (const docId of docIds) {
+            const res = await fetch(`/api/batch-cite/${docId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || '移除失败');
+            }
+        }
+    }
+
+    removeSelectedBtn?.addEventListener('click', async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`确定移除选中的 ${selectedIds.size} 篇文献吗？`)) return;
+        removeSelectedBtn.disabled = true;
+        removeSelectedBtn.classList.add('opacity-70', 'cursor-wait');
+        try {
+            await removeDocs(Array.from(selectedIds));
+            location.reload();
+        } catch (err) {
+            alert(err.message || '移除失败，请稍后重试');
+            removeSelectedBtn.disabled = false;
+            removeSelectedBtn.classList.remove('opacity-70', 'cursor-wait');
+        }
+    });
+
+    clearBatchBtn?.addEventListener('click', async () => {
+        if (!confirm('确定清空整个批量引用列表吗？')) return;
+        clearBatchBtn.disabled = true;
+        clearBatchBtn.classList.add('opacity-70', 'cursor-wait');
+        try {
+            const res = await fetch('/api/batch-cite', {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || '清空失败');
+            location.reload();
+        } catch (err) {
+            alert(err.message || '清空失败，请稍后重试');
+            clearBatchBtn.disabled = false;
+            clearBatchBtn.classList.remove('opacity-70', 'cursor-wait');
+        }
+    });
+
+    async function copyTextToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!success) throw new Error('复制失败');
+    }
+
+    copyMarkdownBtn?.addEventListener('click', async () => {
+        const targetDocs = selectedIds.size
+            ? docData.filter(doc => selectedIds.has(String(doc.id)))
+            : docData;
+        if (!targetDocs.length) {
+            alert('当前没有可复制的文献，请先选择或添加文献。');
+            return;
+        }
+        const lines = targetDocs.map((doc, index) => {
+            const title = doc.title || '未命名文献';
+            const authors = doc.authors || '作者不详';
+            const year = doc.year || '年份未知';
+            const journal = doc.journal || '';
+            const base = `${index + 1}. ${title} — ${authors} (${year}${journal ? ' · ' + journal : ''})`;
+            const link = doc.detail_url ? `\n   ${doc.detail_url}` : '';
+            return `${base}${link}`;
+        });
+        try {
+            await copyTextToClipboard(lines.join('\n\n'));
+            alert('已复制 Markdown 列表，可直接粘贴到文档或聊天工具。');
+        } catch (err) {
+            alert(err.message || '复制失败，请稍后重试');
+        }
+    });
+
+    document.querySelectorAll('.remove-from-batch').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const docId = this.getAttribute('data-doc-id');
+            if (!docId) return;
+            if (!confirm('确定要移除这篇文献吗？')) return;
+            try {
+                const res = await fetch(`/api/batch-cite/${docId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.message || '移除失败');
+                }
+            } catch (err) {
+                alert('请求失败: ' + err.message);
+            }
+        });
+    });
+
+    updateSelectionUI();
+    loadFormats();  // 页面加载时获取格式列表
+});
+</script>
+{% endblock %}

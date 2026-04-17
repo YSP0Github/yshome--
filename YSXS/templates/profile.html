@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}个人资料 - 云凇学术{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-slate-800 mb-8">个人资料</h1>
+
+<!-- 操作反馈提示 -->
+{% if success %}
+<div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+
+  <i class="fa fa-check-circle mr-2"></i>{{ success }}
+
+</div>
+
+{% endif %}
+
+
+
+{% if error %}
+
+<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+
+  <i class="fa fa-exclamation-circle mr-2"></i>{{ error }}
+
+</div>
+
+{% endif %}
+
+
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+  <!-- 左侧个人信息卡片 -->
+
+  <div class="lg:col-span-1">
+
+    <div class="bg-white rounded-xl shadow-sm p-6 sticky top-20">
+
+      <div class="text-center mb-6">
+
+        <!-- 头像 -->
+
+        <div class="relative inline-block mb-4">
+
+          <img id="avatar-preview" src="{{ url_for('static', filename='avatars/' + user.avatar) if user.avatar else url_for('static', filename='images/avatar1.png') }}" 
+
+               alt="用户头像" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md">
+
+          <label for="avatar-upload" class="absolute bottom-0 right-0 bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-blue-700 transition-colors">
+
+            <i class="fa fa-camera"></i>
+
+          </label>
+
+        </div>
+
+        
+
+        <h2 class="text-xl font-bold text-slate-800">{{ user.username }}</h2>
+
+        <p class="text-slate-500 text-sm">{{ user.email }}</p>
+
+        <p class="text-slate-500 text-xs mt-1">注册时间: {{ user.created_at|format_cn_time('%Y-%m-%d') }}</p>
+
+      </div>
+
+      
+
+      <!-- 统计信息 -->
+
+      <div class="grid grid-cols-3 gap-2 text-center">
+
+        <div class="bg-slate-50 rounded-lg p-3">
+
+          <p class="text-2xl font-bold text-blue-600">{{ doc_count }}</p>
+
+          <p class="text-sm text-slate-500">我的文献</p>
+
+        </div>
+
+        <div class="bg-slate-50 rounded-lg p-3">
+
+          <p class="text-2xl font-bold text-green-600">{{ total_views }}</p>
+
+          <p class="text-sm text-slate-500">总浏览量</p>
+
+        </div>
+
+        <div class="bg-slate-50 rounded-lg p-3">
+
+          <p class="text-2xl font-bold text-purple-600">0</p>
+
+          <p class="text-sm text-slate-500">收藏文献</p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  
+
+  <!-- 右侧编辑区域 -->
+
+  <div class="lg:col-span-2 space-y-6">
+
+    <!-- 基本信息编辑 -->
+
+    <div class="bg-white rounded-xl shadow-sm p-6">
+
+      <h3 class="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+
+        <i class="fa fa-user-circle text-blue-500 mr-2"></i>基本信息
+
+      </h3>
+
+      
+
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="update_info">
+
+        
+
+        <!-- 隐藏的头像上传输入框 -->
+
+        <input type="file" id="avatar-upload" name="avatar" accept="image/*" class="hidden">
+
+        
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div>
+
+            <label class="block text-sm font-medium text-slate-700 mb-1">用户名</label>
+
+            <input type="text" name="username" value="{{ user.username }}" 
+
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+          </div>
+
+          <div>
+
+            <label class="block text-sm font-medium text-slate-700 mb-1">邮箱</label>
+
+            <input type="email" name="email" value="{{ user.email }}" 
+
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+          </div>
+
+        </div>
+
+        
+
+        <div class="mt-6">
+
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+
+            保存基本信息
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+    
+
+    <!-- 密码修改 -->
+
+    <div class="bg-white rounded-xl shadow-sm p-6">
+
+      <h3 class="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+
+        <i class="fa fa-lock text-blue-500 mr-2"></i>修改密码
+
+      </h3>
+
+      
+
+      <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="change_password">
+
+        
+
+        <div>
+
+          <label class="block text-sm font-medium text-slate-700 mb-1">当前密码</label>
+
+          <input type="password" name="current_password" required
+
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+        </div>
+
+        <div>
+
+          <label class="block text-sm font-medium text-slate-700 mb-1">新密码</label>
+
+          <input type="password" name="new_password" required
+
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+        </div>
+
+        <div class="md:col-span-2">
+
+          <label class="block text-sm font-medium text-slate-700 mb-1">确认新密码</label>
+
+          <input type="password" name="confirm_password" required
+
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+        </div>
+
+        
+
+        <div class="md:col-span-2 mt-2">
+
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+
+            修改密码
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+    
+
+    <!-- 最近文献 -->
+
+    <div class="bg-white rounded-xl shadow-sm p-6">
+
+      <h3 class="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+
+        <i class="fa fa-file-text-o text-blue-500 mr-2"></i>最近上传的文献
+
+      </h3>
+
+      
+
+      {% if recent_docs %}
+
+      <div class="space-y-4">
+
+        {% for doc in recent_docs %}
+
+        <div class="border-b border-slate-100 pb-3 last:border-0">
+
+          <h4 class="font-medium text-slate-800 hover:text-blue-600 transition-colors">
+
+            <a href="{{ url_for('document_detail', doc_id=doc.id) }}">{{ doc.title }}</a>
+
+          </h4>
+
+          <p class="text-sm text-slate-500 mt-1">
+
+            {{ doc.authors }} | {{ doc.journal }} | {{ doc.year }}
+
+          </p>
+
+          <p class="text-xs text-slate-400 mt-1">
+
+            上传时间: {{ doc.created_at|format_cn_time('%Y-%m-%d %H:%M') }} | 浏览量 {{ doc.view_count }}
+
+          </p>
+
+        </div>
+
+        {% endfor %}
+
+      </div>
+
+      {% else %}
+
+      <p class="text-slate-500 text-center py-6">您还没有上传任何文献</p>
+
+      {% endif %}
+
+      
+
+      <div class="mt-4 text-center">
+
+        <a href="{{ url_for('index') }}" class="text-blue-600 hover:text-blue-700 transition-colors">
+
+          查看全部文献 <i class="fa fa-angle-right ml-1"></i>
+
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+const profileCsrfToken = (typeof window.getCSRFToken === 'function' && window.getCSRFToken()) || (csrfMeta ? csrfMeta.getAttribute('content') : '');
+// 头像预览和上传确认
+document.getElementById('avatar-upload').addEventListener('change', function(e) {
+  const input = e.target;
+  if (input.files && input.files[0]) {
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+      document.getElementById('avatar-preview').src = e.target.result;
+
+      if (confirm('确定要更新头像吗？')) {
+
+        // 构建表单数据提交头像
+
+        const form = new FormData();
+
+        form.append('action', 'update_avatar');
+
+        form.append('avatar', input.files[0]);
+
+        
+        fetch(window.location.href, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': profileCsrfToken
+          },
+          body: form
+        }).then(res => res.redirected ? window.location.reload() : null);
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+});
+</script>
+{% endblock %}

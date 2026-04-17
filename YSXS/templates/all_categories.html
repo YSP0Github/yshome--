@@ -1,0 +1,6 @@
+<h3>所有文献分类</h3>
+<ul>
+  {% for cat in all_cats %}
+    <li><a href="{{ url_for('category', category=cat.value) }}">{{ cat.label }}</a></li>
+  {% endfor %}
+</ul>

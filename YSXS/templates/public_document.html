@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} - 分享文献{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-10">
+    <div class="max-w-3xl mx-auto space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+            <p class="text-xs uppercase tracking-widest text-blue-500 font-semibold">分享文献</p>
+            <h1 class="text-2xl font-bold text-slate-900 leading-tight">{{ doc.title }}</h1>
+            <div class="space-y-2 text-sm text-slate-600">
+                <p><span class="font-semibold text-slate-800">作者：</span>{{ doc.authors or '未填写' }}</p>
+                <p><span class="font-semibold text-slate-800">期刊 / 会议：</span>{{ doc.journal or '未填写' }}</p>
+                <p><span class="font-semibold text-slate-800">年份：</span>{{ doc.year or '未知' }}</p>
+                <p><span class="font-semibold text-slate-800">DOI：</span>{{ doc.doi or '未填写' }}</p>
+            </div>
+            {% if doc.abstract %}
+            <div class="mt-4">
+                <h2 class="text-base font-semibold text-slate-800 mb-2">摘要</h2>
+                <p class="text-sm leading-relaxed text-slate-600 whitespace-pre-line">{{ doc.abstract }}</p>
+            </div>
+            {% endif %}
+            {% if doc.url %}
+            <div class="mt-4">
+                <a href="{{ doc.url }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm">
+                    <i class="fa fa-external-link mr-1.5"></i>访问原文链接
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% if not current_user.is_authenticated %}
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-sm text-slate-700 space-y-3">
+            <p>该页面仅展示基础信息，如需保存到个人文库或操作更多功能，请登录云凇学术。</p>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ url_for('login', next=request.url) }}"
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">立即登录</a>
+                <a href="{{ url_for('register') }}"
+                   class="px-4 py-2 border border-blue-200 text-blue-600 rounded-lg hover:bg-white text-sm">注册新账号</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

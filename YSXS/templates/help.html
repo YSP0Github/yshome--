@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}帮助中心 - 云凇学术{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm p-6 lg:p-8">
+    <h1 class="text-3xl font-bold text-slate-800 mb-8">帮助中心</h1>
+    
+    <!-- 帮助导航 -->
+    <div class="mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <a href="#getting-started" class="p-5 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors flex flex-col items-center text-center pulse-hover">
+                <i class="fa fa-rocket text-blue-500 text-3xl mb-3"></i>
+                <h3 class="font-medium text-slate-800">快速入门</h3>
+                <p class="text-sm text-slate-500 mt-1">新用户指南与基础操作</p>
+            </a>
+            <a href="#document-management" class="p-5 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors flex flex-col items-center text-center pulse-hover">
+                <i class="fa fa-file-text-o text-blue-500 text-3xl mb-3"></i>
+                <h3 class="font-medium text-slate-800">文献管理</h3>
+                <p class="text-sm text-slate-500 mt-1">上传、分类与搜索技巧</p>
+            </a>
+            <a href="#account-settings" class="p-5 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors flex flex-col items-center text-center pulse-hover">
+                <i class="fa fa-cog text-blue-500 text-3xl mb-3"></i>
+                <h3 class="font-medium text-slate-800">账户设置</h3>
+                <p class="text-sm text-slate-500 mt-1">个人信息与系统配置</p>
+            </a>
+            <a href="{{ url_for('site_guide') }}" class="p-5 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors flex flex-col items-center text-center pulse-hover">
+                <i class="fa fa-book text-blue-500 text-3xl mb-3"></i>
+                <h3 class="font-medium text-slate-800">平台指南</h3>
+                <p class="text-sm text-slate-500 mt-1">查看完整功能与部署说明</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 快速入门 -->
+    <section id="getting-started" class="mb-12 scroll-mt-20">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-200">快速入门</h2>
+        
+        <div class="space-y-6 pl-2">
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何注册与登录？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>点击页面右上角的"登录/注册"按钮</li>
+                    <li>在登录页面点击"立即注册"链接</li>
+                    <li>填写用户名、邮箱和密码，完成注册</li>
+                    <li>使用注册的账号密码登录系统</li>
+                </ol>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">系统主要功能有哪些？</h3>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 pl-4">
+                    <li>文献上传与管理：支持多种格式的学术文献上传</li>
+                    <li>文献分类：可自定义分类管理文献</li>
+                    <li>文献检索：通过标题、作者、关键词等快速查找</li>
+                    <li>收藏功能：标记重要文献以便快速访问</li>
+                    <li>个人资料管理：修改个人信息和系统设置</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 文献管理 -->
+    <section id="document-management" class="mb-12 scroll-mt-20">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-200">文献管理</h2>
+        
+        <div class="space-y-6 pl-2">
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何上传文献？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>点击页面右上角的"上传文献"按钮</li>
+                    <li>在弹出的上传窗口中，拖放文件或点击"浏览文件"选择本地文献</li>
+                    <li>填写文献信息：标题、作者、期刊/会议、年份等</li>
+                    <li>选择文献分类和类型</li>
+                    <li>填写关键词和摘要（可选，但建议填写以便检索）</li>
+                    <li>点击"确认上传"按钮完成上传</li>
+                </ol>
+                <p class="text-sm text-amber-600 mt-2">
+                    <i class="fa fa-info-circle mr-1"></i> 支持格式：PDF, DOC, DOCX, PPT, PPTX, TXT（最大50MB）
+                </p>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何搜索文献？</h3>
+                <p class="text-slate-600 mb-2">系统提供多种搜索方式：</p>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 pl-4">
+                    <li>在顶部搜索框输入关键词，支持标题、作者、关键词搜索</li>
+                    <li>通过左侧分类栏筛选特定分类的文献</li>
+                    <li>使用"我的收藏"查看已标记的文献</li>
+                    <li>通过"最近浏览"快速访问近期查看过的文献</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何管理文献分类？</h3>
+                <p class="text-slate-600 mb-2">您可以通过以下方式管理文献分类：</p>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 pl-4">
+                    <li>上传文献时选择现有分类或创建新分类</li>
+                    <li>在"文献分类"页面查看所有分类及包含的文献数量</li>
+                    <li>点击分类名称可查看该分类下的所有文献</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何导出为 EndNote / NoteExpress 等软件使用？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>在任何文献卡片中点击<b>引用</b>按钮打开“文献引用格式”弹窗。</li>
+                    <li>在弹窗底部的“导出到常用软件”区域选择需要的格式并下载。</li>
+                    <li>在目标软件中执行“导入/Import”并选择对应的文件类型。</li>
+                </ol>
+                <div class="grid md:grid-cols-2 gap-4 mt-4">
+                    <div class="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                        <p class="font-semibold text-slate-700 mb-1">BibTeX (.bib)</p>
+                        <p class="text-sm text-slate-600">适用于 LaTeX、Zotero 等，Zotero 中选择 “文件 → 导入 → BibTeX”。</p>
+                    </div>
+                    <div class="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                        <p class="font-semibold text-slate-700 mb-1">EndNote (.enw)</p>
+                        <p class="text-sm text-slate-600">在 EndNote 中执行 “File → Import → File”，格式选择 “EndNote Import”。</p>
+                    </div>
+                    <div class="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                        <p class="font-semibold text-slate-700 mb-1">RefMan (.ris) / NoteExpress (.net) / NoteFirst (.txt)</p>
+                        <p class="text-sm text-slate-600">以上均为 RIS 结构，可在 NoteExpress、NoteFirst、RefMan 等软件中通过 “Import RIS” 或 “导入参考文献” 直接导入。</p>
+                    </div>
+                    <div class="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                        <p class="font-semibold text-slate-700 mb-1">Zotero (.json)</p>
+                        <p class="text-sm text-slate-600">提供 Zotero JSON 包，Zotero 中选择 “文件 → 导入 → Zotero JSON”。</p>
+                    </div>
+                </div>
+                <p class="text-sm text-amber-600 mt-3">
+                    <i class="fa fa-lightbulb-o mr-1"></i> 如果用户已导入相同 DOI 的文献，可先在“批量引用”区域批量去除重复再导出。
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 账户设置 -->
+    <section id="account-settings" class="mb-12 scroll-mt-20">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-200">账户设置</h2>
+        
+        <div class="space-y-6 pl-2">
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何修改个人资料？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>点击右上角头像，在下拉菜单中选择"个人资料"</li>
+                    <li>在个人资料页面可以修改用户名和邮箱</li>
+                    <li>点击头像下方的相机图标可以更换头像</li>
+                    <li>修改完成后点击"保存基本信息"按钮</li>
+                </ol>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何修改密码？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>在个人资料页面找到"修改密码"区域</li>
+                    <li>输入当前密码和新密码</li>
+                    <li>点击"修改密码"按钮完成修改</li>
+                </ol>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何设置系统通知？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>点击右上角头像，在下拉菜单中选择"系统设置"</li>
+                    <li>在左侧导航中选择"通知设置"</li>
+                    <li>勾选需要接收的通知类型</li>
+                    <li>设置会自动保存</li>
+                </ol>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">如何注销账户？</h3>
+                <ol class="list-decimal list-inside space-y-2 text-slate-600 pl-4">
+                    <li>在系统设置页面找到"账户设置"区域</li>
+                    <li>勾选"我已了解删除账户将清除所有数据且无法恢复"</li>
+                    <li>点击"注销账户"按钮</li>
+                    <li>在确认弹窗中点击"确认"完成注销</li>
+                </ol>
+                <p class="text-sm text-red-600 mt-2">
+                    <i class="fa fa-exclamation-triangle mr-1"></i> 注意：账户注销后所有数据将被永久删除，且无法恢复，请谨慎操作
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 联系支持 -->
+    <section id="contact-support" class="scroll-mt-20">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-200">联系支持</h2>
+        
+        <div class="bg-blue-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-slate-700 mb-3">有其他问题？</h3>
+            <p class="text-slate-600 mb-4">如果您在使用过程中遇到其他问题或有功能建议，请通过以下方式联系我们：</p>
+            <ul class="space-y-3 text-slate-600">
+                <li class="flex items-center">
+                    <i class="fa fa-envelope text-blue-500 w-5 text-center mr-3"></i>
+                    <span>邮箱：yspyswh@163.com</span>
+                </li>
+                <li class="flex items-center">
+                    <i class="fa fa-clock-o text-blue-500 w-5 text-center mr-3"></i>
+                    <span>工作时间：周一至周五 9:00-18:00</span>
+                </li>
+            </ul>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 平滑滚动到锚点
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80, // 调整偏移量，避免被导航栏遮挡
+                    behavior: 'smooth'
+                });
+                
+                // 关闭移动菜单（如果打开）
+                document.getElementById('mobile-menu').classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

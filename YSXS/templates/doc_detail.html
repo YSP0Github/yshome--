@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} - 文献详情{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 面包屑导航 -->
+    <div class="mb-6 text-sm">
+        <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline">首页</a>
+        <span class="mx-2 text-slate-400">/</span>
+        <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline">文献列表</a>
+        <span class="mx-2 text-slate-400">/</span>
+        <span class="text-slate-600">{{ document.title }}</span>
+    </div>
+
+    <!-- 文献标题区域 -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-slate-800 mb-4">{{ document.title }}</h1>
+        <p class="text-slate-600 mb-2">{{ document.authors }}</p>
+        {% if document.journal %}
+        <p class="text-slate-500 text-sm">
+            {{ document.journal }}
+            {% if document.year %}（{{ document.year }}）{% endif %}
+            {% if document.volume %}，第 {{ document.volume }} 卷{% endif %}
+            {% if document.issue %}，第 {{ document.issue }} 期{% endif %}
+            {% if document.pages %}，页码：{{ document.pages }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- 文献信息卡片 -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <!-- 文献分类和标签 -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            {% if document.category_obj %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                {{ document.category_obj.label }}
+            </span>
+            {% elif document.category %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                {{ document.category }}
+            </span>
+            {% endif %}
+            {% if document.keywords %}
+                {% for keyword in document.keywords.split(',') %}
+                <span class="px-3 py-1 bg-slate-100 text-slate-800 rounded-full text-xs font-medium">
+                    {{ keyword }}
+                </span>
+                {% endfor %}
+            {% endif %}
+            {% if document.doc_type %}
+            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                {{ document.doc_type }}
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- 摘要部分 -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">摘要</h3>
+            <div class="pl-4 border-l-2 border-slate-200 text-slate-700 leading-relaxed">
+                {{ document.abstract if document.abstract else '该文献未提供摘要信息' }}
+            </div>
+        </div>
+
+        <!-- 文件信息和操作 -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4 border-t border-slate-100">
+            <div class="text-sm text-slate-500">
+                <span>上传者：{{ document.owner.username }}</span>
+                <span class="mx-2">|</span>
+                <span>上传时间：{{ document.created_at|format_cn_time('%Y-%m-%d') }}</span>
+                <span class="mx-2">|</span>
+                <span>文件大小：{{ (document.file_size / 1024 / 1024)|round(2) }} MB</span>
+                <span class="mx-2">|</span>
+                <span>浏览量：{{ document.view_count }}</span>
+            </div>
+            <a href="{{ url_for('download_doc', doc_id=document.id) }}"
+               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center justify-center">
+                <i class="fa fa-download mr-1"></i>下载文献
+            </a>
+        </div>
+    </div>
+
+    <!-- 管理员操作区域（仅管理员或文献拥有者可见） -->
+    {% if current_user.is_authenticated and (current_user.username == 'admin' or current_user.id == document.owner_id) %}
+    <div class="flex gap-3 mb-8 justify-center">
+        <a href="{{ url_for('edit_doc', doc_id=document.id) }}"
+           class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition-colors text-sm">
+            <i class="fa fa-pencil mr-1"></i>编辑文献
+        </a>
+        <a href="{{ url_for('delete_doc', doc_id=document.id) }}"
+           class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+           onclick="return confirm('确定删除文献《{{ document.title }}》吗？此操作不可恢复。')">
+            <i class="fa fa-trash mr-1"></i>删除文献
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 相关推荐（占位展示） -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">相关文献推荐</h3>
+        <div class="text-center py-6 text-slate-500 text-sm">
+            <p>暂无相关文献推荐（可根据标签和分类实现推荐功能）</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

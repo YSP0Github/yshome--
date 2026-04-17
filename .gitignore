@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.log
+*.db
+uploads/
+YSXS/logs/
+.codex
+instance/

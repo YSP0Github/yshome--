@@ -1,0 +1,226 @@
+{% set payload = overview_payload or {} %}
+{% set search_payload = payload.get('search_payload', {}) if payload else {} %}
+{% set selected_papers = payload.get('selected_papers', []) if payload else [] %}
+{% set selected_stats = payload.get('selected_stats', {}) if payload else {} %}
+{% set search_stats = search_payload.get('stats', {}) if search_payload else {} %}
+{% set profile = search_payload.get('profile', {}) if search_payload else {} %}
+{% set errors = search_payload.get('errors', []) if search_payload else [] %}
+    {% if overview_error %}
+    <div class="overview-panel rounded-3xl p-5 mb-6 border border-red-200">
+        <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ overview_error }}</div>
+    </div>
+    {% endif %}
+
+    <div id="research-overview-loading" class="overview-loading-panel rounded-3xl py-12 px-6 text-center hidden mb-6">
+        <div class="overview-loading-spinner mx-auto mb-5"></div>
+        <h3 class="text-2xl font-black text-slate-900 mb-3">正在生成研究现状综述</h3>
+        <p id="research-overview-loading-step" class="text-slate-600 leading-8 max-w-2xl mx-auto">
+            系统正在跨源检索相关文献、优先挑选近年综述与高质量论文，并调用 AI 生成研究现状总结，请稍候。
+        </p>
+    </div>
+
+    {% if payload %}
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-7">
+        <section class="xl:col-span-8 overview-panel rounded-3xl p-6 md:p-7">
+            <div class="flex items-start justify-between gap-4 mb-5">
+                <div>
+                    <div class="text-sm text-slate-500 mb-2">AI 研究现状综述</div>
+                    <h2 class="text-2xl font-extrabold text-slate-900">{{ direction_text }}</h2>
+                    <p class="mt-3 text-slate-600 leading-7">
+                        根据 {{ selected_papers|length }} 篇筛选后的支撑文献自动归纳。
+                        {% if payload.get('generated_at') %}生成时间：{{ payload.get('generated_at') }}。{% endif %}
+                    </p>
+                </div>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+                    <i class="fa fa-file-text-o"></i>{{ focus_options.get(focus_mode, focus_mode) }}
+                </span>
+            </div>
+            <div class="overview-summary-panel rounded-3xl p-5 md:p-6">
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <button type="button" id="overview-save-btn" class="overview-action-btn"><i class="fa fa-save"></i>保存到系统</button>
+                    <button type="button" id="overview-copy-btn" class="overview-action-btn"><i class="fa fa-copy"></i>一键复制</button>
+                    <button type="button" id="overview-export-md-btn" class="overview-action-btn"><i class="fa fa-download"></i>导出 Markdown</button>
+                    <button type="button" id="overview-export-txt-btn" class="overview-action-btn"><i class="fa fa-file-text-o"></i>导出文本</button>
+                </div>
+                {% if payload.get('summary_mode') == 'fallback' %}
+                <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 leading-7">
+                    <strong>本次为规则版综述。</strong> AI 综述生成超时或失败，系统已自动回退到规则摘要，页面仍可正常使用。
+                </div>
+                {% endif %}
+                <div class="overview-summary-collapsible" data-overview-collapsible>
+                    <div class="overview-summary-body">
+                        <div id="overview-summary-content" class="overview-summary-rendered text-sm md:text-[15px] text-slate-700">
+                            {{ payload.get('summary_html')|safe }}
+                        </div>
+                    </div>
+                    <div class="overview-summary-fade hidden" data-overview-summary-fade></div>
+                    <button type="button" class="overview-summary-toggle hidden" data-overview-summary-toggle>
+                        <i class="fa fa-angle-down"></i><span>展开全文</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <aside class="xl:col-span-4 overview-panel rounded-3xl p-6 md:p-7">
+            <div class="text-sm text-slate-500 mb-2">本次梳理信息</div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-5">研究画像</h2>
+            <div class="space-y-3">
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">AI 提炼检索主题</div>
+                    <div class="text-sm font-semibold text-slate-900 mt-1 leading-7">{{ profile.get('search_title') or direction_text }}</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">系统原始候选</div>
+                    <div class="text-lg font-bold text-slate-900 mt-1">{{ search_stats.get('raw_count', 0) }}</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">去重后结果</div>
+                    <div class="text-lg font-bold text-slate-900 mt-1">{{ search_stats.get('deduped_count', 0) }}</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">最终支撑论文</div>
+                    <div class="text-lg font-bold text-slate-900 mt-1">{{ selected_papers|length }}</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">来源</div>
+                    <div class="text-sm font-semibold text-slate-900 mt-1">
+                        {% for source in selected_sources %}{{ source_options.get(source, source) }}{% if not loop.last %} / {% endif %}{% endfor %}
+                    </div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">时间范围</div>
+                    <div class="text-sm font-semibold text-slate-900 mt-1">近 {{ overview_years }} 年优先</div>
+                </div>
+            </div>
+            {% if errors %}
+            <div class="mt-5 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700 leading-7">
+                <div class="font-semibold mb-1">部分来源本次未完全可用</div>
+                {% for item in errors[:4] %}<div>• {{ item }}</div>{% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+    {% endif %}
+
+    <section id="research-overview-results">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <div class="text-sm text-slate-500 mb-1">支撑论文池</div>
+                <h2 class="text-2xl font-extrabold text-slate-900">
+                    {% if direction_text %}用于支撑研究现状总结的重点文献{% else %}输入研究方向后即可开始梳理{% endif %}
+                </h2>
+            </div>
+            {% if selected_papers %}<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{{ selected_papers|length }} 篇</span>{% endif %}
+        </div>
+
+        {% if selected_papers %}
+        <div class="space-y-5">
+            {% for paper in selected_papers %}
+            {% set external_url = ('https://doi.org/' ~ paper.doi) if paper.doi else (paper.url or paper.pdf_url) %}
+            <article class="overview-card rounded-3xl p-5 md:p-6">
+                <div class="flex flex-col gap-5 lg:flex-row lg:justify-between">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start gap-4">
+                            <span class="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">{{ loop.index }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <span class="overview-badge overview-badge-source">{{ paper.source|upper }}</span>
+                                    {% if paper.is_review_like %}<span class="overview-badge overview-badge-review"><i class="fa fa-files-o"></i>综述倾向</span>{% endif %}
+                                    {% if paper.is_recent %}<span class="overview-badge overview-badge-recent"><i class="fa fa-clock-o"></i>近五年</span>{% endif %}
+                                    {% if paper.existing_document_id %}<span class="overview-badge overview-badge-existing"><i class="fa fa-check-circle"></i>系统内已有</span>{% endif %}
+                                </div>
+                                <h3 class="text-xl font-black text-slate-900 leading-9">
+                                    {% if external_url %}
+                                    <a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-3 hover:text-blue-600 transition-colors">
+                                        <span>{{ paper.title }}</span><i class="fa fa-external-link text-base mt-2 text-slate-400"></i>
+                                    </a>
+                                    {% else %}
+                                    {{ paper.title }}
+                                    {% endif %}
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
+                                    <span><i class="fa fa-users mr-2"></i>{{ paper.authors|join('; ') if paper.authors else '未知作者' }}</span>
+                                    <span><i class="fa fa-book mr-2"></i>{{ paper.journal or '未知来源' }}</span>
+                                    <span><i class="fa fa-calendar mr-2"></i>{{ paper.published_at or paper.year or '日期待核实' }}</span>
+                                    {% if paper.citation_count %}<span><i class="fa fa-line-chart mr-2"></i>被引 {{ paper.citation_count }}</span>{% endif %}
+                                </div>
+                                {% if paper.abstract %}
+                                <div class="mt-4 rounded-2xl p-4 text-slate-700 leading-8 text-sm md:text-[15px] bg-slate-50 border border-slate-200">
+                                    <div class="text-xs font-semibold tracking-wide text-slate-400 mb-2">摘要</div>
+                                    {{ paper.abstract[:1000] }}{% if paper.abstract|length > 1000 %}...{% endif %}
+                                </div>
+                                {% endif %}
+                                {% if paper.ai_reason %}
+                                <div class="overview-mini-summary mt-4 rounded-2xl px-4 py-3 text-sm text-blue-700 leading-7">
+                                    <strong>AI 排序理由：</strong>{{ paper.ai_reason }}
+                                </div>
+                                {% endif %}
+                                <div class="mt-5 flex flex-wrap gap-3">
+                                    {% if external_url %}<a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="overview-link-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
+                                    <button type="button" class="overview-import-btn" data-result-id="{{ loop.index }}" data-doc-id="{{ paper.existing_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if paper.existing_document_id else '一键导入系统' }}</button>
+                                </div>
+                                {% set enhancement_links = build_display_source_links(paper.title, paper.doi, limit=8) %}
+                                {% if enhancement_links %}
+                                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                                    <div class="text-xs font-semibold tracking-wide text-slate-500 mb-3">高价值增强检索{% if enhancement_links[0].priority_track %} · 已按方向优先{% endif %}</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for link in enhancement_links %}
+                                        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="overview-link-btn text-sm !px-3 !py-2"><i class="fa fa-external-link"></i>{{ link.label }}</a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <div data-overview-summary-box="{{ loop.index }}" class="mt-5 hidden">
+                                    <div class="overview-summary-panel rounded-2xl p-5">
+                                        <div class="flex items-center justify-between gap-3 mb-3">
+                                            <strong class="text-blue-700">AI 单篇总结</strong>
+                                            <span data-overview-summary-updated="{{ loop.index }}" class="text-xs text-blue-600"></span>
+                                        </div>
+                                        <div data-overview-summary-content="{{ loop.index }}" class="overview-summary-rendered text-sm text-slate-700"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:w-40">
+                        <div class="overview-stat rounded-2xl p-4">
+                            <div class="text-xs uppercase tracking-widest text-slate-400 mb-2">Overview</div>
+                            <div class="text-4xl font-black text-blue-600">{{ '%.1f'|format(paper.overview_score or 0) }}</div>
+                            <div class="text-sm text-slate-500 mt-2">现状支撑度</div>
+                        </div>
+                    </div>
+                </div>
+                <script type="application/json" id="overview-result-payload-{{ loop.index }}">{{ {
+                    'title': paper.get('title'),
+                    'authors': paper.get('authors', []),
+                    'journal': paper.get('journal'),
+                    'year': paper.get('year'),
+                    'published_at': paper.get('published_at'),
+                    'doi': paper.get('doi'),
+                    'url': paper.get('url'),
+                    'pdf_url': paper.get('pdf_url'),
+                    'abstract': paper.get('abstract'),
+                    'topics': paper.get('topics', []),
+                    'matched_keywords': paper.get('matched_keywords', []),
+                    'query_text': direction_text,
+                    'existing_document_id': paper.get('existing_document_id'),
+                } | tojson }}</script>
+            </article>
+            {% endfor %}
+        </div>
+        {% elif direction_text and not overview_error %}
+        <div class="overview-panel rounded-3xl text-center py-14 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-search"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">这次没有找到足够适合梳理现状的文献</h3>
+            <p class="text-slate-600 leading-8 max-w-2xl mx-auto">可以尝试把研究方向写得更具体，或调大保留论文数、扩大时间范围后再试。</p>
+        </div>
+        {% else %}
+        <div class="overview-panel rounded-3xl text-center py-14 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-lightbulb-o"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">先输入一个研究方向</h3>
+            <p class="text-slate-600 leading-8 max-w-2xl mx-auto">
+                例如：“月震深部结构研究现状”“Apollo 月震数据再处理进展”“月球内部结构反演研究现状”。
+            </p>
+        </div>
+        {% endif %}
+    </section>

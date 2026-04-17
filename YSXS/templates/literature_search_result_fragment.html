@@ -1,0 +1,212 @@
+{% set payload = search_payload or {} %}
+{% set results = payload.get('results', []) if payload else [] %}
+{% set profile = payload.get('profile', {}) if payload else {} %}
+{% set stats = payload.get('stats', {}) if payload else {} %}
+{% set errors = payload.get('errors', []) if payload else [] %}
+    {% if search_error %}
+    <div class="smart-panel rounded-3xl p-5 mb-6 border border-red-200">
+        <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ search_error }}</div>
+    </div>
+    {% endif %}
+
+    {% if payload %}
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-7">
+        <section class="xl:col-span-8 smart-panel rounded-3xl p-6 md:p-7">
+            <div class="flex items-start justify-between gap-4 mb-5">
+                <div>
+                    <div class="text-sm text-slate-500 mb-2">AI 提炼后的检索主题</div>
+                    <h2 class="text-2xl font-extrabold text-slate-900">{{ profile.get('search_title') or query_text }}</h2>
+                    <p class="mt-3 text-slate-600 leading-7">{{ profile.get('intent_summary') or '按你的输入问题做跨源检索与综合排序。' }}</p>
+                </div>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+                    <i class="fa fa-check-circle"></i>{{ stats.get('result_count', 0) }} 篇结果
+                </span>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <div class="text-xs text-slate-400 mb-2">检索短语</div>
+                    <div class="flex flex-wrap gap-2">
+                        {% for term in profile.get('queries', []) %}
+                        <span class="smart-chip"><i class="fa fa-search"></i>{{ term }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400 mb-2">提炼关键词</div>
+                    <div class="flex flex-wrap gap-2">
+                        {% for term in profile.get('keywords', []) %}
+                        <span class="smart-chip">{{ term }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if errors %}
+                <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700 leading-7">
+                    <div class="font-semibold mb-1">部分来源本次未完全可用</div>
+                    {% for item in errors[:4] %}<div>• {{ item }}</div>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        <aside class="xl:col-span-4 smart-panel rounded-3xl p-6 md:p-7">
+            <div class="text-sm text-slate-500 mb-2">本次策略</div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-5">排序说明</h2>
+            <div class="space-y-3">
+                <div class="smart-stat rounded-2xl px-4 py-4"><div class="text-xs text-slate-500">排序偏好</div><div class="text-lg font-bold text-slate-900 mt-1">{% if sort_mode == 'quality' %}偏重质量{% elif sort_mode == 'relevance' %}偏重相关性{% else %}综合平衡{% endif %}</div></div>
+                <div class="smart-stat rounded-2xl px-4 py-4"><div class="text-xs text-slate-500">来源</div><div class="text-sm font-semibold text-slate-900 mt-1">{% for source in selected_sources %}{{ source_options.get(source, source) }}{% if not loop.last %} / {% endif %}{% endfor %}</div></div>
+                <div class="smart-stat rounded-2xl px-4 py-4"><div class="text-xs text-slate-500">质量分依据</div><div class="text-sm font-semibold text-slate-900 mt-1">被引、正式发表来源、期刊/期刊条目、近期性</div></div>
+                <div class="smart-stat rounded-2xl px-4 py-4"><div class="text-xs text-slate-500">当前边界</div><div class="text-sm font-semibold text-slate-900 mt-1">暂未直接抓取 JIF，现以公开来源元数据做代理排序</div></div>
+            </div>
+        </aside>
+    </div>
+    {% endif %}
+
+    <section id="literature-search-results">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <div class="text-sm text-slate-500 mb-1">智能排序结果</div>
+                <h2 id="literature-search-results-title" class="text-2xl font-extrabold text-slate-900">{% if query_text %}最值得优先处理的相关文献{% else %}输入问题后即可开始检索{% endif %}</h2>
+            </div>
+            {% if results %}<span id="literature-search-results-count" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{{ results|length }} 篇</span>{% endif %}
+        </div>
+        <div id="literature-search-loading" class="smart-loading-panel rounded-3xl py-12 px-6 text-center hidden mb-5">
+            <div class="smart-loading-spinner mx-auto mb-5"></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">正在进行智能深搜</h3>
+            <p id="literature-search-loading-step" class="text-slate-600 leading-8 max-w-2xl mx-auto">
+                正在调用 AI 提炼检索意图，并跨多个学术源抓取、去重、排序。通常需要几秒到十几秒，请稍候。
+            </p>
+        </div>
+        {% if results %}
+        <div class="space-y-5">
+            {% for paper in results %}
+            {% set external_url = ('https://doi.org/' ~ paper.doi) if paper.doi else (paper.url or paper.pdf_url) %}
+            <article class="smart-result rounded-3xl p-5 md:p-6">
+                <div class="flex flex-col gap-5 lg:flex-row lg:justify-between">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start gap-4">
+                            <span class="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">{{ loop.index }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <span class="smart-source-badge">{{ paper.source|upper }}</span>
+                                    {% if paper.existing_document_id %}<span class="smart-existing-badge"><i class="fa fa-check-circle"></i>系统内已有</span>{% endif %}
+                                    {% if paper.citation_count %}<span class="smart-cite-badge"><i class="fa fa-line-chart"></i>被引 {{ paper.citation_count }}</span>{% endif %}
+                                </div>
+                                <h3 class="text-xl font-black text-slate-900 leading-9">
+                                    {% if external_url %}
+                                    <a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-3 hover:text-blue-600 transition-colors">
+                                        <span>{{ paper.title }}</span><i class="fa fa-external-link text-base mt-2 text-slate-400"></i>
+                                    </a>
+                                    {% else %}
+                                    {{ paper.title }}
+                                    {% endif %}
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
+                                    <span><i class="fa fa-users mr-2"></i>{{ paper.authors|join('; ') if paper.authors else '未知作者' }}</span>
+                                    <span><i class="fa fa-book mr-2"></i>{{ paper.journal or '未知来源' }}</span>
+                                    <span><i class="fa fa-calendar mr-2"></i>{{ paper.published_at or paper.year or '日期待核实' }}</span>
+                                    {% if paper.doi %}<a href="{{ 'https://doi.org/' ~ paper.doi }}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors"><i class="fa fa-link mr-2"></i>{{ paper.doi }}</a>{% endif %}
+                                </div>
+                                {% if paper.matched_keywords or paper.topics %}
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    {% for keyword in paper.matched_keywords[:6] %}<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold"><i class="fa fa-tag mr-1"></i>{{ keyword }}</span>{% endfor %}
+                                    {% for topic in paper.topics[:4] %}<span class="px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-semibold">{{ topic }}</span>{% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if paper.abstract %}
+                                <div class="smart-abstract-card mt-4 rounded-2xl p-4 text-slate-700 leading-8 text-sm md:text-[15px]">
+                                    <div class="text-xs font-semibold tracking-wide text-slate-400 mb-2">摘要</div>
+                                    {{ paper.abstract[:950] }}{% if paper.abstract|length > 950 %}...{% endif %}
+                                </div>
+                                {% endif %}
+                                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                    <div class="smart-stat rounded-2xl px-4 py-3"><div class="text-xs text-slate-400">相关性</div><div class="text-lg font-black text-slate-900 mt-1">{{ '%.2f'|format(paper.relevance_score or 0) }}</div></div>
+                                    <div class="smart-stat rounded-2xl px-4 py-3"><div class="text-xs text-slate-400">质量分</div><div class="text-lg font-black text-slate-900 mt-1">{{ '%.2f'|format(paper.quality_score or 0) }}</div></div>
+                                    <div class="smart-stat rounded-2xl px-4 py-3"><div class="text-xs text-slate-400">综合分</div><div class="text-lg font-black text-slate-900 mt-1">{{ '%.2f'|format(paper.final_score or paper.combined_score or 0) }}</div></div>
+                                </div>
+                                {% if paper.ai_reason %}
+                                <div class="smart-ai-reason mt-4 rounded-2xl px-4 py-3 text-sm text-blue-700 leading-7">
+                                    <strong>AI 重排理由：</strong>{{ paper.ai_reason }}
+                                </div>
+                                {% endif %}
+                                <div class="mt-5 flex flex-wrap gap-3">
+                                    {% if external_url %}<a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="smart-link-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
+                                    <button type="button" class="search-summary-btn smart-link-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-result-id="{{ loop.index }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>AI总结</button>
+                                    {% if paper.existing_document_id %}
+                                    <a href="{{ url_for('document_detail', doc_id=paper.existing_document_id) }}" class="smart-doc-btn"><i class="fa fa-book"></i>查看系统内文献</a>
+                                    {% else %}
+                                    <button type="button" class="search-import-btn smart-import-btn" data-result-id="{{ loop.index }}" data-doc-id="{{ paper.existing_document_id or '' }}"><i class="fa fa-download"></i>一键导入系统</button>
+                                    {% endif %}
+                                </div>
+                                {% set enhancement_links = build_display_source_links(paper.title, paper.doi, limit=8) %}
+                                {% if enhancement_links %}
+                                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                                    <div class="text-xs font-semibold tracking-wide text-slate-500 mb-3">高价值增强检索{% if enhancement_links[0].priority_track %} · 已按方向优先{% endif %}</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for link in enhancement_links %}
+                                        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="smart-link-btn !px-3 !py-2 text-sm">
+                                            <i class="fa fa-external-link"></i>{{ link.label }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div data-search-summary-box="{{ loop.index }}" class="mt-5 hidden">
+                                    <div class="smart-summary-panel rounded-2xl p-5">
+                                        <div class="flex items-center justify-between gap-3 mb-3">
+                                            <strong class="text-blue-700">AI 总结</strong>
+                                            <span data-search-summary-updated="{{ loop.index }}" class="text-xs text-blue-600"></span>
+                                        </div>
+                                        <div class="smart-summary-collapsible" data-search-collapsible>
+                                            <div class="smart-summary-body">
+                                                <div data-search-summary-content="{{ loop.index }}" class="smart-summary-rendered text-sm text-slate-700"></div>
+                                            </div>
+                                            <div class="smart-summary-fade hidden" data-search-summary-fade></div>
+                                            <button type="button" class="smart-summary-toggle hidden" data-search-summary-toggle>
+                                                <i class="fa fa-angle-down"></i><span>展开全文</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="smart-score">
+                        <div class="smart-score-card">
+                            <div class="text-xs uppercase tracking-widest text-slate-400 mb-2">Score</div>
+                            <div class="text-4xl font-black text-blue-600">{{ '%.1f'|format(paper.final_score or paper.combined_score or 0) }}</div>
+                            <div class="text-sm text-slate-500 mt-2">综合排序分</div>
+                        </div>
+                    </div>
+                </div>
+                <script type="application/json" id="search-result-payload-{{ loop.index }}">{{ {
+                    'title': paper.get('title'),
+                    'authors': paper.get('authors', []),
+                    'journal': paper.get('journal'),
+                    'year': paper.get('year'),
+                    'published_at': paper.get('published_at'),
+                    'doi': paper.get('doi'),
+                    'url': paper.get('url'),
+                    'pdf_url': paper.get('pdf_url'),
+                    'abstract': paper.get('abstract'),
+                    'topics': paper.get('topics', []),
+                    'matched_keywords': paper.get('matched_keywords', []),
+                    'query_text': query_text,
+                    'existing_document_id': paper.get('existing_document_id'),
+                } | tojson }}</script>
+            </article>
+            {% endfor %}
+        </div>
+        {% elif query_text and not search_error %}
+        <div id="literature-search-empty-state" class="smart-panel rounded-3xl text-center py-14 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-search"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">这次没有找到足够匹配的高质量文献</h3>
+            <p class="text-slate-600 leading-8 max-w-2xl mx-auto">可以尝试放宽回溯天数、减少限定词，或者把问题改成更核心的研究句子后重搜。</p>
+        </div>
+        {% else %}
+        <div id="literature-search-empty-state" class="smart-panel rounded-3xl text-center py-14 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-lightbulb-o"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">试试输入一句完整研究需求</h3>
+            <p class="text-slate-600 leading-8 max-w-2xl mx-auto">例如：“帮我找近五年利用 Apollo 月震数据约束月球内部结构、且质量较高的论文”。</p>
+        </div>
+        {% endif %}
+    </section>
+</div>

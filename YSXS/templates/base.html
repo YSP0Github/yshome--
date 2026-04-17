@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}云凇学术 - 个人文献管理系统{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" type="image/png">
+    <style>
+        /* 基础动画定义 */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .slide-up { animation: slideUp 0.4s ease-out; }
+        .pulse-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .pulse-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* 搜索结果高亮 */
+        .search-highlight { background-color: rgba(251, 191, 36, 0.3); padding: 0 2px; border-radius: 2px; }
+
+        /* 摘要最多显示三行 */
+        /* stylelint-disable-next-line property-no-unknown */
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .sidebar-scroll {
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .filter-card {
+            margin-bottom: 0.75rem;
+            padding: 1rem;
+        }
+
+        .category-list {
+            max-height: 16rem;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .category-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .category-list::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.5);
+            border-radius: 3px;
+        }
+        
+
+
+        /* 自动主题适配系统深色模式 */
+        :root {
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --card-bg: #ffffff;
+            --card-bg-muted: #f8fafc;
+            --border-color: #e2e8f0;
+            --header-bg: rgba(255, 255, 255, 0.92);
+            --header-text: #1e293b;
+            --surface-strong: #ffffff;
+            --input-bg: #ffffff;
+            --input-text: #0f172a;
+            --muted-text: #64748b;
+            --shadow-color: rgba(15, 23, 42, 0.08);
+        }
+
+        body.auto-theme.auto-dark {
+            --bg-color: #0f172a; /* 深色背景 */
+            --text-color: #f8fafc; /* 深色文本 */
+            --card-bg: #1e293b; /* 深色卡片背景 */
+            --border-color: #334155; /* 深色边框 */
+        }
+
+        /* 自动主题适配系统浅色模式 */
+        body.auto-theme.auto-light {
+            --bg-color: #f8fafc; /* 浅色背景 */
+            --text-color: #1e293b; /* 浅色文本 */
+        /* 其他浅色样式变量 */
+        }
+
+        /* 深色主题手动切换 */
+        body.dark-theme {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: #1e293b; /* 深色卡片背景 */
+            --border-color: #334155; /* 深色边框 */
+        }
+
+        /* 浅色主题手动切换 */
+        body.light-theme {
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+        /* 其他浅色样式变量 */
+        }
+
+        /* 应用变量到页面元素 */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.15s, color 0.15s;
+        }
+
+        #navbar {
+            background: var(--header-bg, rgba(255, 255, 255, 0.92));
+            color: var(--header-text, #1e293b);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        footer {
+            background: var(--surface-strong, #ffffff);
+            border-color: var(--border-color, #e2e8f0);
+        }
+
+        .theme-toggle-btn {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 0;
+            border: none;
+            background: transparent;
+            color: var(--header-text, #1e293b);
+            box-shadow: none;
+            transition: color 0.18s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: none;
+            background: transparent;
+        }
+
+        .theme-toggle-btn:focus,
+        .theme-toggle-btn:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .theme-icon-moon,
+        .theme-icon-sun {
+            position: absolute;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .theme-icon-svg {
+            width: 18px;
+            height: 18px;
+            color: currentColor;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        @media (max-width: 640px) {
+            .theme-toggle-btn {
+                width: 34px;
+                height: 34px;
+                box-shadow: none;
+            }
+
+            .theme-toggle-btn .theme-icon-moon,
+            .theme-toggle-btn .theme-icon-sun {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        body.light-theme .theme-icon-moon { opacity: 1; transform: scale(1); }
+        body.light-theme .theme-icon-sun { opacity: 0; transform: scale(0.7); }
+        body.auto-theme.auto-light .theme-icon-moon { opacity: 1; transform: scale(1); }
+        body.auto-theme.auto-light .theme-icon-sun { opacity: 0; transform: scale(0.7); }
+        body.dark-theme .theme-icon-moon { opacity: 0; transform: scale(0.7); }
+        body.dark-theme .theme-icon-sun { opacity: 1; transform: scale(1); }
+        body.auto-theme.auto-dark .theme-icon-moon { opacity: 0; transform: scale(0.7); }
+        body.auto-theme.auto-dark .theme-icon-sun { opacity: 1; transform: scale(1); }
+
+        body.dark-theme {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: #172033;
+            --border-color: #334155;
+            --header-bg: rgba(15, 23, 42, 0.88);
+            --header-text: #e2e8f0;
+            --surface-strong: #172033;
+            --input-bg: #111827;
+            --input-text: #e5eefb;
+        }
+
+        body.dark-theme #dropdownMenu,
+        body.dark-theme #user-menu,
+        body.dark-theme #add-reference-menu,
+        body.dark-theme #mobile-menu,
+        body.dark-theme #citation-import-modal .bg-white,
+        body.dark-theme #upload-modal .bg-white {
+            background: var(--surface-strong, #172033) !important;
+            color: var(--text-color, #f8fafc);
+            border-color: var(--border-color, #334155);
+        }
+
+        body.dark-theme input,
+        body.dark-theme textarea,
+        body.dark-theme select {
+            background: var(--input-bg, #111827);
+            color: var(--input-text, #e5eefb);
+            border-color: var(--border-color, #334155);
+        }
+
+        body.dark-theme footer,
+        body.auto-theme.auto-dark footer {
+            background: linear-gradient(180deg, #10192b 0%, #0f172a 100%) !important;
+            border-top-color: #243244 !important;
+            box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.06);
+        }
+
+        body.dark-theme footer .border-slate-200,
+        body.auto-theme.auto-dark footer .border-slate-200 {
+            border-color: #243244 !important;
+        }
+
+        body.dark-theme footer .text-slate-500,
+        body.auto-theme.auto-dark footer .text-slate-500 {
+            color: #8ea3bd !important;
+        }
+
+        body.dark-theme footer .text-slate-600,
+        body.auto-theme.auto-dark footer .text-slate-600 {
+            color: #c7d2e3 !important;
+        }
+
+        body.dark-theme footer a,
+        body.auto-theme.auto-dark footer a {
+            color: #c7d2e3 !important;
+            transition: color 0.18s ease;
+        }
+
+        body.dark-theme footer a:hover,
+        body.auto-theme.auto-dark footer a:hover {
+            color: #7fb0ff !important;
+        }
+
+        body.dark-theme footer .text-blue-700,
+        body.auto-theme.auto-dark footer .text-blue-700 {
+            color: #7fb0ff !important;
+        }
+        
+        /* 摘要最终样式：两端对齐 + 段首缩进 + 段间距 + 无开头空行 */
+        .abstract-content {
+            /* 基础样式 */
+            white-space: pre-line;       /* 保留换行，合并多余空格 */
+            line-height: 1.6;              /* 行高加大，段间距更明显 */
+            padding: 1.0rem;             /* 内边距，避免文字贴边 */
+            background-color: var(--card-bg-muted);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 var(--shadow-color);
+            color: var(--text-color);
+            /* 排版优化 */
+            text-align: justify;         /* 两端对齐 */
+            text-justify: inter-ideograph;/* 中英文混排对齐优化 */
+            word-break: break-word;      /* 超长单词换行 */
+            /* 核心：段首缩进 2 字符（关键！） */
+            text-indent: 2em;            /* 1em = 1个字符宽度，2em 就是空两格 */
+            /* 段间距：通过 margin 实现，适配 pre-line 换行 */
+            margin-bottom: 0;
+            /* 兜底：确保分段处有间距 */
+            letter-spacing: 0.02em;      /* 微调字间距，阅读更舒适 */
+        }
+
+        /* 针对多段落的额外间距（兼容 \n\n 分段） */
+        .abstract-content::after {
+            content: "";
+            display: block;
+            margin-top: 1rem; /* 段间距，可调整大小 */
+            height: 0;
+            clear: both;
+        }
+
+        /* 彻底清除开头空行（关键） */
+        .abstract-content {
+            padding-top: 0.1px; /* 触发 BFC 避免塌陷 */
+        }
+        .abstract-content::first-line {
+            line-height: normal; /* 恢复首行正常行高 */
+        }
+        .abstract-content > *:first-child,
+        .abstract-content::before {
+            display: block;
+            content: "";
+            margin-top: -1.8em; /* 抵消首行空白 */
+        }
+
+        body.light-theme,
+        body.dark-theme,
+        body.auto-theme.auto-light,
+        body.auto-theme.auto-dark {
+            background-color: var(--bg-color) !important;
+            color: var(--text-color) !important;
+        }
+
+        body.light-theme,
+        body.auto-theme.auto-light {
+            --heading-text: #0f172a;
+            --muted-text: #64748b;
+            --soft-text: #94a3b8;
+            --card-bg-emphasis: #f1f5f9;
+            --hover-bg: #f8fafc;
+            --accent-soft-bg: #eff6ff;
+            --accent-soft-text: #1d4ed8;
+            color-scheme: light;
+        }
+
+        body.dark-theme,
+        body.auto-theme.auto-dark {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --card-bg: #172033;
+            --card-bg-muted: #1e293b;
+            --card-bg-emphasis: #243244;
+            --border-color: #334155;
+            --header-bg: rgba(15, 23, 42, 0.88);
+            --header-text: #e2e8f0;
+            --surface-strong: #172033;
+            --input-bg: #111827;
+            --input-text: #e5eefb;
+            --heading-text: #f8fafc;
+            --muted-text: #cbd5e1;
+            --soft-text: #94a3b8;
+            --hover-bg: #243244;
+            --accent-soft-bg: rgba(37, 99, 235, 0.18);
+            --accent-soft-text: #93c5fd;
+            --shadow-color: rgba(2, 6, 23, 0.32);
+            color-scheme: dark;
+        }
+
+        body.auto-theme.auto-dark #dropdownMenu,
+        body.auto-theme.auto-dark #user-menu,
+        body.auto-theme.auto-dark #add-reference-menu,
+        body.auto-theme.auto-dark #mobile-menu,
+        body.auto-theme.auto-dark #citation-import-modal .bg-white,
+        body.auto-theme.auto-dark #upload-modal .bg-white {
+            background: var(--surface-strong, #172033) !important;
+            color: var(--text-color, #f8fafc);
+            border-color: var(--border-color, #334155);
+        }
+
+        body.auto-theme.auto-dark input,
+        body.auto-theme.auto-dark textarea,
+        body.auto-theme.auto-dark select {
+            background: var(--input-bg, #111827);
+            color: var(--input-text, #e5eefb);
+            border-color: var(--border-color, #334155);
+        }
+
+        body.dark-theme .bg-white,
+        body.auto-theme.auto-dark .bg-white,
+        body.dark-theme .bg-white\/70,
+        body.auto-theme.auto-dark .bg-white\/70,
+        body.dark-theme .bg-white\/80,
+        body.auto-theme.auto-dark .bg-white\/80,
+        body.dark-theme .bg-white\/90,
+        body.auto-theme.auto-dark .bg-white\/90 {
+            background-color: var(--card-bg);
+        }
+
+        body.dark-theme .bg-slate-50,
+        body.auto-theme.auto-dark .bg-slate-50,
+        body.dark-theme .bg-slate-50\/70,
+        body.auto-theme.auto-dark .bg-slate-50\/70 {
+            background-color: var(--card-bg-muted);
+        }
+
+        body.dark-theme .bg-slate-100,
+        body.auto-theme.auto-dark .bg-slate-100,
+        body.dark-theme .bg-slate-200,
+        body.auto-theme.auto-dark .bg-slate-200 {
+            background-color: var(--card-bg-emphasis);
+        }
+
+        body.dark-theme .bg-blue-50,
+        body.auto-theme.auto-dark .bg-blue-50,
+        body.dark-theme .bg-blue-50\/70,
+        body.auto-theme.auto-dark .bg-blue-50\/70 {
+            background-color: var(--accent-soft-bg);
+        }
+
+        body.dark-theme .text-slate-900,
+        body.auto-theme.auto-dark .text-slate-900,
+        body.dark-theme .text-slate-800,
+        body.auto-theme.auto-dark .text-slate-800,
+        body.dark-theme .text-slate-700,
+        body.auto-theme.auto-dark .text-slate-700 {
+            color: var(--heading-text);
+        }
+
+        body.dark-theme .text-slate-600,
+        body.auto-theme.auto-dark .text-slate-600,
+        body.dark-theme .text-slate-500,
+        body.auto-theme.auto-dark .text-slate-500 {
+            color: var(--muted-text);
+        }
+
+        body.dark-theme .text-slate-400,
+        body.auto-theme.auto-dark .text-slate-400,
+        body.dark-theme .text-slate-300,
+        body.auto-theme.auto-dark .text-slate-300 {
+            color: var(--soft-text);
+        }
+
+        body.dark-theme .border-slate-50,
+        body.auto-theme.auto-dark .border-slate-50,
+        body.dark-theme .border-slate-100,
+        body.auto-theme.auto-dark .border-slate-100,
+        body.dark-theme .border-slate-200,
+        body.auto-theme.auto-dark .border-slate-200,
+        body.dark-theme .border-slate-300,
+        body.auto-theme.auto-dark .border-slate-300 {
+            border-color: var(--border-color);
+        }
+
+        body.dark-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+        body.auto-theme.auto-dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+        body.dark-theme .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+        body.auto-theme.auto-dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+            border-color: var(--border-color);
+        }
+
+        body.dark-theme .hover\:bg-slate-50:hover,
+        body.auto-theme.auto-dark .hover\:bg-slate-50:hover,
+        body.dark-theme .hover\:bg-slate-100:hover,
+        body.auto-theme.auto-dark .hover\:bg-slate-100:hover,
+        body.dark-theme .hover\:bg-white:hover,
+        body.auto-theme.auto-dark .hover\:bg-white:hover {
+            background-color: var(--hover-bg);
+        }
+
+        body.dark-theme .hover\:bg-blue-50:hover,
+        body.auto-theme.auto-dark .hover\:bg-blue-50:hover {
+            background-color: var(--accent-soft-bg);
+        }
+
+        body.dark-theme .shadow-sm,
+        body.auto-theme.auto-dark .shadow-sm,
+        body.dark-theme .shadow,
+        body.auto-theme.auto-dark .shadow,
+        body.dark-theme .shadow-lg,
+        body.auto-theme.auto-dark .shadow-lg,
+        body.dark-theme .shadow-xl,
+        body.auto-theme.auto-dark .shadow-xl,
+        body.dark-theme .shadow-2xl,
+        body.auto-theme.auto-dark .shadow-2xl {
+            box-shadow: 0 18px 38px var(--shadow-color);
+        }
+    </style>
+    <script>
+        (function () {
+            var rawPrefix = "{{ (config.YSXS_URL_PREFIX or (request.script_root or '')).rstrip('/') }}";
+            if (rawPrefix === "/") {
+                rawPrefix = "";
+            }
+            var storedTheme = null;
+            try {
+                storedTheme = window.localStorage ? window.localStorage.getItem('ysxs-theme') : null;
+            } catch (error) {
+                storedTheme = null;
+            }
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            window.__YSXS_THEME__ = storedTheme || (prefersDark ? 'dark' : 'light');
+            window.__APP_BASE_PATH__ = rawPrefix || "";
+            window.withBasePath = function (path) {
+                if (!path || typeof path !== 'string') {
+                    return path;
+                }
+                if (/^https?:\/\//i.test(path) || path.startsWith('//')) {
+                    return path;
+                }
+                var base = window.__APP_BASE_PATH__;
+                if (!base) {
+                    return path;
+                }
+                if (path === base || path.startsWith(base + '/')) {
+                    return path;
+                }
+                if (path.startsWith('/')) {
+                    return base + path;
+                }
+                if (path.startsWith('./')) {
+                    return base + path.slice(1);
+                }
+                return base + '/' + path;
+            };
+            if (typeof window.fetch === 'function') {
+                const originalFetch = window.fetch.bind(window);
+                window.fetch = function(resource, init) {
+                    if (typeof resource === 'string') {
+                        resource = window.withBasePath(resource);
+                    } else if (typeof Request !== 'undefined' && resource instanceof Request) {
+                        const origin = window.location.origin;
+                        if (resource.url.startsWith(origin + '/')) {
+                            const relative = resource.url.slice(origin.length);
+                            const prefixed = window.withBasePath(relative);
+                            if (prefixed !== relative) {
+                                resource = new Request(origin + prefixed, resource);
+                            }
+                        }
+                    }
+                    return originalFetch(resource, init);
+                };
+            }
+        })();
+    </script>
+    <script id="ysxs-server-theme" type="application/json">{{ ((session.get('settings') or {}).get('theme', 'light')) | tojson }}</script>
+    <script>
+        (function () {
+            var serverTheme = null;
+            try {
+                var themeNode = document.getElementById('ysxs-server-theme');
+                serverTheme = themeNode ? JSON.parse(themeNode.textContent || 'null') : null;
+            } catch (error) {
+                serverTheme = null;
+            }
+            var validThemes = { light: true, dark: true, auto: true };
+            var mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+            function normalizeTheme(theme) {
+                return validThemes[theme] ? theme : null;
+            }
+
+            function resolveTheme(theme) {
+                if (theme === 'auto') {
+                    return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+                }
+                return theme === 'dark' ? 'dark' : 'light';
+            }
+
+            function syncDocumentTheme() {
+                var resolvedTheme = resolveTheme(window.__YSXS_THEME_PREFERENCE__ || 'light');
+                window.__YSXS_THEME__ = resolvedTheme;
+                if (document.documentElement) {
+                    document.documentElement.setAttribute('data-theme', resolvedTheme);
+                }
+            }
+
+            var storedTheme = null;
+            try {
+                storedTheme = normalizeTheme(window.localStorage ? window.localStorage.getItem('ysxs-theme') : null);
+            } catch (error) {
+                storedTheme = null;
+            }
+
+            window.__YSXS_SERVER_THEME__ = normalizeTheme(serverTheme) || 'light';
+            window.__YSXS_THEME_PREFERENCE__ = storedTheme || window.__YSXS_SERVER_THEME__;
+            window.__YSXS_RESOLVE_THEME__ = resolveTheme;
+            window.__applyYSXSThemeToBody = function (target) {
+                if (!target) {
+                    return;
+                }
+                var preference = window.__YSXS_THEME_PREFERENCE__ || 'light';
+                var resolvedTheme = resolveTheme(preference);
+                target.classList.remove('light-theme', 'dark-theme', 'auto-theme', 'auto-light', 'auto-dark');
+                if (preference === 'auto') {
+                    target.classList.add('auto-theme');
+                    target.classList.add(resolvedTheme === 'dark' ? 'auto-dark' : 'auto-light');
+                } else {
+                    target.classList.add(resolvedTheme === 'dark' ? 'dark-theme' : 'light-theme');
+                }
+                syncDocumentTheme();
+            };
+            window.setYSXSTheme = function (theme, options) {
+                var nextTheme = normalizeTheme(theme) || 'light';
+                window.__YSXS_THEME_PREFERENCE__ = nextTheme;
+                if (options && options.persist) {
+                    try {
+                        window.localStorage.setItem('ysxs-theme', nextTheme);
+                    } catch (error) {
+                        console.warn('Unable to persist theme preference.', error);
+                    }
+                }
+                if (document.body) {
+                    window.__applyYSXSThemeToBody(document.body);
+                } else {
+                    syncDocumentTheme();
+                }
+                if (typeof window.dispatchEvent === 'function') {
+                    window.dispatchEvent(new CustomEvent('ysxs:themechange', {
+                        detail: {
+                            preference: nextTheme,
+                            resolved: window.__YSXS_THEME__
+                        }
+                    }));
+                }
+            };
+
+            syncDocumentTheme();
+
+            if (mediaQuery) {
+                var handleSystemThemeChange = function () {
+                    if ((window.__YSXS_THEME_PREFERENCE__ || 'light') === 'auto') {
+                        window.setYSXSTheme('auto');
+                    }
+                };
+                if (typeof mediaQuery.addEventListener === 'function') {
+                    mediaQuery.addEventListener('change', handleSystemThemeChange);
+                } else if (typeof mediaQuery.addListener === 'function') {
+                    mediaQuery.addListener(handleSystemThemeChange);
+                }
+            }
+        })();
+    </script>
+    {% block extra_css %}{% endblock %} <!-- 预留扩展样式 -->
+</head>
+
+
+
+<body class="light-theme bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+    <script>
+        (function () {
+            if (typeof window.__applyYSXSThemeToBody === 'function') {
+                window.__applyYSXSThemeToBody(document.body);
+                return;
+            }
+            var theme = window.__YSXS_THEME__ || 'light';
+            document.body.classList.remove('light-theme', 'dark-theme', 'auto-theme', 'auto-light', 'auto-dark');
+            document.body.classList.add(theme === 'dark' ? 'dark-theme' : 'light-theme');
+        })();
+    </script>
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- 左侧Logo区域 -->
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2 whitespace-nowrap">
+                        <!-- <i class="fa fa-book text-blue-600 text-2xl"></i> -->
+                        <span class="text-xl font-bold text-blue-700">
+                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" class="w-10 h-10 ">
+                        </span>
+                        <span class="text-xl font-bold text-blue-700">云凇学术</span>
+                    </a>
+                    
+                    <!-- 桌面端导航菜单 -->
+                    <nav class="hidden md:ml-10 md:flex md:space-x-4 lg:space-x-8 relative z-60">
+                        <!-- 原有导航项（全部文献/我的收藏等）保持不变 -->
+                        <a href="{{ url_for('index') }}" 
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint == 'index' %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                                {% endif %}">
+                            全部文献
+                        </a>
+                        <a href="{{ url_for('my_collected') }}" 
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint == 'my_collected' %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                                {% endif %}">
+                            我的收藏
+                        </a>
+                        <a href="{{ url_for('recent') }}" 
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint == 'recent' %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                                {% endif %}">
+                            最近浏览
+                        </a>
+                        <a href="{{ url_for('shared_documents') }}" 
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint == 'shared_documents' %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                        {% endif %}">
+                            共享文献
+                        </a>
+                        <a href="{{ url_for('documents_table') }}" 
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint == 'documents_table' %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                                {% endif %}">
+                            文献表格
+                        </a>
+                        <a href="{{ url_for('morning_report_home') }}"
+                        class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center
+                                {% if request.endpoint in ['morning_report_home', 'morning_report_settings_view'] %}
+                                    text-blue-600 border-b-2 border-blue-600
+                                {% else %}
+                                    text-slate-600 hover:text-blue-600
+                                {% endif %}">
+                            今日晨报
+                        </a>
+
+                        <!-- 修复核心：父容器加 group，通过 group-hover 控制子菜单 -->
+                        <div class="relative" id="dropdownContainer">
+                            <button id="dropdownTrigger" class="px-1 py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-[70px] text-center flex items-center
+                                    text-slate-600 hover:text-blue-600 cursor-pointer focus:outline-none">
+                                实用工具
+                                <svg class="w-2.5 h-2.5 ml-1 transition-transform" id="dropdownIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+                                </svg>
+                            </button>
+                            <div id="dropdownMenu" class="absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-70 
+                                        opacity-0 invisible pointer-events-none 
+                                        transition-all duration-200 ease-in-out">
+                                <a href="{{ url_for('literature_search_home') }}" target="_blank"
+                                class="block px-4 py-2 text-xs sm:text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 whitespace-nowrap">
+                                    智能文献深搜
+                                </a>
+                                <a href="{{ url_for('research_overview_home') }}" target="_blank"
+                                class="block px-4 py-2 text-xs sm:text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 whitespace-nowrap">
+                                    研究现状综述
+                                </a>
+                                <a href="https://xueshu.baidu.com/" target="_blank" 
+                                class="block px-4 py-2 text-xs sm:text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 whitespace-nowrap">
+                                    百度学术
+                                </a>
+                                <a href="https://scholar.google.com/" target="_blank" 
+                                class="block px-4 py-2 text-xs sm:text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 whitespace-nowrap">
+                                    Google 学术
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+                
+                <!-- 右侧功能区 -->
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle-btn" type="button" class="theme-toggle-btn focus:outline-none" aria-label="Switch color theme" title="Switch color theme">
+                        <svg class="theme-icon-moon theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z"></path>
+                        </svg>
+                        <svg class="theme-icon-sun theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <line x1="12" y1="2" x2="12" y2="5"></line>
+                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                            <line x1="2" y1="12" x2="5" y2="12"></line>
+                            <line x1="19" y1="12" x2="22" y2="12"></line>
+                            <line x1="4.9" y1="4.9" x2="7" y2="7"></line>
+                            <line x1="17" y1="17" x2="19.1" y2="19.1"></line>
+                            <line x1="4.9" y1="19.1" x2="7" y2="17"></line>
+                            <line x1="17" y1="7" x2="19.1" y2="4.9"></line>
+                        </svg>
+                    </button>
+                    <!-- 搜索框（桌面端） -->
+                    <div class="hidden md:block relative w-64 lg:w-80">
+                        <form action="{{ url_for('search_documents') }}" method="get">
+                            <input type="text" id="desktop-search" name="query"  
+                                    placeholder="搜索文献标题、作者、关键词..." 
+                                    class="w-full pl-10 pr-4 py-2 rounded-lg border 
+                                            border-slate-300 focus:outline-none focus:ring-2 
+                                            focus:ring-blue-500 focus:border-transparent transition-all">
+                            <button type="submit" 
+                                    class="absolute left-3 top-1/2 transform 
+                                    -translate-y-1/2 text-slate-400">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            <button id="search-clear" 
+                                    type="button" 
+                                    class="hidden absolute right-3 top-1/2 
+                                    transform -translate-y-1/2 text-slate-400 
+                                    hover:text-slate-600">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 添加文献下拉菜单 -->
+                    <div class="relative inline-block">
+                    <button id="add-reference-btn" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg 
+                                    flex items-center space-x-1 transition-colors shadow-sm">
+                        <i class="fa fa-plus"></i>
+                        <span class="hidden sm:inline whitespace-nowrap">添加文献</span>
+                    </button>
+                    
+                    <!-- 下拉菜单 -->
+                    <div id="add-reference-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10">
+                        <!-- DOI 导入 -->
+                        <div class="p-3 border-b border-slate-200">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">DOI导入</label>
+                        <input type="text" id="doiInput" placeholder="输入DOI，例如10.1038/nature12373" 
+                                class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full mb-2">
+                        <button id="importBtn" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm">
+                            <i class="fa fa-link"></i>
+                            <span>导入</span>
+                        </button>
+                        </div>
+                        
+                        <!-- 上传文献 -->
+                        <div class="p-3 border-b border-slate-200">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">上传文献</label>
+                        <button id="upload-btn" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg 
+                                        flex items-center justify-center space-x-1 transition-colors shadow-sm text-sm">
+                            <i class="fa fa-upload"></i>
+                            <span>选择文件</span>
+                        </button>
+                        </div>
+                        
+                        <!-- RIS/BibTeX 导入 -->
+                        <div class="p-3">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">从RIS/BibTeX导入</label>
+                        <div class="space-y-2">
+                            <button id="upload-ris-btn" 
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg 
+                                        flex items-center justify-center space-x-1 transition-colors shadow-sm text-sm">
+                            <i class="fa fa-file-text-o"></i>
+                            <span>上传RIS文件</span>
+                            </button>
+                            <button id="upload-bibtex-btn" 
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg 
+                                        flex items-center justify-center space-x-1 transition-colors shadow-sm text-sm">
+                            <i class="fa fa-file-text-o"></i>
+                            <span>上传BibTeX文件</span>
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                    <div id="citation-import-modal" class="fixed inset-0 z-50 hidden">
+                        <div class="citation-overlay absolute inset-0 bg-black/40"></div>
+                        <div class="relative mx-auto mt-24 w-full max-w-2xl px-4 sm:mt-16">
+                            <div class="bg-white rounded-2xl shadow-2xl p-6 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 id="citation-import-title" class="text-lg font-semibold text-slate-800">导入引用</h3>
+                                        <p id="citation-import-desc" class="text-sm text-slate-500 mt-1">支持直接粘贴或上传文件</p>
+                                    </div>
+                                    <button type="button" id="citation-import-close" class="text-slate-400 hover:text-slate-600 text-2xl leading-none px-2" aria-label="关闭">×</button>
+                                </div>
+                                <div class="flex flex-wrap gap-3 text-sm">
+                                    <button type="button" data-import-mode="text" class="citation-mode-btn px-3 py-1.5 rounded-lg border border-blue-500 text-blue-600 bg-blue-50">粘贴内容</button>
+                                    <button type="button" data-import-mode="file" class="citation-mode-btn px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-blue-400">上传文件</button>
+                                </div>
+                                <div id="citation-text-panel" class="space-y-2">
+                                    <label class="block text-xs text-slate-500">将 RIS / BibTeX 文本粘贴到这里：</label>
+                                    <textarea id="citation-import-text" class="w-full h-48 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="在此粘贴完整的引用条目……"></textarea>
+                                </div>
+                                <div id="citation-file-panel" class="space-y-2 hidden">
+                                    <label class="block text-xs text-slate-500">选择本地文件：</label>
+                                    <input type="file" id="citation-import-file" class="w-full text-sm" accept=".ris,.enw,.txt">
+                                    <p class="text-xs text-slate-400">支持 RIS（.ris/.enw）或 BibTeX（.bib）文件，大小不超过 5MB。</p>
+                                </div>
+                                <div class="flex justify-end gap-3 pt-2">
+                                    <button type="button" id="citation-import-cancel" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">取消</button>
+                                    <button type="button" id="citation-import-submit" class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">开始导入</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 用户头像与菜单 -->
+                <div class="relative">
+                        {% if current_user.is_authenticated %}
+                        {% set username_full = current_user.username or '' %}
+                        {% set username_mobile = (username_full[:2] ~ '...') if username_full|length > 4 else username_full %}
+                        {% set username_desktop = (username_full[:6] ~ '...') if username_full|length > 6 else username_full %}
+                        <!-- 已登录：显示用户名和头像 -->
+                        <button id="user-menu-btn" class="flex items-center max-w-[8.5rem] md:max-w-[10rem] focus:outline-none" title="{{ username_full }}">
+                            <img id="avatar-preview" src="{{ url_for('static', filename='avatars/' + current_user.avatar) if current_user.avatar else url_for('static', filename='images/avatar1.png') }}"
+                                alt="用户头像" 
+                                class="w-8 h-8 rounded-full object-cover border-2 border-slate-200">
+                            <span class="ml-2 text-sm font-medium md:hidden whitespace-nowrap overflow-hidden text-ellipsis">{{ username_mobile }}</span>
+                            <span class="ml-2 text-sm font-medium hidden md:inline-block whitespace-nowrap overflow-hidden text-ellipsis max-w-[7rem]">{{ username_desktop }}</span>
+                        </button>
+                        <div id="user-menu" 
+                                class="hidden absolute right-0 mt-2 w-48 bg-white 
+                                        rounded-lg shadow-lg py-2 z-10 fade-in">
+                            <a href="{{ url_for('profile') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-slate-700 hover:bg-slate-100">
+                                个人资料</a>
+                            <a href="{{ url_for('settings') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-slate-700 hover:bg-slate-100">
+                                系统设置</a>
+                            <a href="{{ url_for('morning_report_settings_view') }}"
+                                class="block px-4 py-2 text-sm
+                                        text-slate-700 hover:bg-slate-100">
+                                晨报参数</a>
+                            <a href="{{ url_for('broadcast_history') }}"
+                                class="flex items-center justify-between px-4 py-2 text-sm
+                                        text-slate-700 hover:bg-slate-100">
+                                <span>广播历史</span>
+                                {% if broadcast_unread_count %}
+                                <span class="ml-2 inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full bg-blue-600 text-white text-[11px] font-bold">{{ broadcast_unread_count }}</span>
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('help_center') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-slate-700 hover:bg-slate-100">
+                                帮助中心</a>
+                            <!-- 管理员专用链接 -->
+                            {% if 'admin' in current_user.role %}
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <a href="{{ url_for('manage_users') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-purple-600 hover:bg-slate-100">
+                                用户管理
+                            </a>
+                            {% endif %}
+
+                            <!-- 超级管理员专用链接 -->
+                            {% if current_user.role == 'super admin' %}
+                            <a href="{{ url_for('admin.admin_dashboard') }}" 
+                                class="block px-4 py-2 text-sm text-purple-600 hover:bg-slate-100">
+                                管理员中心
+                            </a>
+                            <a href="{{ url_for('admin_register') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-purple-600 hover:bg-slate-100">
+                                管理员注册
+                            </a>
+                            <!-- 生成授权码按钮 -->
+                            <a href="{{ url_for('generate_auth_key') }}"
+                                class="block px-4 py-2 text-sm
+                                        text-purple-600 hover:bg-slate-100">
+                                生成授权码
+                            </a>
+                            <!-- 查看授权码按钮 -->
+                            <a href="{{ url_for('view_auth_keys') }}"
+                                class="block px-4 py-2 text-sm
+                                        text-purple-600 hover:bg-slate-100">
+                                查看授权码列表
+                            </a>
+                            <a href="{{ url_for('admin_ai_config') }}"
+                                class="block px-4 py-2 text-sm
+                                        text-purple-600 hover:bg-slate-100">
+                                AI 管理系统
+                            </a>
+                            <a href="{{ url_for('admin_broadcasts') }}"
+                                class="block px-4 py-2 text-sm
+                                        text-purple-600 hover:bg-slate-100">
+                                系统广播
+                            </a>
+                            {% endif %}
+                            
+                            <!-- 分割线 -->
+                            <div class="border-t border-slate-200 my-1"></div>
+
+                            <!-- 退出登录链接 -->
+                            <a href="{{ url_for('logout') }}" 
+                                class="block px-4 py-2 text-sm 
+                                        text-red-600 hover:bg-slate-100">
+                                退出登录
+                            </a>
+                        </div>
+                        {% else %}
+                        <!-- 未登录：显示登录按钮 (不会因为变窄而换行)-->
+                        <a href="{{ url_for('login') }}" 
+                            class="text-slate-600 hover:text-blue-600 flex items-center justify-center w-full 
+                                     rounded-lg  hover:bg-slate-100 transition-colors whitespace-nowrap"> 
+                            <i class="fa fa-user-circle text-xl mr-1"></i>
+                            <span class="hidden md:inline">登录/注册</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 移动端菜单按钮 -->
+                    <button id="mobile-menu-btn" class="md:hidden focus:outline-none">
+                        <i class="fa fa-bars text-xl text-slate-600"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 移动端导航菜单 -->
+            <div id="mobile-menu" class="md:hidden hidden pb-4 fade-in">
+                <!-- 移动端搜索框 -->
+                <div class="relative mb-4">
+                    <form action="{{ url_for('search_documents') }}" method="get">
+                        <input type="text" id="mobile-search" name="query"  
+                                placeholder="搜索文献..." 
+                                class="w-full pl-10 pr-4 py-2 
+                                    rounded-lg border 
+                                    border-slate-300 
+                                    focus:outline-none 
+                                    focus:ring-2 focus:ring-blue-500 
+                                    focus:border-transparent">
+                        <button type="submit" 
+                                class="absolute left-3 top-1/2 transform 
+                                    -translate-y-1/2 text-slate-400">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- 移动端导航链接 -->
+                <nav class="flex flex-col space-y-1">
+                    <a href="{{ url_for('index') }}" 
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint == 'index' %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        全部文献
+                    </a>
+                    <a href="{{ url_for('my_collected') }}" 
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint == 'my_collected' %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        我的收藏
+                    </a>
+                    <a href="{{ url_for('recent') }}" 
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint == 'recent' %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        最近浏览
+                    </a>
+                    <!-- 共享文献 ，所有用户可见 -->
+                    <a href="{{ url_for('shared_documents') }}" 
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint == 'shared_documents' %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        共享文献
+                    </a>
+                    <a href="{{ url_for('documents_table') }}" 
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint == 'documents_table' %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        文献表格
+                    </a>
+                    <a href="{{ url_for('morning_report_home') }}"
+                    class="px-3 py-2 rounded-md text-sm font-medium
+                            {% if request.endpoint in ['morning_report_home', 'morning_report_settings_view'] %}
+                                text-blue-600 bg-blue-50
+                            {% else %}
+                                text-slate-600 hover:bg-slate-100
+                            {% endif %}">
+                        今日晨报
+                    </a>
+                    <div class="relative">
+                        <button id="mobileDropdownTrigger" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                            <span>实用工具</span>
+                            <svg id="mobileDropdownIcon" class="w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+                            </svg>
+                        </button>
+                        
+                        <div id="mobileDropdownMenu" class="hidden flex-col mt-1 ml-4 space-y-1 border-l-2 border-slate-100">
+                            <a href="{{ url_for('literature_search_home') }}"
+                            class="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md">
+                                智能文献深搜
+                            </a>
+                            <a href="{{ url_for('research_overview_home') }}"
+                            class="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md">
+                                研究现状综述
+                            </a>
+                            <a href="https://xueshu.baidu.com/" target="_blank" 
+                            class="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md">
+                                百度学术
+                            </a>
+                            <a href="https://scholar.google.com/" target="_blank" 
+                            class="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md">
+                                Google 学术
+                            </a>
+                        </div>
+                    </div>
+
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 新增：显示 flash 消息 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {% for category, message in messages %}
+            <div data-flash-message class="fade-in p-4 rounded-lg mb-4 transition-all duration-500 {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif category == 'danger' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-slate-50 text-slate-700 border border-slate-200{% endif %}">
+            {{ message|safe }}  <!-- 关键：添加 |safe 过滤器允许 HTML 渲染 -->
+            </div>
+        {% endfor %}
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const flashMessages = document.querySelectorAll('[data-flash-message]');
+                flashMessages.forEach((message, index) => {
+                    const hideDelay = 4000 + index * 400; // stagger slightly so stacked alerts fade one after another
+                    setTimeout(() => {
+                        message.classList.add('opacity-0', 'translate-y-1', 'pointer-events-none');
+                        message.addEventListener('transitionend', () => {
+                            if (message.classList.contains('opacity-0')) {
+                                message.remove();
+                            }
+                        }, { once: true });
+                    }, hideDelay);
+                });
+            });
+        </script>
+    {% endif %}
+    {% endwith %}
+
+    {% if morning_report_popup %}
+    <div id="morning-report-popup" class="fixed inset-0 flex items-center justify-center px-4" data-report-date="{{ morning_report_popup.report_date }}" data-notify-key="{{ morning_report_popup.report_date }}::{% if morning_report_popup.generated_at %}{{ morning_report_popup.generated_at|format_cn_time }}{% else %}ready{% endif %}" style="z-index:90;background:rgba(15,23,42,.45);">
+        <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 fade-in">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="text-sm text-blue-600 font-semibold mb-2">今日晨报已生成</div>
+                    <h3 class="text-xl font-bold text-slate-900">{{ morning_report_popup.headline }}</h3>
+                </div>
+                <button id="morning-report-popup-close" type="button" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <p class="mt-4 text-sm text-slate-600">
+                今日共抓取 <strong>{{ morning_report_popup.paper_count }}</strong> 篇候选文献。
+                {% if morning_report_popup.keywords %}
+                当前关键词：{{ morning_report_popup.keywords|join('、') }}。
+                {% endif %}
+            </p>
+            {% if morning_report_popup.generated_at %}
+            <p class="mt-2 text-xs text-slate-500">生成时间：{{ morning_report_popup.generated_at|format_cn_time }}</p>
+            {% endif %}
+            <div class="mt-6 flex gap-3 justify-end">
+                <button id="morning-report-popup-ignore" type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:border-slate-400">
+                    稍后再看
+                </button>
+                <a id="morning-report-popup-open" href="{{ url_for('morning_report_home') }}" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                    查看晨报
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if broadcast_popup %}
+    <div id="broadcast-popup" class="fixed inset-0 flex items-center justify-center px-4" data-broadcast-id="{{ broadcast_popup.id }}" style="z-index:91;background:rgba(15,23,42,.45);">
+        <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 fade-in">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="text-sm text-purple-600 font-semibold mb-2">系统广播</div>
+                    <h3 class="text-xl font-bold text-slate-900">{{ broadcast_popup.title }}</h3>
+                </div>
+                <button id="broadcast-popup-close" type="button" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="mt-4 text-sm text-slate-700 leading-7 whitespace-pre-line">{{ broadcast_popup.content }}</div>
+            {% if broadcast_popup.created_at %}
+            <p class="mt-2 text-xs text-slate-500">发布时间：{{ broadcast_popup.created_at }}</p>
+            {% endif %}
+            <div class="mt-6 flex justify-end">
+                <button id="broadcast-popup-confirm" type="button" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white">我知道了</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 主内容区（由子页面填充） -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_modals %}{% endblock %}
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center justify-center md:justify-start">
+                        <span class="text-xl font-bold text-blue-700">
+                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" class="w-10 h-10 ">
+                        </span>
+                        <span class="text-xl font-bold text-blue-700">云凇学术</span>
+                    </div>
+                    <p class="mt-2 text-sm text-slate-500 text-center md:text-left">
+                        个人学术文献管理系统 © 2026 版权所有 All Rights Reserved
+                    </p>
+                    <p class="mt-2 text-sm text-slate-500 text-center md:text-left">
+                        本系统仅供个人学术研究使用，所有文献资源请遵守相关版权法律法规
+                    </p>
+                </div>
+                
+                <div class="flex flex-wrap justify-center gap-x-8 gap-y-4">
+                    <a href="#about" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">关于我们</a>
+                    <a href="{{ url_for('help_center') }}" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">帮助中心</a>
+                    <a href="#terms" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">使用条款</a>
+                    <a href="#privacy" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">隐私政策</a>
+                    <a href="#contact" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">联系我们</a>
+                    <a href="/HTML/report.html" class="text-sm text-slate-600 
+                                            hover:text-blue-600 
+                                            transition-colors">举报入口</a>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-slate-200 text-center text-sm text-slate-500">
+                <p class="flex items-center justify-center gap-2 text-sm text-slate-500">
+                    <img src="{{ url_for('static', filename='images/foot-beian.png') }}" alt="" class="w-4 h-4">
+                    <a href="https://beian.mps.gov.cn/#/query/webSearch?code=42011102005976" rel="noreferrer" target="_blank">鄂公网安备42011102005976号  </a>
+                    <img src="{{ url_for('static', filename='images/foot-icp.png') }}" alt="" class="w-4 h-4">
+                    <a href="https://beian.miit.gov.cn" target="_blank" class="text-slate-500 hover:text-blue-600 transition-colors"> 鄂ICP备2026000757号-1</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    
+    <!-- 上传文献模态框 -->
+    <div id="upload-modal" 
+        class="fixed inset-0 bg-black bg-opacity-50 flex 
+                justify-center items-start sm:items-center z-50 hidden fade-in
+                overflow-y-auto py-6 sm:py-0">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl relative
+                    max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-800">上传新文献</h3>
+                <button id="close-modal" 
+                        class="text-slate-400 hover:text-slate-600 focus:outline-none">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div> 
+            <div>
+
+            <div class="p-6">        
+                <!-- 上传模态框表单部分 -->
+                <form id="upload-form" 
+                        class="space-y-6" enctype="multipart/form-data" 
+                        action="{{ url_for('upload_multiple') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- 文献上传区域 -->
+                    <div>
+                        <label class="block text-sm font-medium 
+                                      text-slate-700 mb-2">上传文献文件</label>
+                        <div id="drop-area" 
+                             class="border-2 border-dashed border-slate-300 
+                                    rounded-lg p-6 text-center 
+                                    hover:border-blue-500 hover:bg-blue-50 
+                                    transition-colors cursor-pointer">
+                            <input type="file" id="file-upload" name="file" 
+                                    class="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" 
+                                    multiple>
+                                <i class="fa fa-cloud-upload text-4xl text-slate-400 mb-3"></i>
+                                <p class="text-sm text-slate-600 mb-2">拖放文件到此处，或</p>
+                                <button type="button" id="browse-files" 
+                                        class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                                        浏览文件
+                                </button>
+                            <p class="text-xs text-slate-400 mt-3">
+                                支持格式：PDF, DOC, DOCX, PPT, PPTX, TXT（最大50MB）
+                            </p>
+                        </div>
+                        
+                        <!-- 新增：文件列表显示区域 -->
+                        <div id="file-list" class="hidden mt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-slate-700">
+                                    已选择文件 (<span id="file-count">0</span>)
+                                </h4>
+                                <div>
+                                    <button type="button" 
+                                            id="toggle-files" 
+                                            class="text-xs text-blue-500 hover:text-blue-600 mr-2">
+                                        <i class="fa fa-chevron-up"></i> 折叠
+                                    </button>
+                                    <button type="button" 
+                                            id="clear-file-btn" 
+                                            class="text-xs text-red-500 hover:text-red-600">
+                                        清除
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- 折叠内容区域 -->
+                            <div id="file-items-container" 
+                                    class="max-h-72 overflow-y-auto">
+                                <div id="file-items" class="space-y-2">
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文件上传进度条（默认隐藏） -->
+                        <div id="upload-progress" class="hidden mt-4">
+                            <div class="flex justify-between text-sm text-slate-600 mb-1">
+                                <span>上传进度</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2.5">
+                                <div id="progress-bar" 
+                                        class="bg-blue-600 h-2.5 rounded-full" 
+                                        style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- ✅ 新增：上传状态提示 + 加载动画 -->
+                        <div id="upload-status" class="hidden mt-3 flex items-center justify-center text-sm text-slate-700">
+                            <i class="fa fa-spinner fa-spin mr-2"></i> <!-- 加载动画 -->
+                            <span id="status-text">正在上传，请稍候...</span>
+                        </div>
+
+                        <!-- ✅ 新增：上传结果提示 -->
+                        <div id="upload-result" class="hidden mt-3 p-3 rounded-lg"></div>
+
+                    </div>
+
+                    <!-- 版权确认和提交按钮保持不变 -->
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="copyright_agreement" class="form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" required>
+                            <span class="ml-2 text-sm text-slate-600">我已确认该文献的版权归属，且上传行为符合相关法律法规</span>
+                        </label>
+                    </div>
+
+                    <div class="p-6 border-t border-slate-200 flex justify-end space-x-4">
+                        <button id="cancel-upload" type="button" class="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" id="submit-upload" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
+                            确认上传
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>    
+    </div>
+
+    <!-- 公共JS -->
+    <script>
+    if (typeof window.getCSRFToken !== 'function') {
+        window.getCSRFToken = function () {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag && metaTag.content) {
+                return metaTag.content;
+            }
+            const match = document.cookie.match(/csrf_token=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        };
+    }
+    const csrfToken = window.getCSRFToken();
+    window.csrfToken = csrfToken;
+        // DOM元素获取
+        const navbar = document.getElementById('navbar');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userMenu = document.getElementById('user-menu');
+        const uploadBtn = document.getElementById('upload-btn');
+        const uploadRisBtn = document.getElementById('upload-ris-btn');
+        const uploadBibtexBtn = document.getElementById('upload-bibtex-btn');
+        const citationModal = document.getElementById('citation-import-modal');
+        const citationTitle = document.getElementById('citation-import-title');
+        const citationDesc = document.getElementById('citation-import-desc');
+        const citationClose = document.getElementById('citation-import-close');
+        const citationCancel = document.getElementById('citation-import-cancel');
+        const citationSubmit = document.getElementById('citation-import-submit');
+        const citationTextarea = document.getElementById('citation-import-text');
+        const citationFileInput = document.getElementById('citation-import-file');
+        const citationTextPanel = document.getElementById('citation-text-panel');
+        const citationFilePanel = document.getElementById('citation-file-panel');
+        const citationModeButtons = document.querySelectorAll('.citation-mode-btn');
+
+        const submitUpload = document.getElementById('submit-upload');
+        const desktopSearch = document.getElementById('desktop-search');
+        const mobileSearch = document.getElementById('mobile-search');
+        const searchClear = document.getElementById('search-clear');
+        const searchResultCount = document.getElementById('search-result-count');
+        const searchResults = document.getElementById('search-results');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
+        
+        const fileInfoForm = document.getElementById('file-info-form');
+        const selectedFileName = document.getElementById('selected-file-name');
+        const selectedFileSize = document.getElementById('selected-file-size');
+        const selectedFilesContainer = document.getElementById('selected-files'); // 假设 DOM 元素 id 是 selected-files
+        const titleInput = document.querySelector('.doc-title');
+
+        function applyTheme(theme, options = {}) {
+            if (typeof window.setYSXSTheme === 'function') {
+                window.setYSXSTheme(theme, options);
+            } else {
+                const isDark = theme === 'dark';
+                document.body.classList.remove('light-theme', 'dark-theme', 'auto-theme', 'auto-light', 'auto-dark');
+                document.body.classList.add(isDark ? 'dark-theme' : 'light-theme');
+                window.__YSXS_THEME__ = isDark ? 'dark' : 'light';
+            }
+            syncThemeToggleButton();
+        }
+
+        function syncThemeToggleButton() {
+            if (!themeToggleBtn) {
+                return;
+            }
+            const isDark = (window.__YSXS_THEME__ || 'light') === 'dark';
+            themeToggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            themeToggleBtn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        applyTheme(window.__YSXS_THEME_PREFERENCE__ || window.__YSXS_THEME__ || 'light');
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                const nextTheme = (window.__YSXS_THEME__ || 'light') === 'dark' ? 'light' : 'dark';
+                applyTheme(nextTheme, { persist: true });
+            });
+
+            themeToggleBtn.addEventListener('mouseup', () => {
+                themeToggleBtn.blur();
+            });
+        }
+
+        window.addEventListener('ysxs:themechange', syncThemeToggleButton);
+
+        // 导航栏滚动效果
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                navbar.classList.add('shadow');
+                navbar.classList.remove('shadow-sm');
+            } else {
+                navbar.classList.remove('shadow');
+                navbar.classList.add('shadow-sm');
+            }
+        });
+
+        // 移动端菜单切换
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // 用户菜单切换
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenu.classList.toggle('hidden');
+            });
+            // 点击页面其他区域关闭用户菜单
+            document.addEventListener('click', () => {
+                userMenu.classList.add('hidden');
+            });
+            // 阻止用户菜单内部点击事件冒泡
+            userMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // 搜索功能实现
+        function handleSearch(query) {
+            query = query.trim().toLowerCase();
+            if (query === '') {
+                // 清空搜索，恢复默认显示
+                searchResultCount.textContent = '找到 {{ total_count }} 篇相关文献';
+                searchClear.classList.add('hidden');
+                // 恢复所有文献显示
+                const docItems = searchResults.querySelectorAll('.pulse-hover');
+                docItems.forEach(item => {
+                    item.classList.remove('hidden');
+                    // 移除高亮
+                    const titles = item.querySelectorAll('h3 a');
+                    titles.forEach(title => {
+                        title.innerHTML = title.innerHTML.replace(/<span class="search-highlight">([^<]+)<\/span>/g, '$1');
+                    });
+                    const abstracts = item.querySelectorAll('p.line-clamp-3');
+                    abstracts.forEach(abstract => {
+                        abstract.innerHTML = abstract.innerHTML.replace(/<span class="search-highlight">([^<]+)<\/span>/g, '$1');
+                    });
+                });
+                return;
+            }
+            
+            searchClear.classList.remove('hidden');
+            
+            // 模拟搜索逻辑
+            const docItems = searchResults.querySelectorAll('.pulse-hover');
+            let matchCount = 0;
+            
+            docItems.forEach(item => {
+                const title = item.querySelector('h3 a').textContent.toLowerCase();
+                const authors = item.querySelector('p.text-sm').textContent.toLowerCase();
+                const abstract = item.querySelector('p.line-clamp-3').textContent.toLowerCase();
+                const keywords = item.querySelectorAll('.bg-slate-100');
+                const journal = item.querySelector('p.text-sm').textContent.toLowerCase();
+                let keywordText = '';
+                keywords.forEach(kw => {
+                    keywordText += kw.textContent.toLowerCase() + ' ';
+                });
+                
+                // 检查是否匹配
+                const isMatch = title.includes(query) || authors.includes(query) || 
+                               abstract.includes(query) || keywordText.includes(query) ||
+                                journal.includes(query);
+                
+                if (isMatch) {
+                    matchCount++;
+                    item.classList.remove('hidden');
+                    
+                    // 高亮匹配文本
+                    const titleElement = item.querySelector('h3 a');
+                    const originalTitle = titleElement.textContent;
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    titleElement.innerHTML = originalTitle.replace(regex, '<span class="search-highlight">$1</span>');
+                    
+                    const abstractElement = item.querySelector('p.line-clamp-3');
+                    const originalAbstract = abstractElement.textContent;
+                    abstractElement.innerHTML = originalAbstract.replace(regex, '<span class="search-highlight">$1</span>');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+            
+            // 更新搜索结果计数
+            searchResultCount.textContent = `找到 ${matchCount} 篇与 "${query}" 相关的文献`;
+        }
+
+        // 桌面端搜索
+        desktopSearch.addEventListener('input', (e) => {
+            handleSearch(e.target.value);
+        });
+
+        // 移动端搜索
+        mobileSearch.addEventListener('input', (e) => {
+            handleSearch(e.target.value);
+        });
+
+        // 清空搜索
+        searchClear.addEventListener('click', () => {
+            desktopSearch.value = '';
+            handleSearch('');
+        });
+
+        // 复制到剪贴板函数
+        function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('授权码已复制到剪贴板');
+        }).catch(err => {
+            console.error('复制失败:', err);
+            alert('复制失败，请手动复制');
+        });
+        }
+
+        // DOI导入文献按钮点击事件
+        document.getElementById('importBtn').addEventListener('click', function() {
+            const doi = document.getElementById('doiInput').value.trim();
+            if (!doi) {
+                alert('请输入 DOI');
+                return;
+            }
+
+            fetch('/api/import_by_doi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                    },
+                body: JSON.stringify({ doi: doi })
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    let errorMsg = '导入失败';
+                    try {
+                        const data = await res.json();
+                        errorMsg = data.error || errorMsg;
+                    } catch (e) {
+                        // ignore json parsing errors
+                    }
+                    throw new Error(errorMsg);
+                }
+                return res.json();
+            })
+            .then(data => {
+                alert(data.message || '导入成功');
+                // 可刷新页面或跳转到新导入的文献详情
+                window.location.reload();
+            })
+            .catch(err => {
+                console.error(err);
+                alert(err.message || '导入失败，请检查 DOI 是否正确');
+            });
+        });
+
+        let citationImportFormat = 'ris';
+        let citationImportMode = 'text';
+
+        const openCitationModal = (format) => {
+            citationImportFormat = format;
+            citationImportMode = 'text';
+            citationTextarea.value = '';
+            citationFileInput.value = '';
+            updateCitationMode();
+            citationTitle.textContent = format === 'bibtex' ? '导入 BibTeX 文献' : '导入 RIS 文献';
+            citationDesc.textContent = format === 'bibtex'
+                ? '可粘贴 BibTeX 条目或选择 .bib 文件'
+                : '可粘贴 RIS 条目或选择 .ris/.enw 文件';
+            citationFileInput.accept = format === 'bibtex' ? '.bib,.bibtex,.txt' : '.ris,.enw,.txt';
+            citationModal.classList.remove('hidden');
+        };
+
+        const closeCitationModal = () => {
+            citationModal.classList.add('hidden');
+        };
+
+        const updateCitationMode = () => {
+            citationModeButtons.forEach(btn => {
+                const mode = btn.dataset.importMode;
+                if (mode === citationImportMode) {
+                    btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+                    btn.classList.remove('border-slate-200', 'text-slate-600', 'bg-white');
+                } else {
+                    btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
+                    btn.classList.add('border-slate-200', 'text-slate-600', 'bg-white');
+                }
+            });
+            if (citationImportMode === 'text') {
+                citationTextPanel.classList.remove('hidden');
+                citationFilePanel.classList.add('hidden');
+            } else {
+                citationTextPanel.classList.add('hidden');
+                citationFilePanel.classList.remove('hidden');
+            }
+        };
+
+        citationModeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.importMode;
+                if (mode && mode !== citationImportMode) {
+                    citationImportMode = mode;
+                    updateCitationMode();
+                }
+            });
+        });
+
+        const submitCitationImport = () => {
+            const endpoint = citationImportFormat === 'bibtex' ? '/api/import/bibtex' : '/api/import/ris';
+            const formData = new FormData();
+            if (citationImportMode === 'text') {
+                const content = citationTextarea.value.trim();
+                if (!content) {
+                    alert('请先粘贴需要导入的内容。');
+                    return;
+                }
+                formData.append('content', content);
+            } else {
+                const file = citationFileInput.files && citationFileInput.files[0];
+                if (!file) {
+                    alert('请选择需要上传的文件。');
+                    return;
+                }
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert('导入文件不要超过 5MB。');
+                    return;
+                }
+                formData.append('file', file);
+            }
+            fetch(window.withBasePath ? window.withBasePath(endpoint) : endpoint, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            })
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok) {
+                        throw new Error(data.error || '导入失败，请检查文件内容。');
+                    }
+                    const imported = data.imported || 0;
+                    const skipped = data.skipped || 0;
+                    let message = `导入完成：成功 ${imported} 条`;
+                    if (skipped) {
+                        message += `，跳过 ${skipped} 条`;
+                    }
+                    alert(message);
+                    closeCitationModal();
+                    const redirect = data.redirect_url;
+                    if (redirect) {
+                        const target = window.withBasePath ? window.withBasePath(redirect) : redirect;
+                        window.location.href = target;
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert(err.message || '导入失败，请稍后再试。');
+                });
+        };
+
+        uploadRisBtn?.addEventListener('click', () => {
+            openCitationModal('ris');
+        });
+        uploadBibtexBtn?.addEventListener('click', () => {
+            openCitationModal('bibtex');
+        });
+        const citationOverlay = citationModal?.querySelector('.citation-overlay');
+
+        citationSubmit?.addEventListener('click', submitCitationImport);
+        citationCancel?.addEventListener('click', closeCitationModal);
+        citationClose?.addEventListener('click', closeCitationModal);
+        citationOverlay?.addEventListener('click', closeCitationModal);
+
+        // 添加文献按钮点击事件
+        document.getElementById('add-reference-btn').addEventListener('click', function() {
+            const menu = document.getElementById('add-reference-menu');
+            menu.classList.toggle('hidden');
+            });
+
+            // 点击页面其他地方关闭菜单
+            document.addEventListener('click', function(event) {
+            const btn = document.getElementById('add-reference-btn');
+            const menu = document.getElementById('add-reference-menu');
+            
+            if (!btn.contains(event.target) && !menu.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // PC端实用工具js
+        const trigger = document.getElementById('dropdownTrigger');
+        const menu = document.getElementById('dropdownMenu');
+        const icon = document.getElementById('dropdownIcon');
+
+        trigger.addEventListener('click', (e) => {
+            // 阻止冒泡，防止触发下面的 window 点击事件
+            e.stopPropagation();
+            
+            // 切换菜单显示/隐藏
+            const isVisible = !menu.classList.contains('invisible');
+            
+            if (isVisible) {
+                hideMenu();
+            } else {
+                showMenu();
+            }
+        });
+
+        // 点击页面其他地方关闭菜单
+        window.addEventListener('click', () => {
+            hideMenu();
+        });
+
+        function showMenu() {
+            menu.classList.remove('opacity-0', 'invisible', 'pointer-events-none');
+            menu.classList.add('opacity-100', 'visible');
+            icon.style.transform = 'rotate(180deg)';
+        }
+
+        function hideMenu() {
+            menu.classList.add('opacity-0', 'invisible', 'pointer-events-none');
+            menu.classList.remove('opacity-100', 'visible');
+            icon.style.transform = 'rotate(0deg)';
+        }
+        
+        // 移动端实用工具js
+        const mobileTrigger = document.getElementById('mobileDropdownTrigger');
+        const mobileMenuDrop = document.getElementById('mobileDropdownMenu');
+        const mobileIcon = document.getElementById('mobileDropdownIcon');
+
+        mobileTrigger.addEventListener('click', () => {
+            // 切换 hidden 类名
+            const isHidden = mobileMenuDrop.classList.contains('hidden');
+            
+            if (isHidden) {
+                mobileMenuDrop.classList.remove('hidden');
+                mobileMenuDrop.classList.add('flex');
+                mobileIcon.style.transform = 'rotate(180deg)';
+            } else {
+                mobileMenuDrop.classList.add('hidden');
+                mobileMenuDrop.classList.remove('flex');
+                mobileIcon.style.transform = 'rotate(0deg)';
+            }
+        });
+
+
+    </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        (function () {
+            const currentEndpoint = "{{ request.endpoint or '' }}";
+            const skipMorningReportEndpoints = new Set(['morning_report_home', 'morning_report_settings_view']);
+            const MORNING_REPORT_FAST_POLL_MS = 15000;
+            const MORNING_REPORT_READY_POLL_MS = 180000;
+            const MORNING_REPORT_WAITING_POLL_MS = 300000;
+            const MORNING_REPORT_IDLE_POLL_MS = 600000;
+            const BROADCAST_POLL_MS = 120000;
+            const POLL_LEASE_KEY = 'ysxs-popup-poll-lease';
+            const POLL_LEASE_MS = 45000;
+            const POLL_TAB_ID = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            let pollTimer = null;
+            let lastBroadcastPollAt = 0;
+
+            function apiUrl(path) {
+                return window.withBasePath ? window.withBasePath(path) : path;
+            }
+
+            function clearPollTimer() {
+                if (pollTimer) {
+                    window.clearTimeout(pollTimer);
+                    pollTimer = null;
+                }
+            }
+
+            function schedulePolling(delayMs) {
+                clearPollTimer();
+                if (!Number.isFinite(delayMs) || delayMs <= 0) {
+                    return;
+                }
+                pollTimer = window.setTimeout(() => {
+                    void runPopupPolling();
+                }, delayMs);
+            }
+
+            function tryAcquirePollingLease() {
+                try {
+                    const now = Date.now();
+                    const raw = window.localStorage?.getItem(POLL_LEASE_KEY);
+                    const lease = raw ? JSON.parse(raw) : null;
+                    if (!lease || Number(lease.expiresAt || 0) < now || lease.tabId === POLL_TAB_ID) {
+                        window.localStorage?.setItem(POLL_LEASE_KEY, JSON.stringify({
+                            tabId: POLL_TAB_ID,
+                            expiresAt: now + POLL_LEASE_MS
+                        }));
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    return true;
+                }
+            }
+
+            function releasePollingLease() {
+                try {
+                    const raw = window.localStorage?.getItem(POLL_LEASE_KEY);
+                    const lease = raw ? JSON.parse(raw) : null;
+                    if (lease && lease.tabId === POLL_TAB_ID) {
+                        window.localStorage?.removeItem(POLL_LEASE_KEY);
+                    }
+                } catch (error) {
+                    // ignore storage cleanup error
+                }
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function morningReportNotifyKey(notifyKey) {
+                return `ysxs-morning-report-notified:${notifyKey || 'ready'}`;
+            }
+
+            function hasMorningReportNotified(notifyKey) {
+                try {
+                    return window.sessionStorage?.getItem(morningReportNotifyKey(notifyKey)) === '1';
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function markMorningReportNotified(notifyKey) {
+                try {
+                    window.sessionStorage?.setItem(morningReportNotifyKey(notifyKey), '1');
+                } catch (error) {
+                    console.warn('persist morning report notify state failed', error);
+                }
+            }
+
+            async function markMorningReportSeen(reportDate) {
+                if (!reportDate) return;
+                try {
+                    await fetch(apiUrl('/api/morning-report/popup/seen'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': window.getCSRFToken()
+                        },
+                        body: JSON.stringify({ report_date: reportDate })
+                    });
+                } catch (error) {
+                    console.warn('mark morning report popup seen failed', error);
+                }
+            }
+
+            function bindMorningReportPopup(popup) {
+                if (!popup || popup.dataset.bound === '1') return;
+                popup.dataset.bound = '1';
+                const reportDate = popup.dataset.reportDate || '';
+                const notifyKey = popup.dataset.notifyKey || reportDate || 'ready';
+                markMorningReportNotified(notifyKey);
+
+                const closeBtn = popup.querySelector('#morning-report-popup-close');
+                const ignoreBtn = popup.querySelector('#morning-report-popup-ignore');
+                const openBtn = popup.querySelector('#morning-report-popup-open');
+
+                const closePopup = async () => {
+                    popup.remove();
+                    await markMorningReportSeen(reportDate);
+                };
+
+                closeBtn?.addEventListener('click', closePopup);
+                ignoreBtn?.addEventListener('click', closePopup);
+                openBtn?.addEventListener('click', async () => {
+                    await markMorningReportSeen(reportDate);
+                });
+                popup.addEventListener('click', async (event) => {
+                    if (event.target === popup) {
+                        await closePopup();
+                    }
+                });
+            }
+
+            function buildMorningReportPopup(payload) {
+                const reportDate = escapeHtml(payload.report_date || '');
+                const notifyKey = escapeHtml(payload.notify_key || payload.report_date || 'ready');
+                const headline = escapeHtml(payload.headline || '???????');
+                const paperCount = escapeHtml(payload.paper_count || 0);
+                const reportUrl = escapeHtml(payload.report_url || apiUrl('/morning-report'));
+                const generatedAtText = payload.generated_at_text
+                    ? `<p class="mt-2 text-xs text-slate-500">?????${escapeHtml(payload.generated_at_text)}</p>`
+                    : '';
+                const keywordLine = Array.isArray(payload.keywords) && payload.keywords.length
+                    ? `??????${escapeHtml(payload.keywords.join('?'))}?`
+                    : '';
+                return `
+                    <div id="morning-report-popup" class="fixed inset-0 flex items-center justify-center px-4" data-report-date="${reportDate}" data-notify-key="${notifyKey}" style="z-index:90;background:rgba(15,23,42,.45);">
+                        <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 fade-in">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <div class="text-sm text-blue-600 font-semibold mb-2">???????</div>
+                                    <h3 class="text-xl font-bold text-slate-900">${headline}</h3>
+                                </div>
+                                <button id="morning-report-popup-close" type="button" class="text-slate-400 hover:text-slate-600">
+                                    <i class="fa fa-times text-lg"></i>
+                                </button>
+                            </div>
+                            <p class="mt-4 text-sm text-slate-600">????? <strong>${paperCount}</strong> ??????${keywordLine}</p>
+                            ${generatedAtText}
+                            <div class="mt-6 flex gap-3 justify-end">
+                                <button id="morning-report-popup-ignore" type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:border-slate-400">????</button>
+                                <a id="morning-report-popup-open" href="${reportUrl}" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">????</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function showMorningReportPopup(payload) {
+                if (!payload || skipMorningReportEndpoints.has(currentEndpoint)) return;
+                const notifyKey = payload.notify_key || payload.report_date || 'ready';
+                if (hasMorningReportNotified(notifyKey)) {
+                    return;
+                }
+                const existingPopup = document.getElementById('morning-report-popup');
+                if (existingPopup) {
+                    bindMorningReportPopup(existingPopup);
+                    return;
+                }
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = buildMorningReportPopup(payload).trim();
+                const popup = wrapper.firstElementChild;
+                if (!popup) return;
+                document.body.appendChild(popup);
+                bindMorningReportPopup(popup);
+            }
+
+            function broadcastNotifyKey(broadcastId) {
+                return `ysxs-broadcast-notified:${broadcastId}`;
+            }
+
+            function hasBroadcastNotified(broadcastId) {
+                try {
+                    return window.sessionStorage?.getItem(broadcastNotifyKey(broadcastId)) === '1';
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function markBroadcastNotified(broadcastId) {
+                try {
+                    window.sessionStorage?.setItem(broadcastNotifyKey(broadcastId), '1');
+                } catch (error) {
+                    console.warn('persist broadcast notify state failed', error);
+                }
+            }
+
+            async function markBroadcastSeen(broadcastId) {
+                if (!broadcastId) return true;
+                try {
+                    const response = await fetch(apiUrl(`/api/broadcasts/${broadcastId}/seen`), {
+                        method: 'POST',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': window.getCSRFToken()
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    markBroadcastNotified(broadcastId);
+                    return true;
+                } catch (error) {
+                    console.warn('mark broadcast seen failed', error);
+                    return false;
+                }
+            }
+
+            function bindBroadcastPopup(popup) {
+                if (!popup || popup.dataset.bound === '1') return;
+                popup.dataset.bound = '1';
+                const broadcastId = popup.dataset.broadcastId || '';
+                const closeBtn = popup.querySelector('#broadcast-popup-close');
+                const confirmBtn = popup.querySelector('#broadcast-popup-confirm');
+
+                const closePopup = async () => {
+                    if (popup.dataset.closing === '1') return;
+                    popup.dataset.closing = '1';
+                    closeBtn && (closeBtn.disabled = true);
+                    confirmBtn && (confirmBtn.disabled = true);
+                    await markBroadcastSeen(broadcastId);
+                    popup.remove();
+                };
+
+                closeBtn?.addEventListener('click', closePopup);
+                confirmBtn?.addEventListener('click', closePopup);
+                popup.addEventListener('click', async (event) => {
+                    if (event.target === popup) {
+                        await closePopup();
+                    }
+                });
+            }
+
+            function buildBroadcastPopup(payload) {
+                const broadcastId = escapeHtml(payload.id || '');
+                const title = escapeHtml(payload.title || '系统广播');
+                const content = escapeHtml(payload.content || '').replace(/\n/g, '<br>');
+                const createdAt = payload.created_at
+                    ? `<p class="mt-2 text-xs text-slate-500">发布时间：${escapeHtml(payload.created_at)}</p>`
+                    : '';
+                return `
+                    <div id="broadcast-popup" class="fixed inset-0 flex items-center justify-center px-4" data-broadcast-id="${broadcastId}" style="z-index:91;background:rgba(15,23,42,.45);">
+                        <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 fade-in">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <div class="text-sm text-purple-600 font-semibold mb-2">系统广播</div>
+                                    <h3 class="text-xl font-bold text-slate-900">${title}</h3>
+                                </div>
+                                <button id="broadcast-popup-close" type="button" class="text-slate-400 hover:text-slate-600">
+                                    <i class="fa fa-times text-lg"></i>
+                                </button>
+                            </div>
+                            <div class="mt-4 text-sm text-slate-700 leading-7 whitespace-pre-line">${content}</div>
+                            ${createdAt}
+                            <div class="mt-6 flex justify-end">
+                                <button id="broadcast-popup-confirm" type="button" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white">我知道了</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function showBroadcastPopup(payload) {
+                if (!payload || !payload.id || hasBroadcastNotified(payload.id)) {
+                    return;
+                }
+                const existingPopup = document.getElementById('broadcast-popup');
+                if (existingPopup) {
+                    bindBroadcastPopup(existingPopup);
+                    return;
+                }
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = buildBroadcastPopup(payload).trim();
+                const popup = wrapper.firstElementChild;
+                if (!popup) return;
+                document.body.appendChild(popup);
+                bindBroadcastPopup(popup);
+            }
+
+            async function refreshMorningReportPopup() {
+                if (skipMorningReportEndpoints.has(currentEndpoint)) {
+                    return MORNING_REPORT_IDLE_POLL_MS;
+                }
+                try {
+                    const response = await fetch(apiUrl('/api/morning-report/status'), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error || '????????');
+                    }
+                    const existingPopup = document.getElementById('morning-report-popup');
+                    if (existingPopup) {
+                        bindMorningReportPopup(existingPopup);
+                    } else if (payload.popup && payload.status === 'ready') {
+                        showMorningReportPopup(payload.popup);
+                    }
+
+                    switch (payload.status) {
+                        case 'running':
+                            return MORNING_REPORT_FAST_POLL_MS;
+                        case 'waiting':
+                            return MORNING_REPORT_WAITING_POLL_MS;
+                        case 'ready':
+                            return payload.popup ? MORNING_REPORT_READY_POLL_MS : MORNING_REPORT_IDLE_POLL_MS;
+                        case 'failed':
+                            return MORNING_REPORT_READY_POLL_MS;
+                        case 'disabled':
+                        case 'idle':
+                        default:
+                            return MORNING_REPORT_IDLE_POLL_MS;
+                    }
+                } catch (error) {
+                    console.warn('refresh morning report popup failed', error);
+                    return MORNING_REPORT_WAITING_POLL_MS;
+                }
+            }
+
+            async function refreshBroadcastPopup(force = false) {
+                const now = Date.now();
+                if (!force && (now - lastBroadcastPollAt) < BROADCAST_POLL_MS) {
+                    return;
+                }
+                lastBroadcastPollAt = now;
+                try {
+                    const response = await fetch(apiUrl('/api/broadcasts/latest'), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error || '????????');
+                    }
+                    if (payload.broadcast) {
+                        showBroadcastPopup(payload.broadcast);
+                    }
+                } catch (error) {
+                    console.warn('refresh broadcast popup failed', error);
+                }
+            }
+
+            async function runPopupPolling(force = false) {
+                clearPollTimer();
+                if (document.visibilityState === 'hidden') {
+                    releasePollingLease();
+                    return;
+                }
+                if (!tryAcquirePollingLease()) {
+                    schedulePolling(MORNING_REPORT_READY_POLL_MS);
+                    return;
+                }
+
+                const nextMorningPollMs = await refreshMorningReportPopup();
+                await refreshBroadcastPopup(force);
+                schedulePolling(nextMorningPollMs || MORNING_REPORT_READY_POLL_MS);
+            }
+
+            const initialMorningReportPopup = document.getElementById('morning-report-popup');
+            if (initialMorningReportPopup) {
+                bindMorningReportPopup(initialMorningReportPopup);
+            }
+            const initialBroadcastPopup = document.getElementById('broadcast-popup');
+            if (initialBroadcastPopup) {
+                bindBroadcastPopup(initialBroadcastPopup);
+            }
+
+            void runPopupPolling(true);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    void runPopupPolling(true);
+                } else {
+                    clearPollTimer();
+                    releasePollingLease();
+                }
+            });
+            window.addEventListener('storage', (event) => {
+                if (event.key === POLL_LEASE_KEY && document.visibilityState === 'visible' && !pollTimer) {
+                    void runPopupPolling(true);
+                }
+            });
+            window.addEventListener('beforeunload', () => {
+                clearPollTimer();
+                releasePollingLease();
+            });
+        })();
+    </script>
+    {% endif %}
+    
+    <script src="{{ url_for('static', filename='js/file-upload.js') }}"></script>
+    {% block extra_js %}{% endblock %} <!-- 预留扩展JS -->
+</body>
+</html>

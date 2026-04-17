@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>50x - 服务器暂时开小差了</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(34, 197, 94, 0.16), transparent 22%),
+                radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.18), transparent 24%),
+                #090c10;
+            color: #b9fbc0;
+            line-height: 1.7;
+        }
+
+        .terminal {
+            width: 100%;
+            max-width: 720px;
+            background: rgba(10, 15, 20, 0.96);
+            border: 1px solid rgba(74, 222, 128, 0.5);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(18, 25, 32, 0.98);
+            border-bottom: 1px solid rgba(74, 222, 128, 0.18);
+            color: #d1fae5;
+            font-size: 13px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .btn-close {
+            background: #f87171;
+        }
+
+        .btn-min {
+            background: #fbbf24;
+        }
+
+        .btn-max {
+            background: #4ade80;
+        }
+
+        .terminal-content {
+            padding: 28px 24px 24px;
+        }
+
+        .status-line {
+            color: #86efac;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .code {
+            font-size: clamp(54px, 10vw, 88px);
+            font-weight: 700;
+            color: #f0fdf4;
+            letter-spacing: 0.04em;
+            text-shadow: 0 0 18px rgba(74, 222, 128, 0.18);
+            margin-bottom: 8px;
+        }
+
+        .headline {
+            font-size: 22px;
+            color: #dcfce7;
+            margin-bottom: 12px;
+        }
+
+        .copy {
+            color: #bbf7d0;
+            margin-bottom: 18px;
+        }
+
+        .panel {
+            padding: 16px;
+            border-radius: 10px;
+            background: rgba(20, 29, 37, 0.92);
+            border: 1px solid rgba(74, 222, 128, 0.14);
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            color: #f0fdf4;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .panel p + p {
+            margin-top: 6px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn-link {
+            appearance: none;
+            border: 1px solid rgba(74, 222, 128, 0.32);
+            background: transparent;
+            color: #dcfce7;
+            padding: 10px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-link:hover {
+            background: rgba(74, 222, 128, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .hint {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #86efac;
+            opacity: 0.82;
+        }
+
+        @media (max-width: 520px) {
+            .terminal-content {
+                padding: 22px 18px 20px;
+            }
+
+            .headline {
+                font-size: 18px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn-link {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <span class="btn btn-close"></span>
+                <span class="btn btn-min"></span>
+                <span class="btn btn-max"></span>
+            </div>
+            <span>server-error.log</span>
+        </div>
+        <div class="terminal-content">
+            <div class="status-line">[server] upstream application returned 50x</div>
+            <div class="code">50x</div>
+            <h1 class="headline">服务器暂时开小差了</h1>
+            <p class="copy">
+                请求已经到达服务器，但应用在处理时出了问题。
+                这通常是服务异常、数据库错误或配置问题导致的临时故障。
+            </p>
+
+            <section class="panel">
+                <div class="panel-title">你可以先试试</div>
+                <p>1. 刷新页面，确认是不是短暂波动。</p>
+                <p>2. 稍后再访问一次。</p>
+                <p>3. 如果问题持续存在，请联系站点管理员查看应用日志。</p>
+            </section>
+
+            <div class="actions">
+                <button class="btn-link" type="button" onclick="window.location.reload()">刷新重试</button>
+                <button class="btn-link" type="button" onclick="window.location.href='/'">返回首页</button>
+                <button class="btn-link" type="button" onclick="history.back()">返回上一页</button>
+            </div>
+
+            <p class="hint">Tip: 如果站点部署在子路径，例如 /YSXS/，可以把“返回首页”的链接改成对应路径。</p>
+        </div>
+    </main>
+</body>
+</html>

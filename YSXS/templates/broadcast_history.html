@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}广播历史 - 云凇学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .broadcast-shell { max-width: 1180px; margin: 0 auto; }
+    .broadcast-card {
+        background: rgba(255,255,255,.96);
+        border: 1px solid rgba(226,232,240,.95);
+        box-shadow: 0 18px 40px rgba(15,23,42,.07);
+    }
+    .broadcast-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .34rem .8rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+    .broadcast-pill-unread { background: rgba(37,99,235,.10); color: #1d4ed8; }
+    .broadcast-pill-read { background: rgba(148,163,184,.14); color: #475569; }
+    .broadcast-pill-active { background: rgba(16,185,129,.12); color: #047857; }
+    .broadcast-pill-inactive { background: rgba(245,158,11,.12); color: #b45309; }
+    .broadcast-content {
+        white-space: pre-line;
+        line-height: 1.95;
+        color: #334155;
+    }
+    .dark .broadcast-card {
+        background: rgba(15,23,42,.90);
+        border-color: rgba(71,85,105,.72);
+        box-shadow: 0 18px 40px rgba(2,6,23,.34);
+    }
+    .dark .broadcast-content { color: #cbd5e1; }
+    .dark .broadcast-pill-read { background: rgba(71,85,105,.28); color: #cbd5e1; }
+    .dark .broadcast-pill-unread { background: rgba(37,99,235,.24); color: #bfdbfe; }
+    .dark .broadcast-pill-active { background: rgba(16,185,129,.22); color: #a7f3d0; }
+    .dark .broadcast-pill-inactive { background: rgba(245,158,11,.18); color: #fde68a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="broadcast-shell px-4 py-8">
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+        <div>
+            <div class="text-sm text-slate-500 dark:text-slate-400 mb-2">个人消息中心</div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">广播历史</h1>
+            <p class="text-slate-600 dark:text-slate-300 mt-2">查看系统广播、已读状态与历史通知内容。</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for('index') }}" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium">
+                <i class="fa fa-arrow-left mr-2"></i>返回首页
+            </a>
+            {% if unread_count > 0 %}
+            <form method="post" action="{{ url_for('broadcast_history_mark_all_read') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                    <i class="fa fa-check-double mr-2"></i>全部标记已读
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="broadcast-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">广播总数</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ total_count }}</div>
+        </div>
+        <div class="broadcast-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">未读广播</div>
+            <div class="text-3xl font-bold text-blue-600 mt-2">{{ unread_count }}</div>
+        </div>
+        <div class="broadcast-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">当前有效</div>
+            <div class="text-3xl font-bold text-emerald-600 mt-2">{{ active_count }}</div>
+        </div>
+    </div>
+
+    <div class="space-y-5">
+        {% for item in history %}
+        {% set message = item.message %}
+        {% set receipt = item.receipt %}
+        <article class="broadcast-card rounded-3xl p-6 md:p-7">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span class="broadcast-pill {{ 'broadcast-pill-read' if item.is_read else 'broadcast-pill-unread' }}">
+                            <i class="fa {{ 'fa-check-circle' if item.is_read else 'fa-bell' }}"></i>
+                            {{ '已读' if item.is_read else '未读' }}
+                        </span>
+                        <span class="broadcast-pill {{ 'broadcast-pill-active' if item.is_active else 'broadcast-pill-inactive' }}">
+                            <i class="fa {{ 'fa-bullhorn' if item.is_active else 'fa-archive' }}"></i>
+                            {{ '当前有效' if item.is_active else '已停用' }}
+                        </span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-9">{{ message.title }}</h2>
+                    <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
+                        <span><i class="fa fa-calendar mr-2"></i>发布时间：{{ message.created_at|format_cn_time }}</span>
+                        {% if receipt %}
+                        <span><i class="fa fa-eye mr-2"></i>已读时间：{{ receipt.seen_at|format_cn_time }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mt-5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 p-5 broadcast-content">{{ message.content }}</div>
+                </div>
+                <div class="flex lg:flex-col gap-3 lg:items-end shrink-0">
+                    {% if not item.is_read %}
+                    <form method="post" action="{{ url_for('broadcast_history_mark_read', broadcast_id=message.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="next" value="{{ url_for('broadcast_history') }}">
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                            <i class="fa fa-check mr-2"></i>标记已读
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-300 font-medium">
+                        <i class="fa fa-check-circle mr-2"></i>已处理
+                    </div>
+                    {% endif %}
+                    <form method="post" action="{{ url_for('broadcast_history_delete', broadcast_id=message.id) }}" onsubmit="return confirm('确认从你的广播历史中删除这条记录吗？此操作只对你自己生效。');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="next" value="{{ url_for('broadcast_history') }}">
+                        <button type="submit" class="px-4 py-2 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/20 font-medium">
+                            <i class="fa fa-trash mr-2"></i>删除
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </article>
+        {% else %}
+        <div class="broadcast-card rounded-3xl text-center py-16 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-bullhorn"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-3">还没有系统广播</h3>
+            <p class="text-slate-600 dark:text-slate-300 leading-8 max-w-2xl mx-auto">后续管理员发布的系统通知会显示在这里。</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

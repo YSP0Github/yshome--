@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面离家出走啦！</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* 终端容器 */
+        .terminal {
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            position: relative;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* 终端标题栏 */
+        .terminal-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: #333;
+            border-bottom: 1px solid #00ff00;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 12px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 6px;
+            margin-right: 10px;
+        }
+
+        .btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .btn-close {
+            background: #ff5555;
+        }
+
+        .btn-min {
+            background: #ffb86c;
+        }
+
+        .btn-max {
+            background: #50fa7b;
+        }
+
+        /* 404内容 */
+        .terminal-content {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .code-404 {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            animation: blink 1.5s infinite alternate;
+        }
+
+        .msg {
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        /* 打字机效果 */
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid #00ff00;
+            white-space: nowrap;
+            margin: 0;
+            letter-spacing: 0.5px;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        /* 返回主页按钮 */
+        .back-home {
+            margin-top: 25px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-home:hover {
+            background: #00ff00;
+            color: #0a0a0a;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        /* 小屏幕适配 */
+        @media (max-width: 480px) {
+            .terminal {
+                padding: 20px 15px;
+            }
+            .code-404 {
+                font-size: 36px;
+            }
+        }
+
+        /* 动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes blink {
+            from { color: #00ff00; }
+            to { color: #66ff66; }
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #00ff00; }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <span class="btn btn-close"></span>
+                <span class="btn btn-min"></span>
+                <span class="btn btn-max"></span>
+            </div>
+            页面访问错误 - 404.exe
+        </div>
+        <div class="terminal-content">
+            <div class="code-404">404</div>
+            <div class="msg typewriter">错误：页面离家出走啦！😜</div>
+            <div class="msg">
+                可能的原因：
+                → 你输入的地址迷路了
+                → 页面被我偷偷藏起来了
+                → 宇宙射线干扰了服务器
+                → 其实是我写的代码有bug（嘘）
+            </div>
+            <div class="msg">
+                解决方案：
+                → 点击下方按钮返回主页
+                → 检查网址是否输错
+                → 刷新页面试试运气
+                → 或者联系站长（就是我）修bug
+            </div>
+            <button class="back-home" onclick="window.location.href='/'">🚀 返回主页</button>
+        </div>
+    </div>
+
+    <script>
+        // 彩蛋：按回车模拟终端输入
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const msg = document.createElement('div');
+                msg.textContent = "> 别按回车了，没用的！还是点按钮吧～";
+                msg.style.marginTop = "10px";
+                msg.style.color = "#ff6b6b";
+                document.querySelector('.terminal-content').appendChild(msg);
+            }
+        });
+    </script>
+</body>
+</html>

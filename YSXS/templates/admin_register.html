@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}创建创建管理员 - 管理员中心
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- 页面标题 -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">创建管理员账户</h1>
+        <p class="mt-2 text-sm text-slate-500">
+            仅允许系统超级管理员用户可创建新管理员账户
+        </p>
+    </div>
+
+    <!-- 注册表单卡片 -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-8">
+            <!-- 错误提示 -->
+            {% if error %}
+            <div class="mb-4 px-4 py-3 bg-red-50 text-red-600 rounded-md text-sm">
+                <i class="fa fa-exclamation-circle mr-1"></i>{{ error }}
+            </div>
+            {% endif %}
+
+            <!-- 表单 -->
+            <form method="post" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- 用户名 -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-slate-700 mb-1">
+                        用户名
+                    </label>
+                    <input type="text" id="username" name="username" required
+                           class="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="输入管理员用户名">
+                </div>
+
+                <!-- 邮箱 -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-1">
+                        邮箱地址
+                    </label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="输入管理员邮箱">
+                </div>
+
+                <!-- 密码 -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-1">
+                        密码
+                    </label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="设置管理员密码（至少8位）">
+                    <p class="mt-1 text-xs text-slate-500">
+                        密码长度至少8位，建议包含字母和数字
+                    </p>
+                </div>
+                {% if not current_user.is_super_admin %}
+                <!-- 超级管理员授权密钥 -->
+                <div>
+                    <label for="auth_key" class="block text-sm font-medium text-slate-700 mb-1">
+                        授权密钥 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="auth_key" name="auth_key" required
+                        class="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="请输入超级管理员提供的授权密钥">
+                    <p class="mt-1 text-xs text-slate-500">
+                        授权密钥由超级管理员生成，单次有效且24小时内过期
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- 操作按钮 -->
+                <div class="flex items-center justify-end space-x-4 pt-4 border-t border-slate-100">
+                    <a href="{{ url_for('manage_users') }}" 
+                       class="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                        取消
+                    </a>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                        创建管理员
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="mt-6 text-center text-sm text-slate-500">
+        <p>创建后将自动生成 <span class="font-medium text-purple-600">ADMIN-xxxxxx</span> 格式的管理员ID</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 简单的密码长度验证
+        const passwordInput = document.getElementById('password');
+        const form = passwordInput.closest('form');
+        
+        form.addEventListener('submit', function(e) {
+            if (passwordInput.value.length < 8) {
+                alert('密码长度至少需要8位');
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑文献 - {{ doc.title }} - 云凇学术</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    {% include "includes/standalone_theme_head.html" %}
+    <script>
+        (function () {
+            var rawPrefix = "{{ (request.script_root or '').rstrip('/') }}";
+            if (rawPrefix === "/") {
+                rawPrefix = "";
+            }
+            window.__APP_BASE_PATH__ = rawPrefix || "";
+            window.withBasePath = function (path) {
+                if (!path || typeof path !== 'string') {
+                    return path;
+                }
+                if (/^https?:\/\//i.test(path) || path.startsWith('//')) {
+                    return path;
+                }
+                if (!window.__APP_BASE_PATH__) {
+                    return path;
+                }
+                if (path.startsWith('/')) {
+                    return window.__APP_BASE_PATH__ + path;
+                }
+                if (path.startsWith('./')) {
+                    return window.__APP_BASE_PATH__ + path.slice(1);
+                }
+                return window.__APP_BASE_PATH__ + '/' + path;
+            };
+        })();
+    </script>
+</head>
+<body class="bg-slate-50">
+    {% include "includes/standalone_theme_body.html" %}
+    <!-- 导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="{{ url_for('index') }}" class="text-xl font-bold text-blue-600">云凇学术</a>
+            <a href="{{ url_for('document_detail', doc_id=doc.id) }}" class="text-slate-600 hover:text-blue-600">返回详情</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">编辑文献信息</h1>
+        <!-- 文献详情页添加导入文件按钮 -->
+        <div class="mb-6">
+        <button id="import-btn-{{ doc.id }}" 
+                class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                data-doc-id="{{ doc.id }}"
+                data-has-file="{{ 'true' if doc.file_path else 'false' }}">
+            <i class="fa fa-link mr-2"></i>
+            <span>导入文件</span>
+        </button>
+        </div>
+        <!-- 文件选择 input (隐藏) -->
+        <input type="file" id="file-upload-{{ doc.id }}" class="hidden" accept=".pdf,.doc,.docx">
+
+        <!-- 确认对话框 (初始隐藏) -->
+        <div id="file-action-modal-{{ doc.id }}" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-lg font-medium mb-4">该文献已关联文件</h3>
+            <p class="text-gray-600 mb-6">您可以选择查看当前文件或替换为新文件。</p>
+            <div class="flex space-x-3">
+            <button id="view-file-{{ doc.id }}" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fa fa-eye mr-2"></i>查看文件
+            </button>
+            <button id="replace-file-{{ doc.id }}" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fa fa-upload mr-2"></i>替换文件
+            </button>
+            <button id="cancel-action-{{ doc.id }}" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                取消
+            </button>
+            </div>
+        </div>
+        </div>
+
+        <!-- 进度指示器 (初始隐藏) -->
+        <div id="upload-progress-{{ doc.id }}" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p id="progress-text-{{ doc.id }}" class="text-gray-700">正在上传文件...</p>
+        </div>
+        </div>
+
+
+        <!-- 文献信息表单 -->
+        <form method="POST" class="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- 标题和作者 -->
+            <div class="grid grid-cols-2 md:grid-cols-1 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">文献标题 <span class="text-red-500">*</span></label>
+                    <input type="text" name="title" value="{{ doc.title }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                           required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">作者 <span class="text-red-500">*</span></label>
+                    <input type="text" name="authors" value="{{ doc.authors }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                           required>
+                </div>
+            </div>
+
+            <!-- 期刊/会议、年份、卷、期、页码 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">期刊/会议</label>
+                    <input type="text" name="journal" value="{{ doc.journal or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">发表年份</label>
+                    <input type="number" name="year" value="{{ doc.year or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">DOI</label>
+                    <input type="text" name="DOI" value="{{ doc.doi or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">卷</label>
+                    <input type="text" name="volume" value="{{ doc.volume or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">期</label>
+                    <input type="text" name="issue" value="{{ doc.issue or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">页码</label>
+                    <input type="text" name="pages" value="{{ doc.pages or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- 分类和文献类型 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">文献分类 <span class="text-red-500">*</span></label>
+                    <select name="category_id" required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">请选择分类</option>
+                        <!-- 循环后端传过来的 categories 变量 -->
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" 
+                                {% if doc.category_id == category.id %}selected{% endif %}>
+                            {{ category.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">文献类型 <span class="text-red-500">*</span></label>
+                    <select name="doc_type" required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">请选择类型</option>
+                        <!-- 循环后端传过来的 doc_types 变量 -->
+                        {% for doc_type in doc_types %}
+                        <option value="{{ doc_type.value }}" 
+                                {% if doc.doc_type == doc_type.value %}selected{% endif %}>
+                            {{ doc_type.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="thesis-degree-wrapper" class="{% if doc.doc_type != 'thesis' %}hidden{% endif %}">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">学位类型</label>
+                    <select name="thesis_degree"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="" {% if not doc.thesis_degree %}selected{% endif %}>未指定</option>
+                        <option value="master" {% if doc.thesis_degree == 'master' %}selected{% endif %}>硕士</option>
+                        <option value="phd" {% if doc.thesis_degree == 'phd' %}selected{% endif %}>博士</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 关键词和标签 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">关键词（用逗号分隔）</label>
+                    <input type="text" name="keywords" value="{{ doc.keywords or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如：机器学习, 神经网络">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">标签（用逗号分隔）</label>
+                    <input type="text" name="tags" value="{{ doc.tags or '' }}" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如：2023最新, 综述">
+                </div>
+            </div>
+
+            <!-- 摘要 -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-700 mb-1">摘要</label>
+                <textarea name="abstract" rows="6" 
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ doc.abstract or '' }}</textarea>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="flex justify-end gap-4">
+                <a href="{{ url_for('document_detail', doc_id=doc.id) }}" 
+                   class="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors">
+                    取消
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    保存修改
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const docTypeSelect = document.querySelector('select[name="doc_type"]');
+            const thesisWrapper = document.getElementById('thesis-degree-wrapper');
+            const sync = () => {
+                if (!docTypeSelect || !thesisWrapper) return;
+                thesisWrapper.classList.toggle('hidden', String(docTypeSelect.value || '').trim().toLowerCase() !== 'thesis');
+            };
+            docTypeSelect?.addEventListener('change', sync);
+            sync();
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const importBtn = document.querySelector('[data-doc-id]'); // 或按ID获取
+            if (!importBtn) return; // 防止元素不存在导致报错
+
+            // 2. 读取 data 属性（注意类型转换：data-* 读取后默认是字符串）
+            const docId = Number(importBtn.dataset.docId); // 转成数字（因为ID是整数）
+            const fileInput = document.getElementById(`file-upload-${docId}`);
+            const modal = document.getElementById(`file-action-modal-${docId}`);
+            const viewBtn = document.getElementById(`view-file-${docId}`);
+            const replaceBtn = document.getElementById(`replace-file-${docId}`);
+            const cancelBtn = document.getElementById(`cancel-action-${docId}`);
+            const progressModal = document.getElementById(`upload-progress-${docId}`);
+            const progressText = document.getElementById(`progress-text-${docId}`);
+            const hasFile = importBtn.dataset.hasFile === 'true';
+
+            // 绑定按钮事件
+            importBtn.addEventListener('click', handleImportClick);
+            viewBtn.addEventListener('click', handleViewFile);
+            replaceBtn.addEventListener('click', handleReplaceFile);
+            cancelBtn.addEventListener('click', handleCancel);
+            fileInput.addEventListener('change', handleFileSelected);
+
+            // 点击外部关闭模态框
+            document.addEventListener('click', function(event) {
+                if (modal.classList.contains('hidden') === false && 
+                    !modal.contains(event.target) && 
+                    !importBtn.contains(event.target)) {
+                modal.classList.add('hidden');
+                }
+            });
+
+            function handleImportClick() {
+                if (hasFile) {
+                // 已有文件，显示选项
+                modal.classList.remove('hidden');
+                } else {
+                // 没有文件，直接选择文件
+                fileInput.click();
+                }
+            }
+
+            function handleViewFile() {
+                modal.classList.add('hidden');
+                // 跳转到文件查看页面，在新标签页打开
+                const target = window.withBasePath ? window.withBasePath(`/documents/${docId}/file`) : `/documents/${docId}/file`;
+                window.open(target, '_blank');
+            }
+
+            function handleReplaceFile() {
+                modal.classList.add('hidden');
+                fileInput.click();
+            }
+
+            function handleCancel() {
+                modal.classList.add('hidden');
+            }
+
+            function handleFileSelected(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // 简单的文件类型和大小检查
+                const allowedTypes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                ];
+                const maxSize = 50 * 1024 * 1024; // 50MB
+
+                if (!allowedTypes.includes(file.type)) {
+                alert('只允许上传PDF或Word文档');
+                fileInput.value = '';
+                return;
+                }
+
+                if (file.size > maxSize) {
+                alert('文件大小不能超过50MB');
+                fileInput.value = '';
+                return;
+                }
+
+                // 显示进度并上传文件
+                progressModal.classList.remove('hidden');
+                uploadFile(file);
+            }
+
+            function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const xhr = new XMLHttpRequest();
+                const uploadUrl = window.withBasePath ? window.withBasePath(`/documents/${docId}/upload-file`) : `/documents/${docId}/upload-file`;
+                xhr.open('POST', uploadUrl, true);
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressText.textContent = `正在上传文件... ${percent}%`;
+                }
+                });
+                
+                xhr.addEventListener('load', function() {
+                progressModal.classList.add('hidden');
+                
+                if (xhr.status === 200) {
+                    alert('文件上传成功！');
+                    // 刷新页面以显示新文件
+                    window.location.reload();
+                } else {
+                    alert('文件上传失败，请重试');
+                }
+                fileInput.value = '';
+                });
+                
+                xhr.addEventListener('error', function() {
+                progressModal.classList.add('hidden');
+                alert('上传发生错误，请重试');
+                fileInput.value = '';
+                });
+                
+                xhr.send(formData);
+            }
+            });
+            
+    </script>   
+
+</body>
+</html>

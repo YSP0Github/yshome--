@@ -1,0 +1,2825 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .ysxs-shell {
+        background: transparent;
+    }
+
+    body.light-theme,
+    body.auto-theme.auto-light {
+        background:
+            radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 24%),
+            radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 22%),
+            linear-gradient(180deg, #f3f7fc 0%, #f8fafc 42%, #eef4fb 100%);
+        background-attachment: fixed;
+    }
+
+    body.dark-theme,
+    body.auto-theme.auto-dark {
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 28%),
+            radial-gradient(circle at top right, rgba(13, 148, 136, 0.12), transparent 24%),
+            linear-gradient(180deg, #08111f 0%, #0f172a 40%, #111827 100%);
+        background-attachment: fixed;
+    }
+
+    body.light-theme main,
+    body.auto-theme.auto-light main,
+    body.dark-theme main,
+    body.auto-theme.auto-dark main {
+        background: transparent;
+    }
+
+    .ysxs-hero {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 64, 175, 0.92) 58%, rgba(13, 148, 136, 0.88));
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    .ysxs-hero-grid {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: 28px 28px;
+    }
+
+    .ysxs-stat-card {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+    }
+
+    .ysxs-panel {
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(12px);
+    }
+
+    .ysxs-filter-intro {
+        background: linear-gradient(135deg, #eaf2ff 0%, #f4f8ff 100%);
+        border: 1px solid #d7e5fb;
+        color: #0f172a;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .ysxs-filter-intro-kicker {
+        color: #7aa2da;
+    }
+
+    .ysxs-filter-intro-title {
+        color: #1e3a8a;
+    }
+
+    .ysxs-filter-intro-copy {
+        color: #475569;
+    }
+
+    .ysxs-filter-intro > div:nth-child(2) {
+        color: #1e3a8a;
+    }
+
+    .ysxs-filter-intro > p {
+        color: #475569 !important;
+    }
+
+    .ysxs-section-title {
+        color: #0f172a;
+        font-size: 0.98rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+    }
+
+    .ysxs-filter-group + .ysxs-filter-group {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    .ysxs-filter-option {
+        transition: all 0.18s ease;
+    }
+
+    .ysxs-filter-option:hover {
+        transform: translateX(2px);
+    }
+
+    .ysxs-toolbar {
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(12px);
+    }
+
+    .ysxs-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #334155;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #e2e8f0;
+    }
+
+    .ysxs-card {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .ysxs-card:hover {
+        border-color: rgba(59, 130, 246, 0.30);
+        box-shadow: 0 24px 44px rgba(29, 78, 216, 0.12);
+    }
+
+    .ysxs-card-title a {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+
+    }
+
+    .ysxs-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.7rem;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .ysxs-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.38rem 0.7rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+
+    .ysxs-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem 1rem;
+        color: #64748b;
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
+
+    .ysxs-detail-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        min-width: 0;
+    }
+
+    .ysxs-detail-meta-item i {
+        color: #94a3b8;
+        width: 14px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .ysxs-detail-meta-item span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ysxs-action-btn {
+        border: 1px solid #dbe5f1;
+        background: #ffffff;
+        color: #475569;
+        transition: all 0.18s ease;
+    }
+
+    .ysxs-action-btn:hover {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .ysxs-select-wrap {
+        position: relative;
+    }
+
+    .ysxs-select {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 2.75rem;
+        background-image: none !important;
+    }
+
+    .ysxs-select::-ms-expand {
+        display: none;
+    }
+
+    .ysxs-select-caret {
+        position: absolute;
+        top: 50%;
+        right: 0.95rem;
+        transform: translateY(-50%);
+        color: #64748b;
+        pointer-events: none;
+        font-size: 0.9rem;
+    }
+
+    .ysxs-primary-btn {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+    }
+
+    .ysxs-primary-btn:hover {
+        background: linear-gradient(135deg, #1e40af, #1d4ed8);
+    }
+
+    .ysxs-secondary-btn {
+        background: #ffffff;
+        border: 1px solid #dbe5f1;
+        color: #475569;
+    }
+
+    .ysxs-secondary-btn:hover {
+        background: #f8fafc;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    body.light-theme .ysxs-hero,
+    body.auto-theme.auto-light .ysxs-hero {
+        background:
+            radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.18), transparent 18%),
+            linear-gradient(135deg, #163b8f 0%, #2563eb 56%, #0f766e 100%);
+        box-shadow: 0 24px 60px rgba(37, 99, 235, 0.18);
+    }
+
+    body.light-theme .ysxs-stat-card,
+    body.auto-theme.auto-light .ysxs-stat-card {
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    body.light-theme .ysxs-panel,
+    body.auto-theme.auto-light .ysxs-panel,
+    body.light-theme .ysxs-toolbar,
+    body.auto-theme.auto-light .ysxs-toolbar,
+    body.light-theme .ysxs-card,
+    body.auto-theme.auto-light .ysxs-card {
+        background: rgba(255, 255, 255, 0.96);
+        border-color: #dbe7f3;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+        backdrop-filter: none;
+    }
+
+    body.light-theme .ysxs-filter-intro,
+    body.auto-theme.auto-light .ysxs-filter-intro {
+        background: linear-gradient(135deg, #edf4ff 0%, #f8fbff 100%);
+        border-color: #d7e5fb;
+    }
+
+    body.light-theme .ysxs-chip,
+    body.auto-theme.auto-light .ysxs-chip {
+        background: #ffffff;
+        border-color: #dbe7f3;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    body.light-theme .ysxs-card:hover,
+    body.auto-theme.auto-light .ysxs-card:hover {
+        border-color: rgba(37, 99, 235, 0.32);
+        box-shadow: 0 22px 40px rgba(37, 99, 235, 0.10);
+    }
+
+    body.dark-theme .ysxs-panel,
+    body.auto-theme.auto-dark .ysxs-panel,
+    body.dark-theme .ysxs-toolbar,
+    body.auto-theme.auto-dark .ysxs-toolbar,
+    body.dark-theme .ysxs-card,
+    body.auto-theme.auto-dark .ysxs-card,
+    body.dark-theme .bg-white\/70,
+    body.auto-theme.auto-dark .bg-white\/70 {
+        background: rgba(15, 23, 42, 0.78) !important;
+        border-color: rgba(71, 85, 105, 0.7) !important;
+        color: #e2e8f0;
+        box-shadow: 0 18px 44px rgba(2, 6, 23, 0.35);
+    }
+
+    body.dark-theme .ysxs-filter-intro,
+    body.auto-theme.auto-dark .ysxs-filter-intro {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.92));
+        border-color: rgba(71, 85, 105, 0.78);
+        box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
+    }
+
+    body.dark-theme .ysxs-filter-intro-kicker,
+    body.auto-theme.auto-dark .ysxs-filter-intro-kicker {
+        color: #93c5fd;
+    }
+
+    body.dark-theme .ysxs-filter-intro-title,
+    body.auto-theme.auto-dark .ysxs-filter-intro-title {
+        color: #eff6ff;
+    }
+
+    body.dark-theme .ysxs-filter-intro-copy,
+    body.auto-theme.auto-dark .ysxs-filter-intro-copy {
+        color: #cbd5e1;
+    }
+
+    body.dark-theme .ysxs-filter-intro > div:nth-child(2),
+    body.auto-theme.auto-dark .ysxs-filter-intro > div:nth-child(2) {
+        color: #eff6ff;
+    }
+
+    body.dark-theme .ysxs-filter-intro > p,
+    body.auto-theme.auto-dark .ysxs-filter-intro > p {
+        color: #cbd5e1 !important;
+    }
+
+    body.dark-theme .ysxs-section-title,
+    body.auto-theme.auto-dark .ysxs-section-title,
+    body.dark-theme .ysxs-card-title,
+    body.auto-theme.auto-dark .ysxs-card-title,
+    body.dark-theme .text-slate-800,
+    body.auto-theme.auto-dark .text-slate-800,
+    body.dark-theme .text-slate-900,
+    body.auto-theme.auto-dark .text-slate-900 {
+        color: #e5eefb !important;
+    }
+
+    body.dark-theme .ysxs-chip,
+    body.auto-theme.auto-dark .ysxs-chip,
+    body.dark-theme .ysxs-tag,
+    body.auto-theme.auto-dark .ysxs-tag {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: rgba(71, 85, 105, 0.9);
+        color: #cbd5e1;
+    }
+
+    body.dark-theme .ysxs-meta-pill,
+    body.auto-theme.auto-dark .ysxs-meta-pill {
+        background: rgba(30, 64, 175, 0.22);
+        color: #bfdbfe;
+    }
+
+    body.dark-theme .ysxs-action-btn,
+    body.auto-theme.auto-dark .ysxs-action-btn,
+    body.dark-theme .favorite-btn,
+    body.auto-theme.auto-dark .favorite-btn,
+    body.dark-theme .delete-doc-btn,
+    body.auto-theme.auto-dark .delete-doc-btn,
+    body.dark-theme .share-btn,
+    body.auto-theme.auto-dark .share-btn,
+    body.dark-theme .cite-btn,
+    body.auto-theme.auto-dark .cite-btn,
+    body.dark-theme .batch-cite-btn,
+    body.auto-theme.auto-dark .batch-cite-btn,
+    body.dark-theme .copy-link-btn,
+    body.auto-theme.auto-dark .copy-link-btn,
+    body.dark-theme .send-to-kindle-btn,
+    body.auto-theme.auto-dark .send-to-kindle-btn,
+    body.dark-theme .custom-action-btn,
+    body.auto-theme.auto-dark .custom-action-btn {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+
+    body.dark-theme .ysxs-action-btn:hover,
+    body.auto-theme.auto-dark .ysxs-action-btn:hover,
+    body.dark-theme .cite-btn:hover,
+    body.auto-theme.auto-dark .cite-btn:hover,
+    body.dark-theme .batch-cite-btn:hover,
+    body.auto-theme.auto-dark .batch-cite-btn:hover,
+    body.dark-theme .copy-link-btn:hover,
+    body.auto-theme.auto-dark .copy-link-btn:hover,
+    body.dark-theme .send-to-kindle-btn:hover,
+    body.auto-theme.auto-dark .send-to-kindle-btn:hover,
+    body.dark-theme .custom-action-btn:hover,
+    body.auto-theme.auto-dark .custom-action-btn:hover {
+        background: #2563eb !important;
+        color: #fff !important;
+        border-color: #2563eb !important;
+    }
+
+    body.dark-theme .ysxs-filter-option:hover,
+    body.auto-theme.auto-dark .ysxs-filter-option:hover {
+        background: rgba(30, 41, 59, 0.9);
+    }
+
+    .ysxs-filter-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.48);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 70;
+    }
+
+    .ysxs-mobile-filter-toggle {
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+    }
+
+    .ysxs-mobile-filter-entry {
+        position: relative;
+        z-index: 40;
+    }
+
+    .ysxs-mobile-filter-card {
+        transition: opacity 0.22s ease, transform 0.22s ease, max-height 0.22s ease, margin-bottom 0.22s ease;
+        transform-origin: top center;
+        max-height: 220px;
+        opacity: 1;
+    }
+
+    .ysxs-mobile-filter-card.is-condensed {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+        pointer-events: none;
+        max-height: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+    }
+
+    .ysxs-mobile-filter-fab {
+        position: fixed;
+        left: 0.12rem;
+        top: 52%;
+        transform: translate(-45%, -50%);
+        opacity: 0;
+        pointer-events: none;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        min-width: 2.2rem;
+        padding: 0.62rem 0.46rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        color: #fff;
+        box-shadow: 0 16px 34px rgba(37, 99, 235, 0.30);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        z-index: 45;
+    }
+
+    .ysxs-mobile-filter-fab.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%);
+    }
+
+    .ysxs-mobile-filter-fab-count {
+        min-width: 1.3rem;
+        height: 1.3rem;
+        padding: 0 0.28rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.18);
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .ysxs-mobile-filter-actions {
+        display: none;
+    }
+
+    .ysxs-toolbar-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .ysxs-toolbar-control-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+    }
+
+    .ysxs-toolbar-label {
+        white-space: nowrap;
+    }
+
+    .ysxs-toolbar-controls-desktop {
+        display: flex;
+    }
+
+    .ysxs-view-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        padding-top: 0.2rem;
+    }
+
+    @media (max-width: 640px) {
+        .ysxs-toolbar-controls-desktop {
+            display: none;
+        }
+
+        .ysxs-toolbar-controls {
+            width: 100%;
+            flex-wrap: nowrap;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding-bottom: 0.15rem;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .ysxs-toolbar-controls::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ysxs-toolbar-control-group {
+            flex: 0 0 auto;
+            gap: 0.35rem;
+        }
+
+        .ysxs-toolbar-label {
+            font-size: 0.875rem;
+        }
+
+        .ysxs-mobile-filter-fab {
+            left: 0.06rem;
+            min-width: 2.05rem;
+            padding: 0.56rem 0.4rem;
+        }
+
+        .ysxs-card-actions .ysxs-mobile-icon-btn {
+            min-width: 2.35rem;
+            justify-content: center;
+            padding-left: 0.62rem;
+            padding-right: 0.62rem;
+            font-size: 0;
+            line-height: 1;
+        }
+
+        .ysxs-card-actions .ysxs-mobile-icon-btn i {
+            margin-right: 0 !important;
+            font-size: 0.95rem;
+        }
+
+        .ysxs-card-actions .ysxs-mobile-icon-btn .ysxs-action-text {
+            display: none;
+        }
+    }
+
+    @media (max-width: 1023px) {
+        body.ysxs-filter-drawer-open {
+            overflow: hidden;
+        }
+
+        .ysxs-filter-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .ysxs-filter-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(86vw, 360px);
+            height: 100vh;
+            z-index: 80;
+            transform: translateX(-100%);
+            transition: transform 0.28s ease;
+            padding-right: 0;
+        }
+
+        .ysxs-filter-drawer.is-open {
+            transform: translateX(0);
+        }
+
+        .ysxs-filter-drawer-panel {
+            height: 100%;
+            overflow-y: auto;
+            border-radius: 0 1.75rem 1.75rem 0;
+            padding-bottom: 6.5rem;
+        }
+
+        .ysxs-mobile-filter-actions {
+            display: flex;
+            position: sticky;
+            bottom: 0;
+            margin: 1.25rem -1rem -1rem;
+            padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom));
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.96) 24%);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(226, 232, 240, 0.95);
+        }
+
+        body.dark-theme .ysxs-mobile-filter-actions,
+        body.auto-theme.auto-dark .ysxs-mobile-filter-actions {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.96) 24%);
+            border-top-color: rgba(71, 85, 105, 0.75);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block title %} 云凇学术 {% endblock %}
+
+    <!-- 主内容区 -->
+    {% block content %}
+    <div class="ysxs-shell">
+    <div class="container mx-auto px-4 py-6 lg:py-8">
+        <section class="ysxs-hero ysxs-hero-grid relative overflow-hidden rounded-3xl px-5 py-6 sm:px-7 lg:px-10 lg:py-9 text-white mb-6">
+            <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="max-w-3xl">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold tracking-widest uppercase text-blue-100">
+                        YSXS Library Workspace
+                    </div>
+                    <h1 class="mt-4 text-3xl sm:text-4xl font-bold tracking-tight">更清晰地管理你的学术资料</h1>
+                    <p class="mt-3 text-sm sm:text-base text-blue-50/90 max-w-2xl leading-7">
+                        把搜索、筛选、收藏、共享和引用放进同一套工作流里，让文献整理从能用变成顺手。
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 lg:min-w-[360px]">
+                    <div class="ysxs-stat-card rounded-2xl p-4">
+                        <div class="text-xs uppercase tracking-widest text-blue-100/80">Documents</div>
+                        <div class="mt-2 text-3xl font-semibold">{{ total_count_all }}</div>
+                        <div class="mt-1 text-xs text-blue-100/80">当前库中文献总量</div>
+                    </div>
+                    <div class="ysxs-stat-card rounded-2xl p-4">
+                        <div class="text-xs uppercase tracking-widest text-blue-100/80">Current View</div>
+                        <div class="mt-2 text-lg font-semibold">{{ current_view_label or '全部文献' }}</div>
+                        <div class="mt-1 text-xs text-blue-100/80">当前浏览区域</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="flex flex-wrap items-center gap-2 mb-5">
+            <!-- <span class="ysxs-chip"><i class="fa fa-database text-blue-600"></i>{{ total_count }} 条结果</span> -->
+            {% if active_categories %}
+            <span class="ysxs-chip"><i class="fa fa-folder-open text-blue-600"></i>{{ active_categories|length }} 个分类筛选</span>
+            {% endif %}
+            {% if active_doc_types %}
+            <span class="ysxs-chip"><i class="fa fa-clone text-blue-600"></i>{{ active_doc_types|length }} 个类型</span>
+            {% endif %}
+            {% if active_year_ranges %}
+            <span class="ysxs-chip"><i class="fa fa-calendar text-blue-600"></i>{{ active_year_ranges|length }} 个年份区间</span>
+            {% endif %}
+        </div>
+        <div class="lg:hidden mb-4 ysxs-mobile-filter-entry" id="mobile-filter-entry">
+            <div id="mobile-filter-card" class="ysxs-mobile-filter-card">
+                <div class="ysxs-mobile-filter-toggle ysxs-toolbar rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-xs uppercase tracking-widest text-blue-600 font-semibold">Mobile Filters</div>
+                        <p class="text-sm text-slate-500 mt-1">小屏设备下将筛选收纳成抽屉，阅读区域更宽松。</p>
+                    </div>
+                    <button id="mobile-filter-toggle"
+                            type="button"
+                            class="ysxs-primary-btn inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap">
+                        <i class="fa fa-sliders"></i>
+                        <span>筛选</span>
+                        <span id="mobile-filter-count" class="inline-flex min-w-[1.35rem] h-[1.35rem] items-center justify-center rounded-full bg-white/20 px-1 text-xs font-semibold">0</span>
+                    </button>
+                </div>
+            </div>
+            <button id="mobile-filter-fab"
+                    type="button"
+                    class="ysxs-mobile-filter-fab"
+                    aria-label="打开筛选">
+                <i class="fa fa-sliders"></i>
+                <span id="mobile-filter-fab-count" class="ysxs-mobile-filter-fab-count">0</span>
+            </button>
+        </div>
+        <div id="mobile-filter-overlay" class="ysxs-filter-overlay lg:hidden" aria-hidden="true"></div>
+        <div class="flex flex-col lg:flex-row gap-6 min-h-screen">
+            <!-- 左侧边栏（筛选和分类） -->
+            <aside id="filter-drawer" class="ysxs-filter-drawer lg:w-64 xl:w-72 flex-shrink-0" aria-hidden="false">
+                <div class="ysxs-panel ysxs-filter-drawer-panel rounded-3xl p-4 lg:p-5 lg:sticky lg:top-20 sidebar-scroll pr-1.5">
+                    <div class="flex items-center justify-between gap-3 lg:hidden mb-3">
+                        <div>
+                            <div class="text-xs uppercase tracking-widest text-blue-600 font-semibold">Filters</div>
+                            <div class="text-base font-semibold text-slate-800 mt-1">筛选与分类</div>
+                        </div>
+                        <button id="mobile-filter-close"
+                                type="button"
+                                class="ysxs-action-btn inline-flex h-10 w-10 items-center justify-center rounded-full"
+                                aria-label="关闭筛选面板">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="ysxs-filter-intro mb-4 rounded-2xl p-4">
+                        <div class="ysxs-filter-intro-kicker text-xs uppercase tracking-widest">Workspace Filters</div>
+                        <div class="mt-2 text-lg font-semibold">筛选面板</div>
+                        <p class="mt-1 text-sm text-slate-300">按分类、年份、类型和排序方式快速收窄结果。</p>
+                    </div>
+                    <!-- 文献分类 -->
+                    <div class="bg-white/70 rounded-2xl p-4 md:p-4 filter-card transition-shadow duration-300 relative z-30 border border-slate-200/80" style="overflow: visible;">
+                        <!-- 分类标题栏（含搜索功能） -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <h3 class="ysxs-section-title flex items-center">
+                                <i class="fa fa-folder-open text-blue-500 mr-2 text-center"></i>文献分类
+                            </h3>
+                        </div>
+
+                            {% set selected_categories = active_categories or [] %}
+                            <ul class="space-y-1 category-list">
+                                <li>
+                                    <div class="flex items-center justify-between px-3 py-2 rounded-xl transition-colors {{ 'bg-blue-50 text-blue-700 border border-blue-100' if not selected_categories else 'text-slate-600 bg-slate-50 border border-transparent' }}">
+                                        <span class="text-sm font-medium">全部文献</span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full {{ 'bg-blue-100 text-blue-700' if not selected_categories else 'bg-slate-100 text-slate-500' }}">
+                                            {{ total_count_all  }}
+                                        </span>
+                                    </div>
+                                </li>
+
+                                {% for cat in category_counts %}
+                                <li>
+                                    <label class="ysxs-filter-option flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-colors border
+                                            {% if cat.value in selected_categories %}
+                                                bg-blue-50 text-blue-700 border-blue-100
+                                            {% else %}
+                                                text-slate-600 hover:bg-slate-50 border-transparent
+                                            {% endif %}">
+                                        <span class="flex items-center gap-2">
+                                            <input type="checkbox"
+                                                   class="filter-category form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-2 focus:ring-blue-200"
+                                                   value="{{ cat.value }}"
+                                                   {% if cat.value in selected_categories %}checked{% endif %}>
+                                            <span class="text-sm">{{ cat.label }}</span>
+                                        </span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full
+                                                {% if cat.value in selected_categories %}
+                                                    bg-blue-100 text-blue-700
+                                                {% else %}
+                                                    bg-slate-100 text-slate-500
+                                                {% endif %}">
+                                            {{ cat.count }}
+                                        </span>
+                                    </label>
+                                </li>
+                                {% endfor %}
+
+                        </ul>
+
+                        <!-- 分类操作栏（新建/管理，仅对已登录用户可见） -->
+                        {% if current_user.is_authenticated %}
+                        <div class="mt-2">
+                            <button id="manage-category-btn" class="w-full flex items-center justify-start px-3 py-2 text-sm font-medium text-slate-600 border border-dashed border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors gap-2">
+                                <i class="fa fa-folder-open"></i>分类管理
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 筛选条件卡片 -->
+                    <div class="bg-white/70 rounded-2xl p-4 md:p-4 filter-card transition-shadow duration-300 border border-slate-200/80">
+                        <h3 class="ysxs-section-title mb-3 flex items-center">
+                            <i class="fa fa-filter text-blue-500 mr-2"></i>筛选条件
+                        </h3>
+                        
+                        <!-- 发表年份 -->
+                        <div class="ysxs-filter-group">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">发表年份</label>
+                            <div class="space-y-0">
+
+                                {% if year_filter_options %}
+                                    {% for option in year_filter_options %}
+                                        <label class="ysxs-filter-option flex items-center p-1 rounded-lg hover:bg-neutral cursor-pointer group transition-colors">
+                                            <input type="checkbox"
+                                                   class="form-checkbox h-4.5 w-4.5 text-primary rounded border-gray-300 focus:ring-2 focus:ring-primary/30 checkbox-transition group-hover:scale-105 filter-year"
+                                                   value="{{ option.value }}"
+                                                   {% if option.value in (active_year_ranges or []) %}checked{% endif %}>
+                                            <span class="ml-2.5 text-sm text-gray-600 group-hover:text-primary transition-colors">{{ option.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-sm text-slate-400">暂无可用年份选项</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 文献类型 -->
+                        <div class="ysxs-filter-group">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">文献类型</label>
+                            <div class="space-y-0">
+
+                                {% if doc_type_options %}
+                                    {% for option in doc_type_options %}
+                                        <label class="ysxs-filter-option flex items-center p-1 rounded-lg hover:bg-neutral cursor-pointer group transition-colors">
+                                            <input type="checkbox"
+                                                   class="form-checkbox h-4.5 w-4.5 text-primary rounded border-gray-300 focus:ring-2 focus:ring-primary/30 checkbox-transition group-hover:scale-105 filter-type"
+                                                   value="{{ option.value }}"
+                                                   {% if option.value in (active_doc_types or []) %}checked{% endif %}>
+                                            <span class="ml-2.5 text-sm text-gray-600 group-hover:text-primary transition-colors">{{ option.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-sm text-slate-400">暂无文献类型选项</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 排序方式 -->
+                        <div class="ysxs-filter-group mb-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">排序方式</label>
+                            <div class="ysxs-select-wrap">
+                            <select id="sort-select" class="ysxs-select rounded-lg border border-gray-300 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all bg-white">
+                            {% set sort_value = active_sort or 'latest' %}
+                            <option value="latest" {% if sort_value == 'latest' %}selected{% endif %}>最新上传</option>
+                            <option value="earliest" {% if sort_value == 'earliest' %}selected{% endif %}>最早上传</option>
+                            <option value="title-asc" {% if sort_value == 'title-asc' %}selected{% endif %}>按标题排序（A-Z）</option>
+                            <option value="title-desc" {% if sort_value == 'title-desc' %}selected{% endif %}>按标题排序（Z-A）</option>
+                            <option value="citations" {% if sort_value == 'citations' %}selected{% endif %}>按引用量排序</option>
+                            </select>
+                            <span class="ysxs-select-caret"><i class="fa fa-chevron-down"></i></span>
+                            </div>
+                        </div>
+
+                        
+                        <!-- 筛选操作按钮 -->
+                        <div class="hidden lg:flex space-x-3 mt-4">
+                            <button id="apply-filter" class="ysxs-primary-btn flex-1 px-4 py-2.5 rounded-xl text-sm font-medium btn-effect transform hover:-translate-y-0.5 active:translate-y-0">
+                                <i class="fa fa-check mr-1.5"></i>应用筛选
+                            </button>
+                            <button id="reset-filter" class="ysxs-secondary-btn px-4 py-2.5 rounded-xl text-sm btn-effect transform hover:-translate-y-0.5 active:translate-y-0">
+                                <i class="fa fa-refresh mr-1.5"></i>重置
+                            </button>
+                        </div>
+                        <div class="ysxs-mobile-filter-actions space-x-3">
+                            <button id="apply-filter-mobile" class="ysxs-primary-btn flex-1 px-4 py-2.5 rounded-xl text-sm font-medium btn-effect">
+                                <i class="fa fa-check mr-1.5"></i>应用筛选
+                            </button>
+                            <button id="reset-filter-mobile" class="ysxs-secondary-btn px-4 py-2.5 rounded-xl text-sm btn-effect">
+                                <i class="fa fa-refresh mr-1.5"></i>重置
+                            </button>
+                        </div>
+                        
+                        <!-- 筛选结果展示区域 -->
+                        <div id="filter-result" class="mt-6 p-4 rounded-lg bg-white hidden">
+                        <h4 class="font-medium text-gray-800 mb-2 flex items-center">
+                            <i class="fa fa-info-circle text-primary mr-2"></i>筛选条件
+                        </h4>
+                        <div id="result-content" class="text-sm text-gray-600 space-y-0"></div>
+
+                        </div>
+                    </div>
+
+
+                </div>
+            </aside>
+            
+            <!-- 右侧文献列表区 -->
+            <div class="flex-grow max-h-[calc(100vh-120px)] overflow-y-auto">
+                <!-- 搜索结果统计 -->
+                <div class="ysxs-toolbar rounded-3xl p-5 mb-4 flex flex-col gap-4 sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                        <div class="text-xs uppercase tracking-widest text-blue-600 font-semibold">Results Overview</div>
+                        <h2 class="text-xl font-semibold text-slate-800">{{ results_heading_label or current_view_label or '全部文献' }}</h2>
+                        <p class="text-sm text-slate-500 mt-1" id="search-result-count">找到 {{ total_count }} 篇相关文献</p>
+                    </div>
+                    <div class="mt-3 sm:mt-0 ysxs-toolbar-controls ysxs-toolbar-controls-desktop">
+                        <div class="ysxs-toolbar-control-group">
+                            <span class="ysxs-toolbar-label text-sm text-slate-500">显示方式：</span>
+                            <button id="list-view-btn" class="ysxs-action-btn p-2.5 rounded-xl bg-blue-50 text-blue-600">
+                                <i class="fa fa-list"></i>
+                            </button>
+                            <button id="grid-view-btn" class="ysxs-action-btn p-2.5 rounded-xl text-slate-400 transition-colors">
+                                <i class="fa fa-th-large"></i>
+                            </button>
+                        </div>
+                        {# <div class="ysxs-toolbar-control-group">
+                            <span class="ysxs-toolbar-label text-sm text-slate-500">?????</span>
+                            <button class="ysxs-action-btn p-2.5 rounded-xl text-slate-400 transition-colors">
+                                <i class="fa fa-sort"></i>
+                            </button>
+                        </div> #}
+                    </div>
+                </div>
+                <!-- 搜索结果区域 -->
+                <div id="search-results" class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    {% set batch_ids = batch_cite_ids or [] %}
+                    {% for doc in documents %}  <!-- 循环数据库中的每篇文献 -->
+                    {% set in_batch = doc.id in batch_ids %}
+                    <div class="ysxs-card bg-white rounded-3xl overflow-hidden pulse-hover h-full flex flex-col">
+                        <div class="p-5 flex-1 flex flex-col">
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        {% if doc.doc_type %}
+                                        <span class="ysxs-meta-pill"><i class="fa fa-file-text-o"></i>{{ doc.doc_type_obj.label if doc.doc_type_obj else (doc.doc_type|doc_type_label) }}</span>
+                                        {% endif %}
+                                        {% if doc.category %}
+                                        <span class="ysxs-meta-pill bg-teal-50 text-teal-700"><i class="fa fa-folder-o"></i>{{ doc.category }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <h3 class="ysxs-card-title text-lg font-semibold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer flex-1 leading-8">
+                                        <a href="{{ url_for('document_detail', doc_id=doc.id) }}" target="_blank">{{ doc.title }}</a>
+                                    </h3>
+                                </div>
+                                {% if current_user.is_authenticated %}
+                                <div class="flex items-center gap-2">
+                                    <div class="hidden sm:flex items-center gap-2">
+                                        <button class="favorite-btn w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:text-amber-500 hover:border-amber-200 flex items-center justify-center transition-colors bg-white"
+                                                title="{% if current_user in doc.favorited_by %}取消收藏{% else %}收藏文献{% endif %}"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-is-favorited="{% if current_user in doc.favorited_by %}true{% else %}false{% endif %}">
+                                            <i class="fa {% if current_user.is_authenticated and current_user.favorites.filter_by(id=doc.id).first() %}fa-star text-amber-500{% else %}fa-star-o{% endif %} text-base"></i>
+                                        </button>
+                                        <button class="delete-doc-btn w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 flex items-center justify-center transition-colors bg-white"
+                                                title="删除文献"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-doc-title="{{ doc.title }}">
+                                            <i class="fa fa-trash-o text-base"></i>
+                                        </button>
+                                        <button class="share-btn w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:text-green-500 hover:border-green-200 flex items-center justify-center transition-colors bg-white"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-owner-id="{{ doc.owner_id }}"
+                                                data-current-user-id="{{ current_user.id }}"
+                                                data-is-shared="{{ 'true' if doc.is_shared else 'false' }}"
+                                                title="{{ '已共享' if doc.is_shared else '点击共享' }}">
+                                            <i class="fa {% if doc.is_shared %}fa-share-alt text-green-500{% else %}fa-lock{% endif %} text-base"></i>
+                                        </button>
+                                    </div>
+                                    <div class="relative sm:hidden" data-mobile-actions>
+                                        <button type="button" class="w-6 h-6 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors" data-mobile-action-trigger aria-label="更多操作" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-20 hidden" data-mobile-action-menu>
+                                            <button class="favorite-btn flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                                                    data-doc-id="{{ doc.id }}"
+                                                    data-is-favorited="{% if current_user in doc.favorited_by %}true{% else %}false{% endif %}">
+                                                <i class="fa {% if current_user.is_authenticated and current_user.favorites.filter_by(id=doc.id).first() %}fa-star text-amber-500{% else %}fa-star-o{% endif %}"></i>
+                                                <span>{% if current_user in doc.favorited_by %}取消收藏{% else %}收藏文献{% endif %}</span>
+                                            </button>
+                                            <button class="delete-doc-btn flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                                                    data-doc-id="{{ doc.id }}"
+                                                    data-doc-title="{{ doc.title }}">
+                                                <i class="fa fa-trash-o"></i>
+                                                <span>删除文献</span>
+                                            </button>
+                                            <button class="share-btn flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                                                    data-doc-id="{{ doc.id }}"
+                                                    data-owner-id="{{ doc.owner_id }}"
+                                                    data-current-user-id="{{ current_user.id }}"
+                                                    data-is-shared="{{ 'true' if doc.is_shared else 'false' }}">
+                                                <i class="fa {% if doc.is_shared %}fa-share-alt text-green-500{% else %}fa-lock{% endif %}"></i>
+                                                <span>{% if doc.is_shared %}取消共享{% else %}设为共享{% endif %}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="ysxs-detail-meta mb-4">
+                                <span class="ysxs-detail-meta-item">
+                                    <i class="fa fa-users"></i>
+                                    <span title="{{ doc.authors or '未知作者' }}">{{ doc.authors or '未知作者' }}</span>
+                                </span>
+                                <span class="ysxs-detail-meta-item">
+                                    <i class="fa fa-book"></i>
+                                    <span title="{{ doc.journal or '未知来源' }}">{{ doc.journal or '未知来源' }}</span>
+                                </span>
+                                <span class="ysxs-detail-meta-item">
+                                    <i class="fa fa-calendar"></i>
+                                    <span>{{ doc.year or '年份未知' }}</span>
+                                </span>
+                                {% if doc.doi %}
+                                <span class="ysxs-detail-meta-item">
+                                    <i class="fa fa-link"></i>
+                                    <span title="{{ doc.doi }}">{{ doc.doi[:18] }}{% if doc.doi|length > 18 %}...{% endif %}</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-slate-600 mb-5 line-clamp-3 leading-7">
+                                {{ doc.abstract }}  <!-- 显示摘要(灰色字体) -->
+                            </p>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-5">
+                                <!-- 显示标签（按逗号分割）keywords最多显示3个 -->
+                                 {% if doc.keywords %}
+                                <span class="ysxs-tag">{{ doc.keywords.split(',')[:3]|join(',') }}</span>
+                                {% endif %}
+                                {% if doc.tags %}
+                                {% for tag in doc.tags.split(',') %}
+                                <span class="ysxs-tag">{{ tag }}</span>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <!-- 新增的底部操作按钮 -->
+                            <div class="border-t border-slate-100 pt-4 mt-auto">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="ysxs-card-actions flex flex-wrap gap-2 flex-1">
+                                    <!-- 引用按钮 -->
+                                    <button class="cite-btn ysxs-mobile-icon-btn flex items-center px-3.5 py-2 text-sm bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl transition-colors shadow-sm hover:shadow-md"
+                                            data-doc-id="{{ doc.id }}"
+                                            title="查看引用格式">
+                                        <i class="fa fa-quote-right mr-1.5"></i>引用
+                                    </button>
+                                    
+                                    <!-- 批量引用按钮 -->
+                                    <button class="batch-cite-btn ysxs-mobile-icon-btn flex items-center px-3.5 py-2 text-sm rounded-xl transition-colors
+                                        {% if in_batch %}
+                                            bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800
+                                        {% else %}
+                                            bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white
+                                        {% endif %}"
+                                            data-doc-id="{{ doc.id }}"
+                                            data-in-batch="{% if in_batch %}true{% else %}false{% endif %}"
+                                            title="{% if in_batch %}已在批量引用中{% else %}添加到批量引用{% endif %}">
+
+                                        {% if in_batch %}
+                                            <i class="fa fa-check mr-1.5"></i>已选
+                                        {% else %}
+                                            <i class="fa fa-bookmark-o mr-1.5"></i>批量引用
+                                        {% endif %}
+                                    </button>
+                                    
+                                    <!-- 导出按钮 -->
+                                    <!-- <div class="relative" data-export-wrapper>
+                                        <button type="button"
+                                                class="flex items-center px-3 py-1.5 text-sm bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-lg transition-colors"
+                                                title="导出文献信息"
+                                                data-export-trigger>
+                                            <i class="fa fa-download mr-1.5"></i>导出
+                                            <i class="fa fa-chevron-down text-xs ml-1"></i>
+                                        </button>
+                                        <div class="hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-20"
+                                             data-export-menu>
+                                            <a href="{{ url_for('export_reference', doc_id=doc.id, fmt='ris') }}" 
+                                               class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                                <i class="fa fa-file-text-o mr-2"></i>RIS格式
+                                            </a>
+                                            <a href="{{ url_for('export_reference', doc_id=doc.id, fmt='bibtex') }}" 
+                                               class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                                <i class="fa fa-file-text-o mr-2"></i>BibTeX格式
+                                            </a>
+                                            <a href="{{ url_for('export_reference', doc_id=doc.id, fmt='json') }}" 
+                                               class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                                <i class="fa fa-file-code-o mr-2"></i>JSON格式
+                                            </a>
+                                        </div>
+                                    </div> -->
+                                    
+                                    <!-- 复制链接按钮 -->
+                                    <button class="copy-link-btn ysxs-mobile-icon-btn flex items-center px-3.5 py-2 text-sm bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl transition-colors"
+                                            data-doc-id="{{ doc.id }}"
+                                            data-url="{{ url_for('document_detail', doc_id=doc.id, _external=True) }}"
+                                            data-share-url="{{ url_for('shared_document', doc_id=doc.id, _external=True) if doc.is_shared else '' }}"
+                                            data-is-shared="{{ 'true' if doc.is_shared else 'false' }}"
+                                            title="复制文献链接">
+                                        <i class="fa fa-link mr-1.5"></i>复制链接
+                                    </button>
+                                    
+                                    <!-- 发送到Kindle按钮 -->
+                                    <!-- <button class="send-to-kindle-btn flex items-center px-3.5 py-2 text-sm bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl transition-colors"
+                                            data-doc-id="{{ doc.id }}"
+                                            title="发送到Kindle">
+                                        <i class="fa fa-tablet mr-1.5"></i>发送到Kindle
+                                    </button> -->
+                                    
+                                    <!-- 备用按钮接口 -->
+                                    <button class="custom-action-btn ysxs-mobile-icon-btn flex items-center px-3.5 py-2 text-sm bg-gray-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl transition-colors"
+                                            data-doc-id="{{ doc.id }}"
+                                            title="自定义功能">
+                                        <i class="fa fa-cog mr-1.5"></i>更多
+                                    </button>
+                                    </div>
+                                    <span class="ysxs-view-count">
+                                        <i class="fa fa-eye"></i>{{ doc.view_count }}
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if pagination and pagination.pages > 1 %}
+                <div class="mt-8 flex flex-col items-center gap-3">
+                    <div class="text-sm text-slate-500">
+                        第 {{ pagination.page }} / {{ pagination.pages }} 页 · 共 {{ pagination.total }} 篇
+                    </div>
+                    <nav class="flex items-center space-x-1" aria-label="分页导航">
+                        {% set prev_disabled = not pagination.has_prev %}
+                        <a href="{{ pagination_url(pagination.prev_num) if pagination.has_prev else '#' }}"
+                           class="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 transition-colors {{ 'pointer-events-none opacity-50 cursor-not-allowed' if prev_disabled else '' }}"
+                           aria-disabled="{{ 'true' if prev_disabled else 'false' }}"
+                           tabindex="{{ '-1' if prev_disabled else '0' }}">
+                            <i class="fa fa-chevron-left text-sm"></i>
+                        </a>
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% set is_active = page_num == pagination.page %}
+                                <a href="{{ pagination_url(page_num) }}"
+                                   class="px-4 py-2 rounded-lg {{ 'bg-blue-600 text-white font-medium shadow-sm' if is_active else 'border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 transition-colors' }}"
+                                   aria-current="{{ 'page' if is_active else 'false' }}">
+                                    {{ page_num }}
+                                </a>
+                            {% else %}
+                                <span class="px-3 py-2 text-slate-400 select-none">…</span>
+                            {% endif %}
+                        {% endfor %}
+                        {% set next_disabled = not pagination.has_next %}
+                        <a href="{{ pagination_url(pagination.next_num) if pagination.has_next else '#' }}"
+                           class="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 transition-colors {{ 'pointer-events-none opacity-50 cursor-not-allowed' if next_disabled else '' }}"
+                           aria-disabled="{{ 'true' if next_disabled else 'false' }}"
+                           tabindex="{{ '-1' if next_disabled else '0' }}">
+                            <i class="fa fa-chevron-right text-sm"></i>
+                        </a>
+                    </nav>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量引用悬浮按钮 -->
+    </div>
+    <!-- 鎵归噺寮曠敤鎮诞鎸夐挳 -->
+    {% if current_user.is_authenticated %}
+    <div id="batch-cite-fab-wrapper"
+        class="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2 transition-all duration-200 {{ 'opacity-100' if batch_cite_count else 'opacity-60' }}"
+        style="z-index: 11000;"
+        data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}">
+        <button type="button"
+                id="batch-cite-fab"
+                data-list-url="{{ url_for('batch_cite_list') }}"
+                class="pointer-events-auto relative w-16 h-16 rounded-full bg-blue-600 text-white shadow-xl flex flex-col items-center justify-center hover:bg-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none">
+            <span class="text-[11px] leading-none">已选</span>
+            <span id="batch-cite-count" class="text-lg font-semibold leading-tight">{{ batch_cite_count }}</span>
+        </button>
+        <button type="button"
+                id="clear-batch-cite-btn"
+                class="pointer-events-auto px-3 py-1.5 rounded-full bg-white/95 text-blue-600 shadow border border-blue-100 text-xs flex items-center gap-1 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 {{ '' if current_user.is_authenticated else 'opacity-50 cursor-not-allowed' }}"
+                {% if not current_user.is_authenticated %}disabled{% endif %}>
+            <i class="fa fa-trash-o"></i>清空
+        </button>
+    </div>
+    {% endif %}
+
+{% endblock %}
+
+    <!-- 分类管理模态框 -->
+
+{% block extra_modals %}
+    <div id="manage-category-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto hidden" role="dialog" aria-modal="true" aria-labelledby="category-modal-title" style="z-index: 9999;">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-white">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 id="category-modal-title" class="text-lg font-semibold text-slate-800">分类管理</h3>
+                        <p class="text-sm text-slate-500 mt-1">统一管理分类：可编辑名称/标识、合并或删除分类。</p>
+                    </div>
+                    <button id="close-category-modal" class="text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa fa-times text-lg"></i>
+                    </button>
+                </div>
+                <div class="mt-4 flex flex-col gap-2">
+                    <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 w-fit">
+                        <button type="button" class="category-mode-btn px-4 py-1.5 text-sm rounded-full font-medium text-slate-500 transition-colors" data-category-mode="edit">编辑分类</button>
+                        <button type="button" class="category-mode-btn px-4 py-1.5 text-sm rounded-full font-medium text-slate-500 transition-colors" data-category-mode="ops">合并 / 删除</button>
+                    </div>
+                    <p id="category-manager-tip" class="text-xs text-blue-600"></p>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <div id="category-edit-panel" class="space-y-4">
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3 text-left w-12">
+                                        <input type="checkbox" id="select-all-categories" class="form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300">
+                                    </th>
+                                    <th class="px-4 py-3 text-left">显示名称</th>
+                                    <th class="px-4 py-3 text-left">标识（slug）</th>
+                                    <th class="px-4 py-3 text-left">文献数量</th>
+                                    <th class="px-4 py-3 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="category-manager-body" class="divide-y divide-slate-200 bg-white">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-center text-slate-500">正在加载分类...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-slate-500">提示：“其他”分类不可删除，删除其他分类时文献将自动归入“其他”。</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <button id="add-inline-category-btn" class="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-dashed border-blue-200 text-blue-600 text-sm hover:bg-blue-50 transition-colors">
+                            <i class="fa fa-plus"></i> 新建分类
+                        </button>
+                        <button id="refresh-category-btn" class="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">
+                            刷新列表
+                        </button>
+                    </div>
+                </div>
+                <div id="category-ops-panel" class="space-y-4 hidden">
+                    <div id="category-merge-panel" class="border border-dashed border-slate-300 rounded-xl p-4 bg-slate-50">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <h4 class="text-base font-semibold text-slate-800">合并分类</h4>
+                                <p class="text-sm text-slate-500 mt-1">将多个分类的文献迁移至同一分类，并自动删除源分类。</p>
+                            </div>
+                            <button type="button" id="merge-category-btn" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                执行合并
+                            </button>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-2">需要合并的分类（可多选）</label>
+                                <select id="merge-source-select" multiple size="6" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"></select>
+                                <p class="text-xs text-slate-400 mt-1">默认“其他”分类不能作为来源。</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-2">目标分类</label>
+                                <select id="merge-target-select" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"></select>
+                                <p class="text-xs text-slate-400 mt-1">所有文献将移动到该分类，源分类会被删除。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <h4 class="text-base font-semibold text-slate-800">删除分类</h4>
+                                <p class="text-sm text-slate-500 mt-1">在上方“编辑分类”里勾选需要删除的分类，再点击右侧按钮。</p>
+                            </div>
+                            <button id="bulk-delete-category-btn" disabled class="px-4 py-2 text-sm border border-red-200 rounded-lg text-red-500 bg-red-50 opacity-60 cursor-not-allowed">
+                                删除选中分类
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">删除后分类下的文献将自动归入“其他”分类。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-200 flex justify-end items-center gap-3">
+                <button id="finish-category-btn" class="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-stack" class="fixed top-28 sm:top-8 right-4 z-[12000] flex flex-col gap-3 pointer-events-none sm:right-4 left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 w-[90%] max-w-sm"></div>
+{% endblock %}
+
+    <!-- JavaScript 功能实现 -->
+     {% block extra_js %}
+    <script id="filter-metadata" type="application/json">
+        {{ (filter_metadata or {
+            'year_filter_options': year_filter_options or [],
+            'doc_type_options': doc_type_options or [],
+            'category_options': category_options or [],
+            'active_year_ranges': active_year_ranges or [],
+            'active_doc_types': active_doc_types or [],
+            'active_categories': active_categories or [],
+            'active_sort': active_sort or 'latest'
+        }) | tojson }}
+    </script>
+    <script id="app-meta" type="application/json">
+        {{ {'is_authenticated': current_user.is_authenticated}|tojson }}
+    </script>
+    <script id="batch-cite-meta" type="application/json">{{ (batch_cite_ids or []) | tojson }}</script>
+    <script>
+
+        const listViewBtn = document.getElementById('list-view-btn');
+        const gridViewBtn = document.getElementById('grid-view-btn');
+        const toastVariants = {
+            info: 'bg-white text-slate-700 border border-slate-200',
+            success: 'bg-green-50 text-green-700 border border-green-200',
+            error: 'bg-red-50 text-red-700 border border-red-200',
+            warning: 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+        };
+
+        const GLOBAL_TOAST_TOP = '6rem';
+
+        function getToastStack() {
+            const stack = document.getElementById('toast-stack');
+            if (stack && !stack.dataset.positioned) {
+                stack.style.top = GLOBAL_TOAST_TOP;
+                stack.dataset.positioned = 'true';
+            }
+            return stack;
+        }
+
+        const MODAL_TOAST_DEFAULT_TOP = '0.5rem';   // push modal toasts below page header
+        const MODAL_TOAST_DEFAULT_RIGHT = '3.5rem';  // roughly tailwind right-14
+
+        function ensureModalToastStack(container, opts = {}) {
+            if (!container) return getToastStack();
+            let stack = container.querySelector('.modal-toast-stack');
+            if (!stack) {
+                if (!container.classList.contains('relative')) {
+                    container.classList.add('relative');
+                }
+                stack = document.createElement('div');
+                stack.className = 'modal-toast-stack pointer-events-none flex flex-col gap-2 absolute z-[13001] w-[85%] sm:w-auto'; //
+                container.appendChild(stack);
+            }
+            const resolvedTop = opts.offsetTop ?? stack.dataset.offsetTop ?? MODAL_TOAST_DEFAULT_TOP;
+            const resolvedRight = opts.offsetRight ?? stack.dataset.offsetRight ?? MODAL_TOAST_DEFAULT_RIGHT;
+            const toCssValue = (value, fallback) => {
+                if (typeof value === 'number' && !Number.isNaN(value)) {
+                    return `${value}px`;
+                }
+                return value || fallback;
+            };
+            const topValue = toCssValue(resolvedTop, MODAL_TOAST_DEFAULT_TOP);
+            const rightValue = toCssValue(resolvedRight, MODAL_TOAST_DEFAULT_RIGHT);
+            stack.style.top = topValue;
+            stack.style.right = rightValue;
+            stack.style.left = 'auto';
+            stack.dataset.offsetTop = topValue;
+            stack.dataset.offsetRight = rightValue;
+            return stack;
+        }
+
+        function showToast(message, variant = 'info', options) {
+            const opts = options || {};
+            const stack = opts.container ? ensureModalToastStack(opts.container, opts) : getToastStack();
+            if (!stack) {
+                alert(message);
+                return;
+            }
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg transition-all duration-300 translate-y-2 opacity-0 ${toastVariants[variant] || toastVariants.info}`;
+            toast.textContent = message;
+            stack.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            const duration = opts.duration || 2600;
+            setTimeout(() => {
+                toast.classList.add('-translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 250);
+            }, duration);
+        }
+
+        async function copyText(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
+            return new Promise((resolve, reject) => {
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.left = '-9999px';
+                    textarea.style.top = '-9999px';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    const ok = document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    if (ok) {
+                        resolve();
+                    } else {
+                        reject(new Error('复制失败'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        function encodeHtml(str) {
+            return (str ?? '').replace(/&/g, '&amp;')
+                              .replace(/</g, '&lt;')
+                              .replace(/>/g, '&gt;');
+        }
+
+        function buildCardToastOptions(triggerEl, container) {
+            if (!triggerEl || !container) return undefined;
+            let offsetTopPx = null;
+            try {
+                const triggerRect = triggerEl.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                offsetTopPx = triggerRect.top - containerRect.top - 12;
+            } catch (err) {
+                offsetTopPx = null;
+            }
+            return {
+                container,
+                offsetTop: offsetTopPx !== null ? Math.max(offsetTopPx, 18) : '3rem'
+            };
+        }
+
+        const appMetaEl = document.getElementById('app-meta');
+        let isAuthenticated = false;
+        try {
+            const parsedAppMeta = appMetaEl ? JSON.parse(appMetaEl.textContent || '{}') : {};
+            isAuthenticated = !!parsedAppMeta.is_authenticated;
+        } catch (err) {
+            console.warn('读取 app meta 失败', err);
+        }
+
+        const batchMetaEl = document.getElementById('batch-cite-meta');
+        const initialBatchIds = batchMetaEl ? JSON.parse(batchMetaEl.textContent || '[]') : [];
+        const batchCiteState = {
+            ids: new Set(initialBatchIds.map(id => Number(id))),
+            countEl: document.getElementById('batch-cite-count'),
+            wrapper: document.getElementById('batch-cite-fab-wrapper'),
+            clearBtn: document.getElementById('clear-batch-cite-btn'),
+            fabBtn: document.getElementById('batch-cite-fab'),
+            isAuthenticated,
+        };
+
+        function updateBatchSummaryCount(forcedCount) {
+            const count = typeof forcedCount === 'number' ? forcedCount : batchCiteState.ids.size;
+            if (batchCiteState.countEl) {
+                batchCiteState.countEl.textContent = count;
+            }
+            if (batchCiteState.wrapper) {
+                const shouldDim = count === 0 || !batchCiteState.isAuthenticated;
+                batchCiteState.wrapper.classList.toggle('opacity-60', shouldDim);
+                batchCiteState.wrapper.classList.toggle('opacity-100', !shouldDim);
+            }
+            if (batchCiteState.clearBtn) {
+                const disable = count === 0 || !batchCiteState.isAuthenticated;
+                batchCiteState.clearBtn.disabled = disable;
+                batchCiteState.clearBtn.classList.toggle('opacity-50', disable);
+                batchCiteState.clearBtn.classList.toggle('cursor-not-allowed', disable);
+            }
+        }
+
+        function setBatchButtonState(btn, isSelected) {
+            if (!btn) return;
+            const removable = [
+                'bg-blue-100', 'text-blue-700', 'hover:bg-blue-200', 'hover:text-blue-800',
+                'bg-gray-100', 'bg-slate-100', 'text-slate-700', 'hover:bg-blue-600',
+                'hover:text-white', 'hover:bg-slate-200'
+            ];
+            removable.forEach(cls => btn.classList.remove(cls));
+            if (isSelected) {
+                btn.classList.add('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200', 'hover:text-blue-800');
+                btn.innerHTML = '<i class="fa fa-check mr-1.5"></i>已选';
+                btn.title = '已在批量引用中';
+            } else {
+                btn.classList.add('bg-gray-100', 'text-slate-700', 'hover:bg-blue-600', 'hover:text-white');
+                btn.innerHTML = '<i class="fa fa-bookmark-o mr-1.5"></i>批量引用';
+                btn.title = '添加到批量引用';
+            }
+            btn.setAttribute('data-in-batch', isSelected ? 'true' : 'false');
+        }
+
+        updateBatchSummaryCount();
+
+        const exportWrappers = document.querySelectorAll('[data-export-wrapper]');
+        function closeAllExportMenus() {
+            exportWrappers.forEach(wrapper => {
+                const menu = wrapper.querySelector('[data-export-menu]');
+                if (menu) menu.classList.add('hidden');
+            });
+        }
+        exportWrappers.forEach(wrapper => {
+            const trigger = wrapper.querySelector('[data-export-trigger]');
+            const menu = wrapper.querySelector('[data-export-menu]');
+            if (!trigger || !menu) return;
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const willOpen = menu.classList.contains('hidden');
+                closeAllExportMenus();
+                if (willOpen) {
+                    menu.classList.remove('hidden');
+                } else {
+                    menu.classList.add('hidden');
+                }
+            });
+            menu.addEventListener('click', (event) => event.stopPropagation());
+        });
+        document.addEventListener('click', closeAllExportMenus);
+        function renderCitationBlock(label, key, content, isCode = false, hint = '') {
+            const safe = encodeHtml(content && content.trim() ? content : '暂无数据');
+            const inner = isCode
+                ? `<pre class="text-slate-700 text-sm leading-relaxed overflow-x-auto" id="${key}-content">${safe}</pre>`
+                : `<p class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap" id="${key}-content">${safe}</p>`;
+            const hintMarkup = hint ? `<span class="text-xs text-slate-400">${hint}</span>` : '';
+            return `
+                <li class="citation-row rounded-2xl border border-slate-100 bg-white shadow-sm hover:border-blue-100 transition-colors">
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
+                        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs tracking-wide">${label}</span>
+                            ${hintMarkup}
+                        </div>
+                        <button class="copy-btn text-blue-600 hover:text-blue-700 text-xs flex items-center gap-1 font-medium" data-target="${key}">
+                            <i class="fa fa-copy text-sm"></i><span>复制</span>
+                        </button>
+                    </div>
+                    <div class="px-4 pb-4 pt-3">
+                        <div class="citation-content bg-slate-50 rounded-xl px-4 py-3 border border-transparent hover:border-blue-100 transition-colors">${inner}</div>
+                    </div>
+                </li>
+            `;
+        }
+
+        function openDocumentCitationModal(data, meta = {}) {
+            const existing = document.querySelector('.citation-modal');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.className = 'citation-modal fixed inset-0 z-[12000] bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center pt-20 sm:pt-6 pb-6 px-3 sm:px-6 overflow-y-auto opacity-0 transition-opacity duration-200';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-label', '文献引用格式');
+            const panel = document.createElement('div');
+            panel.className = 'citation-modal__panel w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] sm:max-h-[85vh] transform translate-y-6 transition-all duration-200 overflow-hidden my-0 pointer-events-auto';
+            const sections = [
+                renderCitationBlock('GB/T 7714-2015', 'gbt7714', data?.gbt7714, false, '中文推荐'),
+                renderCitationBlock('MLA', 'mla', data?.mla),
+                renderCitationBlock('APA', 'apa', data?.apa),
+                renderCitationBlock('BibTeX', 'bibtex', data?.bibtex, true, '可粘贴到 LaTeX'),
+            ].join('');
+            const titleMarkup = meta.title ? `<p class="text-xs text-slate-500 truncate">《${encodeHtml(meta.title)}》</p>` : '';
+            const exportBase = window.withBasePath ? window.withBasePath('/export') : '/export';
+            const exportTargets = meta.docId ? [
+                { label: 'EndNote (.enw)', fmt: 'endnote' },
+                { label: 'RefMan (.ris)', fmt: 'ris' },
+                { label: 'NoteExpress (.net)', fmt: 'noteexpress' },
+                { label: 'NoteFirst (.txt)', fmt: 'notefirst' },
+                { label: 'Zotero (.json)', fmt: 'zotero' },
+            ] : [];
+            const exportLinks = exportTargets.length ? `
+                <div class="flex flex-col gap-2 text-sm">
+                    <span class="text-slate-500">导出到常用软件</span>
+                    <div class="flex flex-wrap gap-2">
+                        ${exportTargets.map(item => `
+                            <a class="px-3 py-1.5 rounded-lg border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors text-xs sm:text-sm"
+                               href="${exportBase}/${meta.docId}/${item.fmt}" target="_blank" rel="noopener">
+                                ${item.label}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+            panel.innerHTML = `
+                <div class="bg-white/90 backdrop-blur px-4 sm:px-5 py-3 border-b border-slate-200 flex items-start justify-between gap-3 sticky top-0 z-10">
+                    <div class="min-w-0">
+                        <h3 class="text-lg font-semibold text-slate-800 leading-tight">文献引用格式</h3>
+                        ${titleMarkup}
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" class="close-btn text-slate-400 hover:text-slate-700 transition-colors">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-4 sm:px-5 py-4">
+                    <ul class="space-y-2">
+                        ${sections}
+                    </ul>
+                </div>
+                <div class="px-4 sm:px-5 py-3 border-t border-slate-200 bg-slate-50/70 flex flex-col gap-3">
+                    ${exportLinks}
+                    <div class="flex flex-col sm:flex-row justify-end gap-3">
+                        <button type="button" class="copy-all-btn inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fa fa-copy"></i><span>复制全部</span>
+                        </button>
+                        <button type="button" class="close-btn inline-flex items-center justify-center px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-white">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            overlay.appendChild(panel);
+            const previousOverflow = document.body.style.overflow || '';
+            overlay.dataset.restoreOverflow = previousOverflow;
+            document.body.style.overflow = 'hidden';
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => {
+                overlay.classList.add('opacity-100');
+                panel.classList.remove('translate-y-6');
+                panel.classList.add('translate-y-0');
+            });
+
+            const handleClose = () => {
+                overlay.classList.remove('opacity-100');
+                panel.classList.add('translate-y-6');
+                panel.classList.remove('translate-y-0');
+                setTimeout(() => {
+                    document.body.style.overflow = overlay.dataset.restoreOverflow || '';
+                    overlay.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }, 180);
+            };
+            const escHandler = (event) => {
+                if (event.key === 'Escape') {
+                    handleClose();
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) {
+                    handleClose();
+                }
+            });
+            panel.querySelectorAll('.close-btn').forEach(btn => {
+                btn.addEventListener('click', handleClose);
+            });
+
+            const modalToastOptions = { container: panel };
+
+            async function handleCopy(targets, message = '内容已复制') {
+                try {
+                    await copyText(targets);
+                    showToast(message, 'success', modalToastOptions);
+                } catch (err) {
+                    showToast(err.message || '复制失败，请手动复制', 'error', modalToastOptions);
+                }
+            }
+
+            panel.querySelectorAll('.copy-btn').forEach(copyBtn => {
+                copyBtn.addEventListener('click', () => {
+                    const targetId = copyBtn.getAttribute('data-target');
+                    const contentEl = panel.querySelector(`#${targetId}-content`);
+                    if (!contentEl) {
+                        showToast('没有可复制的内容', 'warning', modalToastOptions);
+                        return;
+                    }
+                    handleCopy(contentEl.textContent || '');
+                });
+            });
+
+            panel.querySelectorAll('.copy-all-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sectionsText = [
+                        ['GB/T 7714', panel.querySelector('#gbt7714-content')?.textContent],
+                        ['APA', panel.querySelector('#apa-content')?.textContent],
+                        ['MLA', panel.querySelector('#mla-content')?.textContent],
+                        ['BibTeX', panel.querySelector('#bibtex-content')?.textContent],
+                    ].filter(([, text]) => text && text.trim()).map(([label, text]) => `${label}:\n${text.trim()}\n\n`);
+                    
+                    if (!sectionsText.length) {
+                        showToast('暂无可复制的引用内容', 'warning', modalToastOptions);
+                        return;
+                    }
+                    handleCopy(sectionsText.join(''), '所有引用内容已复制');
+                });
+            });
+        }
+
+        // 文献列表视图切换
+        listViewBtn.addEventListener('click', () => {
+            // 按钮样式切换
+            listViewBtn.classList.add('bg-blue-50', 'text-blue-600');
+            listViewBtn.classList.remove('text-slate-400', 'hover:bg-slate-100');
+            gridViewBtn.classList.remove('bg-blue-50', 'text-blue-600');
+            gridViewBtn.classList.add('text-slate-400', 'hover:bg-slate-100');
+            
+            // 列表视图样式 - 完全重置网格样式
+            searchResults.classList.remove('grid', 'md:grid-cols-2', 'gap-4');
+            searchResults.classList.add('block'); // 确保父容器为块级
+            
+            const docItems = searchResults.querySelectorAll('.pulse-hover');
+            docItems.forEach(item => {
+                item.classList.remove('grid', 'md:grid-cols-2', 'gap-4', 'h-full');
+                item.classList.add('block', 'mb-4'); // 添加列表项间距
+            });
+        });
+
+        gridViewBtn.addEventListener('click', () => {
+            // 按钮样式切换
+            gridViewBtn.classList.add('bg-blue-50', 'text-blue-600');
+            gridViewBtn.classList.remove('text-slate-400', 'hover:bg-slate-100');
+            listViewBtn.classList.remove('bg-blue-50', 'text-blue-600');
+            listViewBtn.classList.add('text-slate-400', 'hover:bg-slate-100');
+            
+            // 网格视图样式 - 完全重置列表样式
+            searchResults.classList.remove('block');
+            searchResults.classList.add('grid', 'md:grid-cols-2', 'gap-4');
+            
+            const docItems = searchResults.querySelectorAll('.pulse-hover');
+            docItems.forEach(item => {
+                item.classList.remove('block', 'mb-4');
+                item.classList.add('h-full');
+            });
+        });
+
+        // 页面加载时初始化视图状态（可选）
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认激活列表视图
+            listViewBtn.click();
+
+            // 收藏按钮点击事件
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    const isFavorited = this.getAttribute('data-is-favorited') === 'true';
+                    const icon = this.querySelector('i');
+
+                    fetch(`/api/toggle_favorite/${docId}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': window.getCSRFToken()
+                        }
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error('网络请求失败');
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (isFavorited) {
+                            console.log('取消收藏');
+                            icon.classList.remove('fa-star', 'text-amber-500');
+                            icon.classList.add('fa-star-o');
+                            btn.setAttribute('data-is-favorited', 'false');
+                            btn.setAttribute('title', '收藏文献');
+                        } else {
+                            console.log('收藏文献');
+                            icon.classList.remove('fa-star-o');
+                            icon.classList.add('fa-star', 'text-amber-500');
+                            btn.setAttribute('data-is-favorited', 'true');
+                            btn.setAttribute('title', '取消收藏');
+                        }
+                        alert(data.message);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('操作失败，请重试');
+                    });
+                });
+            });
+            
+            // 删除按钮点击事件
+            document.querySelectorAll('.delete-doc-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    const docTitle = this.getAttribute('data-doc-title');
+
+                    if (confirm(`确定要删除文献《${docTitle}》吗？\n此操作不可恢复！`)) {
+                        fetch(`/document/${docId}/delete`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        })
+                        .then(res => {
+                            if (res.ok) {
+                                return res.json();
+                            }
+                            throw new Error('删除失败');
+                        })
+                        .then(data => {
+                            alert(data.message);
+                            window.location.reload(); // 刷新页面
+                        })
+                        .catch(err => {
+                            alert('删除失败，请稍后重试');
+                            console.error(err);
+                        });
+                    }
+                });
+            });
+
+            //  共享按钮点击事件
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    const isShared = this.getAttribute('data-is-shared') === 'true';
+                    const icon = this.querySelector('i');
+                    const ownerId = btn.getAttribute('data-owner-id');
+                    const currentUserId = btn.getAttribute('data-current-user-id');
+
+                    fetch(`/api/toggle_share/${docId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': window.getCSRFToken()
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        // 如果非共享者点击共享按钮，提示无权限
+                        if (currentUserId !== ownerId) {
+                            alert('只有文献共享者才能处理共享文献！');
+                            return;
+                        }
+
+                        if (isShared && currentUserId === ownerId) {
+                            icon.classList.remove('fa-share-alt', 'text-green-500');
+                            icon.classList.add('fa-lock');
+                            btn.setAttribute('data-is-shared', 'false');
+                            btn.setAttribute('title', '点击共享');
+                        } else {
+                            icon.classList.remove('fa-lock');
+                            icon.classList.add('fa-share-alt', 'text-green-500');
+                            btn.setAttribute('data-is-shared', 'true');
+                            btn.setAttribute('title', '已共享');
+                        }
+                        alert(data.message);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('操作失败，请重试');
+                    });
+                });
+            });
+
+            // 移动端操作菜单
+            const mobileActionWrappers = document.querySelectorAll('[data-mobile-actions]');
+            const closeMobileMenus = () => {
+                mobileActionWrappers.forEach(wrapper => {
+                    const menu = wrapper.querySelector('[data-mobile-action-menu]');
+                    const trigger = wrapper.querySelector('[data-mobile-action-trigger]');
+                    if (menu) menu.classList.add('hidden');
+                    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                });
+            };
+            mobileActionWrappers.forEach(wrapper => {
+                const trigger = wrapper.querySelector('[data-mobile-action-trigger]');
+                const menu = wrapper.querySelector('[data-mobile-action-menu]');
+                if (!trigger || !menu) return;
+                trigger.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const expanded = trigger.getAttribute('aria-expanded') === 'true';
+                    closeMobileMenus();
+                    if (!expanded) {
+                        menu.classList.remove('hidden');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                });
+                menu.addEventListener('click', (event) => event.stopPropagation());
+            });
+            document.addEventListener('click', closeMobileMenus);
+
+            // 引用按钮 - 弹出引用格式选择（包含GB/T 7714格式）
+            document.querySelectorAll('.cite-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    const card = this.closest('.pulse-hover');
+                    const title = card?.querySelector('h3 a')?.textContent?.trim() || '';
+                    if (this.dataset.loading === 'true') return;
+                    this.dataset.loading = 'true';
+                    this.classList.add('opacity-70', 'cursor-wait');
+                    try {
+                        const res = await fetch(`/api/document/${docId}/citation`, {
+                            headers: {
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        });
+                        if (res.status === 401 || res.status === 403 || res.redirected) {
+                            showToast('请先登录后查看引用格式', 'warning');
+                            return;
+                        }
+                        const contentType = res.headers.get('content-type') || '';
+                        if (!contentType.includes('application/json')) {
+                            showToast('无法解析引用信息，请稍后再试', 'error');
+                            return;
+                        }
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || data.error || '获取引用格式失败');
+                        openDocumentCitationModal(data, { title, docId });
+                    } catch (err) {
+                        showToast(err.message || '获取引用格式失败', 'error');
+                    } finally {
+                        this.dataset.loading = 'false';
+                        this.classList.remove('opacity-70', 'cursor-wait');
+                    }
+                });
+            });
+
+        batchCiteState.fabBtn?.addEventListener('click', () => {
+            if (!batchCiteState.isAuthenticated) {
+                showToast('请先登录以查看批量引用列表', 'warning');
+                return;
+            }
+            const url = batchCiteState.fabBtn.dataset.listUrl;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+
+        if (batchCiteState.clearBtn) {
+            batchCiteState.clearBtn.addEventListener('click', async () => {
+                if (!batchCiteState.isAuthenticated) {
+                    showToast('请先登录后再清空批量引用', 'warning');
+                    return;
+                }
+                if (batchCiteState.clearBtn.disabled || batchCiteState.ids.size === 0) return;
+                if (!confirm('确定清空批量引用列表吗？')) return;
+                if (batchCiteState.clearBtn.dataset.loading === 'true') return;
+                    batchCiteState.clearBtn.dataset.loading = 'true';
+                    batchCiteState.clearBtn.classList.add('opacity-70', 'cursor-wait');
+                    try {
+                        const res = await fetch('/api/batch-cite', {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || data.error || '清空失败');
+                        batchCiteState.ids.clear();
+                        document.querySelectorAll('.batch-cite-btn[data-in-batch="true"]').forEach(btn => setBatchButtonState(btn, false));
+                        updateBatchSummaryCount(typeof data.total === 'number' ? data.total : 0);
+                        showToast(data.message || '批量引用列表已清空', 'success');
+                    } catch (err) {
+                        showToast(err.message || '清空失败，请稍后重试', 'error');
+                    } finally {
+                        batchCiteState.clearBtn.dataset.loading = 'false';
+                        batchCiteState.clearBtn.classList.remove('opacity-70', 'cursor-wait');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.batch-cite-btn').forEach(btn => {
+                setBatchButtonState(btn, btn.getAttribute('data-in-batch') === 'true');
+                btn.addEventListener('click', async function() {
+                    if (!batchCiteState.isAuthenticated) {
+                        showToast('登录后即可使用批量引用功能', 'warning');
+                        return;
+                    }
+                    const docId = Number(this.getAttribute('data-doc-id'));
+                    if (Number.isNaN(docId)) {
+                        showToast('无法识别文献编号', 'error');
+                        return;
+                    }
+                    const isInBatch = this.getAttribute('data-in-batch') === 'true';
+                    if (this.dataset.loading === 'true') return;
+                    this.dataset.loading = 'true';
+                    this.classList.add('opacity-70', 'cursor-wait');
+
+                    try {
+                        const res = await fetch(`/api/batch-cite/${docId}`, {
+                            method: isInBatch ? 'DELETE' : 'POST',
+                            headers: {
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || data.error || '操作失败');
+
+                        if (isInBatch) {
+                            batchCiteState.ids.delete(docId);
+                        } else {
+                            batchCiteState.ids.add(docId);
+                        }
+                        setBatchButtonState(this, !isInBatch);
+                        updateBatchSummaryCount(typeof data.total === 'number' ? data.total : undefined);
+                        showToast(data.message || (isInBatch ? '已移出批量引用' : '已加入批量引用'), 'success');
+                    } catch (err) {
+                        showToast(err.message || '操作失败，请稍后重试', 'error');
+                    } finally {
+                        this.dataset.loading = 'false';
+                        this.classList.remove('opacity-70', 'cursor-wait');
+                    }
+                });
+            });
+
+            // 复制链接按钮
+            document.querySelectorAll('.copy-link-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const container = this.closest('.pulse-hover') || null;
+                    const isShared = this.getAttribute('data-is-shared') === 'true';
+                    const shareUrl = this.getAttribute('data-share-url');
+                    const privateUrl = this.getAttribute('data-url');
+                    if (!isShared || !shareUrl) {
+                        showToast('该文献尚未开启共享，请先点击文献上的“共享”按钮再复制链接。', 'warning');
+                        return;
+                    }
+                    const url = shareUrl || privateUrl;
+                    if (!url) {
+                        showToast('无法生成分享链接', 'error');
+                        return;
+                    }
+                    try {
+                        const originalHtml = this.innerHTML;
+                        await copyText(url);
+                        this.innerHTML = '<i class="fa fa-check mr-1.5"></i>已复制';
+                        const baseClasses = ['bg-gray-100', 'text-slate-700', 'hover:bg-blue-600', 'hover:text-white'];
+                        this.classList.remove(...baseClasses);
+                        this.classList.add('bg-green-100', 'text-green-700');
+                        showToast('分享链接已复制，可发送给任意用户查看。', 'success');
+                        setTimeout(() => {
+                            this.innerHTML = originalHtml;
+                            this.classList.remove('bg-green-100', 'text-green-700');
+                            this.classList.add(...baseClasses);
+                        }, 2000);
+                    } catch (err) {
+                        showToast(err.message || '复制失败，请手动复制', 'error');
+                    }
+                });
+            });
+
+            // 发送到 Kindle
+            document.querySelectorAll('.send-to-kindle-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    if (!confirm('确定发送该文献到您的 Kindle 吗？')) return;
+                    try {
+                        const res = await fetch(`/api/send-to-kindle/${docId}`, { 
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            alert('发送成功，请注意查收');
+                        } else {
+                            alert(data.message || '发送失败');
+                        }
+                    } catch (err) {
+                        alert('请求失败: ' + err.message);
+                    }
+                });
+            });
+
+            // 备用按钮接口（可自定义功能）
+            document.querySelectorAll('.custom-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const docId = this.getAttribute('data-doc-id');
+                    alert(`自定义功能按钮,更多功能请联系管理员实现`);
+                    // 示例：跳转到自定义处理页面
+                    // window.location.href = `/custom-action/${docId}`;
+                });
+            });
+
+            // const exportLinks = document.querySelectorAll('.group a');
+            // exportLinks.forEach(link => {
+            //     link.addEventListener('click', function(e) {
+            //         e.preventDefault();
+            //         const url = this.getAttribute('href');
+            //         // 创建隐藏的 iframe 来触发下载
+            //         const iframe = document.createElement('iframe');
+            //         iframe.style.display = 'none';
+            //         iframe.src = url;
+            //         document.body.appendChild(iframe);
+            //         setTimeout(() => {
+            //             document.body.removeChild(iframe);
+            //         }, 1000);
+            //     });
+            // });
+
+        });
+        const manageCategoryBtn = document.getElementById('manage-category-btn');
+        const manageCategoryModal = document.getElementById('manage-category-modal');
+        const categoryManagerBody = document.getElementById('category-manager-body');
+        const closeCategoryModalBtn = document.getElementById('close-category-modal');
+        const finishCategoryBtn = document.getElementById('finish-category-btn');
+        const refreshCategoryBtn = document.getElementById('refresh-category-btn');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-category-btn');
+        const selectAllCategoriesCheckbox = document.getElementById('select-all-categories');
+        const categoryManagerTip = document.getElementById('category-manager-tip');
+        const mergeCategoryBtn = document.getElementById('merge-category-btn');
+        const mergeSourceSelect = document.getElementById('merge-source-select');
+        const mergeTargetSelect = document.getElementById('merge-target-select');
+        const mergePanel = document.getElementById('category-merge-panel');
+        const categoryModeButtons = document.querySelectorAll('[data-category-mode]');
+        const categoryEditPanel = document.getElementById('category-edit-panel');
+        const categoryOpsPanel = document.getElementById('category-ops-panel');
+        const addInlineCategoryBtn = document.getElementById('add-inline-category-btn');
+        const selectedCategoryIds = new Set();
+        let cachedCategoryList = [];
+        let currentCategoryMode = 'edit';
+        let categoryModalEscHandler = null;
+        let tempCategoryIndex = 0;
+
+        function lockBodyScrollForCategoryModal() {
+            if (!manageCategoryModal) return;
+            if (manageCategoryModal.dataset.scrollLocked === 'true') return;
+            manageCategoryModal.dataset.scrollLocked = 'true';
+            manageCategoryModal.dataset.prevOverflow = document.body.style.overflow || '';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockBodyScrollForCategoryModal() {
+            if (!manageCategoryModal) return;
+            if (manageCategoryModal.dataset.scrollLocked !== 'true') return;
+            document.body.style.overflow = manageCategoryModal.dataset.prevOverflow || '';
+            manageCategoryModal.dataset.scrollLocked = 'false';
+        }
+
+        function closeCategoryModal() {
+            if (!manageCategoryModal) return;
+            manageCategoryModal.classList.add('hidden');
+            unlockBodyScrollForCategoryModal();
+            if (categoryModalEscHandler) {
+                document.removeEventListener('keydown', categoryModalEscHandler);
+                categoryModalEscHandler = null;
+            }
+        }
+
+        async function loadCategoryManager() {
+            if (!categoryManagerBody) return;
+            categoryManagerBody.innerHTML = `
+                <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">正在加载分类...</td></tr>
+            `;
+            try {
+                const res = await fetch('/get-category-data');
+                // 处理未认证或权限问题
+                if (res.status === 401 || res.status === 403) {
+                    categoryManagerBody.innerHTML = `
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">请先登录以管理分类</td></tr>
+                    `;
+                    return;
+                }
+
+                // 如果返回不是 JSON（例如重定向到登录页），也安全提示
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    categoryManagerBody.innerHTML = `
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-red-500">无法加载分类（非 JSON 响应）</td></tr>
+                    `;
+                    return;
+                }
+
+                const data = await res.json();
+                cachedCategoryList = data.category_list || [];
+                renderCategoryRows(cachedCategoryList);
+                updateMergeSelectors(cachedCategoryList);
+            } catch (err) {
+                categoryManagerBody.innerHTML = `
+                    <tr><td colspan="5" class="px-4 py-6 text-center text-red-500">加载分类失败：${err.message}</td></tr>
+                `;
+            }
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, '&amp;')
+                              .replace(/</g, '&lt;')
+                              .replace(/>/g, '&gt;')
+                              .replace(/"/g, '&quot;')
+                              .replace(/'/g, '&#39;');
+        }
+
+        // 前端默认分类映射，作为后端数据尚未修复时的展示回退
+        const DEFAULT_CATEGORY_MAP = {
+            computer: '计算机',
+            ai: '人工智能',
+            math: '数学',
+            physics: '物理',
+            geology: '地质',
+            geophysics: '地球物理',
+            geochemistry: '地球化学',
+            geography: '地理',
+            geoinformatics: '地理信息',
+            geostatistics: '地质统计',
+            biology: '生物',
+            other: '其他'
+        };
+
+        function updateBulkDeleteState() {
+            if (!bulkDeleteBtn) return;
+            if (selectedCategoryIds.size === 0) {
+                bulkDeleteBtn.disabled = true;
+                bulkDeleteBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            } else {
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+        }
+
+        function setCategoryManagerMode(mode = 'edit') {
+            currentCategoryMode = mode;
+            const hints = {
+                edit: '可直接在列表中修改名称或标识，点击“保存”按钮或添加新行。',
+                ops: '可在此处执行分类合并或删除，删除操作需先在编辑页勾选分类。'
+            };
+            if (categoryManagerTip) {
+                const hint = hints[mode] || '';
+                categoryManagerTip.textContent = hint;
+                categoryManagerTip.classList.toggle('hidden', !hint);
+            }
+            if (categoryEditPanel) {
+                categoryEditPanel.classList.toggle('hidden', mode !== 'edit');
+            }
+            if (categoryOpsPanel) {
+                categoryOpsPanel.classList.toggle('hidden', mode !== 'ops');
+            }
+            categoryModeButtons.forEach(btn => {
+                const isActive = btn.dataset.categoryMode === mode;
+                btn.classList.toggle('bg-blue-600', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('text-slate-500', !isActive);
+            });
+        }
+        setCategoryManagerMode('edit');
+
+        function updateMergeSelectors(list = []) {
+            if (!mergeSourceSelect || !mergeTargetSelect) return;
+            mergeSourceSelect.innerHTML = '';
+            mergeTargetSelect.innerHTML = '';
+            const sorted = [...list].sort((a, b) => {
+                const labelA = (a.label || '').toString();
+                const labelB = (b.label || '').toString();
+                return labelA.localeCompare(labelB, 'zh-Hans-CN');
+            });
+            let hasSourceOption = false;
+            sorted.forEach(cat => {
+                const optionLabel = `${cat.label || '未命名'} (${cat.doc_count ?? 0})`;
+                const targetOption = document.createElement('option');
+                targetOption.value = cat.id;
+                targetOption.textContent = optionLabel;
+                mergeTargetSelect.appendChild(targetOption);
+                if (cat.value !== 'other') {
+                    const sourceOption = document.createElement('option');
+                    sourceOption.value = cat.id;
+                    sourceOption.textContent = optionLabel;
+                    mergeSourceSelect.appendChild(sourceOption);
+                    hasSourceOption = true;
+                }
+            });
+            if (!hasSourceOption) {
+                const placeholder = document.createElement('option');
+                placeholder.disabled = true;
+                placeholder.textContent = '暂无可合并的分类';
+                mergeSourceSelect.appendChild(placeholder);
+            }
+            if (mergeTargetSelect.options.length === 0) {
+                const placeholder = document.createElement('option');
+                placeholder.disabled = true;
+                placeholder.textContent = '暂无可用目标';
+                mergeTargetSelect.appendChild(placeholder);
+            } else {
+                mergeTargetSelect.selectedIndex = 0;
+            }
+            if (mergeCategoryBtn) {
+                if (!hasSourceOption || mergeTargetSelect.options.length === 0) {
+                    mergeCategoryBtn.disabled = true;
+                    mergeCategoryBtn.classList.add('opacity-60', 'cursor-not-allowed');
+                } else {
+                    mergeCategoryBtn.disabled = false;
+                    mergeCategoryBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        function syncSelectionAfterLoad(list) {
+            const validIds = new Set((list || []).map(cat => String(cat.id)));
+            [...selectedCategoryIds].forEach(id => {
+                if (!validIds.has(id)) selectedCategoryIds.delete(id);
+            });
+            if (selectAllCategoriesCheckbox) {
+                const selectable = (list || []).filter(cat => cat.value !== 'other');
+                selectAllCategoriesCheckbox.checked = selectable.length > 0 && selectable.every(cat => selectedCategoryIds.has(String(cat.id)));
+            }
+            updateBulkDeleteState();
+        }
+
+        function renderCategoryRows(list) {
+            if (!list.length) {
+                categoryManagerBody.innerHTML = `<tr data-empty-placeholder="true"><td colspan="5" class="px-4 py-6 text-center text-slate-500">暂无分类</td></tr>`;
+                selectedCategoryIds.clear();
+                if (selectAllCategoriesCheckbox) selectAllCategoriesCheckbox.checked = false;
+                updateBulkDeleteState();
+                return;
+            }
+            const rows = list.map(cat => {
+                const protectedFlag = cat.value === 'other';
+                const disableSlug = protectedFlag ? 'readonly' : '';
+                const disableDelete = protectedFlag ? 'disabled opacity-50 cursor-not-allowed' : '';
+                // 如果后端返回的 label 为空或仅由问号组成，使用前端映射作为回退显示
+                const rawLabel = (cat.label || '').toString();
+                const displayLabel = (/^\?+$/.test(rawLabel) || !rawLabel) ? (DEFAULT_CATEGORY_MAP[cat.value] || rawLabel || '未命名') : rawLabel;
+                const labelValue = escapeHtml(displayLabel);
+                const slugValue = escapeHtml(cat.value);
+                const checkboxDisabled = protectedFlag ? 'disabled' : '';
+                const checked = selectedCategoryIds.has(String(cat.id)) ? 'checked' : '';
+                return `
+                    <tr data-id="${cat.id}" data-protected="${protectedFlag}" class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 text-center">
+                            <input type="checkbox" class="category-select-checkbox form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300" ${checkboxDisabled} ${checked}>
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm category-label-input" value="${labelValue}">
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm category-slug-input" value="${slugValue}" ${disableSlug}>
+                        </td>
+                        <td class="px-4 py-3 text-slate-600 text-center">${cat.doc_count ?? cat.document_count ?? '--'}</td>
+                        <td class="px-4 py-3 text-right space-x-2">
+                            <button class="save-category-btn px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs hover:bg-blue-100">保存</button>
+                            <button class="delete-category-btn px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs hover:bg-red-100 ${disableDelete}">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            categoryManagerBody.innerHTML = rows;
+            syncSelectionAfterLoad(list);
+        }
+
+        function appendInlineCategoryRow() {
+            if (!categoryManagerBody) return;
+            const placeholder = categoryManagerBody.querySelector('tr[data-empty-placeholder="true"]');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            const tempId = `temp-${Date.now()}-${++tempCategoryIndex}`;
+            const newRowHtml = `
+                <tr data-temp-id="${tempId}" data-id="new-${tempId}" data-new="true" class="bg-blue-50/70">
+                    <td class="px-4 py-3 text-center text-slate-400">--</td>
+                    <td class="px-4 py-3">
+                        <input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm category-label-input" placeholder="分类名称">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" class="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm category-slug-input" placeholder="可留空自动生成">
+                    </td>
+                    <td class="px-4 py-3 text-center text-slate-400">--</td>
+                    <td class="px-4 py-3 text-right space-x-2">
+                        <button class="save-category-btn px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600">保存</button>
+                        <button class="cancel-new-category-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs hover:bg-slate-200">取消</button>
+                    </td>
+                </tr>
+            `;
+            categoryManagerBody.insertAdjacentHTML('beforeend', newRowHtml);
+            const firstInput = categoryManagerBody.querySelector(`tr[data-temp-id="${tempId}"] .category-label-input`);
+            firstInput?.focus();
+        }
+
+        if (categoryManagerBody) {
+            categoryManagerBody.addEventListener('click', async (event) => {
+                const row = event.target.closest('tr[data-id]');
+                if (!row) return;
+                const categoryId = row.dataset.id;
+                if (event.target.classList.contains('save-category-btn')) {
+                    const labelInput = row.querySelector('.category-label-input');
+                    const slugInput = row.querySelector('.category-slug-input');
+                    const payload = {
+                        label: labelInput.value.trim(),
+                        value: slugInput.value.trim()
+                    };
+                    if (row.dataset.new === 'true') {
+                        if (!payload.label) {
+                            alert('分类名称不能为空');
+                            return;
+                        }
+                        try {
+                            const res = await fetch('/api/add_category', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': window.getCSRFToken()
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || '新建分类失败');
+                            alert(data.message || '分类已添加');
+                            await loadCategoryManager();
+                        } catch (err) {
+                            alert(err.message);
+                        }
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/categories/${categoryId}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': window.getCSRFToken()
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || '保存失败');
+                        alert(data.message || '分类已更新');
+                        await loadCategoryManager();
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                } else if (event.target.classList.contains('delete-category-btn')) {
+                    if (row.dataset.protected === 'true') return;
+                    if (!confirm('删除后该分类下的文献将移至“其他”分类，确认继续吗？')) return;
+                    handleDeleteCategories([categoryId]);
+                } else if (event.target.classList.contains('cancel-new-category-btn')) {
+                    row.remove();
+                }
+            });
+            categoryManagerBody.addEventListener('change', (event) => {
+                if (event.target.classList.contains('category-select-checkbox')) {
+                    const row = event.target.closest('tr[data-id]');
+                    if (!row || row.dataset.protected === 'true') return;
+                    const id = String(row.dataset.id);
+                    if (event.target.checked) {
+                        selectedCategoryIds.add(id);
+                    } else {
+                        selectedCategoryIds.delete(id);
+                    }
+                    if (selectAllCategoriesCheckbox) {
+                        if (!event.target.checked) {
+                            selectAllCategoriesCheckbox.checked = false;
+                        } else {
+                            const checkboxes = categoryManagerBody.querySelectorAll('.category-select-checkbox:not(:disabled)');
+                            const checkedBoxes = categoryManagerBody.querySelectorAll('.category-select-checkbox:not(:disabled):checked');
+                            selectAllCategoriesCheckbox.checked = checkboxes.length > 0 && checkboxes.length === checkedBoxes.length;
+                        }
+                    }
+                    updateBulkDeleteState();
+                }
+            });
+        }
+
+        async function handleDeleteCategories(ids) {
+            if (!ids || !ids.length) return;
+            try {
+                for (const categoryId of ids) {
+                    const res = await fetch(`/api/categories/${categoryId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': window.getCSRFToken()
+                        },
+                        body: JSON.stringify({})
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || '删除失败');
+                    selectedCategoryIds.delete(String(categoryId));
+                }
+                alert('分类已删除');
+                await loadCategoryManager();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                updateBulkDeleteState();
+            }
+        }
+
+        async function openCategoryModal(mode = 'edit') {
+            setCategoryManagerMode(mode);
+            manageCategoryModal?.classList.remove('hidden');
+            lockBodyScrollForCategoryModal();
+            if (!categoryModalEscHandler) {
+                categoryModalEscHandler = (event) => {
+                    if (event.key === 'Escape') {
+                        closeCategoryModal();
+                    }
+                };
+                document.addEventListener('keydown', categoryModalEscHandler);
+            }
+            await loadCategoryManager();
+            if (mode === 'ops') {
+                mergePanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                mergeSourceSelect?.focus();
+            }
+        }
+
+        manageCategoryBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            openCategoryModal('edit');
+        });
+        categoryModeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.categoryMode || 'edit';
+                setCategoryManagerMode(mode);
+            });
+        });
+        addInlineCategoryBtn?.addEventListener('click', () => {
+            if (currentCategoryMode !== 'edit') {
+                setCategoryManagerMode('edit');
+            }
+            appendInlineCategoryRow();
+        });
+
+        closeCategoryModalBtn?.addEventListener('click', () => {
+            closeCategoryModal();
+        });
+        finishCategoryBtn?.addEventListener('click', () => {
+            closeCategoryModal();
+        });
+        refreshCategoryBtn?.addEventListener('click', () => {
+            loadCategoryManager();
+        });
+        mergeCategoryBtn?.addEventListener('click', async () => {
+            if (!mergeSourceSelect || !mergeTargetSelect) return;
+            const sourceIds = Array.from(mergeSourceSelect.selectedOptions).map(opt => opt.value).filter(Boolean);
+            const targetId = mergeTargetSelect.value;
+            if (sourceIds.length === 0) {
+                alert('请选择至少一个需要合并的分类');
+                return;
+            }
+            if (!targetId) {
+                alert('请选择目标分类');
+                return;
+            }
+            if (sourceIds.includes(targetId)) {
+                alert('目标分类不能与来源分类相同');
+                return;
+            }
+            const sourceLabels = sourceIds.map(id => {
+                const found = cachedCategoryList.find(cat => String(cat.id) === String(id));
+                return found ? found.label : id;
+            }).join('、');
+            const targetLabel = cachedCategoryList.find(cat => String(cat.id) === String(targetId))?.label || targetId;
+            if (!confirm(`确定将【${sourceLabels}】合并到【${targetLabel}】吗？`)) return;
+            try {
+                const res = await fetch('/api/categories/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        target_id: Number(targetId),
+                        source_ids: sourceIds.map(id => Number(id))
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '合并失败');
+                alert(data.message || '分类已合并');
+                selectedCategoryIds.clear();
+                if (selectAllCategoriesCheckbox) {
+                    selectAllCategoriesCheckbox.checked = false;
+                }
+                await loadCategoryManager();
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+        bulkDeleteBtn?.addEventListener('click', () => {
+            if (selectedCategoryIds.size === 0) return;
+            if (!confirm(`确定删除选中的 ${selectedCategoryIds.size} 个分类吗？这些分类下的文献将移至“其他”。`)) return;
+            handleDeleteCategories(Array.from(selectedCategoryIds));
+        });
+        selectAllCategoriesCheckbox?.addEventListener('change', () => {
+            const checkboxes = categoryManagerBody?.querySelectorAll('.category-select-checkbox:not(:disabled)') || [];
+            checkboxes.forEach(box => {
+                box.checked = selectAllCategoriesCheckbox.checked;
+                const row = box.closest('tr[data-id]');
+                if (!row) return;
+                const id = String(row.dataset.id);
+                if (selectAllCategoriesCheckbox.checked) {
+                    selectedCategoryIds.add(id);
+                } else {
+                    selectedCategoryIds.delete(id);
+                }
+            });
+            updateBulkDeleteState();
+        });
+
+        manageCategoryModal?.addEventListener('click', (event) => {
+            if (event.target === manageCategoryModal) {
+                closeCategoryModal();
+            }
+        });
+        
+        // 获取DOM元素
+        const applyBtn = document.getElementById('apply-filter');
+        const applyBtnMobile = document.getElementById('apply-filter-mobile');
+        const resetBtn = document.getElementById('reset-filter');
+        const resetBtnMobile = document.getElementById('reset-filter-mobile');
+        const sortSelect = document.getElementById('sort-select');
+        const resultSection = document.getElementById('filter-result');
+        const resultContent = document.getElementById('result-content');
+        const filterMetadataEl = document.getElementById('filter-metadata');
+        const yearCheckboxes = document.querySelectorAll('.filter-year');
+        const docTypeCheckboxes = document.querySelectorAll('.filter-type');
+        const categoryCheckboxes = document.querySelectorAll('.filter-category');
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
+        const mobileFilterClose = document.getElementById('mobile-filter-close');
+        const mobileFilterOverlay = document.getElementById('mobile-filter-overlay');
+        const filterDrawer = document.getElementById('filter-drawer');
+        const mobileFilterCount = document.getElementById('mobile-filter-count');
+        const mobileFilterFab = document.getElementById('mobile-filter-fab');
+        const mobileFilterFabCount = document.getElementById('mobile-filter-fab-count');
+        const mobileFilterCard = document.getElementById('mobile-filter-card');
+        let filterConfig = null;
+        if (filterMetadataEl) {
+            try {
+                filterConfig = JSON.parse(filterMetadataEl.textContent);
+            } catch (err) {
+                console.warn('无法解析筛选元数据', err);
+            }
+        }
+        
+        function navigateWithFilters(selectedYears, selectedTypes, selectedCategories, sortValue) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('page');
+            url.searchParams.delete('year_range');
+            selectedYears.forEach(value => url.searchParams.append('year_range', value));
+            url.searchParams.delete('doc_type');
+            selectedTypes.forEach(value => url.searchParams.append('doc_type', value));
+            url.searchParams.delete('category');
+            selectedCategories.forEach(value => url.searchParams.append('category', value));
+            if (sortValue && sortValue !== 'latest') {
+                url.searchParams.set('sort', sortValue);
+            } else {
+                url.searchParams.delete('sort');
+            }
+            window.location.assign(url.toString());
+        }
+
+        function isMobileViewport() {
+            return window.innerWidth < 1024;
+        }
+
+        function updateMobileFilterCount() {
+            const activeCount = Array.from(yearCheckboxes).filter(cb => cb.checked).length
+                + Array.from(docTypeCheckboxes).filter(cb => cb.checked).length
+                + Array.from(categoryCheckboxes).filter(cb => cb.checked).length;
+            if (mobileFilterCount) mobileFilterCount.textContent = activeCount;
+            if (mobileFilterFabCount) mobileFilterFabCount.textContent = activeCount;
+        }
+
+        function updateMobileFilterAffordance() {
+            if (!mobileFilterCard || !mobileFilterFab) return;
+            if (!isMobileViewport()) {
+                mobileFilterCard.classList.remove('is-condensed');
+                mobileFilterFab.classList.remove('is-visible');
+                return;
+            }
+            const shouldCondense = window.scrollY > 220 && !(filterDrawer && filterDrawer.classList.contains('is-open'));
+            mobileFilterCard.classList.toggle('is-condensed', shouldCondense);
+            mobileFilterFab.classList.toggle('is-visible', shouldCondense);
+        }
+
+        function closeFilterDrawer() {
+            if (!filterDrawer || !mobileFilterOverlay || !isMobileViewport()) return;
+            filterDrawer.classList.remove('is-open');
+            mobileFilterOverlay.classList.remove('is-open');
+            document.body.classList.remove('ysxs-filter-drawer-open');
+            filterDrawer.setAttribute('aria-hidden', 'true');
+            updateMobileFilterAffordance();
+        }
+
+        function openFilterDrawer() {
+            if (!filterDrawer || !mobileFilterOverlay || !isMobileViewport()) return;
+            filterDrawer.classList.add('is-open');
+            mobileFilterOverlay.classList.add('is-open');
+            document.body.classList.add('ysxs-filter-drawer-open');
+            filterDrawer.setAttribute('aria-hidden', 'false');
+            mobileFilterCard?.classList.remove('is-condensed');
+            mobileFilterFab?.classList.remove('is-visible');
+        }
+
+        function handleApplyFilters(button) {
+            const selectedYears = Array.from(yearCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            const selectedTypes = Array.from(docTypeCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            const selectedCategories = Array.from(categoryCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            const sortValue = sortSelect ? sortSelect.value : 'latest';
+            button?.classList.add('scale-95');
+            setTimeout(() => button?.classList.remove('scale-95'), 200);
+            closeFilterDrawer();
+            navigateWithFilters(selectedYears, selectedTypes, selectedCategories, sortValue);
+        }
+
+        function handleResetFilters(button) {
+            const url = new URL(window.location.href);
+            ['year_range', 'doc_type', 'category', 'sort', 'page'].forEach(param => url.searchParams.delete(param));
+            button?.classList.add('scale-95');
+            setTimeout(() => button?.classList.remove('scale-95'), 200);
+            closeFilterDrawer();
+            window.location.assign(url.toString());
+        }
+
+        // 应用筛选按钮点击事件
+        if (applyBtn) {
+            applyBtn.addEventListener('click', function() {
+                handleApplyFilters(this);
+            });
+        }
+        if (applyBtnMobile) {
+            applyBtnMobile.addEventListener('click', function() {
+                handleApplyFilters(this);
+            });
+        }
+        
+        // 重置按钮点击事件
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                handleResetFilters(this);
+            });
+        }
+        if (resetBtnMobile) {
+            resetBtnMobile.addEventListener('click', function() {
+                handleResetFilters(this);
+            });
+        }
+        
+        const sortLabelMap = {
+            'latest': '最新上传',
+            'earliest': '最早上传',
+            'title-asc': '按标题排序（A-Z）',
+            'title-desc': '按标题排序（Z-A）',
+            'citations': '按引用量排序'
+        };
+
+        function renderFilterSummaryFromState(state) {
+            if (!resultSection || !resultContent) return;
+            if (!state) {
+                resultSection.classList.add('hidden');
+                resultContent.innerHTML = '';
+                return;
+            }
+            const yearLookup = {};
+            (state.year_filter_options || []).forEach(option => {
+                yearLookup[option.value] = option.label;
+            });
+            const typeLookup = {};
+            (state.doc_type_options || []).forEach(option => {
+                typeLookup[option.value] = option.label;
+            });
+            const categoryLookup = {};
+            (state.category_options || []).forEach(option => {
+                categoryLookup[option.value] = option.label;
+            });
+            const yearLabels = (state.active_year_ranges || []).map(value => yearLookup[value] || value);
+            const typeLabels = (state.active_doc_types || []).map(value => typeLookup[value] || value);
+            const categoryLabels = (state.active_categories || []).map(value => categoryLookup[value] || value);
+            const sortLabel = sortLabelMap[state.active_sort] || sortLabelMap.latest;
+            const hasYears = yearLabels.length > 0;
+            const hasTypes = typeLabels.length > 0;
+            const hasCategories = categoryLabels.length > 0;
+            const sortIsDefault = !state.active_sort || state.active_sort === 'latest';
+
+            if (!hasYears && !hasTypes && !hasCategories && sortIsDefault) {
+                resultSection.classList.add('hidden');
+                resultContent.innerHTML = '';
+                return;
+            }
+
+            resultContent.innerHTML = '';
+            const categoryItem = document.createElement('div');
+            categoryItem.innerHTML = `<strong>文献分类：</strong>${hasCategories ? categoryLabels.join('、') : '全部'}`;
+            resultContent.appendChild(categoryItem);
+
+            const yearItem = document.createElement('div');
+            yearItem.innerHTML = `<strong>发表年份：</strong>${hasYears ? yearLabels.join('、') : '未选择'}`;
+            resultContent.appendChild(yearItem);
+
+            const typeItem = document.createElement('div');
+            typeItem.innerHTML = `<strong>文献类型：</strong>${hasTypes ? typeLabels.join('、') : '未选择'}`;
+            resultContent.appendChild(typeItem);
+
+            const sortItem = document.createElement('div');
+            sortItem.innerHTML = `<strong>排序方式：</strong>${sortLabel}`;
+            resultContent.appendChild(sortItem);
+
+            resultSection.classList.remove('hidden');
+            resultSection.classList.add('animate-fadeIn');
+            setTimeout(() => {
+                resultSection.classList.remove('animate-fadeIn');
+            }, 500);
+        }
+        
+        // 为复选框添加动画效果
+        checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            this.classList.add('scale-110');
+            setTimeout(() => this.classList.remove('scale-110'), 200);
+            updateMobileFilterCount();
+        });
+        });
+
+        mobileFilterToggle?.addEventListener('click', openFilterDrawer);
+        mobileFilterFab?.addEventListener('click', openFilterDrawer);
+        mobileFilterClose?.addEventListener('click', closeFilterDrawer);
+        mobileFilterOverlay?.addEventListener('click', closeFilterDrawer);
+        window.addEventListener('resize', () => {
+            if (!isMobileViewport()) {
+                filterDrawer?.classList.remove('is-open');
+                mobileFilterOverlay?.classList.remove('is-open');
+                document.body.classList.remove('ysxs-filter-drawer-open');
+                filterDrawer?.setAttribute('aria-hidden', 'false');
+            } else if (filterDrawer && !filterDrawer.classList.contains('is-open')) {
+                filterDrawer.setAttribute('aria-hidden', 'true');
+            }
+            updateMobileFilterAffordance();
+        });
+        window.addEventListener('scroll', updateMobileFilterAffordance, { passive: true });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                closeFilterDrawer();
+            }
+        });
+        
+        // 为排序下拉框添加自定义箭头
+        const style = document.createElement('style');
+        style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        `;
+        document.head.appendChild(style);
+
+        renderFilterSummaryFromState(filterConfig);
+        updateMobileFilterCount();
+        if (isMobileViewport() && filterDrawer) {
+            filterDrawer.setAttribute('aria-hidden', 'true');
+        }
+        updateMobileFilterAffordance();
+
+    </script>
+    {% endblock %}

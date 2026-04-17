@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }} 的详情 - 管理员中心{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- 面包屑导航 -->
+    <div class="mb-6 text-sm">
+        <a href="{{ url_for('manage_users') }}" class="text-blue-600 hover:underline">用户管理</a>
+        <span class="mx-2 text-slate-400">/</span>
+        <span class="text-slate-600">{{ user.username }} 的详情</span>
+    </div>
+
+    <!-- 用户基本信息卡片 -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-start gap-6">
+            <!-- 头像区域 -->
+            <div class="flex-shrink-0">
+                <img src="{{ url_for('static', filename='images/avatar1.png') if not user.avatar else url_for('static', filename='avatars/' + user.avatar) }}" 
+                     alt="{{ user.username }}的头像" 
+                     class="w-24 h-24 rounded-full object-cover border-2 border-slate-100">
+            </div>
+
+            <!-- 基础信息区域 -->
+            <div class="flex-grow">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-4">
+                    <h2 class="text-2xl font-bold text-slate-800">{{ user.username }}</h2>
+                </div>
+
+                <!-- 信息表格 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">邮箱：</span>
+                        <span class="text-slate-800">{{ user.email }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">角色：</span>
+                        <span class="text-slate-800">
+                            {% if user.role == 'admin' %}
+                            <span class="text-purple-600 font-medium">管理员</span>
+                            {% elif user.role == 'super admin' %}
+                            <span class="text-red-600 font-medium">超级管理员</span>
+                            {% else %}
+                            <span class="text-slate-600">普通用户</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">注册时间：</span>
+                        <span class="text-slate-800">{{ user.created_at|format_cn_time('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">最后登录：</span>
+                        <span class="text-slate-800">
+                            {{ user.last_login|format_cn_time('%Y-%m-%d %H:%M') if user.last_login else '未登录' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">文献数量：</span>
+                        <span class="text-slate-800">{{ documents|length }} 篇</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">账户状态：</span>
+                        <span class="text-slate-800">
+                        <span class="text-green-600">{{ user.status }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="mt-6 flex gap-3">
+                    {% if 'admin' not in user.role or (current_user.role == 'super admin' and user.role == 'admin' ) %}
+                    <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" 
+                       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
+                        <i class="fa fa-pencil mr-1"></i>编辑用户
+                    </a>
+                    <a href="{{ url_for('admin_delete_user', user_id=user.id) }}" 
+                       class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                       onclick="return confirm('确定删除用户 {{ user.username }}？删除后其所有文献、收藏将一并删除，不可恢复！')">
+                        <i class="fa fa-trash mr-1"></i>删除用户
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户文献列表 -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-slate-800">用户上传的文献</h3>
+            <span class="text-sm text-slate-500">共 {{ documents|length }} 篇</span>
+        </div>
+
+        <!-- 文献列表 -->
+        {% if documents %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm border border-slate-200">
+                <thead>
+                    <!-- 宽度设置合理 -->
+
+                    <tr class="bg-slate-50 text-slate-700 uppercase text-xs font-medium tracking-wider whitespace-nowrap">
+                        <th class="px-4 py-3 text-left text-slate-500">文献标题</th>
+                        <th class="px-4 py-3 text-left text-slate-500">上传时间</th>
+                        <th class="px-4 py-3 text-left text-slate-500">文件大小</th>
+                        <th class="px-4 py-3 text-left text-slate-500">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for doc in documents %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3">
+                            <!--{{ url_for('doc_detail', doc_id=doc.id) }} -->
+                             <a href="#"  
+                               class="text-blue-600 hover:underline">{{ doc.title }}</a>
+                        </td>
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
+                            {{ doc.upload_time|format_cn_time('%Y-%m-%d') }}
+                        </td>
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
+
+                            {{ (doc.file_size / 1024 / 1024)|round(2) if doc.file_size is not none else '未知大小' }} MB
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ url_for('admin_delete_doc', doc_id=doc.id) }}" 
+                               class="text-red-600 hover:text-red-800 text-xs"
+                               onclick="return confirm('确定删除文献 {{ doc.title }}？')">
+                                删除
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-slate-500">
+            <i class="fa fa-file-text-o text-3xl mb-2"></i>
+            <p>该用户未上传任何文献</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 用户行为记录（可选） -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">最近操作记录</h3>
+        <div class="text-center py-6 text-slate-500 text-sm">
+            <p>当前未记录用户操作日志（可扩展日志功能）</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

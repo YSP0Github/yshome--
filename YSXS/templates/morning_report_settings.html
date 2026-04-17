@@ -1,0 +1,216 @@
+﻿{% extends "base.html" %}
+
+{% block title %}晨报参数 - 云凇学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .morning-settings-shell {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    .morning-settings-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="morning-settings-shell px-4 py-8">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+            <div class="text-sm text-slate-500 mb-2">科研助手 v1 / 参数页</div>
+            <h1 class="text-3xl font-bold text-slate-900">晨报参数</h1>
+            <p class="text-slate-600 mt-2">在这里控制关键词、论文来源、强过滤、论文池数量和自动运行时间。</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('morning_report_home') }}" class="px-4 py-2 rounded-lg border border-slate-300 hover:border-blue-300 hover:text-blue-600 text-slate-700 font-medium">
+                <i class="fa fa-arrow-left mr-2"></i>返回晨报
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="morning-settings-card rounded-2xl p-6 md:p-8 space-y-8">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <section>
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">关键词库</h2>
+            <p class="text-sm text-slate-500 mb-3">一行一个关键词即可。建议同时放中文和英文，例如：moonquake、deep moonquake、月震深部结构。</p>
+            <textarea
+                name="keywords_text"
+                rows="8"
+                class="w-full rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-slate-800 p-4"
+                placeholder="moonquake&#10;deep moonquake&#10;lunar seismic&#10;月震"
+            >{{ report_settings.keywords_text }}</textarea>
+        </section>
+
+        {% set enabled_sources = report_settings.enabled_source_list() %}
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">论文来源</h2>
+                <p class="text-sm text-slate-500 mb-3">控制晨报从哪些来源抓取论文。</p>
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                        <div>
+                            <div class="font-medium text-slate-800">OpenAlex</div>
+                            <div class="text-sm text-slate-500 mt-1">学术元数据较完整，适合最新研究发现。</div>
+                        </div>
+                        <input type="checkbox" name="enabled_sources" value="openalex" class="h-5 w-5 text-blue-600 rounded" {% if 'openalex' in enabled_sources %}checked{% endif %}>
+                    </label>
+                    <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                        <div>
+                            <div class="font-medium text-slate-800">Crossref</div>
+                            <div class="text-sm text-slate-500 mt-1">覆盖面更广，但也更容易混入离题结果。</div>
+                        </div>
+                        <input type="checkbox" name="enabled_sources" value="crossref" class="h-5 w-5 text-blue-600 rounded" {% if 'crossref' in enabled_sources %}checked{% endif %}>
+                    </label>
+                    <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                        <div>
+                            <div class="font-medium text-slate-800">arXiv</div>
+                            <div class="text-sm text-slate-500 mt-1">补充预印本来源，适合提前发现新工作，但需二次甄别质量。</div>
+                        </div>
+                        <input type="checkbox" name="enabled_sources" value="arxiv" class="h-5 w-5 text-blue-600 rounded" {% if 'arxiv' in enabled_sources %}checked{% endif %}>
+                    </label>
+                    <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                        <div>
+                            <div class="font-medium text-slate-800">NASA ADS</div>
+                            <div class="text-sm text-slate-500 mt-1">更适合天文、行星与月球科学；需先配置 <code>NASA_ADS_API_TOKEN</code>。</div>
+                        </div>
+                        <input type="checkbox" name="enabled_sources" value="ads" class="h-5 w-5 text-blue-600 rounded" {% if 'ads' in enabled_sources %}checked{% endif %}>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">科研方向强过滤</h2>
+                <p class="text-sm text-slate-500 mb-3">建议默认开启，可减少离题论文和异常日期论文。</p>
+                <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4 mb-4">
+                    <div>
+                        <div class="font-medium text-slate-800">启用强过滤</div>
+                        <div class="text-sm text-slate-500 mt-1">要求论文更贴近核心研究方向，并自动过滤明显异常日期。</div>
+                    </div>
+                    <input type="checkbox" name="strict_filter_enabled" class="h-5 w-5 text-blue-600 rounded" {% if report_settings.strict_filter_enabled %}checked{% endif %}>
+                </label>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">排除词</label>
+                    <textarea
+                        name="exclude_keywords_text"
+                        rows="5"
+                        class="w-full rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-slate-800 p-4"
+                        placeholder="management&#10;governance&#10;poetry"
+                    >{{ report_settings.exclude_keywords_text }}</textarea>
+                    <p class="text-xs text-slate-500 mt-2">一行一个，命中这些词的论文会被优先排除。</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">论文池数量</label>
+                <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    name="paper_pool_size"
+                    value="{{ report_settings.paper_pool_size }}"
+                    class="w-full rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-blue-500 px-4 py-3"
+                >
+                <p class="text-xs text-slate-500 mt-2">建议 8–15 篇，太多会影响筛选效率。</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">回溯天数</label>
+                <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    name="lookback_days"
+                    value="{{ report_settings.lookback_days }}"
+                    class="w-full rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-blue-500 px-4 py-3"
+                >
+                <p class="text-xs text-slate-500 mt-2">控制搜索最近多久的论文。</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">自动运行时间</label>
+                <div class="flex items-center gap-3">
+                    <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        name="auto_run_hour"
+                        value="{{ report_settings.auto_run_hour }}"
+                        class="w-28 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-blue-500 px-4 py-3"
+                    >
+                    <span class="text-slate-600">点自动生成</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900">高价值增强源</h2>
+                    <p class="text-sm text-slate-500 mt-2">这批来源暂时只作为“显示 / 跳转增强源”，不会参与后台自动抓取，但会用于结果页快速复查。</p>
+                </div>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                    <i class="fa fa-external-link"></i> 当前为跳转型
+                </span>
+            </div>
+            {% if enhancement_sources and enhancement_sources[0].priority_track %}
+            <div class="mb-4 text-xs font-semibold text-emerald-600">已按当前晨报关键词关联方向优先排序。</div>
+            {% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {% for source in enhancement_sources %}
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                    <div class="font-semibold text-slate-800">{{ source.label }}</div>
+                    <div class="text-sm text-slate-500 mt-2 leading-7">{{ source.description }}</div>
+                    {% if source.homepage %}
+                    <div class="mt-3">
+                        <a href="{{ source.homepage }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            <i class="fa fa-compass"></i> 打开源站
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+<section class="space-y-4">
+            <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                <div>
+                    <div class="font-medium text-slate-800">启用今日晨报</div>
+                    <div class="text-sm text-slate-500 mt-1">关闭后将不再生成晨报。</div>
+                </div>
+                <input type="checkbox" name="enabled" class="h-5 w-5 text-blue-600 rounded" {% if report_settings.enabled %}checked{% endif %}>
+            </label>
+
+            <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                <div>
+                    <div class="font-medium text-slate-800">每天自动生成</div>
+                    <div class="text-sm text-slate-500 mt-1">到设定时间后，后台自动拉取论文池。</div>
+                </div>
+                <input type="checkbox" name="auto_run_enabled" class="h-5 w-5 text-blue-600 rounded" {% if report_settings.auto_run_enabled %}checked{% endif %}>
+            </label>
+
+            <label class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4">
+                <div>
+                    <div class="font-medium text-slate-800">首页弹窗提醒</div>
+                    <div class="text-sm text-slate-500 mt-1">进入网站时弹出“今日晨报已生成”。</div>
+                </div>
+                <input type="checkbox" name="popup_enabled" class="h-5 w-5 text-blue-600 rounded" {% if report_settings.popup_enabled %}checked{% endif %}>
+            </label>
+        </section>
+
+        <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <a href="{{ url_for('morning_report_home') }}" class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:border-blue-300 hover:text-blue-600 text-center font-medium">
+                取消
+            </a>
+            <button type="submit" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                保存参数
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

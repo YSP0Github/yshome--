@@ -1,0 +1,825 @@
+{% extends "base.html" %}
+{% block title %}文献表格视图{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 text-slate-800">
+    <div class="bg-white rounded-2xl shadow-sm p-6 mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-blue-700 mb-1">文献表格视图</h1>
+            <p class="text-slate-500 text-sm">专为 Word 引用整理而设计，可在此筛选、勾选并导出所需的文献条目。</p>
+        </div>
+        <form method="get" class="flex gap-2 w-full md:w-96">
+            <input type="text" name="q" value="{{ keyword }}" placeholder="搜索标题 / 作者 / 关键词..."
+                   class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors">
+                搜索
+            </button>
+        </form>
+    </div>
+        <!-- 新增筛选排序栏 -->
+        <div class="mt-4 flex items-center gap-4 flex-wrap">
+            <!-- 年份筛选 -->
+            <div class="flex items-center gap-2">
+                <label class="text-slate-600">年份：</label>
+                <input type="number" id="year-start" placeholder="起始年" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span>-</span>
+                <input type="number" id="year-end" placeholder="结束年" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- 排序筛选 -->
+            <div class="flex items-center gap-2">
+                <label class="text-slate-600">排序：</label>
+                <select id="sort-type" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="default">默认排序</option>
+                    <option value="year-asc">年份升序</option>
+                    <option value="year-desc">年份降序</option>
+                    <option value="author-asc">作者首字母A-Z</option>
+                    <option value="author-desc">作者首字母Z-A</option>
+                </select>
+            </div>
+
+            <!-- 操作按钮 -->
+            <button id="apply-filter" class="bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-600 transition">应用筛选</button>
+            <button id="reset-filter" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-300 transition">重置</button>
+        </div>
+
+
+    <div class="bg-white rounded-2xl shadow ">
+        <div class="p-4 flex flex-wrap items-center justify-between text-sm text-slate-600 border-b border-slate-100">
+            <span>共 {{ total_count }} 篇文献</span>
+            <div class="flex flex-wrap gap-3">
+                <button type="button" id="open-format-modal"
+                        class="px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                    <i class="fa fa-sliders"></i>
+                    <span>当前格式：<span id="current-format-label">GB/T 7714</span></span>
+                </button>
+                <button type="button" id="export-selected"
+                        class="px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                    <i class="fa fa-download"></i>
+                    导出引用
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+           <div class="overflow-y-auto" style="max-height:80vh;">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="px-4 py-3 w-10">
+                                <input type="checkbox" id="select-all" class="rounded text-blue-600 focus:ring-blue-500">
+                            </th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">标题</th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">作者</th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">年份</th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">期刊 / 会议</th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">文献类型</th>
+                            <th class="px-4 py-3 text-left font-medium whitespace-nowrap">DOI / 链接</th>
+                        </tr>
+                    </thead>
+                    <tbody id="document-table-body" class="divide-y divide-slate-100 text-slate-700">
+                        {% for doc in documents %}
+                        <tr data-id="{{ doc.id }}" 
+                            data-year="{{ doc.year }}" 
+                            data-author="{{ doc.authors | trim }}" 
+                            class="hover:bg-slate-50">
+                            <td class="px-4 py-3">
+                                <input type="checkbox" class="doc-select rounded text-blue-600 focus:ring-blue-500"
+                                    value="{{ doc.id }}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <a href="{{ url_for('document_detail', doc_id=doc.id) }} "
+                                target="_blank"
+                                class="font-medium text-blue-700 hover:text-blue-900 line-clamp-2"
+                                title="查看《{{ doc.title }}》的详细信息">
+                                    {{ doc.title }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-3">{{ doc.authors or '—' }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ doc.year or '—' }}</td>
+                            <td class="px-4 py-3">
+                                {{ doc.journal or doc.booktitle or doc.venue or '—' }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ doc.doc_type_obj.label if doc.doc_type_obj else (doc.doc_type|doc_type_label) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if doc.doi %}
+                                    <span class="text-blue-600 text-xs">{{ doc.doi }}</span>
+                                {% elif doc.url %}
+                                    <a href="{{ doc.url }}" target="_blank" class="text-blue-600 hover:text-blue-700 text-xs">访问链接</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="px-4 py-6 text-center text-slate-500">
+                                暂无符合条件的文献。
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+           </div>
+        </div>
+    </div>
+
+    <!-- 格式设置弹窗 -->
+    <div id="export-modal" class="fixed inset-0 z-40 hidden">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="relative mx-auto flex h-full w-full max-w-3xl flex-col p-4 pt-24 sm:p-6 sm:pt-20">
+            <div class="bg-white shadow-2xl rounded-2xl h-full flex flex-col">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <h3 class="text-lg font-semibold text-slate-800">选择 / 管理引用格式</h3>
+                    <button id="close-export-modal" class="text-slate-500 hover:text-slate-700 text-2xl leading-none px-2" aria-label="关闭">×</button>
+                </div>
+                <div class="px-6 pt-4 pb-6 flex-1 overflow-y-auto space-y-5">
+                    <p class="text-sm text-slate-500">从常用格式库中选择，或创建多个自定义模板（可命名并重复使用）。</p>
+
+                    <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+                        <table class="min-w-full text-sm divide-y divide-slate-200">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-medium w-8">选择</th>
+                                    <th class="px-4 py-3 text-left font-medium">格式名称</th>
+                                    <th class="px-4 py-3 text-left font-medium">类型</th>
+                                    <th class="px-4 py-3 text-left font-medium">说明 / 模板预览</th>
+                                    <th class="px-4 py-3 text-left font-medium whitespace-nowrap">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="format-table-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="border border-dashed border-slate-300 rounded-2xl p-4 space-y-3">
+                        <h4 class="font-semibold text-slate-800 text-sm">新增自定义格式</h4>
+                        <div class="grid gap-3 md:grid-cols-2">
+                            <input type="text" id="custom-name" placeholder="格式名称（如：Nature 模板）"
+                                   class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <input type="text" id="custom-desc" placeholder="说明（可选）"
+                                   class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <textarea id="custom-format" class="w-full h-24 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                                      placeholder="在这里粘贴或编辑自定义模板，例如：作者. 标题[J]. 期刊, 年, 卷(期): 页码."></textarea>
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1">点击字段快速插入：</p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div id="template-snippet-list" class="flex flex-wrap gap-2"></div>
+                                    <button type="button" id="remove-snippet"
+                                            class="px-2.5 py-1 rounded border border-rose-200 text-xs text-rose-600 hover:bg-rose-50">
+                                        删除上一个
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap justify-between items-center gap-3">
+                            <button type="button"
+                                    class="px-3 py-1.5 rounded-md border border-dashed border-slate-300 text-slate-500 text-sm hover:border-blue-400"
+                                    id="import-template-btn">
+                                导入常用期刊格式（敬请期待）
+                            </button>
+                            <button type="button" id="add-custom-format"
+                                    class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-black text-sm font-semibold shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                                    title="保存当前自定义格式以便日后复用">
+                                <i class="fa fa-save text-base" aria-hidden="true"></i>
+                                <span>保存到格式库</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" id="cancel-export"
+                            class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        (() => {
+            const selectAll = document.getElementById('select-all');
+            const exportModal = document.getElementById('export-modal');
+            const openFormatModal = document.getElementById('open-format-modal');
+            const closeModalButtons = [
+                document.getElementById('close-export-modal'),
+                document.getElementById('cancel-export')
+            ];
+            const customFormatTextarea = document.getElementById('custom-format');
+            const customNameInput = document.getElementById('custom-name');
+            const customDescInput = document.getElementById('custom-desc');
+            const addCustomBtn = document.getElementById('add-custom-format');
+            const importTemplateBtn = document.getElementById('import-template-btn');
+            const formatTableBody = document.getElementById('format-table-body');
+            const exportSelectedBtn = document.getElementById('export-selected');
+            const currentFormatLabel = document.getElementById('current-format-label');
+            const templateSnippetList = document.getElementById('template-snippet-list');
+            const removeSnippetBtn = document.getElementById('remove-snippet');
+            const resolveCsrfToken = () => {
+                try {
+                    if (typeof window.getCSRFToken === 'function') {
+                        const value = window.getCSRFToken();
+                        if (value) {
+                            return value;
+                        }
+                    }
+                } catch (_) {
+                    // ignore and continue to other strategies
+                }
+                if (window.csrfToken) {
+                    return window.csrfToken;
+                }
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                return metaTag?.content || '';
+            };
+
+            const withCsrfHeader = (headers = {}) => {
+                const token = resolveCsrfToken();
+                if (!token) {
+                    return headers;
+                }
+                return { ...headers, 'X-CSRFToken': token };
+            };
+
+            const state = {
+                systemFormats: [],
+                customFormats: [],
+                selectedFormatKey: 'system_gbt'
+            };
+
+            const templateSnippets = [
+                { label: '作者', field: 'authors' },
+                { label: '标题', field: 'title' },
+                { label: '期刊/会议', field: 'journal' },
+                { label: '年份', field: 'year' },
+                { label: '卷', field: 'volume' },
+                { label: '期', field: 'issue' },
+                { label: '(期)', field: '{% raw %}({{issue}}){% endraw %}', literal: true },
+                { label: '页码', field: 'pages' },
+                { label: '出版社', field: 'publisher' },
+                { label: '地点', field: 'venue' },
+                { label: '文献类型', field: 'doc_type' },
+                { label: 'DOI', field: 'doi' },
+                { label: 'URL', field: 'url' },
+                { label: '.', field: '.', literal: true },
+                { label: ',', field: ',', literal: true },
+                { label: ':', field: ':', literal: true },
+                { label: ';', field: ';', literal: true },
+                { label: '( )', field: '()', literal: true },
+            ];
+
+            const buildPlaceholder = (field) => {
+                if (!field) {
+                    return '';
+                }
+                const open = '{' + '{';
+                const close = '}' + '}';
+                return `${open}${field}${close}`;
+            };
+
+            const escapeHtml = (value = '') => value.replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+            }[char] || char));
+
+            const getCheckboxes = () => Array.from(document.querySelectorAll('.doc-select'));
+            selectAll?.addEventListener('change', () => {
+                const checked = !!selectAll.checked;
+                getCheckboxes().forEach(cb => (cb.checked = checked));
+            });
+
+            const insertAtCursor = (textarea, text) => {
+                if (!textarea) {
+                    return;
+                }
+                const start = textarea.selectionStart ?? textarea.value.length;
+                const end = textarea.selectionEnd ?? textarea.value.length;
+                const before = textarea.value.slice(0, start);
+                const after = textarea.value.slice(end);
+                textarea.value = `${before}${text}${after}`;
+                const newPos = start + text.length;
+                textarea.focus();
+                textarea.setSelectionRange(newPos, newPos);
+            };
+
+            const removePreviousPlaceholder = () => {
+                if (!customFormatTextarea) {
+                    return false;
+                }
+                const textarea = customFormatTextarea;
+                const start = textarea.selectionStart ?? textarea.value.length;
+                const end = textarea.selectionEnd ?? textarea.value.length;
+                const caret = Math.min(start, end);
+                const before = textarea.value.slice(0, caret);
+                const after = textarea.value.slice(Math.max(start, end));
+                const placeholderMatch = before.match(/(\(\s*)?\{\{[^{}]+\}\}(\s*\))?$/);
+                if (!placeholderMatch) {
+                    return false;
+                }
+                const newBefore = before.slice(0, before.length - placeholderMatch[0].length);
+                textarea.value = newBefore + after;
+                textarea.focus();
+                textarea.setSelectionRange(newBefore.length, newBefore.length);
+                return true;
+            };
+
+            const renderTemplateSnippets = () => {
+                if (!templateSnippetList) {
+                    return;
+                }
+                templateSnippetList.innerHTML = '';
+                templateSnippets.forEach(snippet => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = snippet.label;
+                    btn.dataset.field = snippet.field;
+                    if (snippet.literal) {
+                        btn.dataset.literal = 'true';
+                    }
+                    btn.className = 'px-2 py-1 rounded border border-slate-200 text-xs text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-colors';
+                    templateSnippetList.appendChild(btn);
+                });
+            };
+            renderTemplateSnippets();
+
+            templateSnippetList?.addEventListener('click', (event) => {
+                const origin = event.target;
+                if (!(origin instanceof HTMLElement)) {
+                    return;
+                }
+                const target = origin.closest('button[data-field]');
+                if (!target) {
+                    return;
+                }
+                const value = target.dataset.field || '';
+                const placeholder = target.dataset.literal === 'true'
+                    ? value
+                    : buildPlaceholder(value);
+                insertAtCursor(customFormatTextarea, placeholder);
+            });
+
+            removeSnippetBtn?.addEventListener('click', () => {
+                if (!removePreviousPlaceholder()) {
+                    alert('光标左侧没有可删除的占位符。');
+                }
+            });
+
+            const getAllFormats = () => [...state.systemFormats, ...state.customFormats];
+            const findFormat = (key) => getAllFormats().find(item => item.key === key);
+
+            function setSelectedFormat(key) {
+                const target = findFormat(key);
+                if (target) {
+                    state.selectedFormatKey = key;
+                    currentFormatLabel.textContent = target.name;
+                } else {
+                    state.selectedFormatKey = 'system_gbt';
+                    currentFormatLabel.textContent = 'GB/T 7714';
+                }
+            }
+
+            function renderFormatTable() {
+                formatTableBody.innerHTML = '';
+                getAllFormats().forEach(format => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50';
+                    const desc = escapeHtml((format.description || format.template || '—').trim());
+                    const name = escapeHtml(format.name);
+                    const type = escapeHtml(format.type);
+                    const actions = format.type === '自定义'                        
+                        ? `<div class="flex flex-col items-start gap-1">
+                               <button class="text-blue-600 text-xs edit-format hover:text-blue-800" data-key="${format.key}" data-db-id="${format.db_id}">编辑</button>
+                               <button class="text-red-500 text-xs delete-format hover:text-red-700" data-key="${format.key}" data-db-id="${format.db_id}">删除</button>
+                           </div>`
+                           : '<span class="text-slate-400 text-xs">系统</span>';
+                    row.innerHTML = `
+                        <td class="px-4 py-3">
+                            <input type="radio" name="export-format" class="format-radio text-blue-600"
+                                   value="${format.key}" ${format.key === state.selectedFormatKey ? 'checked' : ''}>
+                        </td>
+                        <td class="px-4 py-3 font-medium text-slate-800">${name}</td>
+                        <td class="px-4 py-3 text-slate-500">${type}</td>
+                        <td class="px-4 py-3 text-slate-600 text-xs">${desc}</td>
+                        <td class="px-4 py-3 space-x-2">${actions}</td>
+                    `;
+                    formatTableBody.appendChild(row);
+                });
+            }
+
+            openFormatModal?.addEventListener('click', () => {
+                exportModal.classList.remove('hidden');
+                exportModal.classList.add('flex');
+                renderFormatTable();
+            });
+
+            closeModalButtons.forEach(btn => btn?.addEventListener('click', () => {
+                exportModal.classList.add('hidden');
+                exportModal.classList.remove('flex');
+            }));
+
+            formatTableBody.addEventListener('change', (event) => {
+                if (event.target.classList.contains('format-radio')) {
+                    setSelectedFormat(event.target.value);
+                }
+            });
+
+            formatTableBody.addEventListener('click', (event) => {
+                const { target } = event;
+                if (target.classList.contains('edit-format')) {
+                    const key = target.dataset.key;
+                    const format = state.customFormats.find(item => item.key === key);
+                    if (!format) {
+                        return;
+                    }
+                    customNameInput.value = format.name || '';
+                    customDescInput.value = format.description || '';
+                    customFormatTextarea.value = format.template || '';
+                    addCustomBtn.dataset.editingId = format.db_id || '';
+                    addCustomBtn.textContent = '保存修改';
+                    customNameInput.focus();
+                }
+                if (target.classList.contains('delete-format')) {
+                    const dbId = Number(target.dataset.dbId);
+                    if (!dbId) {
+                        return;
+                    }
+                    if (!confirm('确定删除该自定义格式吗？')) {
+                        return;
+                    }
+                    fetch(window.withBasePath(`/api/citation-formats/${dbId}`), {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: withCsrfHeader()
+                    })
+                        .then(res => {
+                            if (!res.ok) {
+                                throw new Error('删除失败，请稍后再试。');
+                            }
+                            state.customFormats = state.customFormats.filter(item => item.db_id !== dbId);
+                            if (state.selectedFormatKey === `custom_${dbId}`) {
+                                setSelectedFormat(state.systemFormats[0]?.key || 'system_gbt');
+                            }
+                            renderFormatTable();
+                        })
+                        .catch(err => alert(err.message));
+                }
+            });
+
+            addCustomBtn?.addEventListener('click', () => {
+                const name = customNameInput.value.trim();
+                const template = customFormatTextarea.value.trim();
+                if (!name || !template) {
+                    alert('请填写自定格式的名称和模板内容。');
+                    return;
+                }
+                const description = customDescInput.value.trim();
+                const editingId = addCustomBtn.dataset.editingId;
+                const payload = { name, description, template };
+                const url = editingId
+                    ? window.withBasePath(`/api/citation-formats/${editingId}`)
+                    : window.withBasePath('/api/citation-formats');
+                const method = editingId ? 'PATCH' : 'POST';
+                fetch(url, {
+                    method,
+                    headers: withCsrfHeader({ 'Content-Type': 'application/json' }),
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload),
+                })
+                    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                    .then(({ ok, data }) => {
+                        if (!ok) {
+                            throw new Error(data.error || '保存失败，请稍后再试。');
+                        }
+                        if (editingId) {
+                            state.customFormats = state.customFormats.map(item =>
+                                item.db_id === Number(editingId) ? data.item : item
+                            );
+                        } else {
+                            state.customFormats.unshift(data.item);
+                        }
+                        renderFormatTable();
+                        setSelectedFormat(data.item.key);
+                        customNameInput.value = '';
+                        customDescInput.value = '';
+                        customFormatTextarea.value = '';
+                        addCustomBtn.dataset.editingId = '';
+                        addCustomBtn.textContent = '保存到格式库';
+                        alert('自定格式已保存，可在列表中选择使用。');
+                    })
+                    .catch(err => alert(err.message));
+            });
+
+            function loadFormatsFromServer() {
+                fetch(window.withBasePath('/api/citation-formats'), { credentials: 'same-origin' })
+                    .then(res => res.json())
+                    .then(data => {
+                        state.systemFormats = (data.system || []).map(item => ({ ...item }));
+                        state.customFormats = (data.custom || []).map(item => ({ ...item }));
+                        const all = getAllFormats();
+                        if (!all.some(item => item.key === state.selectedFormatKey)) {
+                            state.selectedFormatKey = state.systemFormats[0]?.key || 'system_gbt';
+                        }
+                        renderFormatTable();
+                        setSelectedFormat(state.selectedFormatKey);
+                    })
+                    .catch(err => console.error('加载引用格式失败', err));
+            }
+
+            loadFormatsFromServer();
+
+            const originalExportLabel = exportSelectedBtn?.innerHTML || '';
+            let exportInProgress = false;
+
+            const setExportLoading = (loading) => {
+                if (!exportSelectedBtn) {
+                    return;
+                }
+                exportInProgress = loading;
+                exportSelectedBtn.disabled = loading;
+                if (loading) {
+                    exportSelectedBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 处理中...';
+                    exportSelectedBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                } else {
+                    exportSelectedBtn.innerHTML = originalExportLabel;
+                    exportSelectedBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                }
+            };
+
+            const downloadBlob = (blob, filename) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename || 'citations.txt';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+            };
+
+            const parseFilenameFromDisposition = (value, fallback) => {
+                if (!value || typeof value !== 'string') {
+                    return fallback;
+                }
+                const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+                if (utf8Match) {
+                    try {
+                        return decodeURIComponent(utf8Match[1]);
+                    } catch (_) {
+                        return utf8Match[1];
+                    }
+                }
+                const asciiMatch = value.match(/filename="?([^";]+)"?/i);
+                if (asciiMatch) {
+                    return asciiMatch[1];
+                }
+                return fallback;
+            };
+
+            exportSelectedBtn?.addEventListener('click', () => {
+                if (exportInProgress) {
+                    return;
+                }
+                const selected = getCheckboxes().filter(cb => cb.checked).map(cb => cb.value);
+                if (!selected.length) {
+                    alert('请先勾选需要导出的文献。');
+                    return;
+                }
+                const format = findFormat(state.selectedFormatKey);
+                if (!format) {
+                    alert('尚未选择引用格式。');
+                    return;
+                }
+                if (!format.template?.trim()) {
+                    alert('当前格式缺少模板内容，请先完善后再导出。');
+                    return;
+                }
+                setExportLoading(true);
+                fetch(window.withBasePath('/api/citation-formats/export'), {
+                    method: 'POST',
+                    headers: withCsrfHeader({ 'Content-Type': 'application/json' }),
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        doc_ids: selected,
+                        format_key: format.key,
+                    }),
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            const contentType = res.headers.get('Content-Type') || '';
+                            if (contentType.includes('application/json')) {
+                                return res.json().then(data => {
+                                    throw new Error(data.error || '导出失败，请稍后再试。');
+                                });
+                            }
+                            throw new Error('导出失败，请稍后再试。');
+                        }
+                        return res.blob().then(blob => ({
+                            blob,
+                            disposition: res.headers.get('Content-Disposition'),
+                        }));
+                    })
+                    .then(({ blob, disposition }) => {
+                        const fallbackName = `${format.name || 'citations'}.txt`;
+                        const filename = parseFilenameFromDisposition(disposition, fallbackName);
+                        downloadBlob(blob, filename);
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                    })
+                    .finally(() => {
+                        setExportLoading(false);
+                    });
+            });
+
+            importTemplateBtn?.addEventListener('click', () => {
+                alert('格式库导入功能开发中，后续可在此引入期刊或出版社提供的引用模板。');
+            });
+        })();
+    </script>
+
+<!-- 拼音库（中文排序用） -->
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.4/dist/pinyin-pro.min.js"></script>
+
+<!-- 筛选排序JS（仅调整行顺序，保留所有样式） -->
+<script>
+// 1. 保存原始行数据（页面加载时记录）
+let originalRows = [];
+document.addEventListener('DOMContentLoaded', function() {
+    // 保存所有原始行的引用，不修改DOM结构
+    originalRows = Array.from(document.querySelectorAll('#document-table-body tr'));
+});
+
+// 2. 工具函数：判断字符是否为中文
+function isChineseChar(char) {
+    return /[\u4e00-\u9fa5]/.test(char);
+}
+
+// 3. 工具函数：获取作者首字母（英文/中文区分处理）
+function getAuthorFirstLetter(authorName) {
+    if (!authorName) return 'z'; // 空值放最后
+
+    const firstToken = String(authorName)
+        .split(/[,;，；、\s]+/)
+        .map(token => token.trim())
+        .find(Boolean) || '';
+    const cleanName = firstToken.replace(/\s+/g, '').trim();
+    const firstChar = cleanName.charAt(0);
+    if (!firstChar) return 'z';
+
+    // 英文：直接返回首字母小写
+    if (/[a-zA-Z]/.test(firstChar)) {
+        return firstChar.toLowerCase();
+    }
+    // 中文：取姓氏拼音首字母（小写）
+    else if (isChineseChar(firstChar)) {
+        try {
+            const maybe = window.pinyinPro;
+            const fn = typeof maybe === 'function'
+                ? maybe
+                : (maybe && typeof maybe.pinyin === 'function' ? maybe.pinyin : null);
+            if (!fn) return 'z';
+            const result = fn(firstChar, {
+                pattern: 'first',
+                type: 'string',
+                toneType: 'none'
+            });
+            return String(result || 'z').toLowerCase();
+        } catch (err) {
+            return 'z';
+        }
+    }
+    // 其他字符（数字/符号）：放最后
+    else {
+        return 'z';
+    }
+}
+
+// 4. 筛选+排序核心函数（只调整行顺序）
+function filterAndSortRows() {
+    const tableBody = document.getElementById('document-table-body');
+    if (!tableBody || originalRows.length === 0) return;
+
+    // 获取筛选条件
+    const yearStart = parseInt(document.getElementById('year-start').value) || 0;
+    const yearEnd = parseInt(document.getElementById('year-end').value) || 9999;
+    const sortType = document.getElementById('sort-type').value;
+
+    // 1. 筛选：只保留符合年份条件的行
+    let filteredRows = [...originalRows].filter(row => {
+        const rowYear = parseInt(row.dataset.year) || 0;
+        return rowYear >= yearStart && rowYear <= yearEnd;
+    });
+
+    // 2. 排序：仅调整行的顺序，不修改行内容/样式
+    switch (sortType) {
+        case 'year-asc':
+            filteredRows.sort((a, b) => {
+                const aYear = parseInt(a.dataset.year) || 0;
+                const bYear = parseInt(b.dataset.year) || 0;
+                return aYear - bYear;
+            });
+            break;
+        case 'year-desc':
+            filteredRows.sort((a, b) => {
+                const aYear = parseInt(a.dataset.year) || 0;
+                const bYear = parseInt(b.dataset.year) || 0;
+                return bYear - aYear;
+            });
+            break;
+        case 'author-asc': // 英文A-Z → 中文拼音A-Z
+            filteredRows.sort((a, b) => {
+                const aAuthor = a.dataset.author || '';
+                const bAuthor = b.dataset.author || '';
+                
+                // 第一步：判断是否为中文作者（中文权重低，放后面）
+                const aIsChinese = isChineseChar(aAuthor.charAt(0));
+                const bIsChinese = isChineseChar(bAuthor.charAt(0));
+                
+                if (!aIsChinese && bIsChinese) return -1; // 英文在前，中文在后
+                if (aIsChinese && !bIsChinese) return 1;  // 中文在后，英文在前
+                
+                // 第二步：同类型作者按首字母排序（A-Z）
+                const aFirst = getAuthorFirstLetter(aAuthor);
+                const bFirst = getAuthorFirstLetter(bAuthor);
+                return aFirst.localeCompare(bFirst);
+            });
+            break;
+        case 'author-desc': // 英文Z-A → 中文拼音Z-A
+            filteredRows.sort((a, b) => {
+                const aAuthor = a.dataset.author || '';
+                const bAuthor = b.dataset.author || '';
+                
+                // 第一步：判断是否为中文作者（中文权重低，放后面）
+                const aIsChinese = isChineseChar(aAuthor.charAt(0));
+                const bIsChinese = isChineseChar(bAuthor.charAt(0));
+                
+                if (!aIsChinese && bIsChinese) return -1; // 英文在前，中文在后
+                if (aIsChinese && !bIsChinese) return 1;  // 中文在后，英文在前
+                
+                // 第二步：同类型作者按首字母排序（Z-A）
+                const aFirst = getAuthorFirstLetter(aAuthor);
+                const bFirst = getAuthorFirstLetter(bAuthor);
+                return bFirst.localeCompare(aFirst);
+            });
+            break;
+        default:
+            // 默认排序：恢复原始顺序
+            filteredRows = [...originalRows];
+            break;
+    }
+
+    // 3. 重新排列行（只调整顺序，不重渲染，保留所有样式）
+    if (filteredRows.length === 0) {
+        // 无数据时显示提示（保留原表格列结构）
+        tableBody.innerHTML = `<tr><td colspan="1" class="px-6 py-8 text-center text-gray-500">暂无符合条件的文献</td></tr>`;
+    } else {
+        // 清空tbody，按新顺序添加行（行本身完全不变）
+        tableBody.innerHTML = '';
+        filteredRows.forEach(row => {
+            tableBody.appendChild(row);
+        });
+    }
+}
+
+// 5. 重置函数（恢复原始顺序和样式）
+function resetRows() {
+    const tableBody = document.getElementById('document-table-body');
+    if (!tableBody || originalRows.length === 0) return;
+
+    // 清空输入框
+    document.getElementById('year-start').value = '';
+    document.getElementById('year-end').value = '';
+    document.getElementById('sort-type').value = 'default';
+
+    // 恢复原始行顺序和结构
+    tableBody.innerHTML = '';
+    originalRows.forEach(row => {
+        tableBody.appendChild(row);
+    });
+}
+
+// 6. 绑定按钮事件
+document.addEventListener('DOMContentLoaded', function() {
+    const applyBtn = document.getElementById('apply-filter');
+    const resetBtn = document.getElementById('reset-filter');
+    
+    if (applyBtn) applyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        filterAndSortRows();
+    });
+    if (resetBtn) resetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetRows();
+    });
+});
+</script>
+
+{% endblock %}

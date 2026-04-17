@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+
+{% block title %}今日晨报 - 云凇学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .brief-shell { max-width: 1180px; margin: 0 auto; }
+    .brief-hero {
+        background:
+            radial-gradient(circle at top left, rgba(255,255,255,.18), transparent 22%),
+            linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0f766e 100%);
+        box-shadow: 0 26px 54px rgba(15,23,42,.18);
+    }
+    .brief-panel { background: rgba(255,255,255,.96); border: 1px solid rgba(226,232,240,.9); box-shadow: 0 18px 36px rgba(15,23,42,.06); }
+    .brief-paper { background: rgba(255,255,255,.98); border: 1px solid rgba(226,232,240,.95); box-shadow: 0 14px 32px rgba(15,23,42,.06); }
+    .brief-paper:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(29,78,216,.10); border-color: rgba(96,165,250,.45); }
+    .brief-feature-card { background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(239,246,255,.78) 100%); border: 1px solid rgba(191,219,254,.85); }
+    .brief-abstract-card { background: rgba(255,255,255,.84); border: 1px solid rgba(226,232,240,.92); }
+    .brief-side-card { background: rgba(248,250,252,.92); border: 1px solid rgba(226,232,240,.85); }
+    .brief-outline-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        padding: .78rem 1rem;
+        border-radius: .9rem;
+        border: 1px solid rgba(148,163,184,.45);
+        color: #334155;
+        background: rgba(255,255,255,.72);
+        font-weight: 600;
+        transition: all .18s ease;
+    }
+    .brief-outline-btn:hover {
+        border-color: rgba(59,130,246,.45);
+        color: #2563eb;
+        transform: translateY(-1px);
+    }
+    .brief-import-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        min-width: 168px;
+        padding: .78rem 1rem;
+        border-radius: .9rem;
+        border: 1px solid rgba(16,185,129,.35);
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 12px 24px rgba(16,185,129,.18);
+        transition: all .18s ease;
+    }
+    .brief-import-btn:hover {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+        box-shadow: 0 16px 30px rgba(16,185,129,.24);
+        transform: translateY(-1px);
+    }
+    .brief-import-btn:disabled { opacity: .78; cursor: not-allowed; transform: none; }
+    .brief-toast-stack { position: fixed; top: 88px; right: 20px; z-index: 95; display: flex; flex-direction: column; gap: 10px; }
+    .brief-toast { min-width: 240px; max-width: 360px; border-radius: 16px; padding: 14px 16px; color: #fff; box-shadow: 0 18px 32px rgba(15,23,42,.2); }
+    .brief-toast.info { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+    .brief-toast.success { background: linear-gradient(135deg, #059669, #10b981); }
+    .brief-toast.error { background: linear-gradient(135deg, #dc2626, #ef4444); }
+    .brief-summary-rendered { line-height: 1.9; word-break: break-word; }
+    .brief-summary-rendered h3,
+    .brief-summary-rendered h4,
+    .brief-summary-rendered h5,
+    .brief-summary-rendered h6 { color: #0f172a; margin-top: 1rem; margin-bottom: .5rem; }
+    .brief-summary-rendered ul,
+    .brief-summary-rendered ol { padding-left: 1.1rem; }
+    .brief-summary-rendered code { color: #0f172a; }
+    .brief-summary-panel { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); }
+    .brief-summary-collapsible { position: relative; }
+    .brief-summary-body { overflow: hidden; transition: max-height .25s ease; }
+    .brief-summary-fade {
+        position: absolute;
+        left: 0; right: 0; bottom: 2.5rem;
+        height: 4.5rem;
+        background: linear-gradient(180deg, rgba(248,250,252,0) 0%, rgba(248,250,252,.96) 100%);
+        pointer-events: none;
+    }
+    .brief-summary-toggle {
+        margin-top: .9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2563eb;
+        font-size: .92rem;
+        font-weight: 600;
+    }
+    .brief-summary-toggle:hover { color: #1d4ed8; }
+    body.dark-theme .brief-panel,
+    body.auto-theme.auto-dark .brief-panel,
+    body.dark-theme .brief-paper,
+    body.auto-theme.auto-dark .brief-paper {
+        background: rgba(15,23,42,.9);
+        border-color: rgba(51,65,85,.9);
+        box-shadow: 0 20px 44px rgba(2,6,23,.35);
+    }
+    body.dark-theme .brief-feature-card,
+    body.auto-theme.auto-dark .brief-feature-card {
+        background: linear-gradient(180deg, rgba(15,23,42,.94) 0%, rgba(30,41,59,.96) 100%);
+        border-color: rgba(59,130,246,.24);
+    }
+    body.dark-theme .brief-abstract-card,
+    body.auto-theme.auto-dark .brief-abstract-card,
+    body.dark-theme .brief-side-card,
+    body.auto-theme.auto-dark .brief-side-card,
+    body.dark-theme .brief-summary-panel,
+    body.auto-theme.auto-dark .brief-summary-panel {
+        background: rgba(15,23,42,.78);
+        border-color: rgba(51,65,85,.88);
+    }
+    body.dark-theme .brief-outline-btn,
+    body.auto-theme.auto-dark .brief-outline-btn {
+        background: rgba(15,23,42,.68);
+        border-color: rgba(71,85,105,.9);
+        color: #e2e8f0;
+    }
+    body.dark-theme .brief-outline-btn:hover,
+    body.auto-theme.auto-dark .brief-outline-btn:hover {
+        border-color: rgba(96,165,250,.7);
+        color: #93c5fd;
+    }
+    body.dark-theme .brief-summary-rendered h3,
+    body.dark-theme .brief-summary-rendered h4,
+    body.dark-theme .brief-summary-rendered h5,
+    body.dark-theme .brief-summary-rendered h6,
+    body.auto-theme.auto-dark .brief-summary-rendered h3,
+    body.auto-theme.auto-dark .brief-summary-rendered h4,
+    body.auto-theme.auto-dark .brief-summary-rendered h5,
+    body.auto-theme.auto-dark .brief-summary-rendered h6,
+    body.dark-theme .brief-summary-rendered code,
+    body.auto-theme.auto-dark .brief-summary-rendered code {
+        color: #f8fafc;
+    }
+    body.dark-theme .brief-summary-fade,
+    body.auto-theme.auto-dark .brief-summary-fade {
+        background: linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,.96) 100%);
+    }
+    body.dark-theme .brief-summary-toggle,
+    body.auto-theme.auto-dark .brief-summary-toggle {
+        color: #93c5fd;
+    }
+    @media (max-width: 768px) { .brief-toast-stack { left: 14px; right: 14px; top: 76px; } .brief-toast { max-width: none; min-width: 0; } }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set featured_paper = report_papers[0] if report_papers else None %}
+{% set highlights = report_papers[1:4] if report_papers|length > 1 else [] %}
+{% set ns = namespace(imported=0, summarized=0, openalex=0, crossref=0) %}
+{% for paper in report_papers %}
+    {% if paper.imported_document_id %}{% set ns.imported = ns.imported + 1 %}{% endif %}
+    {% if paper.ai_summary %}{% set ns.summarized = ns.summarized + 1 %}{% endif %}
+    {% if paper.source == 'openalex' %}{% set ns.openalex = ns.openalex + 1 %}{% endif %}
+    {% if paper.source == 'crossref' %}{% set ns.crossref = ns.crossref + 1 %}{% endif %}
+{% endfor %}
+
+<div id="report-toast-stack" class="brief-toast-stack"></div>
+
+<div class="brief-shell px-4 py-8">
+    <section class="brief-hero rounded-3xl text-white p-6 md:p-8 lg:p-10 mb-7">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div class="xl:col-span-8">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm font-semibold mb-4">
+                    <i class="fa fa-flask"></i>科研助手 v1 · 论文情报简报
+                </div>
+                <div class="flex flex-wrap gap-4 text-sm text-blue-50/90 mb-4">
+                    <span><i class="fa fa-calendar-o mr-2"></i>{{ report_run.report_date if report_run else today_date }}</span>
+                    <span><i class="fa fa-clock-o mr-2"></i>{{ report_run.generated_at|format_cn_time if report_run and report_run.generated_at else '等待生成' }}</span>
+                    <span><i class="fa fa-database mr-2"></i>关键词 {{ report_settings.keyword_list()|length }} 个</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">今日晨报</h1>
+                <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
+                    自动抓取与你研究方向相关的最新优质文献，先进入论文池，再决定是否做 AI 总结和导入个人文献库。
+                </p>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button id="run-report-btn" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-blue-700 font-semibold shadow-lg">
+                        <i class="fa fa-refresh"></i>重新搜索
+                    </button>
+                    <a href="{{ url_for('morning_report_settings_view') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-semibold">
+                        <i class="fa fa-sliders"></i>调整参数
+                    </a>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2">
+                    {% for keyword in report_settings.keyword_list()[:8] %}
+                    <span class="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-sm">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="xl:col-span-4 grid grid-cols-2 gap-3">
+                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">今日论文池</div><div class="text-3xl font-black mt-1">{{ report_papers|length }}</div></div>
+                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">已AI总结</div><div id="summarized-count" class="text-3xl font-black mt-1">{{ ns.summarized }}</div></div>
+                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">已导入</div><div id="report-imported-count" class="text-3xl font-black mt-1">{{ ns.imported }}</div></div>
+                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">自动生成</div><div class="text-xl font-black mt-2">{{ '%02d:00'|format(report_settings.auto_run_hour or 8) }}</div></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-7">
+        <section class="xl:col-span-8 brief-panel rounded-3xl p-6 md:p-7">
+            <div class="flex items-center justify-between gap-4 mb-5">
+                <div>
+                    <div class="text-sm text-slate-500 mb-2">头版导读</div>
+                    <h2 class="text-2xl font-extrabold text-slate-900">今天最值得优先查看的论文</h2>
+                </div>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold {% if report_run and report_run.status == 'ready' %}bg-blue-50 text-blue-700{% elif report_run and report_run.status == 'failed' %}bg-amber-50 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                    <i class="fa {% if report_run and report_run.status == 'ready' %}fa-check-circle{% elif report_run and report_run.status == 'failed' %}fa-exclamation-circle{% else %}fa-hourglass-half{% endif %}"></i>
+                    {% if report_run and report_run.status == 'ready' %}已生成{% elif report_run and report_run.status == 'failed' %}生成失败{% else %}等待中{% endif %}
+                </span>
+            </div>
+
+            {% if featured_paper %}
+            <div class="brief-feature-card rounded-3xl p-5">
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">头条推荐</span>
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">{{ featured_paper.source|upper }}</span>
+                    {% if featured_paper.imported_document_id %}<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">已入库</span>{% endif %}
+                </div>
+                {% set featured_external_url = ('https://doi.org/' ~ featured_paper.doi) if featured_paper.doi else (featured_paper.url or featured_paper.pdf_url) %}
+                {% if featured_external_url %}
+                <h3 class="text-2xl font-black leading-10 text-slate-900">
+                    <a href="{{ featured_external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-3 hover:text-blue-600 transition-colors">
+                        <span>{{ featured_paper.title }}</span>
+                        <i class="fa fa-external-link text-base mt-2 text-slate-400"></i>
+                    </a>
+                </h3>
+                {% else %}
+                <h3 class="text-2xl font-black leading-10 text-slate-900">{{ featured_paper.title }}</h3>
+                {% endif %}
+                <div class="mt-4 flex flex-wrap gap-4 text-sm text-slate-500">
+                    <span><i class="fa fa-users mr-2"></i>{{ featured_paper.authors or '未知作者' }}</span>
+                    <span><i class="fa fa-book mr-2"></i>{{ featured_paper.journal or '未知来源' }}</span>
+                    <span><i class="fa fa-calendar mr-2"></i>{{ featured_paper.published_at or featured_paper.year or '日期待核实' }}</span>
+                    <span><i class="fa fa-signal mr-2"></i>相关度 {{ '%.1f'|format(featured_paper.relevance_score or 0) }}</span>
+                </div>
+                <div class="brief-abstract-card mt-4 rounded-2xl p-4">
+                    <div class="text-xs font-semibold tracking-wide text-slate-400 mb-2">原始摘要</div>
+                    <p class="text-slate-600 leading-8">
+                        {{ (featured_paper.abstract or '该论文暂无摘要，可进一步查看原文判断价值。')[:560] }}{% if (featured_paper.abstract or '')|length > 560 %}...{% endif %}
+                    </p>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-3">
+                    {% if featured_external_url %}<a href="{{ featured_external_url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
+                    <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ featured_paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>AI总结</button>
+                    <button type="button" class="import-btn brief-import-btn" data-paper-id="{{ featured_paper.id }}" data-doc-id="{{ featured_paper.imported_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if featured_paper.imported_document_id else '一键导入系统' }}</button>
+                </div>
+                {% set featured_enhancement_links = build_display_source_links(featured_paper.title, featured_paper.doi, limit=8) %}
+                {% if featured_enhancement_links %}
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                    <div class="text-xs font-semibold tracking-wide text-slate-500 mb-3">高价值增强检索{% if featured_enhancement_links[0].priority_track %} · 已按方向优先{% endif %}</div>
+                    <div class="flex flex-wrap gap-2">
+                        {% for link in featured_enhancement_links %}
+                        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn text-sm !px-3 !py-2"><i class="fa fa-external-link"></i>{{ link.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div data-summary-box-for="{{ featured_paper.id }}" class="mt-5 {% if not featured_paper.ai_summary %}hidden{% endif %}">
+                    <div class="brief-summary-panel rounded-2xl border border-blue-100 p-5">
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <strong class="text-blue-700">AI 总结</strong>
+                            <span data-summary-updated-for="{{ featured_paper.id }}" class="text-xs text-blue-600">{% if featured_paper.ai_summary_updated_at %}{{ featured_paper.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
+                        </div>
+                        <div class="brief-summary-collapsible" data-collapsible-summary>
+                            <div class="brief-summary-body">
+                                <div data-summary-content-for="{{ featured_paper.id }}" class="brief-summary-rendered text-sm text-slate-700">{% if featured_paper.ai_summary %}{{ featured_paper.ai_summary|render_ai_summary }}{% endif %}</div>
+                            </div>
+                            <div class="brief-summary-fade hidden" data-collapsible-fade></div>
+                            <button type="button" class="brief-summary-toggle hidden" data-collapsible-toggle>
+                                <i class="fa fa-angle-down"></i><span>展开全文</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-14">
+                <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-newspaper-o"></i></div>
+                <h3 class="text-2xl font-black text-slate-900 mb-3">{% if report_run and report_run.status == 'failed' %}今日晨报生成失败{% else %}还没有生成今天的晨报{% endif %}</h3>
+                <p class="text-slate-600 leading-8 max-w-2xl mx-auto">{% if report_run and report_run.last_error %}{{ report_run.last_error }}{% else %}点击“重新搜索”，立即按当前关键词抓取今天的论文池。{% endif %}</p>
+                <button id="run-report-hero-empty-btn" class="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"><i class="fa fa-paper-plane"></i>立即生成今日晨报</button>
+            </div>
+            {% endif %}
+        </section>
+
+        <aside class="xl:col-span-4 brief-panel rounded-3xl p-6 md:p-7">
+            <div class="text-sm text-slate-500 mb-2">检索摘要</div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-5">本期情报概览</h2>
+            <div class="space-y-3">
+                <div class="brief-side-card rounded-2xl px-4 py-4 flex items-center justify-between"><div><div class="text-xs text-slate-500">论文池上限</div><div class="text-lg font-bold text-slate-900 mt-1">{{ report_settings.paper_pool_size }}</div></div><i class="fa fa-clone text-slate-300 text-2xl"></i></div>
+                <div class="brief-side-card rounded-2xl px-4 py-4 flex items-center justify-between"><div><div class="text-xs text-slate-500">回溯天数</div><div class="text-lg font-bold text-slate-900 mt-1">{{ report_settings.lookback_days }} 天</div></div><i class="fa fa-history text-slate-300 text-2xl"></i></div>
+                <div class="brief-side-card rounded-2xl px-4 py-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-slate-500">已启用来源</div>
+                        <div class="text-sm font-semibold text-slate-700 mt-1">
+                            {% for source in report_settings.enabled_source_list() %}
+                                {% if source == 'openalex' %}OpenAlex{% elif source == 'crossref' %}Crossref{% elif source == 'arxiv' %}arXiv{% elif source == 'ads' %}NASA ADS{% else %}{{ source }}{% endif %}{% if not loop.last %} / {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <i class="fa fa-random text-slate-300 text-2xl"></i>
+                </div>
+                <div class="brief-side-card rounded-2xl px-4 py-4 flex items-center justify-between"><div><div class="text-xs text-slate-500">强过滤</div><div class="text-sm font-semibold text-slate-700 mt-1">{{ '已开启' if report_settings.strict_filter_enabled else '已关闭' }}</div></div><i class="fa fa-filter text-slate-300 text-2xl"></i></div>
+            </div>
+            {% if recent_runs %}
+            <div class="mt-6 pt-5 border-t border-slate-100">
+                <div class="text-sm text-slate-500 mb-3">最近晨报记录</div>
+                <div class="space-y-2">
+                    {% for item in recent_runs %}
+                    <div class="brief-side-card rounded-xl px-4 py-3 flex items-center justify-between text-sm">
+                        <div><div class="font-semibold text-slate-800">{{ item.report_date }}</div><div class="text-slate-500 mt-1">{{ item.trigger_source or 'manual' }}</div></div>
+                        <span class="px-3 py-1 rounded-full bg-white text-slate-700 font-semibold">{{ item.paper_count }} 篇</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+
+    {% if highlights %}
+    <section class="mb-7">
+        <div class="mb-4"><div class="text-sm text-slate-500 mb-1">快读清单</div><h2 class="text-2xl font-extrabold text-slate-900">接下来值得继续看的论文</h2></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {% for paper in highlights %}
+            <article class="brief-panel rounded-3xl p-5">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <span class="w-9 h-9 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black">{{ paper.rank }}</span>
+                    <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">{{ paper.source|upper }}</span>
+                </div>
+                {% set highlight_external_url = ('https://doi.org/' ~ paper.doi) if paper.doi else (paper.url or paper.pdf_url) %}
+                {% if highlight_external_url %}
+                <h3 class="text-lg font-bold text-slate-900 leading-8">
+                    <a href="{{ highlight_external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-2 hover:text-blue-600 transition-colors">
+                        <span>{{ paper.title }}</span>
+                        <i class="fa fa-external-link text-sm mt-1.5 text-slate-400"></i>
+                    </a>
+                </h3>
+                {% else %}
+                <h3 class="text-lg font-bold text-slate-900 leading-8">{{ paper.title }}</h3>
+                {% endif %}
+                <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
+                    <span><i class="fa fa-calendar mr-2"></i>{{ paper.published_at or paper.year or '日期待核实' }}</span>
+                    <span><i class="fa fa-signal mr-2"></i>{{ '%.1f'|format(paper.relevance_score or 0) }}</span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600 leading-7">{{ (paper.abstract or '暂无摘要，建议进入原文进一步筛选。')[:180] }}{% if (paper.abstract or '')|length > 180 %}...{% endif %}</p>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    {% if highlight_external_url %}<a href="{{ highlight_external_url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn text-sm"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
+                    <button type="button" class="import-btn brief-import-btn text-sm" data-paper-id="{{ paper.id }}" data-doc-id="{{ paper.imported_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if paper.imported_document_id else '一键导入系统' }}</button>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section>
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div><div class="text-sm text-slate-500 mb-1">论文池详情</div><h2 class="text-2xl font-extrabold text-slate-900">逐篇处理与入库</h2></div>
+            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{{ report_papers|length }} 篇候选文献</span>
+        </div>
+
+        {% if report_papers %}
+        <div class="space-y-5">
+            {% for paper in report_papers %}
+            <article class="brief-paper rounded-3xl p-5 md:p-6 transition-all duration-200">
+                <div class="flex flex-col gap-5 lg:flex-row lg:justify-between">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start gap-4">
+                            <span class="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">{{ paper.rank }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">{{ paper.source|upper }}</span>
+                                    {% if paper.imported_document_id %}<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">已导入文献库</span>{% endif %}
+                                    {% if paper.citation_count %}<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">引用 {{ paper.citation_count }}</span>{% endif %}
+                                </div>
+                                {% set paper_external_url = ('https://doi.org/' ~ paper.doi) if paper.doi else (paper.url or paper.pdf_url) %}
+                                {% if paper_external_url %}
+                                <h3 class="text-xl font-black text-slate-900 leading-9">
+                                    <a href="{{ paper_external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-3 hover:text-blue-600 transition-colors">
+                                        <span>{{ paper.title }}</span>
+                                        <i class="fa fa-external-link text-base mt-2 text-slate-400"></i>
+                                    </a>
+                                </h3>
+                                {% else %}
+                                <h3 class="text-xl font-black text-slate-900 leading-9">{{ paper.title }}</h3>
+                                {% endif %}
+                                <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
+                                    <span><i class="fa fa-users mr-2"></i>{{ paper.authors or '未知作者' }}</span>
+                                    <span><i class="fa fa-book mr-2"></i>{{ paper.journal or '未知来源' }}</span>
+                                    <span><i class="fa fa-calendar mr-2"></i>{{ paper.published_at or paper.year or '日期待核实' }}</span>
+                                    {% if paper.doi %}<a href="{{ 'https://doi.org/' ~ paper.doi }}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors"><i class="fa fa-link mr-2"></i>{{ paper.doi }}</a>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% set paper_topics = paper.topic_list() %}
+                        {% if paper.keywords_matched or paper_topics %}
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            {% for keyword in paper.keywords_matched.split(';') if paper.keywords_matched %}
+                                {% if keyword.strip() %}<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold"><i class="fa fa-tag mr-1"></i>{{ keyword.strip() }}</span>{% endif %}
+                            {% endfor %}
+                            {% for topic in paper_topics[:4] %}<span class="px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-semibold">{{ topic }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if paper.abstract %}
+                        <div class="brief-abstract-card mt-4 rounded-2xl p-4 text-slate-700 leading-8 text-sm md:text-[15px]">
+                            <div class="text-xs font-semibold tracking-wide text-slate-400 mb-2">原始摘要</div>
+                            {{ paper.abstract[:1100] }}{% if paper.abstract|length > 1100 %}...{% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-5 flex flex-wrap gap-3">
+                            {% if paper_external_url %}<a href="{{ paper_external_url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
+                            <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>AI总结</button>
+                            <button type="button" class="import-btn brief-import-btn" data-paper-id="{{ paper.id }}" data-doc-id="{{ paper.imported_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if paper.imported_document_id else '一键导入系统' }}</button>
+                        </div>
+                        {% set paper_enhancement_links = build_display_source_links(paper.title, paper.doi, limit=8) %}
+                        {% if paper_enhancement_links %}
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                            <div class="text-xs font-semibold tracking-wide text-slate-500 mb-3">高价值增强检索{% if paper_enhancement_links[0].priority_track %} · 已按方向优先{% endif %}</div>
+                            <div class="flex flex-wrap gap-2">
+                                {% for link in paper_enhancement_links %}
+                                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn text-sm !px-3 !py-2"><i class="fa fa-external-link"></i>{{ link.label }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div data-summary-box-for="{{ paper.id }}" class="mt-5 {% if not paper.ai_summary %}hidden{% endif %}">
+                            <div class="brief-summary-panel rounded-2xl border border-blue-100 p-5">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <strong class="text-blue-700">AI 总结</strong>
+                                    <span data-summary-updated-for="{{ paper.id }}" class="text-xs text-blue-600">{% if paper.ai_summary_updated_at %}{{ paper.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
+                                </div>
+                                <div class="brief-summary-collapsible" data-collapsible-summary>
+                                    <div class="brief-summary-body">
+                                        <div data-summary-content-for="{{ paper.id }}" class="brief-summary-rendered text-sm text-slate-700">{% if paper.ai_summary %}{{ paper.ai_summary|render_ai_summary }}{% endif %}</div>
+                                    </div>
+                                    <div class="brief-summary-fade hidden" data-collapsible-fade></div>
+                                    <button type="button" class="brief-summary-toggle hidden" data-collapsible-toggle>
+                                        <i class="fa fa-angle-down"></i><span>展开全文</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:pl-4 lg:text-right">
+                        <div class="text-xs uppercase tracking-widest text-slate-400 mb-2">Score</div>
+                        <div class="text-4xl font-black text-blue-600">{{ '%.1f'|format(paper.relevance_score or 0) }}</div>
+                        <div class="text-sm text-slate-500 mt-2">综合相关度</div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="brief-panel rounded-3xl text-center py-14 px-6">
+            <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-search"></i></div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">今天还没有可查阅的论文池</h3>
+            <p class="text-slate-600 leading-8 max-w-2xl mx-auto">点击“重新搜索”后，系统会按当前关键词重新检索并生成更像论文情报简报的晨报页面。</p>
+            <button id="run-report-empty-btn" class="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"><i class="fa fa-refresh"></i>立即生成今日晨报</button>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const reportRunBtn = document.getElementById('run-report-btn');
+    const reportRunEmptyBtn = document.getElementById('run-report-empty-btn');
+    const reportRunHeroEmptyBtn = document.getElementById('run-report-hero-empty-btn');
+
+    function showReportToast(message, type = 'info') {
+        const stack = document.getElementById('report-toast-stack');
+        if (!stack) return alert(message);
+        const toast = document.createElement('div');
+        toast.className = `brief-toast ${type}`;
+        toast.innerHTML = `<div class="font-semibold mb-1">${type === 'error' ? '操作失败' : type === 'success' ? '操作成功' : '提示'}</div><div class="text-sm leading-6 opacity-95">${message}</div>`;
+        stack.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-4px)'; toast.style.transition = 'all .2s ease'; setTimeout(() => toast.remove(), 220); }, 3200);
+    }
+
+    async function readJsonResponse(response) {
+        const rawText = await response.text();
+        if (!rawText) return {};
+        try { return JSON.parse(rawText); } catch (error) { return { error: rawText }; }
+    }
+
+    function setButtonLoading(button, html) {
+        if (!button) return;
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = html;
+    }
+
+    function restoreButton(button) {
+        if (!button) return;
+        button.disabled = false;
+        if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+    }
+
+    function apiUrl(path) {
+        return window.withBasePath ? window.withBasePath(path) : path;
+    }
+
+    function setupCollapsibleSummary(root) {
+        if (!root) return;
+        const body = root.querySelector('.brief-summary-body');
+        const fade = root.querySelector('[data-collapsible-fade]');
+        const toggle = root.querySelector('[data-collapsible-toggle]');
+        if (!body || !toggle) return;
+        const collapsedHeight = 260;
+        const needsCollapse = body.scrollHeight > collapsedHeight + 24;
+
+        if (!needsCollapse) {
+            body.style.maxHeight = 'none';
+            fade?.classList.add('hidden');
+            toggle.classList.add('hidden');
+            root.dataset.state = 'expanded';
+            return;
+        }
+
+        if (!root.dataset.state) root.dataset.state = 'collapsed';
+        const expanded = root.dataset.state === 'expanded';
+        body.style.maxHeight = expanded ? `${body.scrollHeight}px` : `${collapsedHeight}px`;
+        fade?.classList.toggle('hidden', expanded);
+        toggle.classList.remove('hidden');
+        const icon = toggle.querySelector('i');
+        const label = toggle.querySelector('span');
+        if (icon) icon.className = expanded ? 'fa fa-angle-up' : 'fa fa-angle-down';
+        if (label) label.textContent = expanded ? '收起' : '展开全文';
+        toggle.onclick = () => {
+            root.dataset.state = root.dataset.state === 'expanded' ? 'collapsed' : 'expanded';
+            setupCollapsibleSummary(root);
+        };
+    }
+
+    function updateSummaryPanels(paperId, summaryHtml, updatedAt = '') {
+        document.querySelectorAll(`[data-summary-content-for="${paperId}"]`).forEach((node) => {
+            node.innerHTML = summaryHtml || '';
+        });
+        document.querySelectorAll(`[data-summary-updated-for="${paperId}"]`).forEach((node) => {
+            node.textContent = updatedAt || '';
+        });
+        document.querySelectorAll(`[data-summary-box-for="${paperId}"]`).forEach((node) => {
+            node.classList.remove('hidden');
+        });
+        requestAnimationFrame(() => {
+            document.querySelectorAll(`[data-summary-box-for="${paperId}"] [data-collapsible-summary]`).forEach((node) => {
+                delete node.dataset.state;
+                setupCollapsibleSummary(node);
+            });
+        });
+    }
+
+    function bumpSummarizedCount() {
+        const counter = document.getElementById('summarized-count');
+        if (!counter || counter.dataset.bumped === '1') return;
+        const current = Number(counter.textContent || '0');
+        counter.textContent = String(Number.isFinite(current) ? current + 1 : 1);
+        counter.dataset.bumped = '1';
+        setTimeout(() => { delete counter.dataset.bumped; }, 600);
+    }
+
+    function bumpImportedCount() {
+        const counter = document.getElementById('report-imported-count');
+        if (!counter || counter.dataset.bumped === '1') return;
+        const current = Number(counter.textContent || '0');
+        const nextValue = String(Number.isFinite(current) ? current + 1 : 1);
+        counter.textContent = nextValue;
+        counter.dataset.bumped = '1';
+        setTimeout(() => { delete counter.dataset.bumped; }, 600);
+    }
+
+    function updateImportButtons(paperId, docId) {
+        document.querySelectorAll(`.import-btn[data-paper-id="${paperId}"]`).forEach((button) => {
+            button.dataset.docId = docId || '';
+            button.innerHTML = '<i class="fa fa-book"></i>查看系统内文献';
+            button.dataset.originalHtml = button.innerHTML;
+        });
+    }
+
+    async function runMorningReport() {
+        const buttons = [reportRunBtn, reportRunEmptyBtn, reportRunHeroEmptyBtn].filter(Boolean);
+        buttons.forEach((btn) => setButtonLoading(btn, '<i class="fa fa-spinner fa-spin"></i> 正在搜索'));
+        try {
+            const response = await fetch(apiUrl('/api/morning-report/run'), { method: 'POST', headers: { 'X-CSRFToken': window.getCSRFToken() } });
+            const data = await readJsonResponse(response);
+            if (!response.ok) throw new Error(data.error || '生成晨报失败');
+            showReportToast(data.message || '今日晨报已更新。', 'success');
+            setTimeout(() => { window.location.href = apiUrl(data.redirect_url || '/morning-report'); }, 450);
+        } catch (error) {
+            showReportToast(error.message || '生成晨报失败，请稍后重试。', 'error');
+        } finally {
+            buttons.forEach(restoreButton);
+        }
+    }
+
+    reportRunBtn?.addEventListener('click', runMorningReport);
+    reportRunEmptyBtn?.addEventListener('click', runMorningReport);
+    reportRunHeroEmptyBtn?.addEventListener('click', runMorningReport);
+    document.querySelectorAll('[data-collapsible-summary]').forEach(setupCollapsibleSummary);
+    window.addEventListener('resize', () => {
+        document.querySelectorAll('[data-collapsible-summary]').forEach(setupCollapsibleSummary);
+    });
+
+    document.querySelectorAll('.summary-btn').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const paperId = button.dataset.paperId;
+            if (!paperId) return;
+            setButtonLoading(button, '<i class="fa fa-spinner fa-spin"></i> 正在总结');
+            try {
+                const response = await fetch(apiUrl(`/api/morning-report/paper/${paperId}/summary`), { method: 'POST', headers: { 'X-CSRFToken': window.getCSRFToken() } });
+                const data = await readJsonResponse(response);
+                if (!response.ok) throw new Error(data.error || 'AI 总结失败');
+                updateSummaryPanels(paperId, data.summary_html || '', data.updated_at || '');
+                bumpSummarizedCount();
+                showReportToast(data.message || 'AI 总结已生成。', 'success');
+            } catch (error) {
+                showReportToast(error.message || 'AI 总结失败', 'error');
+            } finally {
+                restoreButton(button);
+            }
+        });
+    });
+
+    document.querySelectorAll('.import-btn').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const paperId = button.dataset.paperId;
+            if (!paperId) return;
+            if (button.dataset.docId) {
+                window.location.href = apiUrl(`/document/${button.dataset.docId}`);
+                return;
+            }
+            const hadDocId = !!button.dataset.docId;
+            setButtonLoading(button, '<i class="fa fa-spinner fa-spin"></i> 正在处理');
+            try {
+                const response = await fetch(apiUrl(`/api/morning-report/paper/${paperId}/import`), { method: 'POST', headers: { 'X-CSRFToken': window.getCSRFToken() } });
+                const data = await readJsonResponse(response);
+                if (!response.ok) throw new Error(data.error || '导入失败');
+                showReportToast(data.message || '已一键导入系统。', 'success');
+                if (data.doc_id) {
+                    updateImportButtons(paperId, data.doc_id);
+                }
+                if (!hadDocId && data.doc_id) {
+                    bumpImportedCount();
+                }
+            } catch (error) {
+                showReportToast(error.message || '导入失败', 'error');
+            } finally {
+                restoreButton(button);
+            }
+        });
+    });
+</script>
+{% endblock %}

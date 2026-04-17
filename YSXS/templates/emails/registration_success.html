@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color:#1f2937; }
+        .btn { display:inline-block; padding:10px 18px; background:#2563eb; color:#fff; border-radius:6px; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <p>{{ user.username }}，您好：</p>
+    <p>您已成功注册云凇学术账号（{{ user.email }}）。我们已向您的邮箱发送验证邮件，请在 {{ expires_hours }} 小时内完成验证以激活全部功能。</p>
+    <p>验证完成后，您即可登录并开始管理个人文献。</p>
+    <p style="margin:24px 0;">
+        <a class="btn" href="{{ login_link }}" target="_blank" rel="noopener">前往登录</a>
+    </p>
+    <p>若您未发起此操作，可忽略本邮件。</p>
+    <p>——</p>
+    <p>云凇学术 · 个人文献管理系统</p>
+    <p>本邮件由系统自动发送，请勿直接回复。</p>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# 修改nginx配置文件yshome.conf后运行
+sudo nginx -t && sudo systemctl reload nginx
+
+# 修改ysxs-gunicorn
+sudo nano /etc/systemd/system/ysxs-gunicorn.service
+
+#修改 service 内容后
+sudo systemctl daemon-reload && sudo systemctl restart ysxs-gunicorn
+
+#查看日志 
+journalctl -u ysxs-gunicorn -f
+
+#停止/启动
+sudo systemctl stop ysxs-gunicorn
+sudo systemctl start ysxs-gunicorn
+
+# 查看gunicorn运行状态
+sudo systemctl status ysxs-gunicorn
+
+# 查看当前运行情况
+ps aux | grep gunicorn
+
+#杀 gunicorn
+pkill -f gunicorn
+
+# 强制终止所有gunicorn进程（-9是强制终止信号）
+pkill -9 -f gunicorn
+
+#生成迁移（根据模型变动生成脚本，在yshome/路径下执行以下指令）：
+flask --app YSXS/app.py db migrate -m "describe the change"
+--示例--：
+flask --app YSXS/app.py db migrate -m "add remark field for document notes"
+
+#应用迁移（把脚本执行到数据库里）：
+flask --app YSXS/app.py db upgrade

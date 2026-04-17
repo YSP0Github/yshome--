@@ -1,0 +1,860 @@
+{% extends "base.html" %}
+
+{% block title %}AI 管理系统 - 云凇学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-admin-shell { max-width: 1380px; margin: 0 auto; }
+    .ai-admin-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+    }
+    .dark .ai-admin-card {
+        background: rgba(15, 23, 42, 0.88);
+        border-color: rgba(71, 85, 105, 0.7);
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.32);
+    }
+    .ai-kpi-card {
+        background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(14,165,233,0.06));
+        border: 1px solid rgba(59,130,246,0.15);
+    }
+    .dark .ai-kpi-card {
+        background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(8,145,178,0.16));
+        border-color: rgba(96,165,250,0.2);
+    }
+    .ai-chart-shell {
+        position: relative;
+        min-height: 340px;
+        border-radius: 1rem;
+        background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(241,245,249,0.82));
+        border: 1px solid rgba(226,232,240,0.9);
+        overflow: hidden;
+    }
+    .dark .ai-chart-shell {
+        background: linear-gradient(180deg, rgba(15,23,42,0.92), rgba(30,41,59,0.86));
+        border-color: rgba(71,85,105,0.68);
+    }
+    .ai-chart-shell svg {
+        width: 100%;
+        height: 340px;
+        display: block;
+    }
+    .ai-chart-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: .95rem;
+    }
+    .dark .ai-chart-empty { color: #94a3b8; }
+    .ai-chart-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .45rem .9rem;
+        border-radius: 999px;
+        font-size: .85rem;
+        font-weight: 700;
+        border: 1px solid rgba(191,219,254,.72);
+        background: rgba(239,246,255,.9);
+        color: #2563eb;
+        transition: all .18s ease;
+    }
+    .ai-chart-switch:hover {
+        border-color: rgba(59,130,246,.45);
+        color: #1d4ed8;
+    }
+    .ai-chart-switch.is-active {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 10px 24px rgba(37,99,235,.22);
+    }
+    .dark .ai-chart-switch {
+        background: rgba(30,41,59,.9);
+        border-color: rgba(71,85,105,.7);
+        color: #bfdbfe;
+    }
+    .dark .ai-chart-switch.is-active {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        border-color: transparent;
+    }
+    .ai-chart-tooltip {
+        position: absolute;
+        z-index: 2;
+        min-width: 150px;
+        max-width: 240px;
+        pointer-events: none;
+        padding: .7rem .85rem;
+        border-radius: .9rem;
+        background: rgba(15,23,42,.94);
+        color: #f8fafc;
+        box-shadow: 0 16px 34px rgba(15,23,42,.24);
+        border: 1px solid rgba(148,163,184,.18);
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity .15s ease, transform .15s ease;
+    }
+    .dark .ai-chart-tooltip {
+        background: rgba(2,6,23,.96);
+        border-color: rgba(148,163,184,.18);
+    }
+    .ai-chart-tooltip.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .ai-chart-tooltip-title {
+        font-size: .76rem;
+        color: rgba(226,232,240,.88);
+        margin-bottom: .45rem;
+    }
+    .ai-chart-tooltip-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        font-size: .82rem;
+        line-height: 1.55;
+    }
+    .ai-chart-tooltip-label {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: rgba(248,250,252,.96);
+    }
+    .ai-chart-tooltip-dot {
+        width: .55rem;
+        height: .55rem;
+        border-radius: 999px;
+        display: inline-block;
+        flex: 0 0 auto;
+    }
+    .ai-chart-tooltip-value {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        color: #fff;
+    }
+    .ai-chart-point {
+        transition: r .15s ease, transform .15s ease, opacity .15s ease, stroke-width .15s ease;
+        opacity: .92;
+    }
+    .ai-chart-point.is-active {
+        r: 7;
+        opacity: 1;
+        stroke-width: 3;
+        filter: drop-shadow(0 0 6px rgba(59,130,246,.18));
+    }
+    .ai-chart-hover-zone {
+        cursor: crosshair;
+    }
+    .ai-chart-guide {
+        pointer-events: none;
+    }
+    .ai-metric-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: .75rem;
+        align-items: center;
+        padding: .6rem 0;
+        border-bottom: 1px dashed rgba(148,163,184,.28);
+    }
+    .dark .ai-metric-row { border-bottom-color: rgba(100,116,139,.38); }
+    .ai-metric-row:last-child { border-bottom: 0; }
+    .ai-rank-bar {
+        height: .5rem;
+        border-radius: 999px;
+        background: rgba(226,232,240,.9);
+        overflow: hidden;
+    }
+    .dark .ai-rank-bar { background: rgba(51,65,85,.95); }
+    .ai-rank-bar > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #2563eb, #06b6d4);
+    }
+    .ai-badge-soft {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 600;
+        background: rgba(59,130,246,.10);
+        color: #1d4ed8;
+    }
+    .dark .ai-badge-soft {
+        background: rgba(59,130,246,.18);
+        color: #bfdbfe;
+    }
+    .ai-table-wrap { overflow-x: auto; }
+    .ai-table-scroll-y {
+        max-height: 34rem;
+        overflow-y: auto;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148,163,184,.7) transparent;
+        border-radius: 1rem;
+    }
+    .ai-table-scroll-y::-webkit-scrollbar { width: 8px; height: 8px; }
+    .ai-table-scroll-y::-webkit-scrollbar-thumb {
+        background: rgba(148,163,184,.65);
+        border-radius: 999px;
+    }
+    .ai-table-scroll-y::-webkit-scrollbar-track { background: transparent; }
+    .ai-table { min-width: 100%; border-collapse: collapse; }
+    .ai-table th, .ai-table td {
+        padding: .8rem .75rem;
+        border-bottom: 1px solid rgba(226,232,240,.9);
+        text-align: left;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .dark .ai-table th, .dark .ai-table td { border-bottom-color: rgba(71,85,105,.6); }
+    .ai-table th {
+        font-size: .78rem;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+        position: sticky;
+        top: 0;
+        background: rgba(255,255,255,.98);
+        z-index: 1;
+    }
+    .dark .ai-table th { color: #94a3b8; }
+    .dark .ai-table th { background: rgba(15,23,42,.98); }
+    .ai-table td { color: #0f172a; }
+    .dark .ai-table td { color: #e2e8f0; }
+    .ai-config-input,
+    .ai-config-textarea,
+    .ai-config-select {
+        width: 100%;
+        border-radius: 1rem;
+        border: 1px solid rgba(203,213,225,.95);
+        background: rgba(255,255,255,.96);
+        color: #0f172a;
+        padding: .9rem 1rem;
+        outline: none;
+        transition: .18s ease;
+    }
+    .dark .ai-config-input,
+    .dark .ai-config-textarea,
+    .dark .ai-config-select {
+        background: rgba(15,23,42,.92);
+        color: #e2e8f0;
+        border-color: rgba(71,85,105,.75);
+    }
+    .ai-config-input:focus,
+    .ai-config-textarea:focus,
+    .ai-config-select:focus {
+        border-color: rgba(37,99,235,.72);
+        box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set summary = dashboard.summary %}
+{% set trend = dashboard.trend %}
+{% set top_users = dashboard.top_users %}
+{% set scene_ranking = dashboard.scene_ranking %}
+{% set model_ranking = dashboard.model_ranking %}
+{% set usage_sources = dashboard.usage_sources %}
+{% set recent_logs = dashboard.recent_logs %}
+{% set max_user_tokens = top_users[0].total_tokens if top_users else 1 %}
+{% set max_scene_tokens = scene_ranking[0].total_tokens if scene_ranking else 1 %}
+
+<div class="ai-admin-shell px-4 py-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+        <div>
+            <div class="text-sm text-slate-500 dark:text-slate-400 mb-2">超级管理员 / 系统控制台</div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">AI 管理系统</h1>
+            <p class="text-slate-600 dark:text-slate-300 mt-2">
+                统一查看 AI 配置、累计 Token、用户使用排行、调用趋势与最近调用记录。
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <span class="ai-badge-soft"><i class="fa fa-robot"></i>{{ 'AI 可用' if effective_ai else 'AI 未就绪' }}</span>
+            <span class="ai-badge-soft"><i class="fa fa-database"></i>总调用 {{ summary.total_calls }}</span>
+            <a href="{{ url_for('index') }}" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium">
+                <i class="fa fa-arrow-left mr-2"></i>返回首页
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-6">
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">累计 Token</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_tokens|compact_number }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Prompt {{ summary.total_prompt_tokens|compact_number }} / Completion {{ summary.total_completion_tokens|compact_number }}</div>
+        </div>
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">今日 Token</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_tokens|compact_number }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">按北京时间自然日统计</div>
+        </div>
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">累计调用</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_calls }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">系统内所有 AI 请求</div>
+        </div>
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">今日调用</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_calls }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">今日活跃用户 {{ summary.today_active_users }}</div>
+        </div>
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">累计活跃用户</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_active_users }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">发生过 AI 调用的用户数</div>
+        </div>
+        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+            <div class="text-sm text-slate-500 dark:text-slate-400">平均单次消耗</div>
+            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.avg_tokens_per_call }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Token / 调用</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        <section class="xl:col-span-2 ai-admin-card rounded-3xl p-6 md:p-7">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-5">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">调用趋势</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">最近 14 天 Token 与请求次数变化</p>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <button type="button" class="ai-chart-switch is-active" data-chart-mode="total">
+                        <i class="fa fa-circle text-[.7rem]"></i>总 Token
+                    </button>
+                    <button type="button" class="ai-chart-switch" data-chart-mode="prompt">
+                        <i class="fa fa-circle text-[.7rem]"></i>Prompt
+                    </button>
+                    <button type="button" class="ai-chart-switch" data-chart-mode="completion">
+                        <i class="fa fa-circle text-[.7rem]"></i>Completion
+                    </button>
+                    <button type="button" class="ai-chart-switch" data-chart-mode="calls">
+                        <i class="fa fa-circle text-[.7rem]"></i>调用次数
+                    </button>
+                </div>
+            </div>
+            <div>
+                <div id="ai-trend-chart-title" class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">总 Token 折线图</div>
+                <div id="ai-trend-chart" class="ai-chart-shell"></div>
+            </div>
+        </section>
+
+        <aside class="space-y-6">
+            <section class="ai-admin-card rounded-3xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">当前生效配置</h2>
+                    <span class="ai-badge-soft">{{ effective_ai.model if effective_ai else '未配置' }}</span>
+                </div>
+                <div class="space-y-0 text-sm">
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">AI 状态</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-100">{{ '可用' if effective_ai else '不可用' }}</div>
+                    </div>
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">Base URL</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-100 break-all">{{ effective_ai.base_url if effective_ai else '未解析到' }}</div>
+                    </div>
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">当前模型</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.model if effective_ai else '未解析到' }}</div>
+                    </div>
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">Wire API</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.wire_api if effective_ai else '未解析到' }}</div>
+                    </div>
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">ADS Token</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ads_token_masked }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ai-admin-card rounded-3xl p-6">
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Usage 统计说明</h2>
+                <div class="space-y-3">
+                    {% for item in usage_sources %}
+                    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-3">
+                        <div>
+                            <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.call_count }} 次调用</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-base font-semibold text-slate-900 dark:text-white">{{ item.total_tokens|compact_number }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Token</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-sm text-slate-500 dark:text-slate-400">暂无 Token 统计记录，后续 AI 调用将自动累积。</div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-6">
+                    某些中转站不会返回 usage 字段，系统会按请求/响应字符数估算 Token，用于看趋势与排行。
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        <section class="ai-admin-card rounded-3xl p-6 xl:col-span-2">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">用户 Token 排行榜</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">按累计 Token 从高到低排序</p>
+                </div>
+                <span class="ai-badge-soft"><i class="fa fa-trophy"></i>TOP {{ top_users|length }}</span>
+            </div>
+            <div class="space-y-4">
+                {% for item in top_users %}
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <span class="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold inline-flex items-center justify-center">{{ item.rank }}</span>
+                                <div class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ item.username }}</div>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ item.custom_id }}</span>
+                            </div>
+                            <div class="text-sm text-slate-500 dark:text-slate-400 mt-2">最近调用：{{ item.last_used_at or '暂无' }}</div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <div class="text-slate-500 dark:text-slate-400">累计 Token</div>
+                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.total_tokens|compact_number }}</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-500 dark:text-slate-400">调用次数</div>
+                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.call_count }}</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-500 dark:text-slate-400">均值</div>
+                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.avg_tokens_per_call }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_user_tokens or 1)) * 100) | round(2) }}%"></span></div>
+                </div>
+                {% else %}
+                <div class="text-sm text-slate-500 dark:text-slate-400">暂无用户使用数据。</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="ai-admin-card rounded-3xl p-6">
+            <div class="mb-5">
+                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">功能场景排行</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">看看 Token 主要花在什么地方</p>
+            </div>
+            <div class="space-y-4">
+                {% for item in scene_ranking %}
+                <div>
+                    <div class="flex items-center justify-between gap-3 text-sm mb-2">
+                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
+                        <div class="text-slate-500 dark:text-slate-400">{{ item.total_tokens|compact_number }} Token · {{ item.call_count }} 次</div>
+                    </div>
+                    <div class="ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_scene_tokens or 1)) * 100) | round(2) }}%"></span></div>
+                </div>
+                {% else %}
+                <div class="text-sm text-slate-500 dark:text-slate-400">暂无功能使用排行。</div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:items-start mb-6">
+        <section class="ai-admin-card rounded-3xl p-6 self-start">
+            <div class="mb-5">
+                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">模型 / 接口使用概览</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">不同模型与接口方式的消耗情况</p>
+            </div>
+            <div class="ai-table-wrap">
+                <table class="ai-table">
+                    <thead>
+                        <tr>
+                            <th>模型</th>
+                            <th>接口</th>
+                            <th>Token</th>
+                            <th>调用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in model_ranking %}
+                        <tr>
+                            <td>{{ item.model }}</td>
+                            <td>{{ item.wire_api }}</td>
+                            <td>{{ item.total_tokens|compact_number }}</td>
+                            <td>{{ item.call_count }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无模型使用数据。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="ai-admin-card rounded-3xl p-6 self-start">
+            <div class="mb-5">
+                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">最近调用记录</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">面板最多展示约 8 行高度，继续增加时可在卡片内滚动查看更多记录</p>
+            </div>
+            <div class="ai-table-wrap ai-table-scroll-y">
+                <table class="ai-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>用户</th>
+                            <th>场景</th>
+                            <th>Token</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_logs %}
+                        <tr>
+                            <td>{{ item.created_at }}</td>
+                            <td>{{ item.username }}</td>
+                            <td>
+                                <div>{{ item.scene_label }}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ item.model }} · {{ item.wire_api }} · {{ item.usage_source }}</div>
+                            </td>
+                            <td>{{ item.total_tokens|compact_number }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无调用记录。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="ai-admin-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">AI 配置中心</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">保留原配置能力，便于随时切换模型、中转地址与 NASA ADS Token。</p>
+            </div>
+            <span class="ai-badge-soft"><i class="fa fa-shield"></i>仅超级管理员可修改</span>
+        </div>
+
+        <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="xl:col-span-2 space-y-6">
+                <section>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">OpenAI / 中转站配置</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Base URL</label>
+                            <input type="text" name="base_url" value="{{ form_data.base_url }}" class="ai-config-input" placeholder="如 https://api.openai.com/v1 或你的中转站地址">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">模型名</label>
+                            <input type="text" name="model" value="{{ form_data.model }}" class="ai-config-input" placeholder="如 gpt-5.4">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Wire API</label>
+                            <select name="wire_api" class="ai-config-select">
+                                <option value="" {% if not form_data.wire_api %}selected{% endif %}>留空（自动回退）</option>
+                                <option value="responses" {% if form_data.wire_api == 'responses' %}selected{% endif %}>responses</option>
+                                <option value="chat_completions" {% if form_data.wire_api == 'chat_completions' %}selected{% endif %}>chat_completions</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">API Key</label>
+                            <input type="password" name="api_key" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
+                            <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
+                                <span>当前已保存：{{ saved_api_key_masked }}</span>
+                                <label class="inline-flex items-center gap-2">
+                                    <input type="checkbox" name="clear_api_key" class="rounded border-slate-300 dark:border-slate-600">
+                                    <span>清除已保存 API Key</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">NASA ADS 配置</h3>
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">NASA ADS API Token</label>
+                        <input type="password" name="nasa_ads_api_token" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
+                        <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
+                            <span>当前已保存：{{ saved_ads_token_masked }}</span>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="clear_nasa_ads_api_token" class="rounded border-slate-300 dark:border-slate-600">
+                                <span>清除 ADS Token</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="space-y-6">
+                <section>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">配置备注</h3>
+                    <textarea name="notes" rows="9" class="ai-config-textarea" placeholder="记录当前账号用途、额度策略、模型切换原因等">{{ form_data.notes }}</textarea>
+                </section>
+                <section class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-4 text-sm text-slate-600 dark:text-slate-300 leading-7">
+                    <div class="font-semibold text-slate-800 dark:text-slate-100 mb-2">说明</div>
+                    <ul class="space-y-1 list-disc pl-5">
+                        <li>本页保存的是站内 AI 覆盖配置，优先级高于环境变量。</li>
+                        <li>API Key / ADS Token 留空不会覆盖旧值，勾选清除才会删除。</li>
+                        <li>若中转站不返回 usage，Token 会按字符数估算，仅用于趋势参考。</li>
+                        <li>配置文件保存在 instance 目录，仅本地部署环境可见。</li>
+                    </ul>
+                </section>
+                {% if saved_config.notes %}
+                <section class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">已保存备注</div>
+                    <div class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line leading-7">{{ saved_config.notes }}</div>
+                </section>
+                {% endif %}
+                <button type="submit" class="w-full px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
+                    <i class="fa fa-save mr-2"></i>保存 AI 管理系统配置
+                </button>
+            </aside>
+        </form>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function formatChartValue(value) {
+        const num = Number(value || 0);
+        const absNum = Math.abs(num);
+        if (absNum >= 1_000_000_000) {
+            return `${(num / 1_000_000_000).toFixed(3)}B`;
+        }
+        if (absNum >= 1_000_000) {
+            return `${(num / 1_000_000).toFixed(3)}M`;
+        }
+        if (absNum >= 10_000) {
+            return `${(num / 1_000).toFixed(3)}k`;
+        }
+        if (Number.isInteger(num)) return `${num}`;
+        return `${num}`;
+    }
+
+    function renderLineChart(targetId, config) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+        const labels = Array.isArray(config.labels) ? config.labels : [];
+        const series = Array.isArray(config.series) ? config.series : [];
+        const maxValue = Math.max(0, ...series.flatMap(item => Array.isArray(item.data) ? item.data : []));
+        if (!labels.length || !series.length || maxValue <= 0) {
+            container.innerHTML = '<div class="ai-chart-empty">暂无可视化数据</div>';
+            return;
+        }
+
+        const width = 860;
+        const height = 340;
+        const padding = { top: 34, right: 24, bottom: 52, left: 56 };
+        const innerWidth = width - padding.left - padding.right;
+        const innerHeight = height - padding.top - padding.bottom;
+        const stepX = labels.length > 1 ? innerWidth / (labels.length - 1) : innerWidth;
+        const ticks = 5;
+        const yMax = Math.max(maxValue, 1);
+
+        const gridLines = [];
+        const yLabels = [];
+        for (let i = 0; i <= ticks; i += 1) {
+            const y = padding.top + innerHeight - (innerHeight / ticks) * i;
+            const value = Math.round((yMax / ticks) * i);
+            gridLines.push(`<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(148,163,184,0.22)" stroke-dasharray="4 4" />`);
+            yLabels.push(`<text x="${padding.left - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" opacity="0.78">${formatChartValue(value)}</text>`);
+        }
+
+        const xLabels = labels.map((label, index) => {
+            const x = padding.left + stepX * index;
+            return `<text x="${x}" y="${height - 14}" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75">${label}</text>`;
+        }).join('');
+
+        const legend = series.map((item, index) => {
+            const x = padding.left + index * 170;
+            return `<g transform="translate(${x}, ${padding.top - 12})"><circle cx="0" cy="0" r="5" fill="${item.color}" /><text x="12" y="4" font-size="12" fill="currentColor" opacity="0.88">${item.name}</text></g>`;
+        }).join('');
+
+        const pointsMatrix = series.map((item, seriesIndex) => (
+            item.data.map((value, index) => {
+                const x = padding.left + stepX * index;
+                const y = padding.top + innerHeight - ((value / yMax) * innerHeight);
+                return { x, y, value, index, seriesIndex, color: item.color, name: item.name };
+            })
+        ));
+
+        const lines = pointsMatrix.map((points, seriesIndex) => {
+            const item = series[seriesIndex];
+            const polyline = points.map((point) => `${point.x},${point.y}`).join(' ');
+            const circles = points.map((point) => `
+                <circle
+                    class="ai-chart-point"
+                    data-series-index="${seriesIndex}"
+                    data-point-index="${point.index}"
+                    cx="${point.x}"
+                    cy="${point.y}"
+                    r="4.5"
+                    fill="${item.color}"
+                    stroke="rgba(255,255,255,.95)"
+                    stroke-width="2"
+                ></circle>
+            `).join('');
+            return `<polyline fill="none" stroke="${item.color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${polyline}" />${circles}`;
+        }).join('');
+
+        const hoverZones = labels.map((label, index) => {
+            const currentX = padding.left + stepX * index;
+            const previousX = index === 0 ? padding.left : padding.left + stepX * (index - 1);
+            const nextX = index === labels.length - 1 ? width - padding.right : padding.left + stepX * (index + 1);
+            const zoneX = index === 0 ? padding.left : (previousX + currentX) / 2;
+            const zoneWidth = index === labels.length - 1 ? (width - padding.right - zoneX) : ((currentX + nextX) / 2 - zoneX);
+            return `<rect class="ai-chart-hover-zone" data-hover-index="${index}" data-hover-x="${currentX}" x="${zoneX}" y="${padding.top}" width="${Math.max(zoneWidth, 18)}" height="${innerHeight}" fill="transparent"></rect>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="ai-chart-tooltip"></div>
+            <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" class="text-slate-500 dark:text-slate-300">
+                <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+                ${gridLines.join('')}
+                <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="rgba(148,163,184,0.35)" />
+                <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="rgba(148,163,184,0.35)" />
+                <line class="ai-chart-guide" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="rgba(59,130,246,.28)" stroke-width="1.5" stroke-dasharray="5 5" opacity="0"></line>
+                ${yLabels.join('')}
+                ${xLabels}
+                ${lines}
+                ${legend}
+                ${hoverZones}
+            </svg>
+        `;
+
+        const tooltip = container.querySelector('.ai-chart-tooltip');
+        const guide = container.querySelector('.ai-chart-guide');
+        const hoverNodes = container.querySelectorAll('.ai-chart-hover-zone');
+        const pointNodes = container.querySelectorAll('.ai-chart-point');
+
+        function clearActiveState() {
+            pointNodes.forEach((node) => node.classList.remove('is-active'));
+            if (guide) guide.setAttribute('opacity', '0');
+            if (tooltip) tooltip.classList.remove('is-visible');
+        }
+
+        function activateIndex(index, event) {
+            const safeIndex = Number(index);
+            if (!Number.isFinite(safeIndex)) return;
+            pointNodes.forEach((node) => {
+                node.classList.toggle('is-active', Number(node.dataset.pointIndex) === safeIndex);
+            });
+
+            const currentX = padding.left + stepX * safeIndex;
+            if (guide) {
+                guide.setAttribute('x1', currentX);
+                guide.setAttribute('x2', currentX);
+                guide.setAttribute('opacity', '1');
+            }
+
+            if (!tooltip) return;
+            const rows = series.map((item, seriesIndex) => `
+                <div class="ai-chart-tooltip-row">
+                    <span class="ai-chart-tooltip-label">
+                        <span class="ai-chart-tooltip-dot" style="background:${item.color}"></span>${item.name}
+                    </span>
+                    <span class="ai-chart-tooltip-value">${formatChartValue(item.data[safeIndex] ?? 0)}</span>
+                </div>
+            `).join('');
+            tooltip.innerHTML = `
+                <div class="ai-chart-tooltip-title">${labels[safeIndex] || ''}</div>
+                ${rows}
+            `;
+            tooltip.classList.add('is-visible');
+
+            const rect = container.getBoundingClientRect();
+            const tooltipWidth = Math.min(240, tooltip.offsetWidth || 180);
+            const tooltipHeight = tooltip.offsetHeight || 90;
+            let left = (event?.clientX || rect.left + rect.width / 2) - rect.left + 14;
+            let top = (event?.clientY || rect.top + 24) - rect.top - tooltipHeight - 12;
+            if (left + tooltipWidth > rect.width - 8) {
+                left = rect.width - tooltipWidth - 8;
+            }
+            if (left < 8) left = 8;
+            if (top < 8) {
+                top = Math.min(rect.height - tooltipHeight - 8, 12);
+            }
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        }
+
+        hoverNodes.forEach((node) => {
+            node.addEventListener('mouseenter', (event) => activateIndex(node.dataset.hoverIndex, event));
+            node.addEventListener('mousemove', (event) => activateIndex(node.dataset.hoverIndex, event));
+        });
+        container.addEventListener('mouseleave', clearActiveState);
+        activateIndex(labels.length - 1, null);
+    }
+
+    const trend = {{ dashboard.trend|default({}, true)|tojson }};
+    const trendChartConfigs = {
+        total: {
+            title: '总 Token 折线图',
+            series: [
+                { name: '总 Token', color: '#2563eb', data: trend.tokens || [] }
+            ]
+        },
+        prompt: {
+            title: 'Prompt Token 折线图',
+            series: [
+                { name: 'Prompt', color: '#06b6d4', data: trend.prompt_tokens || [] }
+            ]
+        },
+        completion: {
+            title: 'Completion Token 折线图',
+            series: [
+                { name: 'Completion', color: '#8b5cf6', data: trend.completion_tokens || [] }
+            ]
+        },
+        calls: {
+            title: '调用次数折线图',
+            series: [
+                { name: '调用次数', color: '#10b981', data: trend.calls || [] }
+            ]
+        }
+    };
+
+    const trendChartTitle = document.getElementById('ai-trend-chart-title');
+    const trendSwitchButtons = document.querySelectorAll('[data-chart-mode]');
+
+    function renderTrendChart(mode) {
+        const config = trendChartConfigs[mode] || trendChartConfigs.total;
+        if (trendChartTitle) {
+            trendChartTitle.textContent = config.title;
+        }
+        renderLineChart('ai-trend-chart', {
+            labels: trend.labels,
+            series: config.series
+        });
+        trendSwitchButtons.forEach((button) => {
+            button.classList.toggle('is-active', button.dataset.chartMode === mode);
+        });
+    }
+
+    trendSwitchButtons.forEach((button) => {
+        button.addEventListener('click', () => renderTrendChart(button.dataset.chartMode || 'total'));
+    });
+
+    renderTrendChart('total');
+})();
+</script>
+{% endblock %}

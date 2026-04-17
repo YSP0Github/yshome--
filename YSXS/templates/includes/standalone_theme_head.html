@@ -1,0 +1,189 @@
+<style>
+    :root {
+        --standalone-page-bg: #f8fafc;
+        --standalone-page-bg-soft: #f1f5f9;
+        --standalone-surface: #ffffff;
+        --standalone-surface-muted: #e2e8f0;
+        --standalone-border: #e2e8f0;
+        --standalone-text: #1e293b;
+        --standalone-heading: #0f172a;
+        --standalone-text-muted: #64748b;
+        --standalone-text-soft: #94a3b8;
+        --standalone-input-bg: #ffffff;
+        --standalone-input-text: #0f172a;
+        --standalone-hover-bg: #f8fafc;
+        --standalone-shadow: rgba(15, 23, 42, 0.08);
+    }
+
+    body.light-theme,
+    body.auto-theme.auto-light {
+        color-scheme: light;
+    }
+
+    body.dark-theme,
+    body.auto-theme.auto-dark {
+        --standalone-page-bg: #0f172a;
+        --standalone-page-bg-soft: #172033;
+        --standalone-surface: #172033;
+        --standalone-surface-muted: #243244;
+        --standalone-border: #334155;
+        --standalone-text: #e2e8f0;
+        --standalone-heading: #f8fafc;
+        --standalone-text-muted: #cbd5e1;
+        --standalone-text-soft: #94a3b8;
+        --standalone-input-bg: #111827;
+        --standalone-input-text: #e5eefb;
+        --standalone-hover-bg: #243244;
+        --standalone-shadow: rgba(2, 6, 23, 0.32);
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: var(--standalone-page-bg) !important;
+        color: var(--standalone-text) !important;
+        transition: background-color 0.18s ease, color 0.18s ease;
+    }
+
+    .bg-white,
+    .bg-white\/90 {
+        background-color: var(--standalone-surface) !important;
+    }
+
+    .bg-slate-50,
+    .bg-slate-100,
+    .bg-gray-100,
+    .bg-gray-200,
+    .bg-gray-300 {
+        background-color: var(--standalone-page-bg-soft) !important;
+    }
+
+    .text-slate-800,
+    .text-slate-700,
+    .text-gray-800 {
+        color: var(--standalone-heading) !important;
+    }
+
+    .text-slate-600,
+    .text-slate-500,
+    .text-gray-700,
+    .text-gray-600 {
+        color: var(--standalone-text-muted) !important;
+    }
+
+    .text-slate-400,
+    .text-gray-500 {
+        color: var(--standalone-text-soft) !important;
+    }
+
+    .border-slate-100,
+    .border-slate-200,
+    .border-slate-300,
+    .border-gray-200,
+    .border-gray-300 {
+        border-color: var(--standalone-border) !important;
+    }
+
+    .hover\:bg-slate-50:hover,
+    .hover\:bg-slate-100:hover,
+    .hover\:bg-gray-300:hover,
+    .hover\:bg-white:hover {
+        background-color: var(--standalone-hover-bg) !important;
+    }
+
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl {
+        box-shadow: 0 18px 38px var(--standalone-shadow) !important;
+    }
+
+    input,
+    textarea,
+    select {
+        background-color: var(--standalone-input-bg) !important;
+        color: var(--standalone-input-text) !important;
+        border-color: var(--standalone-border) !important;
+    }
+</style>
+<script>
+    (function () {
+        var serverTheme = {{ ((session.get('settings') or {}).get('theme', 'light')) | tojson }};
+        var validThemes = { light: true, dark: true, auto: true };
+        var mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+        function normalizeTheme(theme) {
+            return validThemes[theme] ? theme : null;
+        }
+
+        function resolveTheme(theme) {
+            if (theme === 'auto') {
+                return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+            }
+            return theme === 'dark' ? 'dark' : 'light';
+        }
+
+        function syncDocumentTheme() {
+            var resolvedTheme = resolveTheme(window.__YSXS_THEME_PREFERENCE__ || 'light');
+            window.__YSXS_THEME__ = resolvedTheme;
+            if (document.documentElement) {
+                document.documentElement.setAttribute('data-theme', resolvedTheme);
+            }
+        }
+
+        var storedTheme = null;
+        try {
+            storedTheme = normalizeTheme(window.localStorage ? window.localStorage.getItem('ysxs-theme') : null);
+        } catch (error) {
+            storedTheme = null;
+        }
+
+        window.__YSXS_SERVER_THEME__ = normalizeTheme(serverTheme) || 'light';
+        window.__YSXS_THEME_PREFERENCE__ = storedTheme || window.__YSXS_SERVER_THEME__;
+        window.__applyYSXSThemeToBody = function (target) {
+            if (!target) {
+                return;
+            }
+            var preference = window.__YSXS_THEME_PREFERENCE__ || 'light';
+            var resolvedTheme = resolveTheme(preference);
+            target.classList.remove('light-theme', 'dark-theme', 'auto-theme', 'auto-light', 'auto-dark');
+            if (preference === 'auto') {
+                target.classList.add('auto-theme');
+                target.classList.add(resolvedTheme === 'dark' ? 'auto-dark' : 'auto-light');
+            } else {
+                target.classList.add(resolvedTheme === 'dark' ? 'dark-theme' : 'light-theme');
+            }
+            syncDocumentTheme();
+        };
+        window.setYSXSTheme = function (theme, options) {
+            var nextTheme = normalizeTheme(theme) || 'light';
+            window.__YSXS_THEME_PREFERENCE__ = nextTheme;
+            if (options && options.persist) {
+                try {
+                    window.localStorage.setItem('ysxs-theme', nextTheme);
+                } catch (error) {
+                    console.warn('Unable to persist theme preference.', error);
+                }
+            }
+            if (document.body) {
+                window.__applyYSXSThemeToBody(document.body);
+            } else {
+                syncDocumentTheme();
+            }
+        };
+
+        syncDocumentTheme();
+
+        if (mediaQuery) {
+            var handleSystemThemeChange = function () {
+                if ((window.__YSXS_THEME_PREFERENCE__ || 'light') === 'auto') {
+                    window.setYSXSTheme('auto');
+                }
+            };
+            if (typeof mediaQuery.addEventListener === 'function') {
+                mediaQuery.addEventListener('change', handleSystemThemeChange);
+            } else if (typeof mediaQuery.addListener === 'function') {
+                mediaQuery.addListener(handleSystemThemeChange);
+            }
+        }
+    })();
+</script>

@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+
+{% block title %}运行监控 - 云松学术{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 0.75rem;
+        background: linear-gradient(135deg, #fff, #f8fafc);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+    }
+    .badge-online {
+        background-color: rgba(34, 197, 94, 0.15);
+        color: #16a34a;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+    }
+    .badge-offline {
+        background-color: rgba(148, 163, 184, 0.2);
+        color: #475569;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+    }
+    .table-scroll {
+        max-height: 26rem;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">运行监控中心</h1>
+            <p class="text-sm text-slate-500 mt-1">实时掌握网站在线情况、流量消耗与用户资源占用</p>
+            <p class="text-xs text-slate-400 mt-1" id="metrics-timestamp">
+                数据更新时间：{{ summary.timestamp_display or '--' }} · 采样窗口 {{ summary.sample_window_seconds }} 秒
+            </p>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-slate-500">自动刷新：10 秒</span>
+            <button id="refreshButton" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">
+                <i class="fa fa-refresh mr-2"></i>立即刷新
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+        <div class="stat-card">
+            <p class="text-sm text-slate-500">总用户数</p>
+            <div class="flex items-end justify-between mt-2">
+                <h3 class="text-3xl font-semibold text-slate-800" id="stat-total-users">{{ summary.total_users }}</h3>
+                <span class="text-xs text-slate-400">账号数量</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-slate-500">当前在线</p>
+            <div class="flex items-end justify-between mt-2">
+                <h3 class="text-3xl font-semibold text-emerald-600" id="stat-online-users">{{ summary.online_users }}</h3>
+                <span class="text-xs text-slate-400">近 {{ summary.sample_window_seconds }} 秒活跃</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-slate-500">总数据量</p>
+            <div class="flex items-end justify-between mt-2">
+                <h3 class="text-3xl font-semibold text-slate-800" id="stat-total-data">
+                    {{ summary.total_data_bytes|human_bytes }}
+                </h3>
+                <span class="text-xs text-slate-400">含所有文档</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-slate-500">实时带宽</p>
+            <div class="flex items-end justify-between mt-2">
+                <h3 class="text-3xl font-semibold text-indigo-600" id="stat-current-bandwidth">
+                    {{ summary.current_bandwidth_bps|human_bandwidth }}
+                </h3>
+                <span class="text-xs text-slate-400">采样 {{ summary.sample_window_seconds }} 秒</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="stat-card">
+            <p class="text-xs uppercase tracking-wide text-slate-400">带宽上限</p>
+            <h4 class="text-2xl font-semibold text-slate-800 mt-2" id="stat-bandwidth-limit">
+                {{ summary.bandwidth_limit_bps|human_bandwidth }}
+            </h4>
+            <p class="text-xs text-slate-500 mt-1">配置于环境变量 BANDWIDTH_LIMIT_BYTES_PER_SEC</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs uppercase tracking-wide text-slate-400">人均数据 / 实时带宽</p>
+            <div class="flex flex-col gap-2 mt-2">
+                <div>
+                    <p class="text-sm text-slate-500">人均存储</p>
+                    <p class="text-xl font-semibold text-slate-800" id="stat-avg-data">
+                        {{ summary.avg_data_per_user_bytes|human_bytes }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">人均实时带宽（在线用户）</p>
+                    <p class="text-xl font-semibold text-slate-800" id="stat-avg-bandwidth">
+                        {{ summary.avg_bandwidth_per_online_user_bps|human_bandwidth }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-800">站点实时带宽走势</h3>
+                <span class="text-xs text-slate-400">最近 {{ ((runtime_payload.chart_bucket_seconds or 0) * (runtime_payload.chart_bucket_count or 0)) // 60 }} 分钟</span>
+            </div>
+            <div class="h-64">
+                <canvas id="siteBandwidthChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-800">实时带宽 Top 用户</h3>
+                <span class="text-xs text-slate-400">按 {{ summary.sample_window_seconds }} 秒采集</span>
+            </div>
+            <div class="h-64">
+                <canvas id="userBandwidthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-800">历史吞吐趋势</h3>
+                <p class="text-xs text-slate-500">查看最近一段时间的总带宽和在线情况</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="historyRangeSelect" class="text-sm text-slate-500">时间范围</label>
+                <select id="historyRangeSelect" class="border border-slate-200 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring focus:ring-blue-200">
+                    <option value="1">近 1 小时</option>
+                    <option value="6">近 6 小时</option>
+                    <option value="12">近 12 小时</option>
+                    <option value="24" selected>近 24 小时</option>
+                    <option value="72">近 72 小时</option>
+                </select>
+            </div>
+        </div>
+        <div class="h-72">
+            <canvas id="historyBandwidthChart"></canvas>
+        </div>
+        <p id="historyEmptyText" class="text-sm text-slate-400 mt-4 hidden">暂无历史数据，请稍后再试。</p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 xl:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-800">用户资源及实时带宽</h3>
+                    <p class="text-xs text-slate-500" id="user-count-label">
+                        显示前 {{ runtime_payload.per_user_usage|length if runtime_payload.per_user_usage|length < 20 else 20 }} / {{ summary.per_user_count }} 名用户
+                    </p>
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                        <tr>
+                            <th class="px-3 py-2 text-left">#</th>
+                            <th class="px-3 py-2 text-left">用户</th>
+                            <th class="px-3 py-2 text-left">文档</th>
+                            <th class="px-3 py-2 text-left">数据占用</th>
+                            <th class="px-3 py-2 text-left">实时带宽</th>
+                            <th class="px-3 py-2 text-left">最后活跃</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="user-usage-table-body">
+                        {% for user in runtime_payload.per_user_usage[:20] %}
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-3 py-2 text-slate-400">{{ loop.index }}</td>
+                            <td class="px-3 py-2">
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-slate-800">{{ user.username }}</span>
+                                    <span class="text-xs text-slate-500">{{ user.role }}</span>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 text-slate-700">{{ user.doc_count }}</td>
+                            <td class="px-3 py-2 text-slate-700">{{ user.storage_bytes|human_bytes }}</td>
+                            <td class="px-3 py-2 text-slate-700">
+                                {% if user.is_online %}
+                                <span class="badge-online">{{ user.bandwidth_bps|human_bandwidth }}</span>
+                                {% else %}
+                                <span class="badge-offline">{{ user.bandwidth_bps|human_bandwidth }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2 text-slate-500">{{ user.last_seen_display or '—' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-3 py-6 text-center text-slate-400">暂无数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-800">在线用户（最多 8 位）</h3>
+                <span class="text-xs text-emerald-600" id="online-users-count">{{ summary.online_users }} 在线</span>
+            </div>
+            <div class="space-y-4 max-h-96 overflow-y-auto" id="online-users-list">
+                {% if runtime_payload.online_users_detail %}
+                    {% for user in runtime_payload.online_users_detail[:8] %}
+                    <div class="flex items-center justify-between border border-slate-100 rounded-lg p-3">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">{{ user.username }}</p>
+                            <p class="text-xs text-slate-500">{{ user.last_seen_display or '刚刚' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-emerald-600">{{ user.bandwidth_bps|human_bandwidth }}</p>
+                            <p class="text-xs text-slate-400">{{ user.storage_bytes|human_bytes }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-sm text-slate-400 text-center py-8">暂无在线用户</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+    const runtimeEndpointRaw = "{{ url_for('admin.runtime_monitor_data') }}";
+    const historyEndpointRaw = "{{ url_for('admin.runtime_monitor_history') }}";
+    const runtimeEndpoint = window.withBasePath ? window.withBasePath(runtimeEndpointRaw) : runtimeEndpointRaw;
+    const historyEndpoint = window.withBasePath ? window.withBasePath(historyEndpointRaw) : historyEndpointRaw;
+    
+    const refreshIntervalMs = 10000;
+    let siteChart;
+    let userChart;
+    let historyChart;
+    let refreshTimer;
+    const runtimeInitial = {{ runtime_payload|tojson|safe }};
+
+    const numberFormatter = new Intl.NumberFormat('zh-CN');
+
+    function formatBytes(value) {
+        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        let num = Number(value) || 0;
+        if (num <= 0) return '0 B';
+        let idx = 0;
+        while (num >= 1024 && idx < units.length - 1) {
+            num /= 1024;
+            idx += 1;
+        }
+        const digits = idx === 0 ? 0 : 2;
+        return `${num.toFixed(digits)} ${units[idx]}`;
+    }
+
+    function formatBandwidth(value) {
+        const units = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
+        let num = Number(value) || 0;
+        if (num <= 0) return '0 B/s';
+        let idx = 0;
+        while (num >= 1024 && idx < units.length - 1) {
+            num /= 1024;
+            idx += 1;
+        }
+        const digits = idx === 0 ? 0 : 2;
+        return `${num.toFixed(digits)} ${units[idx]}`;
+    }
+
+    function renderSummary(summary = {}) {
+        const {
+            total_users,
+            online_users,
+            total_data_bytes,
+            current_bandwidth_bps,
+            bandwidth_limit_bps,
+            avg_data_per_user_bytes,
+            avg_bandwidth_per_online_user_bps,
+            timestamp_display,
+            sample_window_seconds
+        } = summary;
+        document.getElementById('stat-total-users').textContent = numberFormatter.format(total_users ?? 0);
+        document.getElementById('stat-online-users').textContent = numberFormatter.format(online_users ?? 0);
+        document.getElementById('stat-total-data').textContent = formatBytes(total_data_bytes);
+        document.getElementById('stat-current-bandwidth').textContent = formatBandwidth(current_bandwidth_bps);
+        document.getElementById('stat-bandwidth-limit').textContent = formatBandwidth(bandwidth_limit_bps);
+        document.getElementById('stat-avg-data').textContent = formatBytes(avg_data_per_user_bytes);
+        document.getElementById('stat-avg-bandwidth').textContent = formatBandwidth(avg_bandwidth_per_online_user_bps);
+        const tsLine = `数据更新时间：${timestamp_display || '--'} · 采样窗口 ${sample_window_seconds || '--'} 秒`;
+        document.getElementById('metrics-timestamp').textContent = tsLine;
+        document.getElementById('online-users-count').textContent = `${online_users || 0} 在线`;
+    }
+
+    function renderOnlineList(list = []) {
+        const container = document.getElementById('online-users-list');
+        container.innerHTML = '';
+        if (!list.length) {
+            container.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">暂无在线用户</p>';
+            return;
+        }
+        list.slice(0, 8).forEach((user) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center justify-between border border-slate-100 rounded-lg p-3';
+            wrapper.innerHTML = `
+                <div>
+                    <p class="text-sm font-semibold text-slate-800">${user.username}</p>
+                    <p class="text-xs text-slate-500">${user.last_seen_display || '刚刚'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-emerald-600">${formatBandwidth(user.bandwidth_bps)}</p>
+                    <p class="text-xs text-slate-400">${formatBytes(user.storage_bytes)}</p>
+                </div>
+            `;
+            container.appendChild(wrapper);
+        });
+    }
+
+    function renderUserTable(users = []) {
+        const tbody = document.getElementById('user-usage-table-body');
+        const totalLabel = document.getElementById('user-count-label');
+        tbody.innerHTML = '';
+        if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center text-slate-400">暂无数据</td></tr>';
+            if (totalLabel) totalLabel.textContent = '暂无数据';
+            return;
+        }
+        const displayCount = Math.min(users.length, 20);
+        if (totalLabel) {
+            totalLabel.textContent = `显示前 ${displayCount} / ${users.length} 名用户`;
+        }
+        users.slice(0, displayCount).forEach((user, index) => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-slate-50 transition-colors';
+            row.innerHTML = `
+                <td class="px-3 py-2 text-slate-400">${index + 1}</td>
+                <td class="px-3 py-2">
+                    <div class="flex flex-col">
+                        <span class="font-medium text-slate-800">${user.username}</span>
+                        <span class="text-xs text-slate-500">${user.role || ''}</span>
+                    </div>
+                </td>
+                <td class="px-3 py-2 text-slate-700">${user.doc_count ?? 0}</td>
+                <td class="px-3 py-2 text-slate-700">${formatBytes(user.storage_bytes)}</td>
+                <td class="px-3 py-2 text-slate-700">
+                    <span class="${user.is_online ? 'badge-online' : 'badge-offline'}">
+                        ${formatBandwidth(user.bandwidth_bps)}
+                    </span>
+                </td>
+                <td class="px-3 py-2 text-slate-500">${user.last_seen_display || '—'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateCharts(data) {
+        const siteCtx = document.getElementById('siteBandwidthChart').getContext('2d');
+        const userCtx = document.getElementById('userBandwidthChart').getContext('2d');
+        const series = (data.bandwidth_series || []).map(point => point.bps / 1024);
+        const labels = (data.bandwidth_series || []).map(point => point.label);
+        if (!siteChart) {
+            siteChart = new Chart(siteCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '实时带宽 (KB/s)',
+                        data: series,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                        fill: true,
+                        tension: 0.35
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: (val) => `${val} KB/s` } }
+                    }
+                }
+            });
+        } else {
+            siteChart.data.labels = labels;
+            siteChart.data.datasets[0].data = series;
+            siteChart.update();
+        }
+
+        const topUsers = (data.top_bandwidth_users || []).map((user) => ({
+            label: user.username,
+            value: (user.bandwidth_bps || 0) / 1024
+        }));
+        if (!userChart) {
+            userChart = new Chart(userCtx, {
+                type: 'bar',
+                data: {
+                    labels: topUsers.map(item => item.label),
+                    datasets: [{
+                        label: '实时带宽 (KB/s)',
+                        data: topUsers.map(item => item.value),
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { callback: (val) => `${val} KB/s` } }
+                    }
+                }
+            });
+        } else {
+            userChart.data.labels = topUsers.map(item => item.label);
+            userChart.data.datasets[0].data = topUsers.map(item => item.value);
+            userChart.update();
+        }
+    }
+
+    function renderHistoryChart(points = []) {
+        const emptyText = document.getElementById('historyEmptyText');
+        const ctx = document.getElementById('historyBandwidthChart').getContext('2d');
+        if (!points.length) {
+            if (emptyText) emptyText.classList.remove('hidden');
+            if (historyChart) {
+                historyChart.data.labels = [];
+                historyChart.data.datasets.forEach(dataset => { dataset.data = []; });
+                historyChart.update();
+            }
+            return;
+        }
+        if (emptyText) emptyText.classList.add('hidden');
+        const labels = points.map(point => point.captured_label || point.captured_at);
+        const bandwidthSeries = points.map(point => (point.current_bandwidth_bps || 0) / (1024 * 1024));
+        const onlineSeries = points.map(point => point.online_users || 0);
+        if (!historyChart) {
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: '总带宽 (MB/s)',
+                            data: bandwidthSeries,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                            fill: true,
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '在线用户数',
+                            data: onlineSeries,
+                            borderColor: '#0ea5e9',
+                            borderDash: [6, 6],
+                            pointRadius: 0,
+                            tension: 0.2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (val) => `${val} MB/s`
+                            },
+                            title: {
+                                display: true,
+                                text: '带宽 (MB/s)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: '在线用户'
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            historyChart.data.labels = labels;
+            historyChart.data.datasets[0].data = bandwidthSeries;
+            historyChart.data.datasets[1].data = onlineSeries;
+            historyChart.update();
+        }
+    }
+
+    async function fetchHistoryData(hours = 24) {
+        const params = new URLSearchParams({ hours });
+        const url = `${historyEndpoint}?${params.toString()}`;
+        try {
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error('请求历史数据失败');
+            const json = await response.json();
+            renderHistoryChart(json.points || []);
+        } catch (error) {
+            console.error('获取历史监控数据失败', error);
+            renderHistoryChart([]);
+        }
+    }
+
+    function renderRuntime(data) {
+        if (!data) return;
+        renderSummary(data.summary || {});
+        renderOnlineList(data.online_users_detail || []);
+        renderUserTable(data.per_user_usage || []);
+        updateCharts(data);
+    }
+
+    async function fetchRuntimeData() {
+        const button = document.getElementById('refreshButton');
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fa fa-refresh mr-2 animate-spin"></i>刷新中...';
+        }
+        try {
+            const response = await fetch(runtimeEndpoint, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error('请求失败');
+            const json = await response.json();
+            renderRuntime(json);
+        } catch (error) {
+            console.error('刷新监控数据失败', error);
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<i class="fa fa-refresh mr-2"></i>立即刷新';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderRuntime(runtimeInitial);
+        document.getElementById('refreshButton').addEventListener('click', fetchRuntimeData);
+        refreshTimer = setInterval(fetchRuntimeData, refreshIntervalMs);
+        const historySelect = document.getElementById('historyRangeSelect');
+        if (historySelect) {
+            fetchHistoryData(historySelect.value || 24);
+            historySelect.addEventListener('change', (event) => {
+                fetchHistoryData(event.target.value || 24);
+            });
+        } else {
+            fetchHistoryData(24);
+        }
+    });
+</script>
+{% endblock %}

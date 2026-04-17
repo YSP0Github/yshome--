@@ -1,0 +1,1006 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} - 文献详情{% endblock %}
+{% block content %}
+{% set can_edit = current_user.is_authenticated and current_user.id == doc.owner_id %}
+        <style>
+            .doi-fill-btn {
+                background: #059669;
+                color: #ffffff !important;
+                border: 1px solid #059669;
+            }
+
+            .doi-fill-btn:hover {
+                background: #047857;
+                border-color: #047857;
+            }
+
+            .doi-fill-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+
+            .doi-preview-popup {
+                border-radius: 1rem;
+            }
+
+            .doi-preview-note {
+                text-align: left;
+                font-size: 0.925rem;
+                color: #475569;
+                margin-bottom: 0.75rem;
+            }
+
+            .doi-preview-table-wrap {
+                max-height: 24rem;
+                overflow-y: auto;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.75rem;
+                background: #ffffff;
+            }
+
+            .doi-preview-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.925rem;
+            }
+
+            .doi-preview-table thead th {
+                position: sticky;
+                top: 0;
+                background: #f8fafc;
+                color: #334155;
+                text-align: left;
+                padding: 0.75rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .doi-preview-table td {
+                vertical-align: top;
+                padding: 0.75rem;
+                border-bottom: 1px solid #f1f5f9;
+                color: #0f172a;
+                word-break: break-word;
+            }
+
+            .doi-preview-table td:first-child {
+                width: 8rem;
+                color: #334155;
+                font-weight: 600;
+            }
+
+            .doi-preview-old {
+                color: #64748b !important;
+            }
+
+            .doi-preview-new {
+                color: #0f172a !important;
+            }
+
+            body.dark-theme .doi-preview-popup,
+            body.auto-theme.auto-dark .doi-preview-popup {
+                background: #172033 !important;
+                color: #e5eefb !important;
+                box-shadow: 0 20px 50px rgba(15, 23, 42, 0.45);
+            }
+
+            body.dark-theme .doi-preview-note,
+            body.auto-theme.auto-dark .doi-preview-note {
+                color: #cbd5e1;
+            }
+
+            body.dark-theme .doi-preview-table-wrap,
+            body.auto-theme.auto-dark .doi-preview-table-wrap {
+                background: #0f172a;
+                border-color: #334155;
+            }
+
+            body.dark-theme .doi-preview-table thead th,
+            body.auto-theme.auto-dark .doi-preview-table thead th {
+                background: #1e293b;
+                color: #e2e8f0;
+                border-bottom-color: #334155;
+            }
+
+            body.dark-theme .doi-preview-table td,
+            body.auto-theme.auto-dark .doi-preview-table td {
+                color: #e5eefb;
+                border-bottom-color: #243244;
+            }
+
+            body.dark-theme .doi-preview-table td:first-child,
+            body.auto-theme.auto-dark .doi-preview-table td:first-child {
+                color: #f8fafc;
+            }
+
+            body.dark-theme .doi-preview-old,
+            body.auto-theme.auto-dark .doi-preview-old {
+                color: #94a3b8 !important;
+            }
+
+            body.dark-theme .doi-preview-new,
+            body.auto-theme.auto-dark .doi-preview-new {
+                color: #f8fafc !important;
+            }
+
+            .detail-action-bar {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                margin-bottom: 1rem;
+            }
+
+            .detail-action-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+
+            .detail-meta-list {
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .detail-meta-row {
+                display: grid;
+                grid-template-columns: 8.75rem minmax(0, 1fr);
+                gap: 0.65rem;
+                padding: 0.56rem 0;
+                border-bottom: 1px dashed #e2e8f0;
+            }
+
+            .detail-meta-row:last-child {
+                border-bottom: none;
+            }
+
+            .detail-meta-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.55rem;
+                color: #475569;
+                font-size: 0.88rem;
+                font-weight: 600;
+            }
+
+            .detail-meta-label i {
+                width: 1.75rem;
+                height: 1.75rem;
+                border-radius: 9999px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                background: #eff6ff;
+                color: #2563eb;
+                font-size: 0.84rem;
+            }
+
+            .detail-meta-value {
+                color: #0f172a;
+                line-height: 1.55;
+                word-break: break-word;
+                min-width: 0;
+                padding-top: 0.02rem;
+            }
+
+            .detail-meta-value a {
+                color: #2563eb;
+                text-decoration: none;
+            }
+
+            .detail-meta-value a:hover {
+                text-decoration: underline;
+            }
+
+            .detail-meta-muted {
+                color: #94a3b8;
+            }
+
+            .detail-ai-btn {
+                background: #4f46e5;
+                color: #ffffff !important;
+                border: 1px solid #4f46e5;
+            }
+
+            .detail-ai-btn:hover {
+                background: #4338ca;
+                border-color: #4338ca;
+            }
+
+            .detail-ai-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+
+            .detail-summary-card {
+                border-radius: 1rem;
+                border: 1px solid #dbeafe;
+                background: linear-gradient(180deg, rgba(239,246,255,.92) 0%, rgba(248,250,252,.98) 100%);
+                padding: 1.25rem;
+            }
+
+            .detail-summary-rendered {
+                color: #334155;
+                line-height: 1.95;
+                word-break: break-word;
+            }
+
+            .detail-summary-rendered h3,
+            .detail-summary-rendered h4,
+            .detail-summary-rendered h5,
+            .detail-summary-rendered h6 {
+                color: #0f172a;
+                font-weight: 700;
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .detail-summary-rendered ul,
+            .detail-summary-rendered ol {
+                padding-left: 1.15rem;
+                margin: 0.5rem 0;
+            }
+
+            .detail-summary-collapsible {
+                position: relative;
+            }
+
+            .detail-summary-body {
+                overflow: hidden;
+                transition: max-height .25s ease;
+            }
+
+            .detail-summary-fade {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 2.6rem;
+                height: 4.5rem;
+                background: linear-gradient(180deg, rgba(248,250,252,0) 0%, rgba(248,250,252,.98) 100%);
+                pointer-events: none;
+            }
+
+            .detail-summary-toggle {
+                margin-top: 0.9rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                color: #2563eb;
+                font-size: 0.92rem;
+                font-weight: 600;
+            }
+
+            .detail-summary-toggle:hover {
+                color: #1d4ed8;
+            }
+
+            body.dark-theme .detail-meta-list,
+            body.auto-theme.auto-dark .detail-meta-list {
+                border-bottom-color: #243244;
+            }
+
+            body.dark-theme .detail-meta-row,
+            body.auto-theme.auto-dark .detail-meta-row {
+                border-bottom-color: #243244;
+            }
+
+            body.dark-theme .detail-meta-label,
+            body.auto-theme.auto-dark .detail-meta-label {
+                color: #cbd5e1;
+            }
+
+            body.dark-theme .detail-meta-label i,
+            body.auto-theme.auto-dark .detail-meta-label i {
+                background: rgba(37, 99, 235, 0.18);
+                color: #93c5fd;
+            }
+
+            body.dark-theme .detail-meta-value,
+            body.auto-theme.auto-dark .detail-meta-value {
+                color: #e2e8f0;
+            }
+
+            body.dark-theme .detail-meta-value a,
+            body.auto-theme.auto-dark .detail-meta-value a {
+                color: #93c5fd;
+            }
+
+            body.dark-theme .detail-meta-muted,
+            body.auto-theme.auto-dark .detail-meta-muted {
+                color: #64748b;
+            }
+
+            body.dark-theme .detail-summary-card,
+            body.auto-theme.auto-dark .detail-summary-card {
+                background: linear-gradient(180deg, rgba(30,41,59,.92) 0%, rgba(15,23,42,.98) 100%);
+                border-color: #334155;
+            }
+
+            body.dark-theme .detail-summary-fade,
+            body.auto-theme.auto-dark .detail-summary-fade {
+                background: linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,.98) 100%);
+            }
+
+            body.dark-theme .detail-summary-rendered,
+            body.auto-theme.auto-dark .detail-summary-rendered {
+                color: #e2e8f0;
+            }
+
+            body.dark-theme .detail-summary-rendered h3,
+            body.dark-theme .detail-summary-rendered h4,
+            body.dark-theme .detail-summary-rendered h5,
+            body.dark-theme .detail-summary-rendered h6,
+            body.auto-theme.auto-dark .detail-summary-rendered h3,
+            body.auto-theme.auto-dark .detail-summary-rendered h4,
+            body.auto-theme.auto-dark .detail-summary-rendered h5,
+            body.auto-theme.auto-dark .detail-summary-rendered h6 {
+                color: #f8fafc;
+            }
+
+            @media (max-width: 640px) {
+                .detail-meta-row {
+                    grid-template-columns: 6.4rem minmax(0, 1fr);
+                    gap: 0.55rem;
+                    padding: 0.48rem 0;
+                    align-items: start;
+                }
+
+                .detail-meta-label {
+                    gap: 0.45rem;
+                    font-size: 0.84rem;
+                    white-space: nowrap;
+                }
+
+                .detail-meta-label i {
+                    width: 1.55rem;
+                    height: 1.55rem;
+                    font-size: 0.78rem;
+                }
+
+                .detail-meta-value {
+                    font-size: 0.98rem;
+                    line-height: 1.45;
+                    padding-top: 0;
+                }
+
+                .detail-action-bar {
+                    flex-wrap: nowrap;
+                    justify-content: stretch;
+                }
+
+                .detail-action-btn {
+                    flex: 1 1 0;
+                    min-width: 0;
+                    padding-left: 0.85rem !important;
+                    padding-right: 0.85rem !important;
+                }
+
+                .detail-action-btn .detail-action-text {
+                    display: none;
+                }
+
+                .detail-action-btn i {
+                    margin-right: 0 !important;
+                    font-size: 1.125rem;
+                }
+            }
+        </style>
+        <!-- 操作按钮区 -->
+        <div class="detail-action-bar">
+            {% if can_edit %}
+            <a href="{{ url_for('edit_document', doc_id=doc.id) }}" target="_blank" class="detail-action-btn bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors" aria-label="编辑信息">
+                <i class="fa fa-pencil mr-2"></i><span class="detail-action-text"> 编辑信息</span></a>
+            {% if doc.doi and doc.doi.strip() %}
+            <button type="button"
+                    id="fill-metadata-btn"
+                    data-url="{{ url_for('fill_metadata_by_doi', doc_id=doc.id) }}"
+                    class="detail-action-btn doi-fill-btn px-4 py-2 rounded-lg transition-colors" aria-label="DOI 预览补全">
+                <i class="fa fa-magic mr-2"></i><span class="detail-action-text"> DOI 预览补全</span></button>
+            {% endif %}
+            {% else %}
+            <button type="button"
+                    class="detail-action-btn bg-yellow-500 text-white px-4 py-2 rounded-lg transition-colors hover:bg-yellow-500/90" aria-label="编辑信息"
+                    data-no-edit-access="true">
+                <i class="fa fa-lock mr-2"></i><span class="detail-action-text"> 编辑信息</span></button>
+            {% endif %}
+            <a href="{{ url_for('open_document', doc_id=doc.id) }}" class="detail-action-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors" aria-label="下载原文">
+                <i class="fa fa-download mr-2"></i><span class="detail-action-text"> 下载原文</span></a>
+            <!-- 在浏览器中查看缓存 -->
+            <a href="{{ url_for('open_document_in_browser', doc_id=doc.id) }}" target="_blank" class="detail-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors" aria-label="查看原文">
+                <i class="fa fa-eye mr-2"></i><span class="detail-action-text"> 查看原文</span></a>
+            <button type="button"
+                    id="generate-doc-summary-btn"
+                    class="detail-action-btn detail-ai-btn px-4 py-2 rounded-lg transition-colors {% if not ai_enabled %}opacity-70 cursor-not-allowed{% endif %}"
+                    {% if not ai_enabled %}disabled{% endif %}
+                    data-doc-id="{{ doc.id }}">
+                <i class="fa fa-magic mr-2"></i><span class="detail-action-text"> AI总结</span></button>
+        </div>
+
+        <!-- 文献详情卡片 -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h1 class="text-2xl font-bold text-slate-800 mb-5 border-b pb-2">{{ doc.title }}</h1>
+            
+            <!-- 基础信息 -->
+            <div class="detail-meta-list mb-6">
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-users"></i><span>作者</span></div>
+                    <div class="detail-meta-value">{{ doc.authors or '未填写' }}</div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-book"></i><span>期刊 / 会议</span></div>
+                    <div class="detail-meta-value">{{ doc.journal or '未填写' }}</div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-calendar"></i><span>发表年份</span></div>
+                    <div class="detail-meta-value">{{ doc.year or '未填写' }}</div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-files-o"></i><span>卷 / 期 / 页码</span></div>
+                    <div class="detail-meta-value">
+                        {% if doc.volume or doc.issue or doc.pages %}
+                            卷{{ doc.volume or '-' }}，期{{ doc.issue or '-' }}，页码{{ doc.pages or '-' }}
+                        {% else %}
+                            <span class="detail-meta-muted">未填写</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-link"></i><span>DOI</span></div>
+                    <div class="detail-meta-value">
+                        {% if doc.doi and doc.doi.strip() %}
+                            {% set doi = doc.doi.strip() %}
+                            <a href="{% if doi.startswith('http') %}{{ doi }}{% else %}https://doi.org/{{ doi }}{% endif %}" target="_blank" title="查看 DOI 官方页面">
+                                {{ doi }}
+                            </a>
+                        {% else %}
+                            <span class="detail-meta-muted">未提供</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-folder-open"></i><span>分类</span></div>
+                    <div class="detail-meta-value">{{ doc.category_obj.label if doc.category_obj else '未分类' }}</div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-file-text-o"></i><span>文献类型</span></div>
+                    <div class="detail-meta-value">
+                        {% if doc.doc_type_obj %}
+                            {{ doc.doc_type_obj.label }}
+                        {% elif doc.doc_type %}
+                            {{ doc.doc_type|doc_type_label }}
+                        {% else %}
+                            未填写
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-meta-row">
+                    <div class="detail-meta-label"><i class="fa fa-file-pdf-o"></i><span>文件信息</span></div>
+                    <div class="detail-meta-value">
+                        {{ doc.file_type or '未知格式' }}
+                        {% if doc.file_size %}
+                            · {{ doc.file_size|filesizeformat }}
+                        {% endif %}
+                        · 浏览 {{ doc.view_count }} 次
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关键词 -->
+            {% if doc.keywords %}
+            <div class="mb-8">
+                <p class="text-slate-800 font-medium mb-2">关键词：</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for keyword in doc.keywords.split(',') %}
+                    <span class="bg-slate-100 px-3 py-1 rounded-full text-sm text-slate-700">{{ keyword.strip() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 标签 -->
+            {% if doc.tags %}
+            <div class="mb-8">
+                <p class="text-slate-800 font-medium mb-2">标签：</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in doc.tags.split(',') %}
+                    <span class="bg-blue-50 px-3 py-1 rounded-full text-sm text-blue-700">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 摘要 -->
+            <div class="mt-8 mb-6">
+                <h2 class="text-xl font-semibold mb-3 border-b pb-2 text-slate-800">摘要</h2>
+                <div id="abstract-content" class="abstract-content">
+                    {{ doc.abstract|clean_abstract or '未提供摘要' }}
+                </div>
+            </div>
+
+            <div class="mt-8 mb-6">
+                <div class="flex items-center justify-between gap-3 mb-3 border-b pb-2">
+                    <h2 class="text-xl font-semibold text-slate-800">AI 总结</h2>
+                    <div class="text-xs text-slate-500">
+                        <span id="doc-summary-updated-at">{% if doc.ai_summary_updated_at %}{{ doc.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
+                    </div>
+                </div>
+                <div id="doc-summary-empty" class="{% if doc.ai_summary %}hidden{% endif %} text-slate-500 leading-8">
+                    还没有生成 AI 总结。点击右上角“AI总结”即可得到结构化摘要，且不会覆盖原始摘要。
+                </div>
+                <div id="doc-summary-box" class="{% if not doc.ai_summary %}hidden{% endif %}">
+                    <div class="detail-summary-card">
+                        <div id="doc-summary-collapsible" class="detail-summary-collapsible">
+                            <div class="detail-summary-body">
+                                <div id="doc-summary-content" class="detail-summary-rendered">{% if doc.ai_summary %}{{ doc.ai_summary|render_ai_summary }}{% endif %}</div>
+                            </div>
+                            <div id="doc-summary-fade" class="detail-summary-fade hidden"></div>
+                            <button type="button" id="doc-summary-toggle" class="detail-summary-toggle hidden">
+                                <i class="fa fa-angle-down"></i><span>展开全文</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 备注模块（弱化样式，补充信息） -->
+            <div class="mb-6" id="remark-module">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold  pb-2 text-slate-800">备注 📌</h2>
+                    <!-- 操作按钮组：编辑/保存 + 取消（取消默认隐藏） -->
+                    <div id="remark-btn-group">
+                        {% if can_edit %}
+                        <button id="toggle-remark-btn" class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer mr-2" 
+                                data-doc-id="{{ doc.id }}"
+                                data-url="{{ url_for('edit_remark', doc_id=doc.id) }}">✏️ 编辑备注</button>
+                        <button id="cancel-remark-btn" class="hidden text-sm text-slate-600 hover:text-slate-800 cursor-pointer">❌ 取消</button>
+                        {% else %}
+                        <span class="text-sm text-slate-400">无编辑权限</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 备注展示区域（默认可见） -->
+                <div id="remark-display" class="text-slate-600 leading-relaxed whitespace-pre-line p-4 bg-slate-50 border border-dashed border-slate-200 rounded-lg min-h-[80px] max-h-[300px] overflow-y-auto">
+                    {{ doc.remark or '暂无备注' }}
+                </div>
+
+                <!-- 备注编辑框（默认隐藏，优化样式） -->
+                <textarea id="remark-input" class="hidden w-full min-h-[80px] max-h-[300px] p-4 border border-blue-300 rounded-lg leading-relaxed bg-white shadow-sm overflow-y-auto" 
+                        placeholder="请输入备注内容...">{{ doc.remark or '' }}</textarea>
+            </div>
+
+
+            <!-- 时间信息 -->
+            <div class="text-sm text-slate-500 border-t pt-4">
+                <p>上传时间：{{ doc.upload_time|format_cn_time('%Y-%m-%d %H:%M') }}（UTC+08:00）</p>
+                <p>最近修改：{{ doc.modified_at|format_cn_time('%Y-%m-%d %H:%M') if doc.modified_at else '暂无记录' }}（UTC+08:00）</p>
+                <!-- <p>添加到系统时间：{{ doc.created_at|format_cn_time('%Y-%m-%d %H:%M') }}</p> -->
+                <!-- 如果是共享文件，显示共享者 -->
+                {% if doc.is_shared %}
+                <p>共享者：{{ doc.share_by.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if not can_edit %}
+        <div id="no-edit-access-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4 z-50 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center">
+                    <i class="fa fa-lock text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-2">无法编辑该文献</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                    只有文献上传者本人可以修改信息。您可以联系文献所有者，或将其添加到自己的文献库后再编辑。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button type="button" class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50" data-dismiss-modal="true">
+                        我知道了
+                    </button>
+                    <a href="{{ url_for('index') }}" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        返回首页
+                    </a>
+                </div>
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const trigger = document.querySelector('[data-no-edit-access]');
+            const modal = document.getElementById('no-edit-access-modal');
+            if (!trigger || !modal) return;
+            const closeModal = () => modal.classList.add('hidden');
+            trigger.addEventListener('click', () => {
+                modal.classList.remove('hidden');
+            });
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            modal.querySelectorAll('[data-dismiss-modal]').forEach(btn => {
+                btn.addEventListener('click', closeModal);
+            });
+        });
+        </script>
+        {% endif %}
+        
+        <!-- 引入依赖（jQuery + SweetAlert2） -->
+        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <link href="https://cdn.bootcdn.net/ajax/libs/sweetalert2/11.10.0/sweetalert2.min.css" rel="stylesheet">
+        <script src="https://cdn.bootcdn.net/ajax/libs/sweetalert2/11.10.0/sweetalert2.min.js"></script>
+
+        <script>
+        $(function() {
+            // 核心元素获取
+            const $toggleBtn = $('#toggle-remark-btn');
+            const $cancelBtn = $('#cancel-remark-btn');
+            const $display = $('#remark-display');
+            const $input = $('#remark-input');
+            const $fillMetadataBtn = $('#fill-metadata-btn');
+            const $docSummaryBtn = $('#generate-doc-summary-btn');
+            const $docSummaryBox = $('#doc-summary-box');
+            const $docSummaryEmpty = $('#doc-summary-empty');
+            const $docSummaryContent = $('#doc-summary-content');
+            const $docSummaryUpdatedAt = $('#doc-summary-updated-at');
+            const $docSummaryCollapsible = $('#doc-summary-collapsible');
+            const $docSummaryToggle = $('#doc-summary-toggle');
+            const $docSummaryFade = $('#doc-summary-fade');
+            const docId = $toggleBtn.data('doc-id');
+            const url = $toggleBtn.data('url');
+            const summaryDocId = $docSummaryBtn.data('doc-id');
+            // 保存原始内容（用于取消/对比修改）
+            let originalContent = $display.text().replace('暂无备注', '').trim();
+
+            function setupDocSummaryCollapse(resetState = false) {
+                if (!$docSummaryCollapsible.length) return;
+                const body = $docSummaryCollapsible.find('.detail-summary-body').get(0);
+                if (!body) return;
+                const collapsedHeight = 300;
+                const needsCollapse = body.scrollHeight > collapsedHeight + 24;
+                if (resetState) {
+                    $docSummaryCollapsible.data('state', 'collapsed');
+                }
+                if (!needsCollapse) {
+                    body.style.maxHeight = 'none';
+                    $docSummaryFade.addClass('hidden');
+                    $docSummaryToggle.addClass('hidden');
+                    $docSummaryCollapsible.data('state', 'expanded');
+                    return;
+                }
+                const state = $docSummaryCollapsible.data('state') || 'collapsed';
+                const expanded = state === 'expanded';
+                body.style.maxHeight = expanded ? `${body.scrollHeight}px` : `${collapsedHeight}px`;
+                $docSummaryFade.toggleClass('hidden', expanded);
+                $docSummaryToggle.removeClass('hidden');
+                $docSummaryToggle.find('i').attr('class', expanded ? 'fa fa-angle-up' : 'fa fa-angle-down');
+                $docSummaryToggle.find('span').text(expanded ? '收起' : '展开全文');
+            }
+
+            $docSummaryToggle.on('click', function() {
+                const currentState = $docSummaryCollapsible.data('state') || 'collapsed';
+                $docSummaryCollapsible.data('state', currentState === 'expanded' ? 'collapsed' : 'expanded');
+                setupDocSummaryCollapse();
+            });
+
+            setupDocSummaryCollapse();
+            $(window).on('resize', function() {
+                setupDocSummaryCollapse();
+            });
+
+            // 1. 编辑/保存 切换逻辑
+            $toggleBtn.on('click', function() {
+                if ($toggleBtn.text() === '✏️ 编辑备注') {
+                    // 进入编辑模式
+                    enterEditMode();
+                } else {
+                    // 保存备注
+                    saveRemark();
+                }
+            });
+
+            $fillMetadataBtn.on('click', function() {
+                const requestUrl = $fillMetadataBtn.data('url');
+                if (!requestUrl) return;
+
+                $fillMetadataBtn.prop('disabled', true)
+                    .addClass('opacity-70 cursor-not-allowed');
+
+                $.ajax({
+                    url: requestUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: JSON.stringify({ preview: true }),
+                    success: function(res) {
+                        const previewItems = (res.data && res.data.preview) || [];
+                        if (!previewItems.length) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: '无需补全',
+                                text: res.msg || '可补全的字段都已有内容。'
+                            });
+                            return;
+                        }
+
+                        const fieldLabelMap = {
+                            title: '标题',
+                            authors: '作者',
+                            journal: '期刊/会议',
+                            publisher: '出版社',
+                            year: '年份',
+                            volume: '卷',
+                            issue: '期',
+                            pages: '页码',
+                            abstract: '摘要'
+                        };
+                        const escapeHtml = (value) => $('<div>').text(value || '').html();
+                        const rowsHtml = previewItems.map(item => `
+                            <tr>
+                                <td>${escapeHtml(fieldLabelMap[item.field] || item.field)}</td>
+                                <td class="doi-preview-old">${escapeHtml(item.old || '空')}</td>
+                                <td class="doi-preview-new">${escapeHtml(item.new || '')}</td>
+                            </tr>
+                        `).join('');
+
+                        Swal.fire({
+                            title: '确认 DOI 补全预览',
+                            width: 900,
+                            html: `
+                                <div class="doi-preview-note">
+                                    将仅补全当前为空的字段，不会覆盖你已经填写的内容。
+                                </div>
+                                <div class="doi-preview-table-wrap">
+                                    <table class="doi-preview-table">
+                                        <thead>
+                                            <tr>
+                                                <th>字段</th>
+                                                <th>当前值</th>
+                                                <th>将写入的值</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${rowsHtml}</tbody>
+                                    </table>
+                                </div>
+                            `,
+                            customClass: {
+                                popup: 'doi-preview-popup'
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: '确认写入',
+                            cancelButtonText: '取消',
+                            confirmButtonColor: '#059669'
+                        }).then((result) => {
+                            if (!result.isConfirmed) return;
+                            applyMetadataFill(requestUrl);
+                        });
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON && xhr.responseJSON.msg
+                            ? xhr.responseJSON.msg
+                            : '自动补全失败，请稍后重试。';
+                        Swal.fire({
+                            icon: 'error',
+                            title: '补全失败',
+                            text: errorMsg
+                        });
+                    },
+                    complete: function() {
+                        $fillMetadataBtn.prop('disabled', false)
+                            .removeClass('opacity-70 cursor-not-allowed');
+                    }
+                });
+            });
+
+            $docSummaryBtn.on('click', async function() {
+                if (!summaryDocId) return;
+                const originalHtml = $docSummaryBtn.html();
+                $docSummaryBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-2"></i><span class="detail-action-text"> 正在总结</span>');
+                try {
+                    const response = await fetch(
+                        window.withBasePath ? window.withBasePath(`/api/document/${summaryDocId}/summary`) : `/api/document/${summaryDocId}/summary`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                            }
+                        }
+                    );
+                    const rawText = await response.text();
+                    let data = {};
+                    try {
+                        data = rawText ? JSON.parse(rawText) : {};
+                    } catch (error) {
+                        data = { error: rawText || 'AI 总结失败' };
+                    }
+                    if (!response.ok) {
+                        throw new Error(data.error || 'AI 总结失败');
+                    }
+
+                    $docSummaryContent.html(data.summary_html || '');
+                    $docSummaryUpdatedAt.text(data.updated_at || '');
+                    $docSummaryEmpty.addClass('hidden');
+                    $docSummaryBox.removeClass('hidden');
+                    setupDocSummaryCollapse(true);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'AI 总结已生成',
+                        text: data.message || '已完成结构化总结。',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'AI 总结失败',
+                        text: error.message || '请稍后重试。'
+                    });
+                } finally {
+                    $docSummaryBtn.prop('disabled', false).html(originalHtml);
+                }
+            });
+
+            function applyMetadataFill(requestUrl) {
+                $fillMetadataBtn.prop('disabled', true)
+                    .addClass('opacity-70 cursor-not-allowed');
+                $.ajax({
+                    url: requestUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: JSON.stringify({ preview: false }),
+                    success: function(res) {
+                        const updatedFields = (res.data && res.data.updated_fields) || [];
+                        Swal.fire({
+                            icon: 'success',
+                            title: updatedFields.length ? '补全成功' : '无需补全',
+                            text: updatedFields.length
+                                ? `已补全字段：${updatedFields.join('、')}，页面即将刷新。`
+                                : (res.msg || '可补全的字段都已有内容。'),
+                            timer: 1800,
+                            showConfirmButton: false
+                        });
+                        setTimeout(() => window.location.reload(), 1200);
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON && xhr.responseJSON.msg
+                            ? xhr.responseJSON.msg
+                            : '自动补全失败，请稍后重试。';
+                        Swal.fire({
+                            icon: 'error',
+                            title: '补全失败',
+                            text: errorMsg
+                        });
+                    },
+                    complete: function() {
+                        $fillMetadataBtn.prop('disabled', false)
+                            .removeClass('opacity-70 cursor-not-allowed');
+                    }
+                });
+            }
+
+            // 2. 取消编辑逻辑
+            $cancelBtn.on('click', function() {
+                // 恢复原始内容，退出编辑模式
+                $input.val(originalContent);
+                exitEditMode();
+                // 提示取消成功
+                Swal.fire({
+                    icon: 'info',
+                    title: '已取消',
+                    text: '备注已恢复为原始内容',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            });
+
+            // 3. 页面关闭/刷新提醒（防止未保存丢失）
+            window.addEventListener('beforeunload', function(e) {
+                const currentContent = $input.val().trim();
+                // 仅当编辑状态且内容有修改时提醒
+                if ($toggleBtn.text() === '💾 保存' && currentContent !== originalContent) {
+                    e.preventDefault();
+                    e.returnValue = '您有未保存的备注修改，确定要离开吗？';
+                    return e.returnValue;
+                }
+            });
+
+            // ===== 工具函数 =====
+            // 进入编辑模式
+            function enterEditMode() {
+                $display.addClass('hidden');
+                $input.removeClass('hidden').val(originalContent).focus();
+                $toggleBtn.text('💾 保存');
+                $cancelBtn.removeClass('hidden');
+                // 编辑框样式高亮（视觉提示）
+                $input.addClass('border-blue-500');
+            }
+
+            // 退出编辑模式（切回展示）
+            function exitEditMode() {
+                $input.addClass('hidden');
+                $display.removeClass('hidden');
+                $toggleBtn.text('✏️ 编辑备注');
+                $cancelBtn.addClass('hidden');
+                // 恢复样式
+                $input.removeClass('border-blue-500');
+            }
+
+            // 保存备注到后端
+            function saveRemark() {
+                const newRemark = $input.val().trim();
+                // 无修改则直接退出
+                if (newRemark === originalContent) {
+                    exitEditMode();
+                    Swal.fire({
+                        icon: 'info',
+                        title: '无修改',
+                        text: '备注内容未发生变化',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+
+                // 发送AJAX保存
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: JSON.stringify({ remark: newRemark }),
+                    success: function(res) {
+                        if (res.code === 200) {
+                            // 更新展示内容和原始内容
+                            originalContent = newRemark;
+                            $display.text(newRemark || '暂无备注');
+                            // 退出编辑模式
+                            exitEditMode();
+                            // 成功提示
+                            Swal.fire({
+                                icon: 'success',
+                                title: '保存成功',
+                                text: '备注已更新',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '保存失败',
+                                text: res.msg || '服务器错误，请稍后重试'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // 显示具体错误信息
+                        let errorMsg = '请求失败：';
+                        if (xhr.status === 403) {
+                            errorMsg += '无编辑权限';
+                        } else if (xhr.status === 404) {
+                            errorMsg += '接口不存在（URL错误）';
+                        } else if (xhr.status === 500) {
+                            errorMsg += '服务器内部错误';
+                        } else {
+                            errorMsg += status + ' - ' + error;
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: '保存失败',
+                            text: errorMsg,
+                            toast: true,
+                            position: 'top-end',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+            }
+        });
+        </script>
+
+
+{% endblock %}

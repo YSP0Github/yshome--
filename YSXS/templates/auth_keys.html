@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}授权码管理 - 管理员中心{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- 面包屑导航 -->
+    <div class="mb-6 text-sm">
+        <span class="mx-2 text-slate-400">/</span>
+        <span class="text-slate-600">授权码管理</span>
+    </div>
+
+    <!-- 页面标题与操作 -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">授权码管理</h1>
+            <p class="text-slate-500 mt-1">用于创建管理员账户的授权码（单次有效，24 小时内过期）</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="bulk-delete-btn" class="bg-red-100 text-red-600 px-4 py-2 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa fa-trash mr-2"></i>批量删除
+            </button>
+            <button id="generate-key-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                <i class="fa fa-key mr-2"></i>生成新授权码
+            </button>
+        </div>
+    </div>
+
+    <!-- 授权码列表 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        {% if auth_keys %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left">
+                            <input type="checkbox" id="select-all-keys" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">授权码</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">生成时间</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">过期时间</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    {% for key in auth_keys %}
+                    <tr>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <input type="checkbox" class="key-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500" data-key-id="{{ key.id }}">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-medium text-slate-900">{{ key.code }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-slate-500">{{ key.created_at|format_cn_time('%Y-%m-%d %H:%M') }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-slate-500">{{ key.expires_at|format_cn_time('%Y-%m-%d %H:%M') }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if key.is_used %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                已使用
+                                {% if key.used_by %}
+                                <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    管理员 ID：{{ key.user.custom_id }}
+                                </span>
+                                {% endif %}
+                            </span>
+                            {% elif key.is_expired() %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">已过期</span>
+                            {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">有效</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-3">
+                                {% if not key.is_used and not key.is_expired() %}
+                                <button class="text-red-600 hover:text-red-900 revoke-key" data-key-id="{{ key.id }}">立即失效</button>
+                                <button class="text-blue-600 hover:text-blue-900 copy-key" data-key="{{ key.code }}">复制</button>
+                                {% endif %}
+                                <button class="text-slate-500 hover:text-slate-800 delete-key" data-key-id="{{ key.id }}">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fa fa-key text-slate-300 text-5xl mb-4"></i>
+            <p class="text-slate-500">暂无授权码记录</p>
+            <p class="text-sm text-slate-400 mt-2">点击“生成新授权码”创建用于管理员注册的密钥</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 生成授权码确认弹窗 -->
+<div id="generate-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <h3 class="text-lg font-medium text-slate-900 mb-4">生成新授权码</h3>
+        <p class="text-slate-600 mb-6">
+            新授权码将在生成后 24 小时内有效，且仅能使用一次。请将授权码提供给需要注册管理员的用户。
+        </p>
+        <div class="flex justify-end gap-3">
+            <button id="cancel-generate" class="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">取消</button>
+            <button id="confirm-generate" class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors">确认生成</button>
+        </div>
+    </div>
+</div>
+
+<!-- 操作提示 -->
+<div id="toast" class="fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0 z-50"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const generateModal = document.getElementById('generate-modal');
+    const generateKeyBtn = document.getElementById('generate-key-btn');
+    const cancelGenerate = document.getElementById('cancel-generate');
+    const confirmGenerate = document.getElementById('confirm-generate');
+    const toast = document.getElementById('toast');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const keyCheckboxes = Array.from(document.querySelectorAll('.key-checkbox'));
+    const selectAllCheckbox = document.getElementById('select-all-keys');
+    const csrfToken = (typeof window.getCSRFToken === 'function' && window.getCSRFToken()) || getCookie('csrf_token');
+
+    generateKeyBtn.addEventListener('click', () => {
+        generateModal.classList.remove('hidden');
+    });
+
+    cancelGenerate.addEventListener('click', () => {
+        generateModal.classList.add('hidden');
+    });
+
+    generateModal.addEventListener('click', (event) => {
+        if (event.target === generateModal) {
+            generateModal.classList.add('hidden');
+        }
+    });
+
+    confirmGenerate.addEventListener('click', () => {
+        fetch(`{{ url_for('generate_auth_key') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            generateModal.classList.add('hidden');
+            showToast(data.success ? '授权码生成成功' : (data.error || '生成失败'), data.success);
+            if (data.success) {
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        })
+        .catch(() => {
+            generateModal.classList.add('hidden');
+            showToast('生成授权码失败，请稍后重试', false);
+        });
+    });
+
+    document.querySelectorAll('.copy-key').forEach((button) => {
+        button.addEventListener('click', () => {
+            const code = button.getAttribute('data-key');
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('授权码已复制到剪贴板', true);
+            }).catch(() => {
+                showToast('复制失败，请手动复制', false);
+            });
+        });
+    });
+
+    document.querySelectorAll('.revoke-key').forEach((button) => {
+        button.addEventListener('click', () => {
+            const keyId = button.getAttribute('data-key-id');
+            if (!confirm('确定让该授权码立即失效吗？')) {
+                return;
+            }
+            fetch(`{{ url_for('revoke_auth_key', key_id=0) }}`.replace('0', keyId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToast(data.success ? '授权码已失效' : (data.error || '操作失败'), data.success);
+                if (data.success) {
+                    window.location.reload();
+                }
+            })
+            .catch(() => {
+                showToast('操作失败，请稍后重试', false);
+            });
+        });
+    });
+
+    function getSelectedKeyIds() {
+        return keyCheckboxes.filter(cb => cb.checked).map(cb => cb.getAttribute('data-key-id'));
+    }
+
+    function updateBulkDeleteState() {
+        const hasSelection = getSelectedKeyIds().length > 0;
+        bulkDeleteBtn.disabled = !hasSelection;
+    }
+
+    keyCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+            updateBulkDeleteState();
+            if (!checkbox.checked && selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+        });
+    });
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+            keyCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+            updateBulkDeleteState();
+        });
+    }
+
+    bulkDeleteBtn?.addEventListener('click', () => {
+        const ids = getSelectedKeyIds();
+        if (!ids.length) {
+            return;
+        }
+        if (!confirm(`确认删除选中的 ${ids.length} 个授权码吗？该操作不可恢复。`)) {
+            return;
+        }
+        fetch(`{{ url_for('delete_auth_keys_bulk') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ ids })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.success ? '已删除选中授权码' : (data.error || '删除失败'), data.success);
+            if (data.success) {
+                window.location.reload();
+            }
+        })
+        .catch(() => {
+            showToast('删除失败，请稍后重试', false);
+        });
+    });
+    updateBulkDeleteState();
+
+    document.querySelectorAll('.delete-key').forEach((button) => {
+        button.addEventListener('click', () => {
+            const keyId = button.getAttribute('data-key-id');
+            if (!confirm('删除后无法恢复，确定继续吗？')) {
+                return;
+            }
+            fetch(`{{ url_for('delete_auth_key', key_id=0) }}`.replace('0', keyId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToast(data.success ? '授权码已删除' : (data.error || '删除失败'), data.success);
+                if (data.success) {
+                    window.location.reload();
+                }
+            })
+            .catch(() => {
+                showToast('删除失败，请稍后重试', false);
+            });
+        });
+    });
+
+    function showToast(message, isSuccess) {
+        toast.textContent = message;
+        toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 ${
+            isSuccess ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+        }`;
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.transform = 'translateX(calc(100% + 20px))';
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (const raw of cookies) {
+                const cookie = raw.trim();
+                if (cookie.substring(0, name.length + 1) === `${name}=`) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+});
+</script>
+{% endblock %}
