@@ -1,0 +1,10 @@
+[Unit]
+Description=Run YSXS uploads incremental backup every Sunday at 18:00 Beijing time
+
+[Timer]
+OnCalendar=Sun *-*-* 18:00:00 Asia/Shanghai
+Persistent=true
+Unit=ysxs-uploads-backup.service
+
+[Install]
+WantedBy=timers.target

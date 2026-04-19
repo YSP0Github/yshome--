@@ -1,0 +1,12 @@
+[Unit]
+Description=YSXS uploads incremental backup job
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__RUN_USER__
+Group=__RUN_GROUP__
+WorkingDirectory=__PROJECT_DIR__
+EnvironmentFile=__ENV_FILE__
+ExecStart=/usr/bin/bash __PROJECT_DIR__/deploy/backup_ysxs_uploads.sh

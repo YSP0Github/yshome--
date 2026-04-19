@@ -1787,47 +1787,65 @@
                 });
             });
 
+            function updateDocumentShareState(docId, isShared, shareUrl) {
+                const normalizedDocId = String(docId);
+                document.querySelectorAll(`.share-btn[data-doc-id="${normalizedDocId}"]`).forEach(button => {
+                    const icon = button.querySelector('i');
+                    const textSpan = button.querySelector('span');
+                    button.setAttribute('data-is-shared', isShared ? 'true' : 'false');
+                    button.setAttribute('title', isShared ? '已共享' : '点击共享');
+                    if (icon) {
+                        icon.classList.remove('fa-share-alt', 'text-green-500', 'fa-lock');
+                        if (isShared) {
+                            icon.classList.add('fa-share-alt', 'text-green-500');
+                        } else {
+                            icon.classList.add('fa-lock');
+                        }
+                    }
+                    if (textSpan) {
+                        textSpan.textContent = isShared ? '取消共享' : '设为共享';
+                    }
+                });
+
+                document.querySelectorAll(`.copy-link-btn[data-doc-id="${normalizedDocId}"]`).forEach(button => {
+                    button.setAttribute('data-is-shared', isShared ? 'true' : 'false');
+                    button.setAttribute('data-share-url', isShared ? (shareUrl || '') : '');
+                });
+            }
+
             //  共享按钮点击事件
             document.querySelectorAll('.share-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', async function() {
                     const docId = this.getAttribute('data-doc-id');
-                    const isShared = this.getAttribute('data-is-shared') === 'true';
-                    const icon = this.querySelector('i');
-                    const ownerId = btn.getAttribute('data-owner-id');
-                    const currentUserId = btn.getAttribute('data-current-user-id');
+                    const ownerId = this.getAttribute('data-owner-id');
+                    const currentUserId = this.getAttribute('data-current-user-id');
+                    if (!docId) return;
+                    if (currentUserId !== ownerId) {
+                        showToast('只有文献上传者才能修改共享状态。', 'warning');
+                        return;
+                    }
 
-                    fetch(`/api/toggle_share/${docId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': window.getCSRFToken()
+                    this.disabled = true;
+                    try {
+                        const response = await fetch(`/api/toggle_share/${docId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': window.getCSRFToken()
+                            }
+                        });
+                        const data = await response.json();
+                        if (!response.ok) {
+                            throw new Error(data.error || '操作失败，请重试');
                         }
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        // 如果非共享者点击共享按钮，提示无权限
-                        if (currentUserId !== ownerId) {
-                            alert('只有文献共享者才能处理共享文献！');
-                            return;
-                        }
-
-                        if (isShared && currentUserId === ownerId) {
-                            icon.classList.remove('fa-share-alt', 'text-green-500');
-                            icon.classList.add('fa-lock');
-                            btn.setAttribute('data-is-shared', 'false');
-                            btn.setAttribute('title', '点击共享');
-                        } else {
-                            icon.classList.remove('fa-lock');
-                            icon.classList.add('fa-share-alt', 'text-green-500');
-                            btn.setAttribute('data-is-shared', 'true');
-                            btn.setAttribute('title', '已共享');
-                        }
-                        alert(data.message);
-                    })
-                    .catch(err => {
+                        updateDocumentShareState(docId, !!data.is_shared, data.share_url || '');
+                        showToast(data.message || '共享状态已更新', 'success');
+                    } catch (err) {
                         console.error(err);
-                        alert('操作失败，请重试');
-                    });
+                        showToast(err.message || '操作失败，请重试', 'error');
+                    } finally {
+                        this.disabled = false;
+                    }
                 });
             });
 
@@ -1985,20 +2003,34 @@
             // 复制链接按钮
             document.querySelectorAll('.copy-link-btn').forEach(btn => {
                 btn.addEventListener('click', async function() {
-                    const container = this.closest('.pulse-hover') || null;
-                    const isShared = this.getAttribute('data-is-shared') === 'true';
-                    const shareUrl = this.getAttribute('data-share-url');
+                    const docId = this.getAttribute('data-doc-id');
+                    let isShared = this.getAttribute('data-is-shared') === 'true';
+                    let shareUrl = this.getAttribute('data-share-url');
                     const privateUrl = this.getAttribute('data-url');
-                    if (!isShared || !shareUrl) {
-                        showToast('该文献尚未开启共享，请先点击文献上的“共享”按钮再复制链接。', 'warning');
-                        return;
-                    }
-                    const url = shareUrl || privateUrl;
-                    if (!url) {
+                    let url = shareUrl || privateUrl;
+                    if (!url || !docId) {
                         showToast('无法生成分享链接', 'error');
                         return;
                     }
                     try {
+                        if (!isShared) {
+                            const response = await fetch(`/api/share-link/${docId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': window.getCSRFToken()
+                                }
+                            });
+                            const data = await response.json();
+                            if (!response.ok) {
+                                throw new Error(data.error || '开启共享失败，请稍后重试');
+                            }
+                            isShared = !!data.is_shared;
+                            shareUrl = data.share_url || shareUrl;
+                            updateDocumentShareState(docId, isShared, shareUrl);
+                            url = shareUrl || url;
+                        }
+
                         const originalHtml = this.innerHTML;
                         await copyText(url);
                         this.innerHTML = '<i class="fa fa-check mr-1.5"></i>已复制';

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run YSXS DB backup daily at 17:00 Beijing time
+
+[Timer]
+OnCalendar=*-*-* 17:00:00 Asia/Shanghai
+Persistent=true
+Unit=ysxs-db-backup.service
+
+[Install]
+WantedBy=timers.target

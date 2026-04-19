@@ -3,710 +3,352 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>趣味屋 - 发现好玩的在线游戏和内容</title>
-  <!-- 引入Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 引入Font Awesome -->
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <!-- 引入Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-  <!-- 配置Tailwind -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#6C63FF',
-            secondary: '#FF6B6B',
-            accent: '#4ECDC4',
-            dark: '#292F36',
-            light: '#F7FFF7'
-          },
-          fontFamily: {
-            inter: ['Inter', 'system-ui', 'sans-serif'],
-          },
-        },
-      }
+  <title>趣味屋｜手写精品游戏库</title>
+  <meta name="description" content="趣味屋重新整理为手写精品游戏库：30款手写游戏 + 15款经典老游戏 + 3个趣味实验。">
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(11, 21, 38, 0.88);
+      --line: rgba(255,255,255,0.08);
+      --text: #f7f9ff;
+      --muted: #9eb1cf;
+      --brand: #7c5cff;
+      --brand-2: #2dd4bf;
+      --accent: #ff9860;
+      --shadow: 0 22px 60px rgba(0,0,0,0.34);
     }
-  </script>
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .text-shadow {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      .card-hover {
-        @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-      }
-      .game-card {
-        @apply bg-white rounded-xl overflow-hidden shadow-md card-hover border border-gray-100 flex flex-col h-[400px]; /* 固定卡片高度并使用flex布局 */
-      }
-      .game-card-content {
-        @apply flex flex-col flex-grow; /* 内容区域自适应伸缩 */
-      }
-      .btn-primary {
-        @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300;
-      }
-      .btn-secondary {
-        @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300;
-      }
-      .section-padding {
-        @apply py-12 md:py-20;
-      }
-      .game-desc {
-        @apply text-gray-600 text-sm flex-grow; /* 描述区域占满剩余空间 */
-      }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(124,92,255,0.24), transparent 26%),
+        radial-gradient(circle at 84% 18%, rgba(45,212,191,0.18), transparent 24%),
+        linear-gradient(180deg, #08111f 0%, #07111f 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    .container { width: min(1280px, calc(100vw - 28px)); margin: 0 auto; }
+    .topbar {
+      position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px);
+      background: rgba(6, 12, 24, 0.72); border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav {
+      min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:700; }
+    .brand-mark {
+      width: 42px; height: 42px; display:grid; place-items:center; border-radius:14px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 10px 20px rgba(124,92,255,0.26);
+      font-size: 1.25rem;
+    }
+    .brand-copy strong { display:block; }
+    .brand-copy span { display:block; color: var(--muted); font-size: .84rem; }
+    .hero {
+      padding: 18px 0 14px; display:grid; grid-template-columns: 1.15fr .85fr; gap: 16px;
+    }
+    .card, .hero-card, .side-card, .section-card {
+      background: var(--panel); border:1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow);
+    }
+    .hero-card, .side-card, .section-card { padding: 18px; }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:8px; padding: 8px 14px; border-radius:999px;
+      background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#dce7ff; font-size:.9rem;
+    }
+    h1 { margin: 14px 0 10px; font-size: clamp(2rem, 4vw, 3.35rem); line-height: 1.05; }
+    p, .muted, .section-head p, .list li { color: var(--muted); line-height: 1.75; }
+    .hero-actions, .nav-actions, .toolbar, .quick-links { display:flex; flex-wrap:wrap; gap:10px; }
+    .btn, .ghost-btn, .chip {
+      min-height: 44px; padding: 0 16px; border-radius: 14px; border: 0; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items:center; justify-content:center; transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    .btn { background: linear-gradient(135deg, var(--brand), #9c80ff); color: #fff; font-weight:700; box-shadow:0 12px 28px rgba(124,92,255,0.24); }
+    .ghost-btn, .chip { background: rgba(255,255,255,0.06); color: var(--text); border:1px solid rgba(255,255,255,0.08); }
+    .btn:hover, .ghost-btn:hover, .chip:hover, .game-card:hover { transform: translateY(-2px); }
+    .metrics { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top: 16px; }
+    .metric { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); }
+    .metric strong { display:block; font-size: 1.5rem; margin-bottom: 6px; }
+    .search-bar {
+      margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:10px;
+    }
+    .search-bar input {
+      flex: 1 1 260px; min-height:44px; border-radius: 14px; border:0; outline:none; color: var(--text);
+      background: rgba(255,255,255,0.04); padding: 0 14px;
+    }
+    .list { padding-left: 18px; margin: 14px 0 0; display:grid; gap:8px; }
+    section { padding: 10px 0; }
+    .section-head { display:flex; justify-content:space-between; gap:12px; align-items:end; flex-wrap:wrap; margin-bottom: 12px; }
+    .section-title { margin:0; font-size: clamp(1.45rem, 2.4vw, 2.2rem); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .game-card {
+      padding: 14px; min-height: 152px; display:grid; gap:8px; border-radius: 20px;
+      background: var(--panel); border:1px solid var(--line); box-shadow: var(--shadow);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .game-card.hidden { display:none; }
+    .game-card:hover { border-color: rgba(146,255,240,.28); }
+    .game-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+    .emoji { width: 38px; height: 38px; border-radius: 12px; display:grid; place-items:center; background: rgba(255,255,255,0.1); font-size:1.2rem; }
+    .badge { padding: 6px 10px; border-radius:999px; font-size:.78rem; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.08); }
+    .badge.new { background: rgba(45,212,191,0.16); color:#b9fff5; }
+    .badge.classic { background: rgba(124,92,255,0.18); color:#e6ddff; }
+    .badge.lab { background: rgba(255,152,96,0.16); color:#ffd7c1; }
+    .game-card h3 { margin:0; font-size: 1rem; }
+    .game-card p { margin:0; font-size:.85rem; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+    .pill { display:inline-flex; align-items:center; padding: 6px 10px; border-radius:999px; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); font-size:.78rem; }
+    .empty { display:none; padding: 22px; text-align:center; border-radius: 20px; border:1px dashed rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); }
+    @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) {
+      .container { width: min(100vw - 18px, 1280px); }
+      .hero-card, .side-card, .section-card { padding: 16px; }
+      .metrics { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
     }
   </style>
-  <!-- 预加载字体 -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="font-inter bg-gray-50 text-dark">
-  <!-- 导航栏 -->
-  <header id="navbar" class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-sm shadow-sm">
-    <div class="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
-      <a href="#" class="flex items-center space-x-2">
-        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-          <i class="fa fa-gamepad text-xl"></i>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <div class="brand-mark">🎪</div>
+        <div class="brand-copy">
+          <strong>趣味屋</strong>
+          <span>手写精品游戏库</span>
         </div>
-        <span class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">趣味屋</span>
       </a>
-      
-      <!-- 桌面导航 -->
-      <nav class="hidden md:flex items-center space-x-8">
-        <a href="#home" class="font-medium hover:text-primary transition-colors">首页</a>
-        <a href="#games" class="font-medium hover:text-primary transition-colors">游戏</a>
-        <a href="#categories" class="font-medium hover:text-primary transition-colors">分类</a>
-        <a href="#trending" class="font-medium hover:text-primary transition-colors">热门</a>
-        <a href="#about" class="font-medium hover:text-primary transition-colors">关于</a>
-      </nav>
-      
-      <div class="flex items-center space-x-4">
-        <button class="hidden md:block btn-primary">
-          <i class="fa fa-user-circle mr-2"></i>登录
-        </button>
-        <!-- 移动端菜单按钮 -->
-        <button id="menu-toggle" class="md:hidden text-dark text-xl">
-          <i class="fa fa-bars"></i>
-        </button>
-      </div>
-    </div>
-    
-    <!-- 移动端导航菜单 -->
-    <div id="mobile-menu" class="md:hidden hidden bg-white border-t">
-      <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
-        <a href="#home" class="py-2 font-medium hover:text-primary transition-colors">首页</a>
-        <a href="#games" class="py-2 font-medium hover:text-primary transition-colors">游戏</a>
-        <a href="#categories" class="py-2 font-medium hover:text-primary transition-colors">分类</a>
-        <a href="#trending" class="py-2 font-medium hover:text-primary transition-colors">热门</a>
-        <a href="#about" class="py-2 font-medium hover:text-primary transition-colors">关于</a>
-        <button class="btn-primary w-full">
-          <i class="fa fa-user-circle mr-2"></i>登录
-        </button>
+      <div class="nav-actions">
+        <a class="ghost-btn" href="../index.html">🏠 返回主页</a>
+        <button class="btn" id="randomBtn" type="button">🎲 随机来一款</button>
       </div>
     </div>
   </header>
 
-  <!-- 英雄区域 -->
-  <section id="home" class="pt-28 md:pt-32 pb-16 md:pb-24 bg-gradient-to-br from-primary/5 to-secondary/5">
-    <div class="container mx-auto px-4">
-      <div class="flex flex-col md:flex-row items-center">
-        <div class="md:w-1/2 mb-10 md:mb-0">
-          <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-tight text-shadow mb-6">
-            发现最好玩的<br>
-            <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">在线趣味内容</span>
-          </h1>
-          <p class="text-lg text-gray-600 mb-8 max-w-lg">
-            探索数百款精选小游戏和趣味工具，无需下载，直接在浏览器中畅玩，适合各个年龄段的玩家。
-          </p>
-          <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <button class="btn-primary text-lg py-3 flex items-center justify-center">
-              <i class="fa fa-play-circle mr-2"></i>开始探索
-            </button>
-            <button class="bg-white border border-gray-200 hover:border-primary text-dark font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
-              <i class="fa fa-info-circle mr-2"></i>了解更多
-            </button>
-          </div>
-          <div class="mt-10 flex items-center space-x-6">
-            <div class="flex -space-x-2">
-              <img src="https://picsum.photos/id/1001/100" alt="用户头像" class="w-10 h-10 rounded-full border-2 border-white">
-              <img src="https://picsum.photos/id/1002/100" alt="用户头像" class="w-10 h-10 rounded-full border-2 border-white">
-              <img src="https://picsum.photos/id/1003/100" alt="用户头像" class="w-10 h-10 rounded-full border-2 border-white">
-              <img src="https://picsum.photos/id/1004/100" alt="用户头像" class="w-10 h-10 rounded-full border-2 border-white">
-              <div class="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium">
-                +2k
-              </div>
-            </div>
-            <div>
-              <div class="flex items-center text-yellow-400 mb-1">
-                <i class="fa fa-star"></i>
-                <i class="fa fa-star"></i>
-                <i class="fa fa-star"></i>
-                <i class="fa fa-star"></i>
-                <i class="fa fa-star-half-o"></i>
-                <span class="ml-2 text-gray-600">4.8/5</span>
-              </div>
-              <p class="text-sm text-gray-500">来自2,000+位玩家的评价</p>
-            </div>
-          </div>
+  <main class="container" id="top">
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">🛠️ 这次不凑数，先做真正能玩的内容</div>
+        <h1>趣味屋<br><span style="color:#92fff0;">手写 30 款新游戏</span></h1>
+        <p>这次继续按你说的标准往前做：不拿模板页凑数，继续补<strong>真正不同类型、单独手写</strong>的新游戏。现在首页里主推的是 30 款手写新作，尽量把“真的值得点开”的内容放在最前面。</p>
+        <div class="hero-actions">
+          <a class="btn" href="#library">🚀 先看手写新作</a>
+          <a class="ghost-btn" href="#classics">🎮 经典老游戏</a>
+          <a class="ghost-btn" href="#lab">🧪 趣味实验</a>
         </div>
-        <div class="md:w-1/2 relative">
-          <div class="relative z-10 rounded-2xl overflow-hidden shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
-            <img src="https://picsum.photos/id/1/600/400" alt="趣味游戏展示" class="w-full h-auto">
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-              <span class="bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full">热门推荐</span>
-              <h3 class="text-white text-xl font-bold mt-2">欢乐拼图挑战</h3>
-            </div>
-          </div>
-          <div class="absolute top-10 -right-5 -z-10 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
-          <div class="absolute -bottom-5 -left-5 -z-10 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
+        <div class="metrics">
+          <div class="metric"><strong>30</strong><span class="muted">手写新游戏总数</span></div>
+          <div class="metric"><strong>15</strong><span class="muted">保留的经典老游戏</span></div>
+          <div class="metric"><strong>48</strong><span class="muted">首页直达入口总数</span></div>
         </div>
-      </div>
-      
-      <!-- 统计数据 -->
-      <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
-          <div class="text-3xl md:text-4xl font-bold text-primary mb-2">100+</div>
-          <p class="text-gray-600">趣味小游戏</p>
+        <div class="search-bar">
+          <input id="searchInput" type="search" placeholder="搜索游戏名或类型，例如：塔防、推箱子、数独、高尔夫、坦克、激光">
+          <button class="ghost-btn" id="clearBtn" type="button">清空搜索</button>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
-          <div class="text-3xl md:text-4xl font-bold text-secondary mb-2">50k+</div>
-          <p class="text-gray-600">活跃玩家</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
-          <div class="text-3xl md:text-4xl font-bold text-accent mb-2">15+</div>
-          <p class="text-gray-600">游戏分类</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
-          <div class="text-3xl md:text-4xl font-bold text-dark mb-2">24/7</div>
-          <p class="text-gray-600">随时畅玩</p>
-        </div>
-      </div>
-    </div>
-  </section>
+      </article>
 
-  <!-- 游戏分类 -->
-  <section id="categories" class="section-padding bg-white">
-    <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <span class="text-primary font-medium">探索分类</span>
-        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-4">按类型浏览游戏</h2>
-        <p class="text-gray-600 max-w-2xl mx-auto">从益智游戏到动作冒险，我们有各种类型的游戏满足你的娱乐需求</p>
-      </div>
-      
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
-            <i class="fa fa-puzzle-piece text-2xl"></i>
-          </div>
-          <h3 class="font-medium">益智游戏</h3>
-          <p class="text-sm text-gray-500 mt-1">42款游戏</p>
-        </a>
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-secondary/10 rounded-full flex items-center justify-center text-secondary mb-4">
-            <i class="fa fa-bolt text-2xl"></i>
-          </div>
-          <h3 class="font-medium">动作游戏</h3>
-          <p class="text-sm text-gray-500 mt-1">36款游戏</p>
-        </a>
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-accent/10 rounded-full flex items-center justify-center text-accent mb-4">
-            <i class="fa fa-car text-2xl"></i>
-          </div>
-          <h3 class="font-medium">赛车游戏</h3>
-          <p class="text-sm text-gray-500 mt-1">18款游戏</p>
-        </a>
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-purple-100 rounded-full flex items-center justify-center text-purple-500 mb-4">
-            <i class="fa fa-shooting-star text-2xl"></i>
-          </div>
-          <h3 class="font-medium">冒险游戏</h3>
-          <p class="text-sm text-gray-500 mt-1">29款游戏</p>
-        </a>
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-green-100 rounded-full flex items-center justify-center text-green-500 mb-4">
-            <i class="fa fa-users text-2xl"></i>
-          </div>
-          <h3 class="font-medium">多人游戏</h3>
-          <p class="text-sm text-gray-500 mt-1">21款游戏</p>
-        </a>
-        <a href="#" class="category-card bg-gray-50 rounded-xl p-6 text-center card-hover">
-          <div class="w-14 h-14 mx-auto bg-yellow-100 rounded-full flex items-center justify-center text-yellow-500 mb-4">
-            <i class="fa fa-paint-brush text-2xl"></i>
-          </div>
-          <h3 class="font-medium">创意工具</h3>
-          <p class="text-sm text-gray-500 mt-1">15款工具</p>
-        </a>
-      </div>
-    </div>
-  </section>
+      <article class="side-card">
+        <div class="eyebrow">📌 本次调整</div>
+        <ul class="list">
+          <li>首页不再主推那批自动拼出来的轻量页。</li>
+          <li>现在已经有 30 款游戏是独立手写页面。</li>
+          <li>返回按钮统一回到 <strong>手写新作区</strong>，不用再从顶部重找。</li>
+          <li>保留一批原来就比较好玩的经典页，避免完全推倒重来。</li>
+        </ul>
+        <div class="quick-links" style="margin-top:14px;">
+          <span class="chip">射击</span>
+          <span class="chip">动作</span>
+          <span class="chip">节奏</span>
+          <span class="chip">卡牌</span>
+          <span class="chip">棋盘</span>
+          <span class="chip">益智</span>
+          <span class="chip">物理</span>
+          <span class="chip">塔防</span>
+        </div>
+      </article>
+    </section>
 
-  <!-- 精选游戏 -->
-  <section id="games" class="section-padding bg-gray-50">
-    <div class="container mx-auto px-4">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
+    <section id="library">
+      <div class="section-head">
         <div>
-          <span class="text-primary font-medium">精选推荐</span>
-          <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-4">你可能喜欢的游戏</h2>
-          <p class="text-gray-600 max-w-2xl">我们根据你的兴趣精选了这些游戏，点击即可开始畅玩</p>
-        </div>
-        <div class="mt-6 md:mt-0 flex space-x-2">
-          <button id="prev-game" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
-            <i class="fa fa-chevron-left"></i>
-          </button>
-          <button id="next-game" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
-            <i class="fa fa-chevron-right"></i>
-          </button>
+          <div class="eyebrow">✨ 手写新作</div>
+          <h2 class="section-title">30 款真正手写的新游戏</h2>
+          <p>最新追加的 15 款也放在这里了，依旧不是配置模板页。</p>
         </div>
       </div>
-      
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- 游戏卡片1 -->
-        <div class="game-card">
-          <div class="relative">
-            <img src="https://picsum.photos/id/10/400/250" alt="方块消除游戏" class="w-full h-48 object-cover">
-            <div class="absolute top-3 left-3">
-              <span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded">益智</span>
-            </div>
-            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-dark text-xs font-bold px-2 py-1 rounded-full flex items-center">
-              <i class="fa fa-star text-yellow-400 mr-1"></i> 4.9
-            </div>
-          </div>
-          <div class="p-5 game-card-content">
-            <h3 class="font-bold text-lg mb-2">方块消除大师</h3>
-            <p class="game-desc mb-4">挑战你的反应能力，在限定时间内消除尽可能多的方块</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="text-gray-500 text-sm"><i class="fa fa-play-circle mr-1"></i> 10k+ 玩家</span>
-              <a href="block-master.html" target="_blank" class="btn-primary py-1.5 px-3 text-sm">
-                开始玩
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 游戏卡片2 -->
-        <div class="game-card">
-          <div class="relative">
-            <img src="https://picsum.photos/id/20/400/250" alt="赛车游戏" class="w-full h-48 object-cover">
-            <div class="absolute top-3 left-3">
-              <span class="bg-secondary text-white text-xs font-bold px-2 py-1 rounded">赛车</span>
-            </div>
-            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-dark text-xs font-bold px-2 py-1 rounded-full flex items-center">
-              <i class="fa fa-star text-yellow-400 mr-1"></i> 4.7
-            </div>
-          </div>
-          <div class="p-5 game-card-content">
-            <h3 class="font-bold text-lg mb-2">极速漂移</h3>
-            <p class="game-desc mb-4">体验高速赛车的刺激，展示你的漂移技巧，在各种赛道上挑战极限速度</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="text-gray-500 text-sm"><i class="fa fa-play-circle mr-1"></i> 25k+ 玩家</span>
-              <a href="speed-drift.html" target="_blank" class="btn-primary py-1.5 px-3 text-sm">
-                开始玩
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 游戏卡片3 -->
-        <div class="game-card">
-          <div class="relative">
-            <img src="https://picsum.photos/id/30/400/250" alt="记忆卡牌游戏" class="w-full h-48 object-cover">
-            <div class="absolute top-3 left-3">
-              <span class="bg-accent text-white text-xs font-bold px-2 py-1 rounded">记忆</span>
-            </div>
-            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-dark text-xs font-bold px-2 py-1 rounded-full flex items-center">
-              <i class="fa fa-star text-yellow-400 mr-1"></i> 4.5
-            </div>
-          </div>
-          <div class="p-5 game-card-content">
-            <h3 class="font-bold text-lg mb-2">记忆卡牌挑战</h3>
-            <p class="game-desc mb-4">锻炼你的记忆力，找出所有匹配的卡牌对，难度会随着关卡提升</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="text-gray-500 text-sm"><i class="fa fa-play-circle mr-1"></i> 18k+ 玩家</span>
-              <a href="memory-cards.html" target="_blank" class="btn-primary py-1.5 px-3 text-sm">
-                开始玩
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 游戏卡片4 -->
-        <div class="game-card">
-          <div class="relative">
-            <img src="https://picsum.photos/id/40/400/250" alt="冒险游戏" class="w-full h-48 object-cover">
-            <div class="absolute top-3 left-3">
-              <span class="bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">冒险</span>
-            </div>
-            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-dark text-xs font-bold px-2 py-1 rounded-full flex items-center">
-              <i class="fa fa-star text-yellow-400 mr-1"></i> 4.8
-            </div>
-          </div>
-          <div class="p-5 game-card-content">
-            <h3 class="font-bold text-lg mb-2">神秘岛屿探险</h3>
-            <p class="game-desc mb-4">探索神秘岛屿，解开隐藏的谜题和宝藏，发现岛屿上的秘密</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="text-gray-500 text-sm"><i class="fa fa-play-circle mr-1"></i> 32k+ 玩家</span>
-              <a href="mystery-island.html" target="_blank" class="btn-primary py-1.5 px-3 text-sm">
-                开始玩
-              </a>
-            </div>
-          </div>
-        </div>
+      <div class="grid" data-section="new">
+        <a class="game-card" href="warehouse-sokoban.html" data-key="仓库推箱子 sokoban 推箱子 空间谜题 手写新作">
+          <div class="game-top"><div class="emoji">📦</div><span class="badge new">NEW</span></div><h3>仓库推箱子</h3><p>只能推不能拉，关卡虽少但每一步都得提前想退路。</p><div class="meta"><span class="pill">空间谜题</span><span class="pill">经典难题</span></div>
+        </a>
+        <a class="game-card" href="lights-out.html" data-key="熄灯谜阵 lights out 切换 逻辑 手写新作">
+          <div class="game-top"><div class="emoji">💡</div><span class="badge new">NEW</span></div><h3>熄灯谜阵</h3><p>点击会连带切换周围灯块，目标是把整盘灯全部熄灭。</p><div class="meta"><span class="pill">逻辑</span><span class="pill">切换谜题</span></div>
+        </a>
+        <a class="game-card" href="flood-fill.html" data-key="色彩泛洪 flood fill 颜色 规划 手写新作">
+          <div class="game-top"><div class="emoji">🌈</div><span class="badge new">NEW</span></div><h3>色彩泛洪</h3><p>在限定步数内吞掉整张棋盘，是很考全局规划的颜色游戏。</p><div class="meta"><span class="pill">颜色规划</span><span class="pill">益智</span></div>
+        </a>
+        <a class="game-card" href="pipe-builder.html" data-key="管道工坊 管道 连线 旋转 手写新作">
+          <div class="game-top"><div class="emoji">🧪</div><span class="badge new">NEW</span></div><h3>管道工坊</h3><p>旋转管道接通能源，主干和分叉会越做越绕。</p><div class="meta"><span class="pill">连线</span><span class="pill">旋转拼接</span></div>
+        </a>
+        <a class="game-card" href="sea-battle.html" data-key="海战雷达 battleship 战舰 猜格 手写新作">
+          <div class="game-top"><div class="emoji">⚓</div><span class="badge new">NEW</span></div><h3>海战雷达</h3><p>隐藏舰队搜索猎杀，先搜再补刀，节奏感很强。</p><div class="meta"><span class="pill">猜格</span><span class="pill">搜索猎杀</span></div>
+        </a>
+        <a class="game-card" href="alchemy-lab.html" data-key="元素合成室 炼金 合成 发现 手写新作">
+          <div class="game-top"><div class="emoji">🧪</div><span class="badge new">NEW</span></div><h3>元素合成室</h3><p>从风火水土开始试配方，慢慢开出越来越多的新元素。</p><div class="meta"><span class="pill">发现式玩法</span><span class="pill">组合</span></div>
+        </a>
+        <a class="game-card" href="mancala.html" data-key="曼卡拉 石子棋 kalah 棋盘 策略 手写新作">
+          <div class="game-top"><div class="emoji">🪨</div><span class="badge new">NEW</span></div><h3>曼卡拉石子棋</h3><p>算最后一颗石子的落点，靠额外回合和抢子压制对手。</p><div class="meta"><span class="pill">棋盘策略</span><span class="pill">资源计算</span></div>
+        </a>
+        <a class="game-card" href="laser-lab.html" data-key="激光折射室 激光 镜子 反射 谜题 手写新作">
+          <div class="game-top"><div class="emoji">🔦</div><span class="badge new">NEW</span></div><h3>激光折射室</h3><p>旋转镜面反射激光，点亮晶体并最终命中终点。</p><div class="meta"><span class="pill">反射谜题</span><span class="pill">路线</span></div>
+        </a>
+        <a class="game-card" href="fishing-pond.html" data-key="悠闲钓鱼池 钓鱼 时机 休闲 手写新作">
+          <div class="game-top"><div class="emoji">🎣</div><span class="badge new">NEW</span></div><h3>悠闲钓鱼池</h3><p>放钩、收钩、钓对鱼种，一局节奏轻但很考预判。</p><div class="meta"><span class="pill">时机</span><span class="pill">休闲</span></div>
+        </a>
+        <a class="game-card" href="lunar-lander.html" data-key="月面着陆 登月 物理 模拟 手写新作">
+          <div class="game-top"><div class="emoji">🌕</div><span class="badge new">NEW</span></div><h3>月面着陆</h3><p>低重力着陆模拟，最后两秒的控速尤其考验手感。</p><div class="meta"><span class="pill">物理模拟</span><span class="pill">操作</span></div>
+        </a>
+        <a class="game-card" href="checkers.html" data-key="国际跳棋 checkers 棋盘 对弈 手写新作">
+          <div class="game-top"><div class="emoji">♟️</div><span class="badge new">NEW</span></div><h3>国际跳棋</h3><p>有强制吃子和连跳规则的完整对局，不是装饰棋盘。</p><div class="meta"><span class="pill">对弈</span><span class="pill">吃子博弈</span></div>
+        </a>
+        <a class="game-card" href="mini-golf.html" data-key="迷你高尔夫 golf 轻物理 路线 手写新作">
+          <div class="game-top"><div class="emoji">⛳</div><span class="badge new">NEW</span></div><h3>迷你高尔夫</h3><p>看反弹角、控力度，用更少杆数打完整套球洞。</p><div class="meta"><span class="pill">轻物理</span><span class="pill">路线</span></div>
+        </a>
+        <a class="game-card" href="claw-crane.html" data-key="抓娃娃机 claw crane 时机 抓取 手写新作">
+          <div class="game-top"><div class="emoji">🧸</div><span class="badge new">NEW</span></div><h3>抓娃娃机</h3><p>看准位置放爪，把奖品完整带回上方出口才算得分。</p><div class="meta"><span class="pill">时机抓取</span><span class="pill">休闲</span></div>
+        </a>
+        <a class="game-card" href="lane-defense.html" data-key="三线塔防 tower defense 塔防 策略 手写新作">
+          <div class="game-top"><div class="emoji">🛡️</div><span class="badge new">NEW</span></div><h3>三线塔防</h3><p>三条路、两种塔、逐渐加快的波次，资源分配很关键。</p><div class="meta"><span class="pill">塔防</span><span class="pill">资源分配</span></div>
+        </a>
+        <a class="game-card" href="tank-battle.html" data-key="坦克突围战 tank 双摇杆 射击 手写新作">
+          <div class="game-top"><div class="emoji">🛞</div><span class="badge new">NEW</span></div><h3>坦克突围战</h3><p>WASD 移动加鼠标瞄准的双摇杆风格小战场。</p><div class="meta"><span class="pill">动作射击</span><span class="pill">走位</span></div>
+        </a>
+        <a class="game-card" href="sky-shooter.html" data-key="星际小飞机 飞机大战 射击 动作 手写新作">
+          <div class="game-top"><div class="emoji">🚀</div><span class="badge new">NEW</span></div><h3>星际小飞机</h3><p>轻量飞机大战：移动、射击、连击和逐步提速都有。</p><div class="meta"><span class="pill">飞行射击</span><span class="pill">爽快</span></div>
+        </a>
+        <a class="game-card" href="flappy-sky.html" data-key="流星穿云 flappy 反应 点击 穿云 手写新作">
+          <div class="game-top"><div class="emoji">☄️</div><span class="badge new">NEW</span></div><h3>流星穿云</h3><p>空格或点击控制上扬，节奏越来越紧，适合反复刷分。</p><div class="meta"><span class="pill">反应</span><span class="pill">一键操作</span></div>
+        </a>
+        <a class="game-card" href="lane-racer.html" data-key="霓虹车道 赛车 闪避 街机 手写新作">
+          <div class="game-top"><div class="emoji">🏎️</div><span class="badge new">NEW</span></div><h3>霓虹车道</h3><p>三车道无尽闪避，切车道躲车流，越活越快。</p><div class="meta"><span class="pill">街机</span><span class="pill">躲避</span></div>
+        </a>
+        <a class="game-card" href="stack-tower.html" data-key="云端叠塔 叠叠高 时机 放置 手写新作">
+          <div class="game-top"><div class="emoji">🏗️</div><span class="badge new">NEW</span></div><h3>云端叠塔</h3><p>移动方块精准叠高，越往后越考验手感和稳定性。</p><div class="meta"><span class="pill">时机</span><span class="pill">上头</span></div>
+        </a>
+        <a class="game-card" href="frog-cross.html" data-key="青蛙过河 frogger 过河 动作 手写新作">
+          <div class="game-top"><div class="emoji">🐸</div><span class="badge new">NEW</span></div><h3>青蛙过河</h3><p>上躲车流下踩木头，一次次把青蛙送回终点。</p><div class="meta"><span class="pill">闯关</span><span class="pill">经典玩法</span></div>
+        </a>
+        <a class="game-card" href="orbit-dodge.html" data-key="轨道闪避 环绕 生存 手写新作">
+          <div class="game-top"><div class="emoji">🪐</div><span class="badge new">NEW</span></div><h3>轨道闪避</h3><p>切换内外轨道并反转方向，在绕圈中躲过障碍。</p><div class="meta"><span class="pill">生存</span><span class="pill">一局很快</span></div>
+        </a>
+        <a class="game-card" href="target-hunter.html" data-key="靶心猎手 打靶 点击 准度 手写新作">
+          <div class="game-top"><div class="emoji">🎯</div><span class="badge new">NEW</span></div><h3>靶心猎手</h3><p>45 秒点击打靶，连击和准度都会影响最后得分。</p><div class="meta"><span class="pill">点击射击</span><span class="pill">准度</span></div>
+        </a>
+        <a class="game-card" href="cannon-chaos.html" data-key="风炮打靶 炮台 物理 抛物线 手写新作">
+          <div class="game-top"><div class="emoji">💣</div><span class="badge new">NEW</span></div><h3>风炮打靶</h3><p>调角度、力度和风力，打掉空中的气球阵列。</p><div class="meta"><span class="pill">物理</span><span class="pill">预判</span></div>
+        </a>
+        <a class="game-card" href="music-tiles.html" data-key="节奏落键 钢琴块 节奏 键盘 手写新作">
+          <div class="game-top"><div class="emoji">🎹</div><span class="badge new">NEW</span></div><h3>节奏落键</h3><p>四列落块节奏挑战，D/F/J/K 接住方块连击刷分。</p><div class="meta"><span class="pill">节奏</span><span class="pill">连击</span></div>
+        </a>
+        <a class="game-card" href="blackjack.html" data-key="黑杰克 21点 卡牌 扑克 手写新作">
+          <div class="game-top"><div class="emoji">🃏</div><span class="badge new">NEW</span></div><h3>黑杰克 21 点</h3><p>完整可玩的 21 点：筹码、加倍、庄家逻辑都做了。</p><div class="meta"><span class="pill">卡牌</span><span class="pill">策略</span></div>
+        </a>
+        <a class="game-card" href="reversi.html" data-key="黑白棋 奥赛罗 棋盘 策略 手写新作">
+          <div class="game-top"><div class="emoji">⚫⚪</div><span class="badge new">NEW</span></div><h3>黑白棋</h3><p>完整棋盘博弈，电脑会抢角、会防守，不是摆设 AI。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">策略</span></div>
+        </a>
+        <a class="game-card" href="sudoku.html" data-key="数独 工坊 逻辑 益智 手写新作">
+          <div class="game-top"><div class="emoji">🔢</div><span class="badge new">NEW</span></div><h3>数独工坊</h3><p>随机题目、计时、检查和提示都有，适合认真坐下来玩。</p><div class="meta"><span class="pill">逻辑</span><span class="pill">益智</span></div>
+        </a>
+        <a class="game-card" href="mastermind.html" data-key="密码破译 mastermind 猜颜色 推理 手写新作">
+          <div class="game-top"><div class="emoji">🧩</div><span class="badge new">NEW</span></div><h3>密码破译</h3><p>四位颜色密码推理，靠反馈一步步逼近正确答案。</p><div class="meta"><span class="pill">推理</span><span class="pill">信息博弈</span></div>
+        </a>
+        <a class="game-card" href="gomoku.html" data-key="五子棋 棋盘 对弈 手写新作">
+          <div class="game-top"><div class="emoji">⚪⚫</div><span class="badge new">NEW</span></div><h3>五子棋</h3><p>中等强度电脑对手，会同时考虑进攻和防守。</p><div class="meta"><span class="pill">对弈</span><span class="pill">五连珠</span></div>
+        </a>
+        <a class="game-card" href="bubble-pop.html" data-key="泡泡消消乐 连团消除 益智 手写新作">
+          <div class="game-top"><div class="emoji">🫧</div><span class="badge new">NEW</span></div><h3>泡泡消消乐</h3><p>点击同色连团清除，气泡下落和列压缩会持续改变局势。</p><div class="meta"><span class="pill">消除</span><span class="pill">局面规划</span></div>
+        </a>
+      </div>
+    </section>
 
-        <!-- 游戏卡片5 - 2048游戏 -->
-        <div class="game-card">
-          <div class="relative">
-            <img src="https://picsum.photos/id/200/400/250" alt="2048游戏" class="w-full h-48 object-cover">
-            <div class="absolute top-3 left-3">
-              <span class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">益智</span>
-            </div>
-            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-dark text-xs font-bold px-2 py-1 rounded-full flex items-center">
-              <i class="fa fa-star text-yellow-400 mr-1"></i> 4.9
-            </div>
-          </div>
-          <div class="p-5 game-card-content">
-            <h3 class="font-bold text-lg mb-2">2048</h3>
-            <p class="game-desc mb-4">挑战你的思维极限，合并数字，争取获得2048！简单规则下的无限乐趣</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="text-gray-500 text-sm"><i class="fa fa-play-circle mr-1"></i> 50k+ 玩家</span>
-              <a href="2048.html" target="_blank" class="btn-primary py-1.5 px-3 text-sm">
-                开始玩
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="text-center mt-10">
-        <button class="btn-secondary">
-          查看全部游戏 <i class="fa fa-arrow-right ml-2"></i>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 热门趋势 -->
-  <section id="trending" class="section-padding bg-white">
-    <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <span class="text-primary font-medium">当前流行</span>
-        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-4">热门趋势游戏</h2>
-        <p class="text-gray-600 max-w-2xl mx-auto">这些是当前最受欢迎的游戏，加入大家一起玩</p>
-      </div>
-      
-      <div class="bg-gray-50 rounded-2xl p-6 md:p-8 shadow-sm">
-        <div class="flex flex-col md:flex-row gap-8">
-          <div class="md:w-1/2">
-            <div class="relative rounded-xl overflow-hidden">
-              <img src="https://picsum.photos/id/96/600/400" alt="热门游戏展示" class="w-full h-auto">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                <div class="p-6">
-                  <span class="bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full">热门第一</span>
-                  <h3 class="text-white text-2xl font-bold mt-3">太空侵略者重制版</h3>
-                  <p class="text-white/80 mt-2">经典游戏的现代重制，带来全新体验</p>
-                  <a href="space-invaders.html" target="_blank" class="mt-4 inline-block bg-white text-dark font-medium py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors">
-                    立即开始 <i class="fa fa-gamepad ml-2"></i>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="md:w-1/2">
-            <h3 class="text-xl font-bold mb-6">玩家活跃度趋势</h3>
-            <div class="h-64 mb-6">
-              <canvas id="activityChart"></canvas>
-            </div>
-            
-            <div class="space-y-4">
-              <div class="flex items-center p-3 bg-white rounded-xl shadow-sm">
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4">
-                  <i class="fa fa-trophy"></i>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium">太空侵略者重制版</h4>
-                  <p class="text-sm text-gray-500">今日玩家: 12,458</p>
-                </div>
-                <div class="text-green-500 text-sm font-medium">
-                  <i class="fa fa-arrow-up"></i> 12%
-                </div>
-              </div>
-              
-              <div class="flex items-center p-3 bg-white rounded-xl shadow-sm">
-                <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mr-4">
-                  <i class="fa fa-trophy"></i>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium">极速赛车联赛</h4>
-                  <p class="text-sm text-gray-500">今日玩家: 9,872</p>
-                </div>
-                <div class="text-green-500 text-sm font-medium">
-                  <i class="fa fa-arrow-up"></i> 8%
-                </div>
-              </div>
-              
-              <div class="flex items-center p-3 bg-white rounded-xl shadow-sm">
-                <div class="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent mr-4">
-                  <i class="fa fa-trophy"></i>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium">脑力大挑战</h4>
-                  <p class="text-sm text-gray-500">今日玩家: 7,541</p>
-                </div>
-                <div class="text-red-500 text-sm font-medium">
-                  <i class="fa fa-arrow-down"></i> 3%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 趣味工具 -->
-  <section class="section-padding bg-gradient-to-br from-primary/5 to-secondary/5">
-    <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <span class="text-primary font-medium">创意空间</span>
-        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-4">趣味工具和小玩意</h2>
-        <p class="text-gray-600 max-w-2xl mx-auto">除了游戏，我们还有各种有趣的工具让你消遣时光</p>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 工具1 -->
-        <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
-          <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-5">
-            <i class="fa fa-magic text-xl"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">照片滤镜工坊</h3>
-          <p class="text-gray-600 mb-5">上传你的照片，尝试各种有趣的滤镜效果，一键分享给朋友</p>
-          <a href="#" class="inline-flex items-center text-primary font-medium hover:underline">
-            开始使用 <i class="fa fa-arrow-right ml-2"></i>
-          </a>
-        </div>
-        
-        <!-- 工具2 -->
-        <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
-          <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center text-secondary mb-5">
-            <i class="fa fa-music text-xl"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">节奏生成器</h3>
-          <p class="text-gray-600 mb-5">创建属于你自己的节奏和节拍，体验音乐创作的乐趣</p>
-          <a href="#" class="inline-flex items-center text-primary font-medium hover:underline">
-            开始使用 <i class="fa fa-arrow-right ml-2"></i>
-          </a>
-        </div>
-        
-        <!-- 工具3 -->
-        <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
-          <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center text-accent mb-5">
-            <i class="fa fa-paint-brush text-xl"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">在线涂鸦板</h3>
-          <p class="text-gray-600 mb-5">释放你的创造力，在在线画板上尽情涂鸦，保存或分享你的作品</p>
-          <a href="#" class="inline-flex items-center text-primary font-medium hover:underline">
-            开始使用 <i class="fa fa-arrow-right ml-2"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 用户评价 -->
-  <section class="section-padding bg-white">
-    <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <span class="text-primary font-medium">玩家心声</span>
-        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-4">用户的真实评价</h2>
-        <p class="text-gray-600 max-w-2xl mx-auto">看看其他玩家对我们平台的评价和反馈</p>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 评价1 -->
-        <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
-          <div class="flex text-yellow-400 mb-4">
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-          </div>
-          <p class="text-gray-700 mb-6">"趣味屋是我发现的最好的在线游戏平台之一，游戏种类丰富，界面友好，而且完全免费！我每天都会来玩一会儿。"</p>
-          <div class="flex items-center">
-            <img src="https://picsum.photos/id/1012/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4">
-            <div>
-              <h4 class="font-medium">李明</h4>
-              <p class="text-sm text-gray-500">活跃用户 · 6个月</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 评价2 -->
-        <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
-          <div class="flex text-yellow-400 mb-4">
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star-half-o"></i>
-          </div>
-          <p class="text-gray-700 mb-6">"我的孩子们非常喜欢这里的益智游戏，不仅有趣还能锻炼思维能力。界面设计很清新，没有乱七八糟的广告，非常棒！"</p>
-          <div class="flex items-center">
-            <img src="https://picsum.photos/id/1027/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4">
-            <div>
-              <h4 class="font-medium">王芳</h4>
-              <p class="text-sm text-gray-500">活跃用户 · 1年</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 评价3 -->
-        <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
-          <div class="flex text-yellow-400 mb-4">
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-          </div>
-          <p class="text-gray-700 mb-6">"我特别喜欢这里的创意工具，尤其是在线涂鸦板，让我在工作间隙可以放松一下，释放创造力。更新也很及时，经常有新内容。"</p>
-          <div class="flex items-center">
-            <img src="https://picsum.photos/id/1025/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4">
-            <div>
-              <h4 class="font-medium">张伟</h4>
-              <p class="text-sm text-gray-500">活跃用户 · 3个月</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 订阅区域 -->
-  <section class="py-16 bg-primary">
-    <div class="container mx-auto px-4">
-      <div class="max-w-3xl mx-auto text-center">
-        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-white mb-4">获取最新游戏和活动信息</h2>
-        <p class="text-white/80 mb-8">订阅我们的 newsletter，第一时间获取新游戏上线通知和独家优惠</p>
-        <form class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-          <input type="email" placeholder="输入你的邮箱地址" class="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50">
-          <button type="submit" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 whitespace-nowrap">
-            立即订阅
-          </button>
-        </form>
-        <p class="text-white/60 text-sm mt-4">我们尊重你的隐私，不会向第三方分享你的信息</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 关于我们 -->
-  <section id="about" class="section-padding bg-white">
-    <div class="container mx-auto px-4">
-      <div class="flex flex-col md:flex-row items-center gap-10">
-        <div class="md:w-1/2">
-          <span class="text-primary font-medium">关于我们</span>
-          <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mt-2 mb-6">打造最好的在线趣味平台</h2>
-          <p class="text-gray-600 mb-4">趣味屋成立于2023年，我们的使命是为用户提供高质量、无广告干扰的在线娱乐体验。</p>
-          <p class="text-gray-600 mb-6">我们精选了各种类型的小游戏和趣味工具，无需下载安装，打开浏览器即可畅玩。所有内容都经过精心挑选和测试，确保适合各个年龄段的用户。</p>
-          
-          <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="flex items-center">
-              <i class="fa fa-check-circle text-green-500 mr-2"></i>
-              <span>无广告干扰</span>
-            </div>
-            <div class="flex items-center">
-              <i class="fa fa-check-circle text-green-500 mr-2"></i>
-              <span>完全免费</span>
-            </div>
-            <div class="flex items-center">
-              <i class="fa fa-check-circle text-green-500 mr-2"></i>
-              <span>无需注册</span>
-            </div>
-            <div class="flex items-center">
-              <i class="fa fa-check-circle text-green-500 mr-2"></i>
-              <span>定期更新</span>
-            </div>
-          </div>
-          
-          <a href="#" class="btn-primary inline-flex items-center">
-            了解更多 <i class="fa fa-arrow-right ml-2"></i>
-          </a>
-        </div>
-        
-        <div class="md:w-1/2 relative">
-          <div class="relative z-10 rounded-2xl overflow-hidden shadow-xl">
-            <img src="https://picsum.photos/id/180/600/400" alt="我们的团队" class="w-full h-auto">
-          </div>
-          <div class="absolute -bottom-6 -left-6 w-40 h-40 bg-secondary/20 rounded-full blur-2xl -z-10"></div>
-          <div class="absolute -top-6 -right-6 w-40 h-40 bg-primary/20 rounded-full blur-2xl -z-10"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 页脚 -->
-  <footer class="bg-dark text-white pt-16 pb-8">
-    <div class="container mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+    <section id="classics">
+      <div class="section-head">
         <div>
-          <a href="#" class="flex items-center space-x-2 mb-6">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary">
-              <i class="fa fa-gamepad text-xl"></i>
-            </div>
-            <span class="text-xl font-bold">趣味屋</span>
-          </a>
-          <p class="text-gray-400 mb-6">打造最好的在线趣味平台，让每个人都能找到属于自己的乐趣。</p>
-          <div class="flex space-x-4">
-            <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
-              <i class="fa fa-facebook"></i>
-            </a>
-            <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
-              <i class="fa fa-twitter"></i>
-            </a>
-            <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
-              <i class="fa fa-instagram"></i>
-            </a>
-            <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
-              <i class="fa fa-youtube-play"></i>
-            </a>
-          </div>
+          <div class="eyebrow">🎮 经典保留</div>
+          <h2 class="section-title">原来就比较能打的老游戏</h2>
+          <p>不是全部保留，只留下相对完整、值得继续玩的内容。</p>
         </div>
-        
+      </div>
+      <div class="grid" data-section="classic">
+        <a class="game-card" href="2048.html" data-key="2048 数字 合并 经典 老游戏"><div class="game-top"><div class="emoji">🔢</div><span class="badge classic">CLASSIC</span></div><h3>2048 进阶版</h3><p>保留了平滑移动、合并反馈和撤销功能的新版 2048。</p><div class="meta"><span class="pill">数字</span><span class="pill">合并</span></div></a>
+        <a class="game-card" href="minesweeper.html" data-key="扫雷 经典 推理 老游戏"><div class="game-top"><div class="emoji">💣</div><span class="badge classic">CLASSIC</span></div><h3>扫雷</h3><p>带首击保护的老朋友，适合安静地思考一局。</p><div class="meta"><span class="pill">推理</span><span class="pill">经典</span></div></a>
+        <a class="game-card" href="snake.html" data-key="贪吃蛇 反应 老游戏"><div class="game-top"><div class="emoji">🐍</div><span class="badge classic">CLASSIC</span></div><h3>贪吃蛇</h3><p>熟悉又耐玩，适合拿来短暂放空和刷手感。</p><div class="meta"><span class="pill">街机</span><span class="pill">反应</span></div></a>
+        <a class="game-card" href="breakout.html" data-key="打砖块 弹球 街机 老游戏"><div class="game-top"><div class="emoji">🧱</div><span class="badge classic">CLASSIC</span></div><h3>打砖块</h3><p>接球、清砖、找角度，老派街机味道很足。</p><div class="meta"><span class="pill">弹球</span><span class="pill">街机</span></div></a>
+        <a class="game-card" href="connect-four.html" data-key="四子连珠 棋盘 策略 老游戏"><div class="game-top"><div class="emoji">🔴</div><span class="badge classic">CLASSIC</span></div><h3>四子连珠</h3><p>比三连棋更讲布局，适合快速来一盘脑力对抗。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">布局</span></div></a>
+        <a class="game-card" href="maze-escape.html" data-key="迷宫 逃脱 路径 老游戏"><div class="game-top"><div class="emoji">🌀</div><span class="badge classic">CLASSIC</span></div><h3>迷宫逃脱</h3><p>偏轻度但节奏不错，适合快速闯关。</p><div class="meta"><span class="pill">迷宫</span><span class="pill">路径</span></div></a>
+        <a class="game-card" href="memory-match.html" data-key="记忆翻翻乐 记忆 老游戏"><div class="game-top"><div class="emoji">🧠</div><span class="badge classic">CLASSIC</span></div><h3>记忆翻翻乐</h3><p>翻牌配对，适合轻松玩和练一下记忆。</p><div class="meta"><span class="pill">记忆</span><span class="pill">配对</span></div></a>
+        <a class="game-card" href="sliding-puzzle.html" data-key="滑块拼图 拼图 老游戏"><div class="game-top"><div class="emoji">🧩</div><span class="badge classic">CLASSIC</span></div><h3>滑块拼图</h3><p>传统数字拼图，适合爱琢磨最少步数的人。</p><div class="meta"><span class="pill">拼图</span><span class="pill">耐玩</span></div></a>
+        <a class="game-card" href="typing-challenge.html" data-key="打字挑战 速度 老游戏"><div class="game-top"><div class="emoji">⌨️</div><span class="badge classic">CLASSIC</span></div><h3>打字挑战</h3><p>轻量但实用，拿来热手或测试手速都很合适。</p><div class="meta"><span class="pill">打字</span><span class="pill">速度</span></div></a>
+        <a class="game-card" href="reaction-test.html" data-key="反应测试 手速 老游戏"><div class="game-top"><div class="emoji">⚡</div><span class="badge classic">CLASSIC</span></div><h3>反应测试</h3><p>就看你什么时候点得够快，适合和朋友比手速。</p><div class="meta"><span class="pill">反应</span><span class="pill">极短局</span></div></a>
+        <a class="game-card" href="simon.html" data-key="西蒙 记忆 节奏 老游戏"><div class="game-top"><div class="emoji">🎵</div><span class="badge classic">CLASSIC</span></div><h3>西蒙记忆</h3><p>跟灯光顺序复现，越到后面越容易慌。</p><div class="meta"><span class="pill">记忆</span><span class="pill">节奏</span></div></a>
+        <a class="game-card" href="color-hunt.html" data-key="找色块 眼力 老游戏"><div class="game-top"><div class="emoji">🎨</div><span class="badge classic">CLASSIC</span></div><h3>找色块</h3><p>颜色极其接近时很考眼力，属于短小但挺上头的类型。</p><div class="meta"><span class="pill">眼力</span><span class="pill">反应</span></div></a>
+        <a class="game-card" href="whack-a-mole.html" data-key="打地鼠 手速 老游戏"><div class="game-top"><div class="emoji">🔨</div><span class="badge classic">CLASSIC</span></div><h3>打地鼠</h3><p>快速点击和视线切换都要跟上节奏。</p><div class="meta"><span class="pill">手速</span><span class="pill">街机</span></div></a>
+        <a class="game-card" href="tic-tac-toe.html" data-key="井字棋 经典 棋盘 老游戏"><div class="game-top"><div class="emoji">⭕</div><span class="badge classic">CLASSIC</span></div><h3>井字棋</h3><p>虽然简单，但仍然适合快速开一局解闷。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">极简</span></div></a>
+        <a class="game-card" href="block-master.html" data-key="方块大师 方块 益智 老游戏"><div class="game-top"><div class="emoji">🧊</div><span class="badge classic">CLASSIC</span></div><h3>方块大师</h3><p>偏方块规划类，适合喜欢图形布局的人。</p><div class="meta"><span class="pill">方块</span><span class="pill">益智</span></div></a>
+      </div>
+    </section>
+
+    <section id="lab">
+      <div class="section-head">
         <div>
-          <h3 class="text-lg font-bold mb-6">快速链接</h3>
-          <ul class="space-y-3">
-            <li><a href="#home" class="text-gray-400 hover:text-white transition-colors">首页</a></li>
-            <li><a href="#games" class="text-gray-400 hover:text-white transition-colors">所有游戏</a></li>
-            <li><a href="#categories" class="text-gray-400 hover:text-white transition-colors">游戏分类</a></li>
-            <li><a href="#trending" class="text-gray-400 hover:text-white transition-colors">热门游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">趣味工具</a></li>
-            <li><a href="#about" class="text-gray-400 hover:text-white transition-colors">关于我们</a></li>
-          </ul>
+          <div class="eyebrow">🧪 趣味实验</div>
+          <h2 class="section-title">不是游戏，但也值得点开</h2>
+          <p>保留几个轻松的小实验，和主游戏库区分开。</p>
         </div>
-        
-        <div>
-          <h3 class="text-lg font-bold mb-6">游戏分类</h3>
-          <ul class="space-y-3">
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">益智游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">动作游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">赛车游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">冒险游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">多人游戏</a></li>
-            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">创意工具</a></li>
-          </ul>
-        </div>
-        
-        <div>
-          <h3 class="text-lg font-bold mb-6">联系我们</h3>
-          <ul class="space-y-3">
-            <li class="flex items-start">
-              <i class="fa fa-envelope text-primary mt-1 mr-3"></i>
-              <span class="text-gray-400">contact@quweiwu.com</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fa fa-phone text-primary mt-
+      </div>
+      <div class="grid" data-section="lab">
+        <a class="game-card" href="Calculator.html" data-key="计算器 工具 实验"><div class="game-top"><div class="emoji">🧮</div><span class="badge lab">LAB</span></div><h3>玻璃感计算器</h3><p>顺手好用的小工具，适合在趣味屋里临时打开。</p><div class="meta"><span class="pill">工具</span><span class="pill">彩蛋</span></div></a>
+        <a class="game-card" href="confess.html" data-key="表白 小剧场 实验"><div class="game-top"><div class="emoji">💘</div><span class="badge lab">LAB</span></div><h3>表白小剧场</h3><p>一个会躲躲闪闪的轻松小玩具，不走严肃路线。</p><div class="meta"><span class="pill">互动</span><span class="pill">轻松</span></div></a>
+        <a class="game-card" href="Taiji.html" data-key="太极 动画 实验"><div class="game-top"><div class="emoji">☯️</div><span class="badge lab">LAB</span></div><h3>太极小实验</h3><p>偏视觉和动效的小页面，适合放松点开看看。</p><div class="meta"><span class="pill">动效</span><span class="pill">视觉</span></div></a>
+      </div>
+    </section>
+
+    <div class="empty" id="emptyState">
+      <h3>没有找到匹配内容</h3>
+      <p>试试换个关键词，比如“射击”、“棋盘”、“数独”、“节奏”、“贪吃蛇”。</p>
+    </div>
+  </main>
+
+  <script>
+    const cards = [...document.querySelectorAll('.game-card')];
+    const searchInput = document.getElementById('searchInput');
+    const emptyState = document.getElementById('emptyState');
+    const randomBtn = document.getElementById('randomBtn');
+
+    function filterCards() {
+      const key = searchInput.value.trim().toLowerCase();
+      let shown = 0;
+      cards.forEach(card => {
+        const text = (card.dataset.key || '').toLowerCase();
+        const matched = !key || text.includes(key);
+        card.classList.toggle('hidden', !matched);
+        if (matched) shown += 1;
+      });
+      emptyState.style.display = shown ? 'none' : 'block';
+    }
+
+    searchInput.addEventListener('input', filterCards);
+    document.getElementById('clearBtn').addEventListener('click', () => { searchInput.value = ''; filterCards(); });
+    randomBtn.addEventListener('click', () => {
+      const visible = cards.filter(card => !card.classList.contains('hidden'));
+      const pool = visible.length ? visible : cards;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      window.location.href = pick.getAttribute('href');
+    });
+
+    filterCards();
+  </script>
+</body>
+</html>

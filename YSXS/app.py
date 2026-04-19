@@ -909,7 +909,10 @@ def build_category_counts(filters=None):
             for category in categories
         ]
     else:
-        shared_q = db.session.query(Document.category).filter(Document.is_shared.is_(True))
+        shared_q = (
+            db.session.query(Document.category, func.count(Document.id))
+            .filter(Document.is_shared.is_(True))
+        )
         for condition in filters:
             shared_q = shared_q.filter(condition)
         shared_q = shared_q.group_by(Document.category)
@@ -917,7 +920,11 @@ def build_category_counts(filters=None):
             label = category_value or '未分类'
             counts.append({"value": category_value or 'uncategorized', "label": label, "count": int(cnt)})
 
-    uncategorized_query = Document.query.filter(get_accessible_documents_condition())
+    uncategorized_query = Document.query
+    if owner_id:
+        uncategorized_query = uncategorized_query.filter(get_accessible_documents_condition())
+    else:
+        uncategorized_query = uncategorized_query.filter(Document.is_shared.is_(True))
     for condition in filters:
         uncategorized_query = uncategorized_query.filter(condition)
     uncategorized_count = uncategorized_query.filter(Document.category_id.is_(None)).count()
@@ -1152,7 +1159,7 @@ def render_document_page(**context):
     endpoint_view_labels = {
         'index': '全部文献',
         'my_collected': '我的收藏',
-        'shared_documents': '共享文件',
+        'shared_documents': '共享文献',
     }
     current_view_label = context.get('current_view_label')
     if not current_view_label:
@@ -4144,7 +4151,7 @@ def morning_report_summarize(paper_id: int):
 @login_required
 def document_summarize(doc_id: int):
     doc = Document.query.get_or_404(doc_id)
-    ensure_document_access(doc)
+    ensure_document_access(doc, require_owner=True)
     try:
         summary = summarize_document_with_ai(doc)
     except Exception as exc:
@@ -4760,7 +4767,6 @@ def recent():
 
 #shared_documents：显示共享的文献
 @app.route('/shared_documents')
-@login_required
 def shared_documents():
     # 假设共享的文献是通过Document模型的is_shared字段来标记的
     base_query = Document.query.filter(Document.is_shared.is_(True))
@@ -4802,7 +4808,34 @@ def toggle_share(doc_id):
     db.session.commit()
 
     status = '共享' if doc.is_shared else '取消共享'
-    return jsonify({'message': f'已成功{status}文献《{doc.title}》'})
+    return jsonify({
+        'message': f'已成功{status}文献《{doc.title}》',
+        'is_shared': bool(doc.is_shared),
+        'share_url': url_for('shared_document', doc_id=doc.id, _external=True) if doc.is_shared else '',
+    })
+
+
+@app.route('/api/share-link/<int:doc_id>', methods=['POST'])
+@login_required
+def ensure_share_link(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    if doc.owner_id != current_user.id:
+        return jsonify({'error': '没有权限修改此文献'}), 403
+
+    changed = False
+    if not doc.is_shared:
+        doc.is_shared = True
+        doc.share_by_id = current_user.id
+        changed = True
+
+    if changed:
+        db.session.commit()
+
+    return jsonify({
+        'message': '已自动开启文献共享并复制链接。' if changed else '分享链接已复制。',
+        'is_shared': True,
+        'share_url': url_for('shared_document', doc_id=doc.id, _external=True),
+    })
 
 
 def _split_authors(raw: str | None) -> list[str]:
@@ -6238,7 +6271,6 @@ def export_selected_citations():
 
 # 文献详情页
 @app.route('/document/<int:doc_id>')
-@login_required
 def document_detail(doc_id):
     # 查询文献详情
     doc = Document.query.get_or_404(doc_id)
@@ -6254,7 +6286,7 @@ def shared_document(doc_id):
     doc = Document.query.get_or_404(doc_id)
     if not doc.is_shared:
         abort(404)
-    return render_template('public_document.html', doc=doc)
+    return redirect(url_for('document_detail', doc_id=doc.id))
 
 # 编辑文献页面路由（GET请求：显示表单）
 @app.route('/document/<int:doc_id>/edit', methods=['GET'])
@@ -6676,6 +6708,7 @@ def edit_remark(doc_id):
             remark_content = request.form.get('remark', '')
         
         doc = Document.query.get_or_404(doc_id)
+        ensure_document_access(doc, require_owner=True)
         doc.remark = remark_content.strip()
         db.session.commit()
         

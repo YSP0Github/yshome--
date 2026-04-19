@@ -2,6 +2,16 @@
 {% block title %}{{ doc.title }} - 文献详情{% endblock %}
 {% block content %}
 {% set can_edit = current_user.is_authenticated and current_user.id == doc.owner_id %}
+{% set can_generate_summary = can_edit and ai_enabled %}
+{% set can_view_cached_file = current_user.is_authenticated %}
+{% if doc.doi and doc.doi.strip() %}
+    {% set external_view_url = doc.doi.strip() %}
+    {% if not external_view_url.startswith('http') %}
+        {% set external_view_url = 'https://doi.org/' ~ external_view_url %}
+    {% endif %}
+{% else %}
+    {% set external_view_url = doc.url %}
+{% endif %}
         <style>
             .doi-fill-btn {
                 background: #059669;
@@ -403,17 +413,23 @@
                     data-no-edit-access="true">
                 <i class="fa fa-lock mr-2"></i><span class="detail-action-text"> 编辑信息</span></button>
             {% endif %}
+            {% if can_view_cached_file %}
             <a href="{{ url_for('open_document', doc_id=doc.id) }}" class="detail-action-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors" aria-label="下载原文">
                 <i class="fa fa-download mr-2"></i><span class="detail-action-text"> 下载原文</span></a>
             <!-- 在浏览器中查看缓存 -->
             <a href="{{ url_for('open_document_in_browser', doc_id=doc.id) }}" target="_blank" class="detail-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors" aria-label="查看原文">
                 <i class="fa fa-eye mr-2"></i><span class="detail-action-text"> 查看原文</span></a>
+            {% endif %}
             <button type="button"
                     id="generate-doc-summary-btn"
-                    class="detail-action-btn detail-ai-btn px-4 py-2 rounded-lg transition-colors {% if not ai_enabled %}opacity-70 cursor-not-allowed{% endif %}"
-                    {% if not ai_enabled %}disabled{% endif %}
+                    class="detail-action-btn detail-ai-btn px-4 py-2 rounded-lg transition-colors {% if not can_generate_summary %}opacity-70 cursor-not-allowed{% endif %}"
+                    {% if not can_generate_summary %}disabled{% endif %}
                     data-doc-id="{{ doc.id }}">
                 <i class="fa fa-magic mr-2"></i><span class="detail-action-text"> AI总结</span></button>
+            {% if not can_view_cached_file and (doc.doi or doc.url) %}
+            <a href="{{ external_view_url }}" target="_blank" rel="noopener" class="detail-action-btn bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg transition-colors" aria-label="查看原文链接">
+                <i class="fa fa-external-link mr-2"></i><span class="detail-action-text"> 查看原文</span></a>
+            {% endif %}
         </div>
 
         <!-- 文献详情卡片 -->
@@ -525,7 +541,7 @@
                     </div>
                 </div>
                 <div id="doc-summary-empty" class="{% if doc.ai_summary %}hidden{% endif %} text-slate-500 leading-8">
-                    还没有生成 AI 总结。点击右上角“AI总结”即可得到结构化摘要，且不会覆盖原始摘要。
+                    {% if can_generate_summary %}还没有生成 AI 总结。点击右上角“AI总结”即可得到结构化摘要，且不会覆盖原始摘要。{% else %}当前尚未生成 AI 总结。共享查看模式下仅可阅读已存在的总结内容。{% endif %}
                 </div>
                 <div id="doc-summary-box" class="{% if not doc.ai_summary %}hidden{% endif %}">
                     <div class="detail-summary-card">
