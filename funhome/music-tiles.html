@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>节奏落键｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #36d7b7; --accent-2: #7f74ff; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🎹 手写新作 · 节奏落键</div>
+      <h1>节奏落键</h1>
+      <p class="lead">四列钢琴块风格小游戏。看清底部判定区，在正确时机按下对应列的按键。它不是音乐播放器，但节奏感和连击反馈都有了。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始节奏</button>
+        <button class="ghost-btn" id="restartBtn" type="button">重新来</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>得分</span><strong id="scoreEl">0</strong></div>
+        <div class="stat"><span>连击</span><strong id="comboEl">0</strong></div>
+        <div class="stat"><span>生命</span><strong id="lifeEl">3</strong></div>
+        <div class="stat"><span>最佳分数</span><strong id="bestEl">0</strong></div>
+      </div>
+      <div class="legend">
+        <span class="legend-item">D</span>
+        <span class="legend-item">F</span>
+        <span class="legend-item">J</span>
+        <span class="legend-item">K</span>
+      </div>
+      <ul class="tips">
+        <li>D / F / J / K 分别对应四列，也可以直接点击列。</li>
+        <li>越往后方块下落越快，连击越高加分越多。</li>
+        <li>漏掉方块会扣生命，三次后本局结束。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先稳住判定区，不要盯着顶部。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🎼 四列判定</span>
+          <span class="legend-item">⚡ 越往后速度越快</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="420" height="720"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">按开始后，用 D F J K 接住方块。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const comboEl = document.getElementById('comboEl');
+    const lifeEl = document.getElementById('lifeEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-music-tiles';
+    const state = { running: false, over: false, score: 0, combo: 0, life: 3, best: Number(localStorage.getItem(storageKey) || 0), spawnTimer: 0.9, last: 0 };
+    const columnWidth = canvas.width / 4;
+    const hitY = canvas.height - 110;
+    let tiles = [];
+    let flashes = [0, 0, 0, 0];
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.score = 0;
+      state.combo = 0;
+      state.life = 3;
+      state.spawnTimer = 0.8;
+      tiles = [];
+      flashes = [0, 0, 0, 0];
+      updateHud();
+      statusEl.textContent = '准备开始。';
+      messageEl.textContent = '不要乱按，命中判定区才算。';
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      comboEl.textContent = state.combo;
+      lifeEl.textContent = state.life;
+      bestEl.textContent = state.best;
+    }
+
+    function spawnTile() {
+      const col = Math.floor(Math.random() * 4);
+      const speed = 260 + Math.min(260, state.score * 0.6);
+      tiles.push({ col, y: -120, h: 118, speed, hit: false });
+    }
+
+    function missTile() {
+      state.life -= 1;
+      state.combo = 0;
+      messageEl.textContent = '漏掉了一个方块。';
+      if (state.life <= 0) {
+        state.running = false;
+        state.over = true;
+        statusEl.textContent = '节奏断了，本局结束。';
+      }
+      updateHud();
+    }
+
+    function hitColumn(col) {
+      if (!state.running || state.over) return;
+      flashes[col] = 0.18;
+      const candidate = tiles
+        .filter(tile => tile.col === col && !tile.hit)
+        .sort((a, b) => b.y - a.y)[0];
+      if (!candidate) {
+        state.combo = 0;
+        messageEl.textContent = '按早了。';
+        updateHud();
+        return;
+      }
+      const center = candidate.y + candidate.h / 2;
+      const distance = Math.abs(center - hitY);
+      if (distance < 62) {
+        candidate.hit = true;
+        const gain = Math.max(8, Math.round(18 + state.combo * 1.5 - distance * 0.08));
+        state.score += gain;
+        state.combo += 1;
+        if (state.score > state.best) {
+          state.best = state.score;
+          localStorage.setItem(storageKey, String(state.best));
+        }
+        messageEl.textContent = distance < 20 ? 'Perfect！' : '不错，继续。';
+      } else {
+        state.combo = 0;
+        messageEl.textContent = '节奏不对。';
+      }
+      updateHud();
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnTile();
+        state.spawnTimer = Math.max(0.33, 0.82 - state.score / 1400);
+      }
+      tiles.forEach(tile => tile.y += tile.speed * dt);
+      tiles = tiles.filter(tile => {
+        if (tile.hit) return false;
+        if (tile.y > canvas.height) {
+          missTile();
+          return false;
+        }
+        return true;
+      });
+      flashes = flashes.map(value => Math.max(0, value - dt));
+      updateHud();
+      statusEl.textContent = `速度档 ${1 + Math.floor(state.score / 180)} 级`;
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#0f1326');
+      bg.addColorStop(1, '#101b34');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < 4; i += 1) {
+        ctx.fillStyle = flashes[i] > 0 ? `rgba(127,116,255,${0.3 + flashes[i]})` : 'rgba(255,255,255,0.04)';
+        ctx.fillRect(i * columnWidth + 2, 0, columnWidth - 4, canvas.height);
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.strokeRect(i * columnWidth + 2, 0, columnWidth - 4, canvas.height);
+      }
+
+      ctx.fillStyle = 'rgba(54,215,183,0.22)';
+      ctx.fillRect(0, hitY - 45, canvas.width, 90);
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, hitY - 45, canvas.width, 90);
+
+      tiles.forEach(tile => {
+        const x = tile.col * columnWidth + 10;
+        const gradient = ctx.createLinearGradient(0, tile.y, 0, tile.y + tile.h);
+        gradient.addColorStop(0, '#36d7b7');
+        gradient.addColorStop(1, '#7f74ff');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, tile.y, columnWidth - 20, tile.h, 18);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px Segoe UI';
+      ['D', 'F', 'J', 'K'].forEach((key, i) => ctx.fillText(key, i * columnWidth + columnWidth / 2 - 8, canvas.height - 24));
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.32)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '节奏断了' : '准备开始', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击左侧按钮或直接点开始', canvas.width / 2, canvas.height / 2 + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    canvas.addEventListener('pointerdown', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      hitColumn(Math.max(0, Math.min(3, Math.floor(x / columnWidth))));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const map = { KeyD: 0, KeyF: 1, KeyJ: 2, KeyK: 3 };
+      if (map[event.code] !== undefined) hitColumn(map[event.code]);
+    });
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '节奏开始。';
+    });
+    document.getElementById('restartBtn').addEventListener('click', reset);
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

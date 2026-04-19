@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三线塔防｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #6fe39d; --accent-2: #a9fff4; }
+    .tower-picker { display: grid; gap: 10px; margin-top: 14px; }
+    .tower-option {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      cursor: pointer;
+    }
+    .tower-option.active { box-shadow: inset 0 0 0 2px rgba(111,227,157,0.45); background: rgba(111,227,157,0.12); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🛡️ 手写新作 · 轻塔防</div>
+      <h1>三线塔防</h1>
+      <p class="lead">一张三线地图、两种塔、越来越快的敌人。你要决定钱先拿去补前排火力，还是存着等重炮塔，节奏和资源分配都很重要。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始防守</button>
+        <button class="ghost-btn" id="resetBtn" type="button">重新布局</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>金币</span><strong id="coinEl">120</strong></div>
+        <div class="stat"><span>基地血量</span><strong id="baseEl">10</strong></div>
+        <div class="stat"><span>波次</span><strong id="waveEl">1</strong></div>
+        <div class="stat"><span>击败数</span><strong id="killEl">0</strong></div>
+      </div>
+      <div class="tower-picker">
+        <button class="tower-option active" id="peaBtn" type="button">🌱 速射塔 · 50 金币</button>
+        <button class="tower-option" id="cannonBtn" type="button">💥 重炮塔 · 90 金币</button>
+      </div>
+      <ul class="tips">
+        <li>点击战场上的空位放塔，同一位置只能放一个。</li>
+        <li>速射塔适合清小怪，重炮塔适合打厚血目标。</li>
+        <li>敌人漏进基地会直接掉血，10 点血归零即失败。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">前期别把钱花光，后面需要重炮稳定压线。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🖱️ 点击空位放塔</span>
+          <span class="legend-item">🎯 塔会自动攻击本线敌人</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“开始防守”，再在战场上布置塔位。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const coinEl = document.getElementById('coinEl');
+    const baseEl = document.getElementById('baseEl');
+    const waveEl = document.getElementById('waveEl');
+    const killEl = document.getElementById('killEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+
+    const lanes = [110, 230, 350];
+    const slots = [120, 240, 360, 480, 600];
+    const towerDefs = {
+      pea: { cost: 50, color: '#7cf2b0', damage: 8, cool: 0.55, speed: 4.6, label: '速射塔' },
+      cannon: { cost: 90, color: '#ffd86d', damage: 20, cool: 1.2, speed: 3.4, label: '重炮塔' }
+    };
+
+    let selectedTower = 'pea';
+    let towers = [];
+    let enemies = [];
+    let bullets = [];
+    const state = { running: false, over: false, coins: 120, base: 10, wave: 1, kills: 0, last: 0, spawnTimer: 1.2, spawned: 0 };
+
+    function reset() {
+      towers = [];
+      enemies = [];
+      bullets = [];
+      state.running = false;
+      state.over = false;
+      state.coins = 120;
+      state.base = 10;
+      state.wave = 1;
+      state.kills = 0;
+      state.spawnTimer = 1.2;
+      state.spawned = 0;
+      updateHud();
+      statusEl.textContent = '战场已重置。';
+      messageEl.textContent = '先放一两座速射塔，稳住前两波。';
+    }
+
+    function updateHud() {
+      coinEl.textContent = state.coins;
+      baseEl.textContent = state.base;
+      waveEl.textContent = state.wave;
+      killEl.textContent = state.kills;
+    }
+
+    function slotAt(x, y) {
+      for (let lane = 0; lane < lanes.length; lane += 1) {
+        for (let s = 0; s < slots.length; s += 1) {
+          const sx = slots[s];
+          const sy = lanes[lane];
+          if (Math.abs(x - sx) < 28 && Math.abs(y - sy) < 28) return { lane, x: sx, y: sy };
+        }
+      }
+      return null;
+    }
+
+    function placeTower(x, y) {
+      if (state.over) return;
+      const slot = slotAt(x, y);
+      if (!slot) return;
+      if (towers.some(tower => tower.x === slot.x && tower.y === slot.y)) return;
+      const def = towerDefs[selectedTower];
+      if (state.coins < def.cost) {
+        statusEl.textContent = '金币不够。';
+        return;
+      }
+      towers.push({ ...slot, kind: selectedTower, cooldown: 0 });
+      state.coins -= def.cost;
+      updateHud();
+    }
+
+    function spawnEnemy() {
+      const lane = Math.floor(Math.random() * lanes.length);
+      const hp = 28 + state.wave * 10;
+      enemies.push({ lane, x: 800, y: lanes[lane], hp, maxHp: hp, speed: 0.58 + state.wave * 0.05 });
+    }
+
+    function update(dt) {
+      if (!state.running || state.over) return;
+      state.spawnTimer -= dt;
+      const targetCount = 7 + state.wave * 2;
+      if (state.spawned < targetCount && state.spawnTimer <= 0) {
+        spawnEnemy();
+        state.spawned += 1;
+        state.spawnTimer = Math.max(0.35, 1.15 - state.wave * 0.05);
+      }
+
+      towers.forEach(tower => {
+        tower.cooldown -= dt;
+        const def = towerDefs[tower.kind];
+        const target = enemies.find(enemy => enemy.lane === tower.lane && enemy.x > tower.x && enemy.x - tower.x < 250);
+        if (target && tower.cooldown <= 0) {
+          bullets.push({ x: tower.x + 18, y: tower.y, vx: def.speed, lane: tower.lane, damage: def.damage, color: def.color });
+          tower.cooldown = def.cool;
+        }
+      });
+
+      bullets.forEach(bullet => bullet.x += bullet.vx * 120 * dt);
+      bullets = bullets.filter(bullet => bullet.x < canvas.width + 40);
+
+      enemies.forEach(enemy => enemy.x -= enemy.speed * 120 * dt);
+      enemies = enemies.filter(enemy => {
+        if (enemy.x < 20) {
+          state.base -= 1;
+          if (state.base <= 0) {
+            state.over = true;
+            statusEl.textContent = '基地失守了。';
+            messageEl.textContent = '下次别让前排线崩得太早。';
+          }
+          updateHud();
+          return false;
+        }
+        return true;
+      });
+
+      bullets.forEach(bullet => {
+        const target = enemies.find(enemy => enemy.lane === bullet.lane && Math.abs(enemy.x - bullet.x) < 18);
+        if (!target) return;
+        target.hp -= bullet.damage;
+        bullet.x = canvas.width + 100;
+        if (target.hp <= 0) {
+          target.dead = true;
+          state.coins += 18 + state.wave * 2;
+          state.kills += 1;
+        }
+      });
+      enemies = enemies.filter(enemy => !enemy.dead);
+
+      if (!state.over && state.spawned >= targetCount && enemies.length === 0) {
+        state.wave += 1;
+        state.spawned = 0;
+        state.spawnTimer = 1.2;
+        statusEl.textContent = `第 ${state.wave} 波来袭。`;
+        messageEl.textContent = '敌人更硬了，记得补重炮。';
+      }
+      updateHud();
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#12233a');
+      bg.addColorStop(1, '#0b1729');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      lanes.forEach((laneY, index) => {
+        ctx.fillStyle = index % 2 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)';
+        ctx.fillRect(0, laneY - 42, canvas.width, 84);
+      });
+      ctx.fillStyle = '#1f394f';
+      ctx.fillRect(0, 0, 24, canvas.height);
+
+      slots.forEach(x => lanes.forEach(y => {
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.beginPath();
+        ctx.arc(x, y, 24, 0, Math.PI * 2);
+        ctx.fill();
+      }));
+
+      towers.forEach(tower => {
+        const def = towerDefs[tower.kind];
+        ctx.fillStyle = def.color;
+        ctx.beginPath();
+        ctx.arc(tower.x, tower.y, tower.kind === 'pea' ? 18 : 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#183049';
+        ctx.fillRect(tower.x - 5, tower.y - 20, 10, 22);
+      });
+
+      enemies.forEach(enemy => {
+        ctx.fillStyle = '#ff8b6b';
+        ctx.beginPath();
+        ctx.roundRect(enemy.x - 18, enemy.y - 18, 36, 36, 10);
+        ctx.fill();
+        ctx.fillStyle = '#2a0d0d';
+        ctx.fillRect(enemy.x - 16, enemy.y - 28, 32, 5);
+        ctx.fillStyle = '#7cffb0';
+        ctx.fillRect(enemy.x - 16, enemy.y - 28, 32 * (enemy.hp / enemy.maxHp), 5);
+      });
+
+      bullets.forEach(bullet => {
+        ctx.fillStyle = bullet.color;
+        ctx.beginPath();
+        ctx.arc(bullet.x, lanes[bullet.lane], bullet.damage > 10 ? 6 : 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '基地失守' : '准备布防', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点开始后，再点击圆形空位放塔', canvas.width / 2, canvas.height / 2 + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener('pointerdown', event => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+      placeTower(x, y);
+    });
+
+    document.getElementById('peaBtn').addEventListener('click', () => {
+      selectedTower = 'pea';
+      document.getElementById('peaBtn').classList.add('active');
+      document.getElementById('cannonBtn').classList.remove('active');
+    });
+    document.getElementById('cannonBtn').addEventListener('click', () => {
+      selectedTower = 'cannon';
+      document.getElementById('cannonBtn').classList.add('active');
+      document.getElementById('peaBtn').classList.remove('active');
+    });
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = `第 ${state.wave} 波防守开始。`;
+    });
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

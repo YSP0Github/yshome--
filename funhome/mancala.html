@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>曼卡拉石子棋｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #e7a54f; --accent-2: #f8dd88; }
+    .mancala-board {
+      display: grid;
+      grid-template-columns: 96px 1fr 96px;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .store, .pit {
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+    .pit-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pit {
+      min-height: 82px;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease;
+    }
+    .pit:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.18); }
+    .pit.disabled { cursor: default; opacity: 0.55; }
+    .seeds { font-size: .88rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🪨 手写新作 · 经典棋盘</div>
+      <h1>曼卡拉石子棋</h1>
+      <p class="lead">这是一种非常老派但很有意思的棋。你每次拿起一格里的所有石子，按顺序撒出去。关键在于：算准最后一颗落在哪里，拿额外回合或者直接抢空对面。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新开一局</button>
+        <button class="ghost-btn" id="hintBtn" type="button">电脑建议</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>你的仓库</span><strong id="playerStoreEl">0</strong></div>
+        <div class="stat"><span>电脑仓库</span><strong id="aiStoreEl">0</strong></div>
+        <div class="stat"><span>当前回合</span><strong id="turnEl">你</strong></div>
+        <div class="stat"><span>战绩</span><strong id="recordEl">0 / 0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>如果最后一颗正好落进自己的仓库，就能再走一次。</li>
+        <li>如果最后一颗落在自己空坑，对面对应坑里有子，就能抢过来。</li>
+        <li>电脑不是乱下，会优先拿额外回合和抢子机会。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">别只看当前得分，额外回合经常比一时多拿几颗更重要。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div class="mancala-board">
+          <div class="store" id="aiStoreBox"></div>
+          <div>
+            <div class="pit-grid" id="topRow" style="margin-bottom:10px;"></div>
+            <div class="pit-grid" id="bottomRow"></div>
+          </div>
+          <div class="store" id="playerStoreBox"></div>
+        </div>
+      </div>
+      <div class="message" id="statusEl">你先手，点击下方任意一个非空坑。</div>
+    </section>
+  </main>
+
+  <script>
+    const playerStoreEl = document.getElementById('playerStoreEl');
+    const aiStoreEl = document.getElementById('aiStoreEl');
+    const turnEl = document.getElementById('turnEl');
+    const recordEl = document.getElementById('recordEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const topRow = document.getElementById('topRow');
+    const bottomRow = document.getElementById('bottomRow');
+    const aiStoreBox = document.getElementById('aiStoreBox');
+    const playerStoreBox = document.getElementById('playerStoreBox');
+
+    let pits = [];
+    let turn = 'player';
+    let record = { win: 0, lose: 0 };
+    let busy = false;
+
+    function reset() {
+      pits = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0];
+      turn = 'player';
+      busy = false;
+      statusEl.textContent = '你先手。';
+      messageEl.textContent = '试着先看哪些坑能让最后一颗落进仓库。';
+      render();
+    }
+
+    function clone(arr) { return arr.slice(); }
+
+    function sideEmpty(sidePits) {
+      return sidePits.every(v => v === 0);
+    }
+
+    function finalizeBoard(state) {
+      const next = clone(state);
+      if (sideEmpty(next.slice(0, 6))) {
+        next[13] += next.slice(7, 13).reduce((a, b) => a + b, 0);
+        for (let i = 7; i <= 12; i += 1) next[i] = 0;
+      }
+      if (sideEmpty(next.slice(7, 13))) {
+        next[6] += next.slice(0, 6).reduce((a, b) => a + b, 0);
+        for (let i = 0; i <= 5; i += 1) next[i] = 0;
+      }
+      return next;
+    }
+
+    function playMove(state, index, side) {
+      const next = clone(state);
+      let stones = next[index];
+      next[index] = 0;
+      let pos = index;
+      while (stones > 0) {
+        pos = (pos + 1) % 14;
+        if (side === 'player' && pos === 13) continue;
+        if (side === 'ai' && pos === 6) continue;
+        next[pos] += 1;
+        stones -= 1;
+      }
+
+      if (side === 'player' && pos >= 0 && pos <= 5 && next[pos] === 1 && next[12 - pos] > 0) {
+        next[6] += next[12 - pos] + 1;
+        next[pos] = 0;
+        next[12 - pos] = 0;
+      }
+      if (side === 'ai' && pos >= 7 && pos <= 12 && next[pos] === 1 && next[12 - pos] > 0) {
+        next[13] += next[12 - pos] + 1;
+        next[pos] = 0;
+        next[12 - pos] = 0;
+      }
+
+      const extraTurn = (side === 'player' && pos === 6) || (side === 'ai' && pos === 13);
+      return { pits: finalizeBoard(next), extraTurn, last: pos };
+    }
+
+    function gameOver(state) {
+      return sideEmpty(state.slice(0, 6)) || sideEmpty(state.slice(7, 13));
+    }
+
+    function validMoves(side, state = pits) {
+      const indices = side === 'player' ? [0, 1, 2, 3, 4, 5] : [7, 8, 9, 10, 11, 12];
+      return indices.filter(index => state[index] > 0);
+    }
+
+    function aiTakeTurn() {
+      if (busy) return;
+      const moves = validMoves('ai');
+      if (!moves.length) {
+        pits = finalizeBoard(pits);
+        finishGame();
+        return;
+      }
+      busy = true;
+      statusEl.textContent = '电脑思考中……';
+      setTimeout(() => {
+        let bestMove = moves[0];
+        let bestScore = -Infinity;
+        moves.forEach(move => {
+          const sim = playMove(pits, move, 'ai');
+          let score = sim.pits[13] - sim.pits[6];
+          if (sim.extraTurn) score += 8;
+          if (gameOver(sim.pits)) score += 20;
+          if (sim.last >= 7 && sim.last <= 12 && pits[sim.last] === 0) score += 3;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+          }
+        });
+        const result = playMove(pits, bestMove, 'ai');
+        pits = result.pits;
+        if (gameOver(pits)) {
+          busy = false;
+          finishGame();
+          return;
+        }
+        turn = result.extraTurn ? 'ai' : 'player';
+        busy = false;
+        statusEl.textContent = result.extraTurn ? '电脑获得额外回合。' : '轮到你。';
+        render();
+        if (turn === 'ai') aiTakeTurn();
+      }, 360);
+    }
+
+    function finishGame() {
+      pits = finalizeBoard(pits);
+      busy = false;
+      if (pits[6] > pits[13]) {
+        statusEl.textContent = '你赢了！';
+        record.win += 1;
+      } else if (pits[6] < pits[13]) {
+        statusEl.textContent = '电脑赢了。';
+        record.lose += 1;
+      } else {
+        statusEl.textContent = '平局。';
+      }
+      turn = 'over';
+      render();
+    }
+
+    function playerMove(index) {
+      if (turn !== 'player' || busy || pits[index] === 0) return;
+      const result = playMove(pits, index, 'player');
+      pits = result.pits;
+      if (gameOver(pits)) {
+        finishGame();
+        return;
+      }
+      turn = result.extraTurn ? 'player' : 'ai';
+      statusEl.textContent = result.extraTurn ? '你获得额外回合。' : '电脑回合。';
+      render();
+      if (turn === 'ai') aiTakeTurn();
+    }
+
+    function renderPit(index, isTop = false) {
+      const button = document.createElement('button');
+      button.className = 'pit';
+      if (turn !== 'player' || busy || pits[index] === 0) button.classList.add('disabled');
+      button.type = 'button';
+      button.innerHTML = `<strong style="font-size:1.5rem;">${pits[index]}</strong><span class="seeds">${isTop ? '电脑坑' : '你的坑'}</span>`;
+      button.addEventListener('click', () => playerMove(index));
+      return button;
+    }
+
+    function render() {
+      topRow.innerHTML = '';
+      bottomRow.innerHTML = '';
+      [12, 11, 10, 9, 8, 7].forEach(index => topRow.appendChild(renderPit(index, true)));
+      [0, 1, 2, 3, 4, 5].forEach(index => bottomRow.appendChild(renderPit(index)));
+      aiStoreBox.innerHTML = `<strong style="font-size:2rem;">${pits[13]}</strong><span class="seeds">电脑仓库</span>`;
+      playerStoreBox.innerHTML = `<strong style="font-size:2rem;">${pits[6]}</strong><span class="seeds">你的仓库</span>`;
+      playerStoreEl.textContent = pits[6];
+      aiStoreEl.textContent = pits[13];
+      turnEl.textContent = turn === 'player' ? '你' : turn === 'ai' ? '电脑' : '结算';
+      recordEl.textContent = `${record.win} / ${record.lose}`;
+    }
+
+    document.getElementById('newBtn').addEventListener('click', reset);
+    document.getElementById('hintBtn').addEventListener('click', () => {
+      const moves = validMoves('player');
+      if (!moves.length) return;
+      let suggestion = moves[0];
+      let bestScore = -Infinity;
+      moves.forEach(move => {
+        const sim = playMove(pits, move, 'player');
+        let score = sim.pits[6] - pits[6];
+        if (sim.extraTurn) score += 8;
+        if (score > bestScore) {
+          bestScore = score;
+          suggestion = move;
+        }
+      });
+      statusEl.textContent = `建议你试试第 ${suggestion + 1} 个坑。`;
+    });
+
+    reset();
+  </script>
+</body>
+</html>

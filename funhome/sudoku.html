@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数独工坊｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #5c82ff; --accent-2: #7fdcff; }
+    .sudoku-board { display:grid; grid-template-columns: repeat(9, 1fr); gap: 4px; max-width: 540px; margin: 0 auto; }
+    .sudoku-cell { aspect-ratio: 1; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.06); color: var(--text); text-align:center; font-size: 1.35rem; font-weight: 700; }
+    .sudoku-cell.fixed { background: rgba(92,130,255,0.18); color: #fff; }
+    .sudoku-cell.error { background: rgba(255,96,96,0.2); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🔢 手写新作 · 逻辑解谜</div>
+      <h1>数独工坊</h1>
+      <p class="lead">这不是静态截图式数独。我做了随机化生成、计时、即时校验和提示功能，适合认真坐下来解一局。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新题目</button>
+        <button class="ghost-btn" id="checkBtn" type="button">检查</button>
+        <button class="ghost-btn" id="hintBtn" type="button">提示一格</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>已填格数</span><strong id="filledEl">0</strong></div>
+        <div class="stat"><span>错误数</span><strong id="mistakeEl">0</strong></div>
+        <div class="stat"><span>耗时</span><strong id="timeEl">0s</strong></div>
+        <div class="stat"><span>最佳时间</span><strong id="bestEl">--</strong></div>
+      </div>
+      <ul class="tips">
+        <li>行、列、九宫格都不能重复。</li>
+        <li>数字输入 1-9，删掉可按 Backspace。</li>
+        <li>提示会直接帮你填一格，但会影响“纯手解”的爽感。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">如果一时卡住，先找只剩一个空位的行列。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div class="sudoku-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">数独已准备好。</div>
+    </section>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const filledEl = document.getElementById('filledEl');
+    const mistakeEl = document.getElementById('mistakeEl');
+    const timeEl = document.getElementById('timeEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-sudoku-time';
+    const state = { puzzle: [], solution: [], mistakes: 0, start: 0, timer: null, finished: false };
+    const best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? `${best}s` : '--';
+
+    const base = 3;
+    const side = base * base;
+    const pattern = (r, c) => (base * (r % base) + Math.floor(r / base) + c) % side;
+
+    function shuffle(list) {
+      const arr = list.slice();
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generateBoard() {
+      const rBase = [0, 1, 2];
+      const rows = shuffle(rBase).flatMap(g => shuffle(rBase).map(r => g * base + r));
+      const cols = shuffle(rBase).flatMap(g => shuffle(rBase).map(c => g * base + c));
+      const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+      const solution = rows.map(r => cols.map(c => nums[pattern(r, c)]));
+      const puzzle = solution.map(row => row.slice());
+      let empties = 46;
+      while (empties > 0) {
+        const r = Math.floor(Math.random() * 9);
+        const c = Math.floor(Math.random() * 9);
+        if (puzzle[r][c] !== 0) {
+          puzzle[r][c] = 0;
+          empties -= 1;
+        }
+      }
+      return { puzzle, solution };
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      state.puzzle.forEach((row, r) => {
+        row.forEach((value, c) => {
+          const input = document.createElement('input');
+          input.className = 'sudoku-cell';
+          input.maxLength = 1;
+          input.inputMode = 'numeric';
+          input.dataset.row = r;
+          input.dataset.col = c;
+          if ((Math.floor(r / 3) + Math.floor(c / 3)) % 2 === 0) input.style.background = 'rgba(255,255,255,0.08)';
+          if (value !== 0 && state.solution[r][c] === value && isFixed(r, c)) {
+            input.value = value;
+            input.disabled = true;
+            input.classList.add('fixed');
+          } else if (value !== 0) {
+            input.value = value;
+          }
+          input.addEventListener('input', onInput);
+          boardEl.appendChild(input);
+        });
+      });
+      refreshStats();
+    }
+
+    function isFixed(r, c) {
+      return state.original[r][c] !== 0;
+    }
+
+    function onInput(event) {
+      if (state.finished) return;
+      const input = event.target;
+      input.value = input.value.replace(/[^1-9]/g, '').slice(0, 1);
+      const r = Number(input.dataset.row);
+      const c = Number(input.dataset.col);
+      state.puzzle[r][c] = input.value ? Number(input.value) : 0;
+      validateBoard();
+      refreshStats();
+      if (isSolved()) finishGame();
+    }
+
+    function validateBoard() {
+      const inputs = [...boardEl.querySelectorAll('.sudoku-cell')];
+      inputs.forEach(input => input.classList.remove('error'));
+      let errors = 0;
+      for (const input of inputs) {
+        if (input.disabled || !input.value) continue;
+        const r = Number(input.dataset.row);
+        const c = Number(input.dataset.col);
+        const value = Number(input.value);
+        if (value !== state.solution[r][c]) {
+          input.classList.add('error');
+          errors += 1;
+        }
+      }
+      state.mistakes = errors;
+    }
+
+    function refreshStats() {
+      const filled = state.puzzle.flat().filter(Boolean).length - state.original.flat().filter(Boolean).length;
+      filledEl.textContent = filled;
+      mistakeEl.textContent = state.mistakes;
+    }
+
+    function tick() {
+      if (state.finished) return;
+      const sec = Math.floor((Date.now() - state.start) / 1000);
+      timeEl.textContent = `${sec}s`;
+    }
+
+    function isSolved() {
+      return state.puzzle.every((row, r) => row.every((value, c) => value === state.solution[r][c]));
+    }
+
+    function finishGame() {
+      state.finished = true;
+      clearInterval(state.timer);
+      const sec = Math.floor((Date.now() - state.start) / 1000);
+      timeEl.textContent = `${sec}s`;
+      statusEl.textContent = '恭喜解开！';
+      messageEl.textContent = state.mistakes ? `虽然有 ${state.mistakes} 次错误，但最终还是解出来了。` : '零错误通关，漂亮。';
+      const bestTime = Number(localStorage.getItem(storageKey) || 0);
+      if (!bestTime || sec < bestTime) {
+        localStorage.setItem(storageKey, String(sec));
+        bestEl.textContent = `${sec}s`;
+      }
+    }
+
+    function newGame() {
+      const { puzzle, solution } = generateBoard();
+      state.original = puzzle.map(row => row.slice());
+      state.puzzle = puzzle.map(row => row.slice());
+      state.solution = solution;
+      state.mistakes = 0;
+      state.finished = false;
+      clearInterval(state.timer);
+      state.start = Date.now();
+      state.timer = setInterval(tick, 1000);
+      timeEl.textContent = '0s';
+      render();
+      statusEl.textContent = '新题已生成。';
+      messageEl.textContent = '先做最容易的格子。';
+    }
+
+    document.getElementById('newBtn').addEventListener('click', newGame);
+    document.getElementById('checkBtn').addEventListener('click', () => {
+      validateBoard();
+      refreshStats();
+      statusEl.textContent = state.mistakes ? `当前有 ${state.mistakes} 处错误。` : '当前填写都正确。';
+    });
+    document.getElementById('hintBtn').addEventListener('click', () => {
+      if (state.finished) return;
+      for (let r = 0; r < 9; r += 1) {
+        for (let c = 0; c < 9; c += 1) {
+          if (state.puzzle[r][c] === 0) {
+            state.puzzle[r][c] = state.solution[r][c];
+            render();
+            validateBoard();
+            if (isSolved()) finishGame();
+            statusEl.textContent = '已提示一格。';
+            return;
+          }
+        }
+      }
+    });
+
+    newGame();
+  </script>
+</body>
+</html>

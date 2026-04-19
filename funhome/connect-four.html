@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四子连珠｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #09111f;
+      --panel: rgba(12, 22, 40, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f8ff;
+      --muted: #9eb0d4;
+      --red: #ff6378;
+      --yellow: #ffd166;
+      --brand: #7c5cff;
+      --shadow: 0 24px 60px rgba(0,0,0,0.34);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(255,99,120,0.14), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(255,209,102,0.14), transparent 24%),
+        linear-gradient(180deg, #040912 0%, #09111f 100%);
+      padding: 24px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button, select { font: inherit; }
+    .app {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+    .panel, .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 28px; position: sticky; top: 24px; }
+    .stage { padding: 22px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124,92,255,0.12);
+      color: #d4c9ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3rem);
+      line-height: 1.05;
+    }
+    .lead, .tips li, .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .option-box {
+      margin: 22px 0 18px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      display: grid;
+      gap: 10px;
+    }
+    select {
+      min-height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 0 12px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .btn, .ghost-btn, .drop-btn {
+      border: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn, .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #9983ff);
+      box-shadow: 0 12px 26px rgba(124,92,255,0.25);
+    }
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .score-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+    .score-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+    .board-wrap {
+      overflow: auto;
+      padding-bottom: 6px;
+    }
+    .drop-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+      min-width: 560px;
+    }
+    .drop-btn {
+      min-height: 44px;
+      border-radius: 14px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-weight: 700;
+    }
+    .board {
+      min-width: 560px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(124,92,255,0.18), rgba(65,48,136,0.18));
+      border-radius: 24px;
+    }
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: rgba(6,10,20,0.86);
+      box-shadow: inset 0 8px 18px rgba(0,0,0,0.36);
+    }
+    .cell.red { background: radial-gradient(circle at 35% 35%, #ff9aaa, var(--red)); }
+    .cell.yellow { background: radial-gradient(circle at 35% 35%, #fff2b9, var(--yellow)); }
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,92,255,0.14), rgba(255,209,102,0.08));
+      font-weight: 700;
+    }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel, .stage { padding: 20px; }
+      .scoreboard { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🟡 策略棋盘</div>
+      <h1>四子连珠</h1>
+      <p class="lead">谁先横竖斜连成四个棋子谁就赢。你可以和朋友本地对战，也可以试试和简单 AI 过两招。</p>
+
+      <div class="option-box">
+        <label for="modeSelect">模式</label>
+        <select id="modeSelect">
+          <option value="friend">双人模式</option>
+          <option value="ai" selected>对战 AI</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">新一局</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>中间列通常更强，别轻易让出去。</li>
+        <li>AI 会优先补赢棋和挡你的致胜一步。</li>
+        <li>局很快，适合连续来几盘。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="scoreboard">
+        <div class="score-card">红方<strong id="redScore">0</strong></div>
+        <div class="score-card">平局<strong id="drawScore">0</strong></div>
+        <div class="score-card">黄方<strong id="yellowScore">0</strong></div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="drop-row" id="dropRow"></div>
+        <div class="board" id="board"></div>
+      </div>
+      <div class="message" id="messageBox">红方先手。</div>
+    </section>
+  </main>
+
+  <script>
+    const ROWS = 6;
+    const COLS = 7;
+    const dropRow = document.getElementById('dropRow');
+    const boardEl = document.getElementById('board');
+    const messageBox = document.getElementById('messageBox');
+    const redScore = document.getElementById('redScore');
+    const yellowScore = document.getElementById('yellowScore');
+    const drawScore = document.getElementById('drawScore');
+    const modeSelect = document.getElementById('modeSelect');
+
+    let board = [];
+    let current = 'red';
+    let active = true;
+    const score = { red: 0, yellow: 0, draw: 0 };
+
+    function emptyBoard() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(''));
+    }
+
+    function render() {
+      dropRow.innerHTML = Array.from({ length: COLS }, (_, col) => `
+        <button class="drop-btn" type="button" data-col="${col}" ${!active ? 'disabled' : ''}>↓</button>
+      `).join('');
+
+      boardEl.innerHTML = board.flatMap((row, rowIndex) =>
+        row.map((cell, colIndex) => `<div class="cell ${cell}" data-row="${rowIndex}" data-col="${colIndex}"></div>`)
+      ).join('');
+
+      dropRow.querySelectorAll('[data-col]').forEach(button => {
+        button.addEventListener('click', () => dropPiece(Number(button.dataset.col)));
+      });
+    }
+
+    function updateScores() {
+      redScore.textContent = score.red;
+      yellowScore.textContent = score.yellow;
+      drawScore.textContent = score.draw;
+    }
+
+    function resetGame() {
+      board = emptyBoard();
+      current = 'red';
+      active = true;
+      messageBox.textContent = modeSelect.value === 'friend' ? '红方先手。' : '你是红方，电脑是黄方。';
+      render();
+    }
+
+    function getAvailableRow(col, state = board) {
+      for (let row = ROWS - 1; row >= 0; row -= 1) {
+        if (!state[row][col]) return row;
+      }
+      return -1;
+    }
+
+    function winnerOf(state) {
+      const directions = [
+        [0, 1], [1, 0], [1, 1], [1, -1]
+      ];
+      for (let row = 0; row < ROWS; row += 1) {
+        for (let col = 0; col < COLS; col += 1) {
+          const color = state[row][col];
+          if (!color) continue;
+          for (const [dr, dc] of directions) {
+            let count = 1;
+            while (count < 4) {
+              const nr = row + dr * count;
+              const nc = col + dc * count;
+              if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || state[nr][nc] !== color) break;
+              count += 1;
+            }
+            if (count === 4) return color;
+          }
+        }
+      }
+      if (state.every(row => row.every(Boolean))) return 'draw';
+      return null;
+    }
+
+    function applyMove(col, color, state = board) {
+      const row = getAvailableRow(col, state);
+      if (row < 0) return null;
+      state[row][col] = color;
+      return row;
+    }
+
+    function finish(result) {
+      active = false;
+      if (result === 'draw') {
+        score.draw += 1;
+        messageBox.textContent = '平局，这盘势均力敌。';
+      } else {
+        score[result] += 1;
+        if (modeSelect.value === 'ai') {
+          messageBox.textContent = result === 'red' ? '你赢了！' : '电脑赢了。';
+        } else {
+          messageBox.textContent = result === 'red' ? '红方胜。' : '黄方胜。';
+        }
+      }
+      updateScores();
+      render();
+    }
+
+    function switchTurn() {
+      current = current === 'red' ? 'yellow' : 'red';
+      if (!active) return;
+      if (modeSelect.value === 'friend') {
+        messageBox.textContent = current === 'red' ? '轮到红方。' : '轮到黄方。';
+      } else {
+        messageBox.textContent = current === 'red' ? '轮到你。' : '电脑思考中…';
+      }
+    }
+
+    function bestAiColumn() {
+      const validCols = Array.from({ length: COLS }, (_, col) => col).filter(col => getAvailableRow(col) >= 0);
+
+      for (const color of ['yellow', 'red']) {
+        for (const col of validCols) {
+          const test = board.map(row => [...row]);
+          applyMove(col, color, test);
+          if (winnerOf(test) === color) return col;
+        }
+      }
+
+      const priority = [3, 2, 4, 1, 5, 0, 6];
+      return priority.find(col => validCols.includes(col)) ?? validCols[0];
+    }
+
+    function maybeAiTurn() {
+      if (!active || modeSelect.value !== 'ai' || current !== 'yellow') return;
+      setTimeout(() => {
+        if (!active) return;
+        const col = bestAiColumn();
+        dropPiece(col, true);
+      }, 360);
+    }
+
+    function dropPiece(col, fromAi = false) {
+      if (!active) return;
+      if (modeSelect.value === 'ai' && current === 'yellow' && !fromAi) return;
+      const row = applyMove(col, current);
+      if (row == null) return;
+      render();
+      const result = winnerOf(board);
+      if (result) {
+        finish(result);
+        return;
+      }
+      switchTurn();
+      maybeAiTurn();
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', resetGame);
+    modeSelect.addEventListener('change', resetGame);
+
+    updateScores();
+    resetGame();
+  </script>
+</body>
+</html>

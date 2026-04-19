@@ -1,0 +1,300 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>风炮打靶｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ffa24b; --accent-2: #ffd86b; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">💣 手写新作 · 抛物线射击</div>
+      <h1>风炮打靶</h1>
+      <p class="lead">这是带一点物理手感的抛物线游戏。你要控制角度和力度，用有限炮弹把飘在空中的气球全部打掉。每过一关风力都会变。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始打靶</button>
+        <button class="ghost-btn" id="fireBtn" type="button">发射</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>关卡</span><strong id="roundEl">1</strong></div>
+        <div class="stat"><span>炮弹</span><strong id="ammoEl">10</strong></div>
+        <div class="stat"><span>气球</span><strong id="balloonsEl">0</strong></div>
+        <div class="stat"><span>风力</span><strong id="windEl">0</strong></div>
+      </div>
+      <div class="card-list">
+        <div class="card-item">
+          <div class="meta-line">角度</div>
+          <input class="input" id="angleInput" type="range" min="18" max="82" value="52">
+          <div class="meta-line" id="angleText">52°</div>
+        </div>
+        <div class="card-item">
+          <div class="meta-line">力度</div>
+          <input class="input" id="powerInput" type="range" min="180" max="460" value="320">
+          <div class="meta-line" id="powerText">320</div>
+        </div>
+      </div>
+      <ul class="tips">
+        <li>左右不是直接控制方向，而是通过角度和力度来预判落点。</li>
+        <li>风会持续影响炮弹轨迹，关卡越高越明显。</li>
+        <li>气球清空后自动下一关，并补充一部分炮弹。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先观察一发的落点，再做微调。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🎈 打掉全部气球</span>
+          <span class="legend-item">🧮 角度 + 力度 + 风力</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">准备装填。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const roundEl = document.getElementById('roundEl');
+    const ammoEl = document.getElementById('ammoEl');
+    const balloonsEl = document.getElementById('balloonsEl');
+    const windEl = document.getElementById('windEl');
+    const angleInput = document.getElementById('angleInput');
+    const powerInput = document.getElementById('powerInput');
+    const angleText = document.getElementById('angleText');
+    const powerText = document.getElementById('powerText');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const state = { running: false, round: 1, ammo: 10, wind: 0, last: 0 };
+    let balloons = [];
+    let shots = [];
+    let particles = [];
+
+    function syncControls() {
+      angleText.textContent = `${angleInput.value}°`;
+      powerText.textContent = powerInput.value;
+    }
+
+    function makeRound() {
+      const count = 4 + Math.min(4, state.round - 1);
+      balloons = Array.from({ length: count }, (_, i) => ({
+        x: 420 + (i % 4) * 80 + Math.random() * 35,
+        y: 120 + Math.floor(i / 4) * 90 + Math.random() * 25,
+        r: 18 + Math.random() * 8,
+        bob: Math.random() * Math.PI * 2,
+        color: ['#ff7b7b', '#7cd8ff', '#ffe37a', '#9df09c'][i % 4],
+      }));
+      state.wind = (Math.random() - 0.5) * (14 + state.round * 3);
+      state.ammo += state.round === 1 ? 0 : 4;
+      updateHud();
+      statusEl.textContent = `第 ${state.round} 关，风力已变化。`;
+      messageEl.textContent = '如果炮弹总偏左，就试着增大力度或抬角。';
+    }
+
+    function reset(full = true) {
+      state.running = false;
+      state.round = 1;
+      state.ammo = 10;
+      shots = [];
+      particles = [];
+      if (full) makeRound();
+      else updateHud();
+      syncControls();
+    }
+
+    function updateHud() {
+      roundEl.textContent = state.round;
+      ammoEl.textContent = state.ammo;
+      balloonsEl.textContent = balloons.length;
+      windEl.textContent = state.wind.toFixed(1);
+    }
+
+    function fire() {
+      if (!state.running || state.ammo <= 0) return;
+      const angle = Number(angleInput.value) * Math.PI / 180;
+      const power = Number(powerInput.value);
+      shots.push({ x: 72, y: canvas.height - 72, vx: Math.cos(angle) * power, vy: -Math.sin(angle) * power, trail: [] });
+      state.ammo -= 1;
+      updateHud();
+      statusEl.textContent = '已发射。';
+    }
+
+    function explode(x, y, color) {
+      for (let i = 0; i < 16; i += 1) {
+        particles.push({ x, y, vx: (Math.random() - 0.5) * 180, vy: (Math.random() - 0.5) * 180, life: 0.7, color });
+      }
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      balloons.forEach((balloon, index) => {
+        balloon.bob += dt * (1 + index * 0.2);
+        balloon.y += Math.sin(balloon.bob) * 12 * dt;
+      });
+      shots.forEach(shot => {
+        shot.vx += state.wind * dt;
+        shot.vy += 300 * dt;
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        shot.trail.push({ x: shot.x, y: shot.y });
+        if (shot.trail.length > 18) shot.trail.shift();
+      });
+      shots = shots.filter(shot => shot.x > -40 && shot.x < canvas.width + 40 && shot.y < canvas.height + 40);
+
+      balloons = balloons.filter(balloon => {
+        const hit = shots.find(shot => Math.hypot(shot.x - balloon.x, shot.y - balloon.y) < balloon.r + 8);
+        if (hit) {
+          hit.x = canvas.width + 100;
+          explode(balloon.x, balloon.y, balloon.color);
+          messageEl.textContent = '命中！继续压制。';
+          return false;
+        }
+        return true;
+      });
+
+      particles.forEach(p => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 180 * dt;
+        p.life -= dt;
+      });
+      particles = particles.filter(p => p.life > 0);
+
+      if (!balloons.length) {
+        state.round += 1;
+        makeRound();
+      } else if (state.ammo <= 0 && !shots.length) {
+        state.running = false;
+        statusEl.textContent = '炮弹打光了。点开始重新挑战。';
+        messageEl.textContent = '这游戏更像算轨迹，不是猛点。';
+      }
+      updateHud();
+    }
+
+    function drawCannon() {
+      const angle = Number(angleInput.value) * Math.PI / 180;
+      ctx.fillStyle = '#232836';
+      ctx.beginPath();
+      ctx.arc(70, canvas.height - 60, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(72, canvas.height - 72);
+      ctx.rotate(-angle);
+      ctx.fillStyle = '#ffa24b';
+      ctx.beginPath();
+      ctx.roundRect(0, -8, 76, 16, 8);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function draw() {
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, '#10182e');
+      sky.addColorStop(1, '#2b1d37');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#22384b';
+      ctx.fillRect(0, canvas.height - 56, canvas.width, 56);
+      drawCannon();
+
+      balloons.forEach(balloon => {
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.moveTo(balloon.x, balloon.y + balloon.r);
+        ctx.lineTo(balloon.x + Math.sin(balloon.bob) * 8, balloon.y + balloon.r + 22);
+        ctx.stroke();
+        ctx.fillStyle = balloon.color;
+        ctx.beginPath();
+        ctx.arc(balloon.x, balloon.y, balloon.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      shots.forEach(shot => {
+        shot.trail.forEach((p, index) => {
+          ctx.globalAlpha = index / shot.trail.length;
+          ctx.fillStyle = '#ffd97d';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff5c7';
+        ctx.beginPath();
+        ctx.arc(shot.x, shot.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(18, 18, 170, 62);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px Segoe UI';
+      ctx.fillText(`关卡 ${state.round}`, 30, 42);
+      ctx.fillText(`风力 ${state.wind.toFixed(1)}`, 30, 66);
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText('准备发射', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击左侧开始，再调角度和力度', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    angleInput.addEventListener('input', syncControls);
+    powerInput.addEventListener('input', syncControls);
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (!balloons.length || state.ammo <= 0) {
+        state.round = 1;
+        state.ammo = 10;
+        shots = [];
+        particles = [];
+        makeRound();
+      }
+      state.running = true;
+      statusEl.textContent = '开始打靶。';
+    });
+    document.getElementById('fireBtn').addEventListener('click', fire);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') { event.preventDefault(); fire(); }
+      if (event.key === 'ArrowUp') angleInput.value = Math.min(82, Number(angleInput.value) + 2);
+      if (event.key === 'ArrowDown') angleInput.value = Math.max(18, Number(angleInput.value) - 2);
+      if (event.key === 'ArrowRight') powerInput.value = Math.min(460, Number(powerInput.value) + 10);
+      if (event.key === 'ArrowLeft') powerInput.value = Math.max(180, Number(powerInput.value) - 10);
+      syncControls();
+    });
+
+    makeRound();
+    syncControls();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>青蛙过河｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #53d76d; --accent-2: #6bd5ff; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🐸 手写新作 · 过河闯关</div>
+      <h1>青蛙过河</h1>
+      <p class="lead">上半区要借木头过水，下半区要躲车流过马路。每成功救回一只青蛙都会点亮一个终点槽位，五个槽位全满就进入下一轮。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始过河</button>
+        <button class="ghost-btn" id="resetBtn" type="button">重新开始</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>已救回</span><strong id="savedEl">0/5</strong></div>
+        <div class="stat"><span>生命</span><strong id="livesEl">3</strong></div>
+        <div class="stat"><span>关卡</span><strong id="levelEl">1</strong></div>
+        <div class="stat"><span>得分</span><strong id="scoreEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>方向键 / WASD 每次移动一格。</li>
+        <li>水里必须站在木头上，否则会直接落水。</li>
+        <li>达到五个终点后，车速和水流都会加快。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先记住：上面是水，下面是路。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🌊 借木头漂到对岸</span>
+          <span class="legend-item">🚗 别被马路车流撞到</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="560" height="616"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">按开始后，用方向键移动青蛙。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const savedEl = document.getElementById('savedEl');
+    const livesEl = document.getElementById('livesEl');
+    const levelEl = document.getElementById('levelEl');
+    const scoreEl = document.getElementById('scoreEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const cell = 56;
+    const rows = 11;
+    const cols = 10;
+    const safeSlots = [1, 3, 5, 7, 9];
+    const state = { running: false, over: false, saved: [], lives: 3, level: 1, score: 0, last: 0 };
+    const frog = { col: 4, row: 10 };
+    let rivers = [];
+    let roads = [];
+
+    function makeLane(yRow, speed, length, gap, type) {
+      const items = [];
+      for (let x = -length; x < canvas.width + length; x += length + gap) items.push({ x, y: yRow * cell, w: length, type });
+      return { row: yRow, speed, items, type };
+    }
+
+    function buildLanes() {
+      const k = state.level - 1;
+      rivers = [
+        makeLane(1, 55 + k * 12, 150, 80, 'log'),
+        makeLane(2, -72 - k * 12, 120, 90, 'log'),
+        makeLane(3, 85 + k * 10, 180, 72, 'log'),
+      ];
+      roads = [
+        makeLane(6, -160 - k * 18, 90, 82, 'car'),
+        makeLane(7, 180 + k * 20, 70, 90, 'car'),
+        makeLane(8, -200 - k * 22, 120, 96, 'truck'),
+        makeLane(9, 150 + k * 18, 76, 84, 'car'),
+      ];
+    }
+
+    function resetFrog() {
+      frog.col = 4;
+      frog.row = 10;
+    }
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.saved = [];
+      state.lives = 3;
+      state.level = 1;
+      state.score = 0;
+      buildLanes();
+      resetFrog();
+      updateHud();
+      statusEl.textContent = '按开始后，移动青蛙。';
+      messageEl.textContent = '走一步看一步，但别在水里停。';
+    }
+
+    function updateHud() {
+      savedEl.textContent = `${state.saved.length}/5`;
+      livesEl.textContent = state.lives;
+      levelEl.textContent = state.level;
+      scoreEl.textContent = state.score;
+    }
+
+    function loseLife(text) {
+      state.lives -= 1;
+      messageEl.textContent = text;
+      if (state.lives <= 0) {
+        state.running = false;
+        state.over = true;
+        statusEl.textContent = '三条命都没了。';
+      }
+      resetFrog();
+      updateHud();
+    }
+
+    function tryFinish() {
+      const slot = safeSlots.find(s => frog.col === s - 1);
+      if (!slot || state.saved.includes(slot)) {
+        loseLife('这个终点已经有人了，别硬挤。');
+        return;
+      }
+      state.saved.push(slot);
+      state.score += 100;
+      messageEl.textContent = '成功救回一只！';
+      if (state.saved.length === 5) {
+        state.level += 1;
+        state.saved = [];
+        state.score += 200;
+        buildLanes();
+        statusEl.textContent = `进入第 ${state.level} 轮，速度提升。`;
+      }
+      resetFrog();
+      updateHud();
+    }
+
+    function stepFrog(dx, dy) {
+      if (!state.running || state.over) return;
+      frog.col = Math.max(0, Math.min(cols - 1, frog.col + dx));
+      frog.row = Math.max(0, Math.min(rows - 1, frog.row + dy));
+      if (dy < 0) state.score += 10;
+      if (frog.row === 0) tryFinish();
+      updateHud();
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      [...rivers, ...roads].forEach(lane => {
+        lane.items.forEach(item => {
+          item.x += lane.speed * dt;
+          if (lane.speed > 0 && item.x > canvas.width + item.w) item.x = -item.w - 40;
+          if (lane.speed < 0 && item.x + item.w < -40) item.x = canvas.width + 40;
+        });
+      });
+
+      if (frog.row >= 1 && frog.row <= 3) {
+        const lane = rivers.find(l => l.row === frog.row);
+        const frogCenter = frog.col * cell + cell / 2;
+        const ride = lane.items.find(item => frogCenter > item.x && frogCenter < item.x + item.w);
+        if (!ride) {
+          loseLife('扑通一声，落水了。');
+        } else {
+          const actualX = frog.col * cell + lane.speed * dt;
+          frog.col = Math.round(actualX / cell);
+          if (frog.col < 0 || frog.col >= cols) loseLife('被水流带走了。');
+        }
+      }
+
+      if (frog.row >= 6 && frog.row <= 9) {
+        const lane = roads.find(l => l.row === frog.row);
+        const frogX = frog.col * cell + 8;
+        const hit = lane.items.some(item => frogX + 40 > item.x && frogX < item.x + item.w);
+        if (hit) loseLife('被车撞到了。');
+      }
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = '#1a5a2d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#2d93c7';
+      ctx.fillRect(0, cell, canvas.width, cell * 3);
+      ctx.fillStyle = '#2b2b34';
+      ctx.fillRect(0, cell * 6, canvas.width, cell * 4);
+      ctx.fillStyle = '#21551f';
+      ctx.fillRect(0, 0, canvas.width, cell);
+      ctx.fillRect(0, cell * 4, canvas.width, cell * 2);
+      ctx.fillRect(0, cell * 10, canvas.width, cell);
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      for (let r = 0; r <= rows; r += 1) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * cell);
+        ctx.lineTo(canvas.width, r * cell);
+        ctx.stroke();
+      }
+      for (let c = 0; c <= cols; c += 1) {
+        ctx.beginPath();
+        ctx.moveTo(c * cell, 0);
+        ctx.lineTo(c * cell, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    function draw() {
+      drawBackground();
+      drawGrid();
+      safeSlots.forEach(slot => {
+        const x = (slot - 1) * cell + 14;
+        ctx.fillStyle = state.saved.includes(slot) ? '#ffe17d' : 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.arc(x + 28, 28, 18, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      rivers.forEach(lane => {
+        lane.items.forEach(item => {
+          ctx.fillStyle = '#8c5f35';
+          ctx.beginPath();
+          ctx.roundRect(item.x, item.y + 10, item.w, 36, 18);
+          ctx.fill();
+        });
+      });
+      roads.forEach(lane => {
+        lane.items.forEach(item => {
+          ctx.fillStyle = item.type === 'truck' ? '#ffd46b' : '#ff7c7c';
+          ctx.beginPath();
+          ctx.roundRect(item.x, item.y + 8, item.w, 40, 12);
+          ctx.fill();
+          ctx.fillStyle = '#111';
+          ctx.fillRect(item.x + 10, item.y + 18, item.w - 20, 10);
+        });
+      });
+      const frogX = frog.col * cell + cell / 2;
+      const frogY = frog.row * cell + cell / 2;
+      ctx.fillStyle = '#67e36b';
+      ctx.beginPath();
+      ctx.arc(frogX, frogY, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#163a16';
+      ctx.beginPath();
+      ctx.arc(frogX - 7, frogY - 5, 3, 0, Math.PI * 2);
+      ctx.arc(frogX + 7, frogY - 5, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '小青蛙累趴了' : '准备过河', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击左侧按钮开始', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowUp', 'w', 'W'].includes(event.key)) stepFrog(0, -1);
+      if (['ArrowDown', 's', 'S'].includes(event.key)) stepFrog(0, 1);
+      if (['ArrowLeft', 'a', 'A'].includes(event.key)) stepFrog(-1, 0);
+      if (['ArrowRight', 'd', 'D'].includes(event.key)) stepFrog(1, 0);
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '开始过河。';
+    });
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    buildLanes();
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

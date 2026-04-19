@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>方块大师｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(11, 24, 42, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f7f9ff;
+      --muted: #95a7c9;
+      --brand: #7c5cff;
+      --accent: #2dd4bf;
+      --danger: #ff5d73;
+      --warn: #f8c556;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 14%, rgba(124,92,255,0.22), transparent 24%),
+        radial-gradient(circle at 84% 16%, rgba(45,212,191,0.2), transparent 26%),
+        linear-gradient(180deg, #050b16 0%, #07111f 100%);
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124,92,255,0.14);
+      color: #ccbfff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3.5rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .legend p,
+    .stat-card span:last-child,
+    .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stats {
+      margin: 24px 0 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      display: grid;
+      gap: 6px;
+    }
+
+    .stat-card strong {
+      font-size: 1.75rem;
+      line-height: 1;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .cell {
+      border: 0;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+    }
+
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #947bff);
+      box-shadow: 0 14px 26px rgba(124,92,255,0.25);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .legend {
+      margin-top: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 6px;
+      flex: 0 0 auto;
+    }
+
+    .stage {
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e6eeff;
+      font-size: 0.92rem;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .hud-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .hud-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.5rem;
+    }
+
+    .arena {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 800;
+      padding: 10px;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .cell:hover { transform: translateY(-2px); }
+    .cell:not(.active) { cursor: default; }
+
+    .cell.active::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.16), transparent);
+      pointer-events: none;
+    }
+
+    .cell.normal {
+      background: linear-gradient(135deg, rgba(45,212,191,0.28), rgba(45,212,191,0.14));
+      border-color: rgba(45,212,191,0.32);
+    }
+
+    .cell.bonus {
+      background: linear-gradient(135deg, rgba(248,197,86,0.3), rgba(248,197,86,0.16));
+      border-color: rgba(248,197,86,0.36);
+    }
+
+    .cell.time {
+      background: linear-gradient(135deg, rgba(124,92,255,0.32), rgba(124,92,255,0.18));
+      border-color: rgba(124,92,255,0.34);
+    }
+
+    .cell.bomb {
+      background: linear-gradient(135deg, rgba(255,93,115,0.35), rgba(255,93,115,0.14));
+      border-color: rgba(255,93,115,0.36);
+    }
+
+    .cell .label {
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
+      line-height: 1.1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cell .tip {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.82);
+      position: relative;
+      z-index: 1;
+    }
+
+    .stage-msg {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,92,255,0.14), rgba(45,212,191,0.08));
+      color: #e9f1ff;
+      font-weight: 700;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 22px;
+      border-radius: 24px;
+      background: rgba(5, 11, 22, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-box {
+      max-width: 420px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .overlay-box h2 {
+      margin: 0;
+      font-size: 2.2rem;
+    }
+
+    .overlay-box p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .result-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .result-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.35rem;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel,
+      .stage { padding: 20px; }
+      .hud { grid-template-columns: repeat(2, 1fr); }
+      .arena { gap: 10px; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">⚡ 手速挑战</div>
+      <h1>方块大师</h1>
+      <p class="lead">在倒计时内点掉尽可能多的目标方块。连击越高，加分越猛；紫色会加时间，红色炸弹千万别乱按。</p>
+
+      <div class="stats">
+        <div class="stat-card">
+          <span>本地最高分</span>
+          <strong id="bestScore">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>当前状态</span>
+          <strong id="stateText">待开始</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始挑战</button>
+        <button class="ghost-btn" id="restartBtn" type="button">重开一局</button>
+      </div>
+
+      <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="dot" style="background:#2dd4bf;"></span>
+          <div><strong>普通方块</strong><p>点中得分，连击越高加成越多。</p></div>
+        </div>
+        <div class="legend-item">
+          <span class="dot" style="background:#f8c556;"></span>
+          <div><strong>奖励方块</strong><p>额外高分，适合追纪录。</p></div>
+        </div>
+        <div class="legend-item">
+          <span class="dot" style="background:#7c5cff;"></span>
+          <div><strong>加时方块</strong><p>点中可增加 3 秒，能救命。</p></div>
+        </div>
+        <div class="legend-item">
+          <span class="dot" style="background:#ff5d73;"></span>
+          <div><strong>炸弹方块</strong><p>点中扣分并清空连击，最好别碰。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <h2 style="margin:0;">4 × 4 竞技场</h2>
+          <div class="subtle" style="margin-top:6px;">波次会越来越快，越往后越考验反应。</div>
+        </div>
+        <span class="badge" id="moodBadge">🎯 先热热手</span>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card">分数<strong id="scoreValue">0</strong></div>
+        <div class="hud-card">剩余时间<strong id="timeValue">45</strong></div>
+        <div class="hud-card">当前连击<strong id="comboValue">0</strong></div>
+        <div class="hud-card">命中率<strong id="accuracyValue">0%</strong></div>
+      </div>
+
+      <div class="arena" id="arena"></div>
+      <div class="stage-msg" id="stageMsg">按“开始挑战”后，方块会逐波出现。点中目标，避开炸弹。</div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay-box">
+          <h2>本局结束</h2>
+          <p id="summaryText">再来一局，看看你能不能把连击维持得更久。</p>
+          <div class="result-grid">
+            <div class="result-card">分数<strong id="finalScore">0</strong></div>
+            <div class="result-card">最高连击<strong id="finalCombo">0</strong></div>
+            <div class="result-card">命中率<strong id="finalAccuracy">0%</strong></div>
+          </div>
+          <div class="actions" style="margin:6px 0 0;">
+            <button class="btn" id="playAgainBtn" type="button">再来一局</button>
+            <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">回趣味屋</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const GAME_TIME = 45;
+    const cellElements = [];
+    const arena = document.getElementById('arena');
+    const bestScoreEl = document.getElementById('bestScore');
+    const stateTextEl = document.getElementById('stateText');
+    const moodBadge = document.getElementById('moodBadge');
+    const scoreValue = document.getElementById('scoreValue');
+    const timeValue = document.getElementById('timeValue');
+    const comboValue = document.getElementById('comboValue');
+    const accuracyValue = document.getElementById('accuracyValue');
+    const stageMsg = document.getElementById('stageMsg');
+    const overlay = document.getElementById('overlay');
+    const finalScore = document.getElementById('finalScore');
+    const finalCombo = document.getElementById('finalCombo');
+    const finalAccuracy = document.getElementById('finalAccuracy');
+    const summaryText = document.getElementById('summaryText');
+
+    const TYPES = {
+      normal: { label: '+10', tip: '普通', className: 'normal', score: 10 },
+      bonus: { label: '+25', tip: '奖励', className: 'bonus', score: 25 },
+      time: { label: '+3s', tip: '加时', className: 'time', score: 14, extraTime: 3 },
+      bomb: { label: '💣', tip: '炸弹', className: 'bomb', score: -18 }
+    };
+
+    let bestScore = Number(localStorage.getItem('funhome-block-best') || 0);
+    let score = 0;
+    let combo = 0;
+    let maxCombo = 0;
+    let timeLeft = GAME_TIME;
+    let hits = 0;
+    let misses = 0;
+    let wrongClicks = 0;
+    let playing = false;
+    let timerId = null;
+    let waveId = null;
+    let activeCells = new Map();
+
+    function setupArena() {
+      for (let i = 0; i < 16; i += 1) {
+        const button = document.createElement('button');
+        button.className = 'cell';
+        button.type = 'button';
+        button.innerHTML = '<div><div class="label">·</div><div class="tip">等待</div></div>';
+        button.addEventListener('click', () => handleCellClick(i));
+        arena.appendChild(button);
+        cellElements.push(button);
+      }
+    }
+
+    function resetState() {
+      score = 0;
+      combo = 0;
+      maxCombo = 0;
+      timeLeft = GAME_TIME;
+      hits = 0;
+      misses = 0;
+      wrongClicks = 0;
+      activeCells.clear();
+      clearTimeout(waveId);
+      clearInterval(timerId);
+      playing = false;
+      overlay.classList.remove('show');
+      stateTextEl.textContent = '待开始';
+      moodBadge.textContent = '🎯 先热热手';
+      stageMsg.textContent = '按“开始挑战”后，方块会逐波出现。点中目标，避开炸弹。';
+      cellElements.forEach(resetCell);
+      updateHud();
+    }
+
+    function updateHud() {
+      const totalAttempts = hits + misses + wrongClicks;
+      const accuracy = totalAttempts ? Math.round((hits / totalAttempts) * 100) : 0;
+      scoreValue.textContent = score;
+      timeValue.textContent = timeLeft;
+      comboValue.textContent = combo;
+      accuracyValue.textContent = `${accuracy}%`;
+      bestScoreEl.textContent = bestScore;
+    }
+
+    function resetCell(cell) {
+      cell.className = 'cell';
+      cell.innerHTML = '<div><div class="label">·</div><div class="tip">等待</div></div>';
+    }
+
+    function startGame() {
+      resetState();
+      playing = true;
+      stateTextEl.textContent = '进行中';
+      moodBadge.textContent = '⚡ 节奏开始加快';
+      stageMsg.textContent = '越往后越快，优先点奖励和加时，炸弹别碰。';
+      timerId = setInterval(() => {
+        timeLeft -= 1;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          updateHud();
+          endGame();
+          return;
+        }
+        if (timeLeft <= 10) {
+          moodBadge.textContent = '🔥 最后冲刺';
+        }
+        updateHud();
+      }, 1000);
+      spawnWave();
+    }
+
+    function randomType() {
+      const roll = Math.random();
+      if (roll < 0.12) return 'bomb';
+      if (roll < 0.32) return 'time';
+      if (roll < 0.55) return 'bonus';
+      return 'normal';
+    }
+
+    function clearActive(markMiss) {
+      activeCells.forEach((type, index) => {
+        if (markMiss && type !== 'bomb') {
+          misses += 1;
+          combo = 0;
+        }
+        resetCell(cellElements[index]);
+      });
+      activeCells.clear();
+    }
+
+    function spawnWave() {
+      if (!playing) return;
+      clearActive(true);
+
+      const elapsed = GAME_TIME - timeLeft;
+      const amount = Math.min(4, 1 + Math.floor(elapsed / 10) + (Math.random() > 0.55 ? 1 : 0));
+      const available = [...Array(16).keys()];
+      for (let i = available.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+      }
+
+      available.slice(0, amount).forEach(index => {
+        const type = randomType();
+        activeCells.set(index, type);
+        const cell = cellElements[index];
+        const config = TYPES[type];
+        cell.className = `cell active ${config.className}`;
+        cell.innerHTML = `<div><div class="label">${config.label}</div><div class="tip">${config.tip}</div></div>`;
+      });
+
+      const delay = Math.max(360, 980 - elapsed * 12);
+      waveId = setTimeout(spawnWave, delay);
+    }
+
+    function handleCellClick(index) {
+      if (!playing) return;
+      const type = activeCells.get(index);
+      if (!type) {
+        wrongClicks += 1;
+        combo = 0;
+        score = Math.max(0, score - 3);
+        stageMsg.textContent = '空点也会掉节奏，尽量稳一点。';
+        updateHud();
+        return;
+      }
+
+      const config = TYPES[type];
+      activeCells.delete(index);
+      resetCell(cellElements[index]);
+
+      if (type === 'bomb') {
+        combo = 0;
+        score = Math.max(0, score + config.score);
+        misses += 1;
+        stageMsg.textContent = '踩到炸弹了，连击清空。';
+      } else {
+        hits += 1;
+        combo += 1;
+        maxCombo = Math.max(maxCombo, combo);
+        const comboBonus = type === 'bonus' ? combo * 3 : combo * 2;
+        score += config.score + comboBonus;
+        if (type === 'time') {
+          timeLeft = Math.min(60, timeLeft + config.extraTime);
+          stageMsg.textContent = '拿到加时方块，节奏续住了。';
+        } else if (type === 'bonus') {
+          stageMsg.textContent = '奖励方块命中，分数蹭蹭涨。';
+        } else {
+          stageMsg.textContent = combo >= 6 ? '连击起来了，继续保持！' : '不错，保持命中节奏。';
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('funhome-block-best', String(bestScore));
+      }
+      updateHud();
+    }
+
+    function endGame() {
+      clearInterval(timerId);
+      clearTimeout(waveId);
+      clearActive(false);
+      playing = false;
+      stateTextEl.textContent = '已结束';
+      moodBadge.textContent = '🏁 本局结束';
+
+      const totalAttempts = hits + misses + wrongClicks;
+      const accuracy = totalAttempts ? Math.round((hits / totalAttempts) * 100) : 0;
+      finalScore.textContent = score;
+      finalCombo.textContent = maxCombo;
+      finalAccuracy.textContent = `${accuracy}%`;
+
+      summaryText.textContent = bestScore === score
+        ? '这局刷新了本地最高分，手感很可以。'
+        : '再来一局，说不定下一把就能把纪录打掉。';
+      overlay.classList.add('show');
+      updateHud();
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+    document.getElementById('playAgainBtn').addEventListener('click', startGame);
+
+    setupArena();
+    resetState();
+  </script>
+</body>
+</html>

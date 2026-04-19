@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>海战雷达｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #57b5ff; --accent-2: #7af0ff; }
+    .sea-board {
+      display: grid;
+      grid-template-columns: repeat(8, 54px);
+      gap: 8px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .sea-cell {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, #18416b 0%, #0d2239 100%);
+      color: #fff;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .sea-cell:hover { transform: translateY(-1px); }
+    .sea-cell.miss { background: rgba(255,255,255,0.08); color: #9eb1cf; }
+    .sea-cell.hit { background: linear-gradient(180deg, #ff8d6c 0%, #e04b4b 100%); }
+    .sea-cell.sunk { background: linear-gradient(180deg, #ffe08a 0%, #d8a84b 100%); color: #111; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">⚓ 手写新作 · 搜索猎杀</div>
+      <h1>海战雷达</h1>
+      <p class="lead">经典战舰猜格玩法。你看不到敌方舰队的位置，只能靠点击试探。先铺开搜索，再围绕命中点补刀，越后面越讲究效率。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新一局</button>
+        <button class="ghost-btn" id="sonarBtn" type="button">声呐提示</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>射击次数</span><strong id="shotsEl">0</strong></div>
+        <div class="stat"><span>命中数</span><strong id="hitsEl">0</strong></div>
+        <div class="stat"><span>击沉舰数</span><strong id="sunkEl">0</strong></div>
+        <div class="stat"><span>最佳战绩</span><strong id="bestEl">--</strong></div>
+      </div>
+      <ul class="tips">
+        <li>舰船不会相互重叠，也不会斜着摆放。</li>
+        <li>先按棋盘间隔搜索，比连续乱点更高效。</li>
+        <li>声呐只能用一次，会临时标出一格隐藏舰体。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先铺开侦察，再集中火力，不要东打一枪西打一枪。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div class="sea-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">共有 5 艘战舰：4、3、3、2、2。</div>
+    </section>
+  </main>
+
+  <script>
+    const size = 8;
+    const shipsDef = [4, 3, 3, 2, 2];
+    const boardEl = document.getElementById('board');
+    const shotsEl = document.getElementById('shotsEl');
+    const hitsEl = document.getElementById('hitsEl');
+    const sunkEl = document.getElementById('sunkEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-sea-battle';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? `${best} 发` : '--';
+
+    let grid = [];
+    let ships = [];
+    let shots = 0;
+    let hits = 0;
+    let sonar = 1;
+
+    function emptyGrid() {
+      return Array.from({ length: size }, () => Array.from({ length: size }, () => ({ ship: -1, shot: false, sunk: false, ping: false })));
+    }
+
+    function canPlace(length, r, c, horizontal) {
+      for (let i = 0; i < length; i += 1) {
+        const rr = r + (horizontal ? 0 : i);
+        const cc = c + (horizontal ? i : 0);
+        if (rr >= size || cc >= size || grid[rr][cc].ship !== -1) return false;
+      }
+      return true;
+    }
+
+    function placeShips() {
+      grid = emptyGrid();
+      ships = [];
+      shipsDef.forEach((length, shipId) => {
+        let placed = false;
+        while (!placed) {
+          const horizontal = Math.random() > 0.5;
+          const r = Math.floor(Math.random() * size);
+          const c = Math.floor(Math.random() * size);
+          if (!canPlace(length, r, c, horizontal)) continue;
+          const cells = [];
+          for (let i = 0; i < length; i += 1) {
+            const rr = r + (horizontal ? 0 : i);
+            const cc = c + (horizontal ? i : 0);
+            grid[rr][cc].ship = shipId;
+            cells.push([rr, cc]);
+          }
+          ships.push({ id: shipId, length, cells, sunk: false });
+          placed = true;
+        }
+      });
+    }
+
+    function newGame() {
+      shots = 0;
+      hits = 0;
+      sonar = 1;
+      placeShips();
+      statusEl.textContent = '敌方舰队已布置完毕。';
+      messageEl.textContent = '建议先用棋盘间隔搜索法。';
+      render();
+    }
+
+    function updateStats() {
+      shotsEl.textContent = shots;
+      hitsEl.textContent = hits;
+      sunkEl.textContent = ships.filter(ship => ship.sunk).length;
+      bestEl.textContent = best ? `${best} 发` : '--';
+      document.getElementById('sonarBtn').textContent = sonar ? '声呐提示' : '声呐已用';
+    }
+
+    function markSunk(shipId) {
+      const ship = ships.find(item => item.id === shipId);
+      if (!ship || ship.sunk) return;
+      const down = ship.cells.every(([r, c]) => grid[r][c].shot);
+      if (!down) return;
+      ship.sunk = true;
+      ship.cells.forEach(([r, c]) => grid[r][c].sunk = true);
+      messageEl.textContent = `击沉一艘 ${ship.length} 格战舰。`;
+    }
+
+    function handleShot(r, c) {
+      const cell = grid[r][c];
+      if (cell.shot) return;
+      cell.shot = true;
+      shots += 1;
+      cell.ping = false;
+      if (cell.ship >= 0) {
+        hits += 1;
+        markSunk(cell.ship);
+        statusEl.textContent = '命中！继续追击。';
+      } else {
+        statusEl.textContent = '未命中。';
+      }
+
+      if (ships.every(ship => ship.sunk)) {
+        statusEl.textContent = `全歼成功！共用了 ${shots} 发。`;
+        messageEl.textContent = '搜索和补刀节奏都打得不错。';
+        if (!best || shots < best) {
+          best = shots;
+          localStorage.setItem(storageKey, String(best));
+        }
+      }
+      render();
+    }
+
+    function useSonar() {
+      if (!sonar) return;
+      const hidden = ships.flatMap(ship => ship.cells).filter(([r, c]) => !grid[r][c].shot);
+      if (!hidden.length) return;
+      sonar = 0;
+      const [r, c] = hidden[Math.floor(Math.random() * hidden.length)];
+      grid[r][c].ping = true;
+      statusEl.textContent = '声呐捕捉到一格舰体。';
+      messageEl.textContent = '把这格当作切入口，向两侧继续搜索。';
+      render();
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      grid.forEach((row, r) => row.forEach((cell, c) => {
+        const button = document.createElement('button');
+        button.className = 'sea-cell';
+        if (cell.shot && cell.ship === -1) {
+          button.classList.add('miss');
+          button.textContent = '·';
+        }
+        if (cell.shot && cell.ship >= 0) {
+          button.classList.add(cell.sunk ? 'sunk' : 'hit');
+          button.textContent = cell.sunk ? '⚓' : '✹';
+        }
+        if (cell.ping && !cell.shot) button.textContent = '⌖';
+        button.type = 'button';
+        button.addEventListener('click', () => handleShot(r, c));
+        boardEl.appendChild(button);
+      }));
+      updateStats();
+    }
+
+    document.getElementById('newBtn').addEventListener('click', newGame);
+    document.getElementById('sonarBtn').addEventListener('click', useSonar);
+
+    newGame();
+  </script>
+</body>
+</html>

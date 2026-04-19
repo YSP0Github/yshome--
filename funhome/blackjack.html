@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黑杰克 21 点｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #22c38e; --accent-2: #76ffd0; }
+    .table-board { padding: 18px; border-radius: 24px; background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 38%), linear-gradient(180deg, #12412e 0%, #0d2f22 100%); border: 1px solid rgba(255,255,255,0.08); }
+    .hand { display: grid; gap: 12px; margin-bottom: 18px; }
+    .hand-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .cards { display: flex; flex-wrap: wrap; gap: 10px; min-height: 118px; }
+    .card { width: 74px; height: 102px; border-radius: 16px; background: linear-gradient(180deg, #fff 0%, #eef6ff 100%); color: #20283a; box-shadow: 0 12px 26px rgba(0,0,0,0.18); padding: 10px; display: grid; }
+    .card.red { color: #c93f56; }
+    .card-back { background: linear-gradient(135deg, #7a8cff, #3ddbc7); color: white; place-items: center; font-size: 1.6rem; }
+    .bet-row { display: grid; gap: 8px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🃏 手写新作 · 卡牌博弈</div>
+      <h1>黑杰克 21 点</h1>
+      <p class="lead">这次不是简陋演示，而是一局能完整玩起来的 21 点：有筹码、加倍、庄家逻辑和连胜记录。你要做的是在“爆牌”前尽量压住庄家。</p>
+      <div class="actions">
+        <button class="btn" id="dealBtn" type="button">发牌</button>
+        <button class="ghost-btn" id="hitBtn" type="button">要牌</button>
+        <button class="ghost-btn" id="standBtn" type="button">停牌</button>
+        <button class="ghost-btn" id="doubleBtn" type="button">加倍</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>筹码</span><strong id="bankEl">500</strong></div>
+        <div class="stat"><span>本局下注</span><strong id="betEl">50</strong></div>
+        <div class="stat"><span>连胜</span><strong id="streakEl">0</strong></div>
+        <div class="stat"><span>最佳筹码</span><strong id="bestEl">500</strong></div>
+      </div>
+      <div class="card-item bet-row">
+        <div class="meta-line">下注金额</div>
+        <input class="input" id="betInput" type="range" min="10" max="200" step="10" value="50">
+        <div class="meta-line" id="betText">50</div>
+      </div>
+      <ul class="tips">
+        <li>J Q K 都算 10，A 会自动在 11 和 1 之间切换。</li>
+        <li>加倍会立刻再拿一张牌，然后自动停牌。</li>
+        <li>没筹码时不会真输光，会自动给你最低保底继续玩。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先发牌看看手气。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="table-board">
+        <div class="hand">
+          <div class="hand-head"><h3 style="margin:0;">庄家</h3><span class="pill" id="dealerScoreEl">?</span></div>
+          <div class="cards" id="dealerCards"></div>
+        </div>
+        <div class="hand">
+          <div class="hand-head"><h3 style="margin:0;">你</h3><span class="pill" id="playerScoreEl">0</span></div>
+          <div class="cards" id="playerCards"></div>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“发牌”开始一局。</div>
+    </section>
+  </main>
+
+  <script>
+    const suits = ['♠', '♥', '♣', '♦'];
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const bankEl = document.getElementById('bankEl');
+    const betEl = document.getElementById('betEl');
+    const streakEl = document.getElementById('streakEl');
+    const bestEl = document.getElementById('bestEl');
+    const betInput = document.getElementById('betInput');
+    const betText = document.getElementById('betText');
+    const dealerCardsEl = document.getElementById('dealerCards');
+    const playerCardsEl = document.getElementById('playerCards');
+    const dealerScoreEl = document.getElementById('dealerScoreEl');
+    const playerScoreEl = document.getElementById('playerScoreEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const bestKey = 'funhome-best-blackjack-bank';
+
+    const state = {
+      bank: 500,
+      best: Number(localStorage.getItem(bestKey) || 500),
+      streak: 0,
+      deck: [],
+      dealer: [],
+      player: [],
+      bet: Number(betInput.value),
+      active: false,
+      reveal: false,
+    };
+
+    function shuffleDeck() {
+      state.deck = [];
+      suits.forEach(suit => ranks.forEach(rank => state.deck.push({ suit, rank })));
+      for (let i = state.deck.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.deck[i], state.deck[j]] = [state.deck[j], state.deck[i]];
+      }
+    }
+
+    function drawCard() {
+      if (!state.deck.length) shuffleDeck();
+      return state.deck.pop();
+    }
+
+    function handValue(hand) {
+      let total = 0;
+      let aces = 0;
+      hand.forEach(card => {
+        if (card.rank === 'A') {
+          aces += 1;
+          total += 11;
+        } else if (['J', 'Q', 'K'].includes(card.rank)) total += 10;
+        else total += Number(card.rank);
+      });
+      while (total > 21 && aces > 0) {
+        total -= 10;
+        aces -= 1;
+      }
+      return total;
+    }
+
+    function renderCards() {
+      dealerCardsEl.innerHTML = state.dealer.map((card, index) => {
+        if (!state.reveal && index === 1) return '<div class="card card-back">✦</div>';
+        const red = ['♥', '♦'].includes(card.suit) ? 'red' : '';
+        return `<div class="card ${red}"><strong>${card.rank}</strong><div style="justify-self:end;font-size:1.3rem;">${card.suit}</div><div style="align-self:end;justify-self:start;">${card.suit}</div></div>`;
+      }).join('');
+      playerCardsEl.innerHTML = state.player.map(card => {
+        const red = ['♥', '♦'].includes(card.suit) ? 'red' : '';
+        return `<div class="card ${red}"><strong>${card.rank}</strong><div style="justify-self:end;font-size:1.3rem;">${card.suit}</div><div style="align-self:end;justify-self:start;">${card.suit}</div></div>`;
+      }).join('');
+      playerScoreEl.textContent = handValue(state.player);
+      dealerScoreEl.textContent = state.reveal ? handValue(state.dealer) : `${handValue([state.dealer[0]])} + ?`;
+      bankEl.textContent = state.bank;
+      betEl.textContent = state.bet;
+      streakEl.textContent = state.streak;
+      bestEl.textContent = state.best;
+      betText.textContent = state.bet;
+    }
+
+    function syncBet() {
+      state.bet = Math.min(state.bank, Number(betInput.value));
+      betText.textContent = state.bet;
+      betEl.textContent = state.bet;
+    }
+
+    function settle(result, text) {
+      state.active = false;
+      state.reveal = true;
+      if (result === 'win') {
+        state.bank += state.bet;
+        state.streak += 1;
+      } else if (result === 'lose') {
+        state.bank -= state.bet;
+        state.streak = 0;
+      }
+      if (result === 'push') {
+        statusEl.textContent = '平局。';
+      } else {
+        statusEl.textContent = text;
+      }
+      if (state.bank <= 0) state.bank = 100;
+      if (state.bank > state.best) {
+        state.best = state.bank;
+        localStorage.setItem(bestKey, String(state.best));
+      }
+      renderCards();
+      messageEl.textContent = '可以继续发下一局。';
+    }
+
+    function dealerPlay() {
+      state.reveal = true;
+      while (handValue(state.dealer) < 17) state.dealer.push(drawCard());
+      const dealerValue = handValue(state.dealer);
+      const playerValue = handValue(state.player);
+      if (dealerValue > 21 || playerValue > dealerValue) settle('win', '你赢了。');
+      else if (playerValue < dealerValue) settle('lose', '庄家更大。');
+      else settle('push', '平局。');
+    }
+
+    function deal() {
+      shuffleDeck();
+      syncBet();
+      state.reveal = false;
+      state.active = true;
+      state.dealer = [drawCard(), drawCard()];
+      state.player = [drawCard(), drawCard()];
+      renderCards();
+      statusEl.textContent = '要牌还是停牌？';
+      messageEl.textContent = '先看自己是否适合加倍。';
+      const playerValue = handValue(state.player);
+      const dealerValue = handValue(state.dealer);
+      if (playerValue === 21 && dealerValue === 21) settle('push', '双方黑杰克。');
+      else if (playerValue === 21) settle('win', 'Blackjack！你赢了。');
+      else if (dealerValue === 21) settle('lose', '庄家黑杰克。');
+    }
+
+    function hit() {
+      if (!state.active) return;
+      state.player.push(drawCard());
+      renderCards();
+      const value = handValue(state.player);
+      if (value > 21) settle('lose', '爆牌了。');
+      else statusEl.textContent = '还可以继续。';
+    }
+
+    function stand() {
+      if (!state.active) return;
+      dealerPlay();
+    }
+
+    function doubleDown() {
+      if (!state.active || state.bank < state.bet) return;
+      state.bet *= 2;
+      state.player.push(drawCard());
+      renderCards();
+      if (handValue(state.player) > 21) settle('lose', '加倍后直接爆牌。');
+      else dealerPlay();
+    }
+
+    betInput.addEventListener('input', syncBet);
+    document.getElementById('dealBtn').addEventListener('click', deal);
+    document.getElementById('hitBtn').addEventListener('click', hit);
+    document.getElementById('standBtn').addEventListener('click', stand);
+    document.getElementById('doubleBtn').addEventListener('click', doubleDown);
+
+    syncBet();
+    renderCards();
+  </script>
+</body>
+</html>

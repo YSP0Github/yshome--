@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫雷｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #0a1020;
+      --panel: rgba(12, 20, 38, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f5f7ff;
+      --muted: #99add4;
+      --brand: #7c5cff;
+      --accent: #2dd4bf;
+      --danger: #ff6378;
+      --shadow: 0 24px 60px rgba(0,0,0,0.36);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(124,92,255,0.22), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(45,212,191,0.18), transparent 24%),
+        linear-gradient(180deg, #050913 0%, #0a1020 100%);
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button, select { font: inherit; }
+
+    .app {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .stage { padding: 22px; }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124,92,255,0.12);
+      color: #d2c5ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .subtle,
+    .tips li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .option-box {
+      margin: 22px 0 18px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      display: grid;
+      gap: 10px;
+    }
+
+    select {
+      min-height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .cell {
+      border: 0;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #9981ff);
+      box-shadow: 0 12px 26px rgba(124,92,255,0.25);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .hud-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .hud-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+
+    .board-wrap {
+      overflow: auto;
+      padding-bottom: 6px;
+    }
+
+    .board {
+      display: grid;
+      gap: 6px;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .cell {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      user-select: none;
+    }
+
+    .cell:hover:not(.revealed) {
+      transform: translateY(-1px);
+      border-color: rgba(45,212,191,0.28);
+    }
+
+    .cell.revealed {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.04);
+      cursor: default;
+    }
+
+    .cell.mine.revealed {
+      background: rgba(255,99,120,0.24);
+      color: #ffd8dd;
+    }
+
+    .cell.flagged {
+      background: rgba(124,92,255,0.2);
+      color: #e5deff;
+    }
+
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,92,255,0.14), rgba(45,212,191,0.08));
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel,
+      .stage { padding: 20px; }
+      .hud { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">💣 经典脑力游戏</div>
+      <h1>扫雷</h1>
+      <p class="lead">左键翻格，右键插旗。第一下保证安全。适合在趣味屋里来一局安静但很上头的老朋友。</p>
+
+      <div class="option-box">
+        <label for="difficultySelect">难度</label>
+        <select id="difficultySelect">
+          <option value="easy">轻松 · 9×9 / 10 雷</option>
+          <option value="normal" selected>标准 · 12×12 / 22 雷</option>
+          <option value="hard">挑战 · 16×16 / 40 雷</option>
+        </select>
+        <div class="subtle">第一次点击一定不会踩雷。</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">重新开局</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>数字表示周围八格里有几颗雷。</li>
+        <li>不确定时先插旗，别急着乱点。</li>
+        <li>双指长按不方便时，手机上也能直接单击插旗按钮切换模式——不过这里暂时推荐桌面体验。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <h2 style="margin:0;">雷区</h2>
+          <div class="subtle">支持右键插旗。若是触控板，通常双指点按即可。</div>
+        </div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card">状态<strong id="stateValue">待开始</strong></div>
+        <div class="hud-card">剩余地雷<strong id="mineValue">0</strong></div>
+        <div class="hud-card">已翻开<strong id="openedValue">0</strong></div>
+        <div class="hud-card">计时<strong id="timeValue">0</strong></div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+      </div>
+      <div class="message" id="messageBox">点击任意格子开始。第一下必定安全。</div>
+    </section>
+  </main>
+
+  <script>
+    const DIFFICULTIES = {
+      easy: { rows: 9, cols: 9, mines: 10 },
+      normal: { rows: 12, cols: 12, mines: 22 },
+      hard: { rows: 16, cols: 16, mines: 40 }
+    };
+
+    const boardEl = document.getElementById('board');
+    const difficultySelect = document.getElementById('difficultySelect');
+    const mineValue = document.getElementById('mineValue');
+    const openedValue = document.getElementById('openedValue');
+    const timeValue = document.getElementById('timeValue');
+    const stateValue = document.getElementById('stateValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let config = DIFFICULTIES.normal;
+    let board = [];
+    let started = false;
+    let ended = false;
+    let openedCount = 0;
+    let flaggedCount = 0;
+    let timer = 0;
+    let timerId = null;
+
+    function cellAt(row, col) {
+      return board[row]?.[col];
+    }
+
+    function inBounds(row, col) {
+      return row >= 0 && row < config.rows && col >= 0 && col < config.cols;
+    }
+
+    function neighbors(row, col) {
+      const list = [];
+      for (let dr = -1; dr <= 1; dr += 1) {
+        for (let dc = -1; dc <= 1; dc += 1) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = row + dr;
+          const nc = col + dc;
+          if (inBounds(nr, nc)) list.push([nr, nc]);
+        }
+      }
+      return list;
+    }
+
+    function createBoard() {
+      board = Array.from({ length: config.rows }, (_, row) =>
+        Array.from({ length: config.cols }, (_, col) => ({
+          row,
+          col,
+          mine: false,
+          count: 0,
+          revealed: false,
+          flagged: false
+        }))
+      );
+      started = false;
+      ended = false;
+      openedCount = 0;
+      flaggedCount = 0;
+      timer = 0;
+      clearInterval(timerId);
+      timerId = null;
+      messageBox.textContent = '点击任意格子开始。第一下必定安全。';
+      stateValue.textContent = '待开始';
+      updateHud();
+      render();
+    }
+
+    function placeMines(safeRow, safeCol) {
+      const pool = [];
+      for (let row = 0; row < config.rows; row += 1) {
+        for (let col = 0; col < config.cols; col += 1) {
+          const protectedZone = Math.abs(row - safeRow) <= 1 && Math.abs(col - safeCol) <= 1;
+          if (!protectedZone) pool.push([row, col]);
+        }
+      }
+
+      for (let i = pool.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      pool.slice(0, config.mines).forEach(([row, col]) => {
+        board[row][col].mine = true;
+      });
+
+      board.forEach(row =>
+        row.forEach(cell => {
+          cell.count = neighbors(cell.row, cell.col).filter(([nr, nc]) => board[nr][nc].mine).length;
+        })
+      );
+    }
+
+    function startTimer() {
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        timer += 1;
+        updateHud();
+      }, 1000);
+    }
+
+    function updateHud() {
+      mineValue.textContent = Math.max(0, config.mines - flaggedCount);
+      openedValue.textContent = openedCount;
+      timeValue.textContent = timer;
+    }
+
+    function revealCell(row, col) {
+      const startCell = cellAt(row, col);
+      if (!startCell || startCell.revealed || startCell.flagged || ended) return;
+
+      if (!started) {
+        started = true;
+        stateValue.textContent = '进行中';
+        placeMines(row, col);
+        startTimer();
+      }
+
+      if (startCell.mine) {
+        startCell.revealed = true;
+        ended = true;
+        stateValue.textContent = '失败';
+        messageBox.textContent = '踩雷了，再来一局。';
+        clearInterval(timerId);
+        board.flat().forEach(cell => {
+          if (cell.mine) cell.revealed = true;
+        });
+        render();
+        return;
+      }
+
+      const queue = [[row, col]];
+      while (queue.length) {
+        const [cr, cc] = queue.shift();
+        const cell = cellAt(cr, cc);
+        if (!cell || cell.revealed || cell.flagged) continue;
+        cell.revealed = true;
+        openedCount += 1;
+        if (cell.count === 0) {
+          neighbors(cr, cc).forEach(([nr, nc]) => {
+            const next = cellAt(nr, nc);
+            if (next && !next.revealed && !next.mine) queue.push([nr, nc]);
+          });
+        }
+      }
+
+      if (openedCount === config.rows * config.cols - config.mines) {
+        ended = true;
+        stateValue.textContent = '通关';
+        messageBox.textContent = `恭喜通关，用时 ${timer} 秒。`;
+        clearInterval(timerId);
+        board.flat().forEach(cell => {
+          if (cell.mine) cell.flagged = true;
+        });
+        flaggedCount = config.mines;
+      } else {
+        messageBox.textContent = '继续推理，小心别误点。';
+      }
+
+      updateHud();
+      render();
+    }
+
+    function toggleFlag(row, col) {
+      const cell = cellAt(row, col);
+      if (!cell || cell.revealed || ended) return;
+      cell.flagged = !cell.flagged;
+      flaggedCount += cell.flagged ? 1 : -1;
+      messageBox.textContent = cell.flagged ? '已插旗。' : '已取消旗子。';
+      updateHud();
+      render();
+    }
+
+    function render() {
+      boardEl.style.gridTemplateColumns = `repeat(${config.cols}, 32px)`;
+      boardEl.innerHTML = board.flat().map(cell => {
+        const classes = ['cell'];
+        let label = '';
+        if (cell.revealed) {
+          classes.push('revealed');
+          if (cell.mine) {
+            classes.push('mine');
+            label = '💣';
+          } else if (cell.count > 0) {
+            label = cell.count;
+          }
+        } else if (cell.flagged) {
+          classes.push('flagged');
+          label = '🚩';
+        }
+
+        return `<button class="${classes.join(' ')}" type="button" data-row="${cell.row}" data-col="${cell.col}">${label}</button>`;
+      }).join('');
+
+      boardEl.querySelectorAll('[data-row]').forEach(button => {
+        const row = Number(button.dataset.row);
+        const col = Number(button.dataset.col);
+        button.addEventListener('click', () => revealCell(row, col));
+        button.addEventListener('contextmenu', event => {
+          event.preventDefault();
+          toggleFlag(row, col);
+        });
+      });
+    }
+
+    difficultySelect.addEventListener('change', () => {
+      config = DIFFICULTIES[difficultySelect.value];
+      createBoard();
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', createBoard);
+
+    createBoard();
+  </script>
+</body>
+</html>

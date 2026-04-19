@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>坦克突围战｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #57cfff; --accent-2: #7affcb; }
+    canvas { cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🛞 手写新作 · 双摇杆风格</div>
+      <h1>坦克突围战</h1>
+      <p class="lead">你控制一辆坦克在场地里游走，用鼠标瞄准射击。敌方坦克会从四周进场并朝你压过来，墙体可以挡子弹，但也会限制走位。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始战斗</button>
+        <button class="ghost-btn" id="resetBtn" type="button">重新出击</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>生命</span><strong id="hpEl">100</strong></div>
+        <div class="stat"><span>击毁数</span><strong id="killEl">0</strong></div>
+        <div class="stat"><span>波次</span><strong id="waveEl">1</strong></div>
+        <div class="stat"><span>最佳击毁</span><strong id="bestEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>WASD 移动，鼠标控制炮塔方向，点击或空格开火。</li>
+        <li>墙体既能保护你，也会卡住你的撤退路线。</li>
+        <li>不要被敌人包成半圈，及时拉位非常重要。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">边打边走，千万别站桩。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">WASD 移动</span>
+          <span class="legend-item">鼠标瞄准</span>
+          <span class="legend-item">点击 / 空格开火</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“开始战斗”，然后用鼠标瞄准。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const hpEl = document.getElementById('hpEl');
+    const killEl = document.getElementById('killEl');
+    const waveEl = document.getElementById('waveEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-tank-battle';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best;
+
+    const walls = [
+      { x: 180, y: 90, w: 60, h: 180 },
+      { x: 320, y: 260, w: 90, h: 70 },
+      { x: 500, y: 100, w: 70, h: 180 }
+    ];
+    const player = { x: 110, y: 230, hp: 100, speed: 2.5, angle: 0, cooldown: 0 };
+    const state = { running: false, over: false, last: 0, keys: {}, kills: 0, wave: 1, spawnTimer: 1.2, mouse: { x: 380, y: 230 } };
+    let bullets = [];
+    let enemies = [];
+
+    function reset() {
+      player.x = 110;
+      player.y = 230;
+      player.hp = 100;
+      player.cooldown = 0;
+      bullets = [];
+      enemies = [];
+      state.running = false;
+      state.over = false;
+      state.kills = 0;
+      state.wave = 1;
+      state.spawnTimer = 1.2;
+      updateHud();
+      statusEl.textContent = '战车待命。';
+      messageEl.textContent = '边移动边射击，不要缩在角落。';
+    }
+
+    function updateHud() {
+      hpEl.textContent = Math.max(0, Math.round(player.hp));
+      killEl.textContent = state.kills;
+      waveEl.textContent = state.wave;
+      bestEl.textContent = best;
+    }
+
+    function rectHit(x, y, rect, radius = 16) {
+      const nearestX = Math.max(rect.x, Math.min(x, rect.x + rect.w));
+      const nearestY = Math.max(rect.y, Math.min(y, rect.y + rect.h));
+      return Math.hypot(x - nearestX, y - nearestY) < radius;
+    }
+
+    function spawnEnemy() {
+      const sides = [
+        { x: -20, y: 60 + Math.random() * 340 },
+        { x: canvas.width + 20, y: 60 + Math.random() * 340 },
+        { x: 80 + Math.random() * 600, y: -20 },
+        { x: 80 + Math.random() * 600, y: canvas.height + 20 }
+      ];
+      const spawn = sides[Math.floor(Math.random() * sides.length)];
+      enemies.push({ x: spawn.x, y: spawn.y, hp: 24 + state.wave * 8, cool: 1.4 + Math.random(), speed: 0.9 + state.wave * 0.06 });
+    }
+
+    function fireBullet(sourceX, sourceY, angle, speed, owner) {
+      bullets.push({ x: sourceX, y: sourceY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, owner });
+    }
+
+    function shoot() {
+      if (!state.running || state.over || player.cooldown > 0) return;
+      const angle = Math.atan2(state.mouse.y - player.y, state.mouse.x - player.x);
+      fireBullet(player.x + Math.cos(angle) * 22, player.y + Math.sin(angle) * 22, angle, 5.8, 'player');
+      player.cooldown = 0.28;
+    }
+
+    function movePlayer(dt) {
+      let dx = 0;
+      let dy = 0;
+      if (state.keys.w || state.keys.ArrowUp) dy -= 1;
+      if (state.keys.s || state.keys.ArrowDown) dy += 1;
+      if (state.keys.a || state.keys.ArrowLeft) dx -= 1;
+      if (state.keys.d || state.keys.ArrowRight) dx += 1;
+      const mag = Math.hypot(dx, dy) || 1;
+      const nx = player.x + (dx / mag) * player.speed * 120 * dt;
+      const ny = player.y + (dy / mag) * player.speed * 120 * dt;
+      const blocked = walls.some(wall => rectHit(nx, ny, wall));
+      if (!blocked) {
+        player.x = Math.max(20, Math.min(canvas.width - 20, nx));
+        player.y = Math.max(20, Math.min(canvas.height - 20, ny));
+      }
+    }
+
+    function update(dt) {
+      if (!state.running || state.over) return;
+      player.cooldown = Math.max(0, player.cooldown - dt);
+      movePlayer(dt);
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnEnemy();
+        state.spawnTimer = Math.max(0.45, 1.15 - state.wave * 0.05);
+      }
+
+      enemies.forEach(enemy => {
+        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        const nx = enemy.x + Math.cos(angle) * enemy.speed * 120 * dt;
+        const ny = enemy.y + Math.sin(angle) * enemy.speed * 120 * dt;
+        if (!walls.some(wall => rectHit(nx, ny, wall, 14))) {
+          enemy.x = nx;
+          enemy.y = ny;
+        }
+        enemy.cool -= dt;
+        if (enemy.cool <= 0 && Math.hypot(enemy.x - player.x, enemy.y - player.y) < 320) {
+          fireBullet(enemy.x, enemy.y, angle, 4.2, 'enemy');
+          enemy.cool = 1.4 + Math.random() * 0.5;
+        }
+      });
+
+      bullets.forEach(bullet => {
+        bullet.x += bullet.vx * 120 * dt;
+        bullet.y += bullet.vy * 120 * dt;
+      });
+      bullets = bullets.filter(bullet => bullet.x > -40 && bullet.x < canvas.width + 40 && bullet.y > -40 && bullet.y < canvas.height + 40 && !walls.some(wall => rectHit(bullet.x, bullet.y, wall, 5)));
+
+      bullets.forEach(bullet => {
+        if (bullet.owner === 'player') {
+          const target = enemies.find(enemy => Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y) < 18);
+          if (target) {
+            target.hp -= 12;
+            bullet.x = -100;
+            if (target.hp <= 0) {
+              target.dead = true;
+              state.kills += 1;
+              state.wave = 1 + Math.floor(state.kills / 4);
+              if (state.kills > best) {
+                best = state.kills;
+                localStorage.setItem(storageKey, String(best));
+              }
+            }
+          }
+        } else if (Math.hypot(player.x - bullet.x, player.y - bullet.y) < 18) {
+          player.hp -= 10;
+          bullet.x = -100;
+          if (player.hp <= 0) {
+            state.over = true;
+            statusEl.textContent = '你的坦克被击毁了。';
+            messageEl.textContent = '再来一局，尽量别被夹在墙角。';
+          }
+        }
+      });
+      enemies = enemies.filter(enemy => !enemy.dead);
+      updateHud();
+    }
+
+    function drawTank(x, y, angle, enemy = false) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = enemy ? '#ff8b6b' : '#64d2ff';
+      ctx.fillRect(-16, -14, 32, 28);
+      ctx.fillStyle = enemy ? '#ffd0c2' : '#dff6ff';
+      ctx.fillRect(-9, -22, 18, 10);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#1a2638';
+      ctx.fillRect(0, -4, 26, 8);
+      ctx.restore();
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#132239');
+      bg.addColorStop(1, '#101826');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      walls.forEach(wall => {
+        ctx.fillStyle = '#3e465d';
+        ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+      });
+
+      const angle = Math.atan2(state.mouse.y - player.y, state.mouse.x - player.x);
+      drawTank(player.x, player.y, angle, false);
+      enemies.forEach(enemy => drawTank(enemy.x, enemy.y, Math.atan2(player.y - enemy.y, player.x - enemy.x), true));
+      bullets.forEach(bullet => {
+        ctx.fillStyle = bullet.owner === 'player' ? '#9dfbff' : '#ffcc8d';
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '战车损毁' : '准备出击', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击开始，然后 WASD + 鼠标作战', canvas.width / 2, canvas.height / 2 + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener('pointermove', event => {
+      const rect = canvas.getBoundingClientRect();
+      state.mouse.x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      state.mouse.y = (event.clientY - rect.top) * (canvas.height / rect.height);
+    });
+    canvas.addEventListener('pointerdown', shoot);
+    document.addEventListener('keydown', event => {
+      state.keys[event.key.toLowerCase()] = true;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        shoot();
+      }
+    });
+    document.addEventListener('keyup', event => { state.keys[event.key.toLowerCase()] = false; });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '战斗开始。';
+    });
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

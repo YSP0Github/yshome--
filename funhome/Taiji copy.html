@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>太极冥想｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #06080c;
+      --panel: rgba(14, 18, 25, 0.9);
+      --line: rgba(255,255,255,0.08);
+      --text: #f7f8fb;
+      --muted: #adb7ca;
+      --accent: #c3b27a;
+      --shadow: 0 24px 60px rgba(0,0,0,0.4);
+      --rotation-duration: 6s;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,0.06), transparent 24%),
+        radial-gradient(circle at 82% 20%, rgba(195,178,122,0.12), transparent 24%),
+        linear-gradient(180deg, #020406 0%, #06080c 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      width: min(980px, 100%);
+      background: var(--panel);
+      border-radius: 32px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      color: #e9ecef;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3.2rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .subtle,
+    .slider-line small {
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn {
+      min-height: 48px;
+      border-radius: 16px;
+      border: 0;
+      padding: 0 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .btn {
+      color: #101214;
+      background: linear-gradient(135deg, #f6f1db, #d7c68b);
+      box-shadow: 0 12px 24px rgba(215,198,139,0.18);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .slider-line {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .visual {
+      display: grid;
+      place-items: center;
+      gap: 22px;
+      padding: 20px;
+      border-radius: 28px;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 70%);
+    }
+
+    .taiji {
+      width: min(360px, 70vw);
+      aspect-ratio: 1 / 1;
+      position: relative;
+      animation: rotate var(--rotation-duration) linear infinite;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.12),
+        0 30px 60px rgba(0,0,0,0.4);
+      border-radius: 50%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .taiji svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .taiji.paused { animation-play-state: paused; }
+
+    .breath-box {
+      text-align: center;
+      display: grid;
+      gap: 8px;
+    }
+
+    .breath-box strong {
+      font-size: clamp(1.5rem, 3vw, 2.3rem);
+    }
+
+    .message {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      text-align: center;
+      max-width: 520px;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .app { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section>
+      <div class="eyebrow">☯️ 治愈角落</div>
+      <h1>太极冥想</h1>
+      <p class="lead">这是趣味屋里一个安静一点的角落。看着太极缓慢旋转，配合呼吸提示，放空几十秒也挺舒服。</p>
+
+      <div class="actions">
+        <button class="btn" id="toggleBtn" type="button">暂停旋转</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;">← 返回趣味屋</a>
+      </div>
+
+      <div class="slider-line">
+        <label for="speedRange">旋转速度</label>
+        <input id="speedRange" type="range" min="3" max="12" value="6">
+        <small id="speedText">当前：6 秒一圈</small>
+      </div>
+
+      <div class="message">你可以把它当作一个简单的视觉呼吸器：吸气、停顿、呼气、停顿，然后重复。</div>
+    </section>
+
+    <section class="visual">
+      <div class="taiji" id="taiji" aria-label="太极图">
+        <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+          <defs>
+            <clipPath id="taijiClip">
+              <circle cx="50" cy="50" r="49"></circle>
+            </clipPath>
+          </defs>
+          <g clip-path="url(#taijiClip)">
+            <rect x="0" y="0" width="50" height="100" fill="#000"></rect>
+            <rect x="50" y="0" width="50" height="100" fill="#fff"></rect>
+            <circle cx="50" cy="25" r="25" fill="#fff"></circle>
+            <circle cx="50" cy="75" r="25" fill="#000"></circle>
+            <circle cx="50" cy="25" r="6.8" fill="#000"></circle>
+            <circle cx="50" cy="75" r="6.8" fill="#fff"></circle>
+          </g>
+          <circle cx="50" cy="50" r="49" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"></circle>
+        </svg>
+      </div>
+      <div class="breath-box">
+        <span class="subtle">呼吸提示</span>
+        <strong id="breathTitle">吸气</strong>
+        <div class="subtle" id="breathText">慢慢吸气 4 秒，让肩膀放松下来。</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const phases = [
+      { title: '吸气', text: '慢慢吸气 4 秒，让肩膀放松下来。' },
+      { title: '停顿', text: '轻轻停 2 秒，不用刻意用力。' },
+      { title: '呼气', text: '缓慢呼气 6 秒，把注意力放回当下。' },
+      { title: '停顿', text: '再停 2 秒，然后开始下一轮。' }
+    ];
+
+    const taiji = document.getElementById('taiji');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const speedRange = document.getElementById('speedRange');
+    const speedText = document.getElementById('speedText');
+    const breathTitle = document.getElementById('breathTitle');
+    const breathText = document.getElementById('breathText');
+
+    let paused = false;
+    let phaseIndex = 0;
+
+    function updateSpeed() {
+      const value = speedRange.value;
+      document.documentElement.style.setProperty('--rotation-duration', `${value}s`);
+      speedText.textContent = `当前：${value} 秒一圈`;
+    }
+
+    function toggleSpin() {
+      paused = !paused;
+      taiji.classList.toggle('paused', paused);
+      toggleBtn.textContent = paused ? '继续旋转' : '暂停旋转';
+    }
+
+    function nextPhase() {
+      const phase = phases[phaseIndex];
+      breathTitle.textContent = phase.title;
+      breathText.textContent = phase.text;
+      phaseIndex = (phaseIndex + 1) % phases.length;
+    }
+
+    toggleBtn.addEventListener('click', toggleSpin);
+    speedRange.addEventListener('input', updateSpeed);
+
+    updateSpeed();
+    nextPhase();
+    setInterval(nextPhase, 4000);
+  </script>
+</body>
+</html>

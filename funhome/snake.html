@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>霓虹贪吃蛇｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #04101a;
+      --panel: rgba(10, 20, 32, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f5fbff;
+      --muted: #9bb3ca;
+      --brand: #1de9b6;
+      --accent: #7c5cff;
+      --danger: #ff5d73;
+      --shadow: 0 24px 60px rgba(0,0,0,0.36);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(29,233,182,0.2), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(124,92,255,0.18), transparent 24%),
+        linear-gradient(180deg, #030912 0%, #04101a 100%);
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button, select, input { font: inherit; }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(29,233,182,0.12);
+      color: #b9fff0;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.5vw, 3.4rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .subtle,
+    .option-line small,
+    .tips li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stats {
+      margin: 24px 0 18px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.65rem;
+    }
+
+    .option-group {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .option-line {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .option-line select,
+    .option-line label {
+      color: var(--text);
+    }
+
+    .option-line select {
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .ctrl {
+      border: 0;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+    }
+
+    .btn {
+      color: #031019;
+      background: linear-gradient(135deg, var(--brand), #69ffe1);
+      box-shadow: 0 12px 26px rgba(29,233,182,0.22);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stage {
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .hud-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .hud-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+
+    .canvas-shell {
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    canvas {
+      width: min(100%, 560px);
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(6,18,27,0.98), rgba(3,10,16,1));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .stage-msg {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(29,233,182,0.12), rgba(124,92,255,0.1));
+      font-weight: 700;
+    }
+
+    .mobile-controls {
+      display: none;
+      margin-top: 18px;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .ctrl {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 1.4rem;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 22px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 11, 18, 0.78);
+      border-radius: 24px;
+      backdrop-filter: blur(8px);
+      padding: 24px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-box {
+      max-width: 420px;
+      text-align: center;
+      display: grid;
+      gap: 14px;
+    }
+
+    .overlay-box h2 {
+      margin: 0;
+      font-size: 2.2rem;
+    }
+
+    .overlay-box p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel,
+      .stage { padding: 20px; }
+      .hud { grid-template-columns: repeat(2, 1fr); }
+      .mobile-controls { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🐍 复古重来</div>
+      <h1>霓虹贪吃蛇</h1>
+      <p class="lead">经典玩法 + 霓虹风格。吃到普通果实稳定涨分，金色果实高分但会过期。支持暂停、穿墙模式和移动端方向键。</p>
+
+      <div class="stats">
+        <div class="stat-card">本地最高<strong id="bestScore">0</strong></div>
+        <div class="stat-card">当前状态<strong id="stateText">待开始</strong></div>
+      </div>
+
+      <div class="option-group">
+        <div class="option-line">
+          <label for="speedSelect">速度</label>
+          <select id="speedSelect">
+            <option value="180">慢速</option>
+            <option value="135" selected>标准</option>
+            <option value="95">快速</option>
+          </select>
+          <small>速度越快，节奏越紧张。</small>
+        </div>
+        <div class="option-line">
+          <label><input id="wrapToggle" type="checkbox"> 开启穿墙模式</label>
+          <small>开启后撞墙不会死，会从另一边穿出。</small>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始游戏</button>
+        <button class="ghost-btn" id="pauseBtn" type="button">暂停 / 继续</button>
+      </div>
+
+      <div class="actions" style="margin-top:0;">
+        <button class="ghost-btn" id="restartBtn" type="button">重新开局</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>方向键或 WASD 控制方向，不能立刻掉头。</li>
+        <li>金色果实分更高，但几秒后会消失。</li>
+        <li>暂停适合换手，但别忘了回来继续。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <h2 style="margin:0;">20 × 20 霓虹地图</h2>
+          <div class="subtle">先点“开始游戏”，或者按方向键立即开跑。</div>
+        </div>
+        <span class="badge" id="modeBadge">🌱 标准模式</span>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card">得分<strong id="scoreValue">0</strong></div>
+        <div class="hud-card">长度<strong id="lengthValue">3</strong></div>
+        <div class="hud-card">速度<strong id="speedValue">标准</strong></div>
+        <div class="hud-card">果实类型<strong id="fruitValue">普通</strong></div>
+      </div>
+
+      <div class="canvas-shell">
+        <canvas id="gameCanvas" width="560" height="560"></canvas>
+      </div>
+
+      <div class="mobile-controls">
+        <button class="ctrl" data-dir="up" type="button">↑</button>
+        <button class="ctrl" data-dir="left" type="button">←</button>
+        <button class="ctrl" data-dir="down" type="button">↓</button>
+        <button class="ctrl" data-dir="right" type="button">→</button>
+      </div>
+
+      <div class="stage-msg" id="stageMsg">绿色蛇头会沿着当前方向移动。吃果实、变长、别撞自己。</div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay-box">
+          <h2 id="overlayTitle">游戏结束</h2>
+          <p id="overlayText">撞到了，休息一下再来一局。</p>
+          <div class="actions" style="justify-content:center; margin:0;">
+            <button class="btn" id="playAgainBtn" type="button">再来一局</button>
+            <button class="ghost-btn" id="resumeBtn" type="button">继续看看</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const GRID_SIZE = 20;
+    const CELL = canvas.width / GRID_SIZE;
+
+    const scoreValue = document.getElementById('scoreValue');
+    const bestScore = document.getElementById('bestScore');
+    const lengthValue = document.getElementById('lengthValue');
+    const speedValue = document.getElementById('speedValue');
+    const fruitValue = document.getElementById('fruitValue');
+    const stateText = document.getElementById('stateText');
+    const stageMsg = document.getElementById('stageMsg');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlayText = document.getElementById('overlayText');
+    const modeBadge = document.getElementById('modeBadge');
+    const speedSelect = document.getElementById('speedSelect');
+    const wrapToggle = document.getElementById('wrapToggle');
+
+    let best = Number(localStorage.getItem('funhome-snake-best') || 0);
+    let snake = [];
+    let direction = { x: 1, y: 0 };
+    let nextDirection = { x: 1, y: 0 };
+    let food = null;
+    let score = 0;
+    let running = false;
+    let paused = false;
+    let loopId = null;
+    let goldenExpireAt = 0;
+
+    function speedLabel(value) {
+      const num = Number(value);
+      if (num <= 100) return '快速';
+      if (num <= 145) return '标准';
+      return '慢速';
+    }
+
+    function resetGame() {
+      clearInterval(loopId);
+      snake = [
+        { x: 5, y: 10 },
+        { x: 4, y: 10 },
+        { x: 3, y: 10 }
+      ];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      score = 0;
+      running = false;
+      paused = false;
+      goldenExpireAt = 0;
+      spawnFood();
+      overlay.classList.remove('show');
+      stateText.textContent = '待开始';
+      stageMsg.textContent = '绿色蛇头会沿着当前方向移动。吃果实、变长、别撞自己。';
+      updateHud();
+      draw();
+    }
+
+    function updateHud() {
+      scoreValue.textContent = score;
+      bestScore.textContent = best;
+      lengthValue.textContent = snake.length;
+      speedValue.textContent = speedLabel(speedSelect.value);
+      fruitValue.textContent = food && food.type === 'gold' ? '金色' : '普通';
+      modeBadge.textContent = wrapToggle.checked ? '🌀 穿墙模式' : '🌱 标准模式';
+    }
+
+    function randomEmptyCell() {
+      const occupied = new Set(snake.map(part => `${part.x},${part.y}`));
+      const choices = [];
+      for (let x = 0; x < GRID_SIZE; x += 1) {
+        for (let y = 0; y < GRID_SIZE; y += 1) {
+          if (!occupied.has(`${x},${y}`)) choices.push({ x, y });
+        }
+      }
+      return choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    function spawnFood() {
+      const position = randomEmptyCell();
+      const isGold = Math.random() < 0.22;
+      food = { ...position, type: isGold ? 'gold' : 'normal' };
+      goldenExpireAt = isGold ? Date.now() + 6000 : 0;
+      updateHud();
+    }
+
+    function startGame() {
+      if (running && paused) {
+        togglePause();
+        return;
+      }
+      clearInterval(loopId);
+      running = true;
+      paused = false;
+      stateText.textContent = '进行中';
+      overlay.classList.remove('show');
+      stageMsg.textContent = '开始了，稳住别撞自己。';
+      loopId = setInterval(step, Number(speedSelect.value));
+      updateHud();
+    }
+
+    function togglePause() {
+      if (!running) return;
+      paused = !paused;
+      if (paused) {
+        overlayTitle.textContent = '已暂停';
+        overlayText.textContent = '休息一下，准备好再继续。';
+        overlay.classList.add('show');
+        stateText.textContent = '暂停中';
+      } else {
+        overlay.classList.remove('show');
+        stateText.textContent = '进行中';
+      }
+    }
+
+    function setDirection(x, y) {
+      if (!running) startGame();
+      if (x === -direction.x && y === -direction.y) return;
+      nextDirection = { x, y };
+    }
+
+    function endGame(reason) {
+      clearInterval(loopId);
+      running = false;
+      paused = false;
+      stateText.textContent = '已结束';
+      overlayTitle.textContent = '游戏结束';
+      overlayText.textContent = reason;
+      overlay.classList.add('show');
+      if (score > best) {
+        best = score;
+        localStorage.setItem('funhome-snake-best', String(best));
+        overlayText.textContent = `${reason} 这次还刷新了最高分。`;
+      }
+      updateHud();
+    }
+
+    function step() {
+      if (!running || paused) return;
+      direction = nextDirection;
+
+      if (food?.type === 'gold' && Date.now() > goldenExpireAt) {
+        spawnFood();
+        stageMsg.textContent = '金色果实消失了，新的普通果实已刷新。';
+      }
+
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      if (wrapToggle.checked) {
+        head.x = (head.x + GRID_SIZE) % GRID_SIZE;
+        head.y = (head.y + GRID_SIZE) % GRID_SIZE;
+      } else if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        endGame('撞墙了。');
+        return;
+      }
+
+      if (snake.some(part => part.x === head.x && part.y === head.y)) {
+        endGame('撞到自己了。');
+        return;
+      }
+
+      snake.unshift(head);
+
+      if (food && head.x === food.x && head.y === food.y) {
+        const gained = food.type === 'gold' ? 25 : 10;
+        score += gained;
+        stageMsg.textContent = food.type === 'gold'
+          ? '拿到金色果实，高分进账！'
+          : '吃到普通果实，继续变长。';
+        spawnFood();
+      } else {
+        snake.pop();
+      }
+
+      updateHud();
+      draw();
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= GRID_SIZE; i += 1) {
+        const pos = i * CELL;
+        ctx.beginPath();
+        ctx.moveTo(pos, 0);
+        ctx.lineTo(pos, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, pos);
+        ctx.lineTo(canvas.width, pos);
+        ctx.stroke();
+      }
+    }
+
+    function drawCell(x, y, color, glow = color) {
+      const px = x * CELL + 2;
+      const py = y * CELL + 2;
+      ctx.fillStyle = color;
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.roundRect(px, py, CELL - 4, CELL - 4, 10);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+
+      if (food) {
+        drawCell(food.x, food.y, food.type === 'gold' ? '#ffd166' : '#ff5d73', food.type === 'gold' ? '#ffd166' : '#ff5d73');
+      }
+
+      snake.forEach((part, index) => {
+        if (index === 0) {
+          drawCell(part.x, part.y, '#69ffe1', '#1de9b6');
+        } else {
+          drawCell(part.x, part.y, '#7c5cff', '#7c5cff');
+        }
+      });
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('pauseBtn').addEventListener('click', togglePause);
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      resetGame();
+      startGame();
+    });
+    document.getElementById('playAgainBtn').addEventListener('click', () => {
+      resetGame();
+      startGame();
+    });
+    document.getElementById('resumeBtn').addEventListener('click', () => {
+      if (!running) {
+        overlay.classList.remove('show');
+      } else {
+        togglePause();
+      }
+    });
+
+    speedSelect.addEventListener('change', () => {
+      updateHud();
+      if (running && !paused) {
+        clearInterval(loopId);
+        loopId = setInterval(step, Number(speedSelect.value));
+      }
+    });
+
+    wrapToggle.addEventListener('change', updateHud);
+
+    document.addEventListener('keydown', event => {
+      const map = {
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+        w: [0, -1],
+        s: [0, 1],
+        a: [-1, 0],
+        d: [1, 0]
+      };
+      if (event.key === ' ') {
+        event.preventDefault();
+        if (!running) startGame();
+        else togglePause();
+        return;
+      }
+      const directionArgs = map[event.key];
+      if (!directionArgs) return;
+      event.preventDefault();
+      setDirection(...directionArgs);
+    });
+
+    document.querySelectorAll('[data-dir]').forEach(button => {
+      button.addEventListener('click', () => {
+        const directions = {
+          up: [0, -1],
+          down: [0, 1],
+          left: [-1, 0],
+          right: [1, 0]
+        };
+        setDirection(...directions[button.dataset.dir]);
+      });
+    });
+
+    bestScore.textContent = best;
+    resetGame();
+  </script>
+</body>
+</html>

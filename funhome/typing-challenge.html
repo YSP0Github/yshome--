@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>打字挑战｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #07111d;
+      --panel: rgba(10, 20, 34, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f8ff;
+      --muted: #a0b0cd;
+      --brand: #4f8fff;
+      --accent: #2dd4bf;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(79,143,255,0.18), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(45,212,191,0.14), transparent 24%),
+        linear-gradient(180deg, #030811 0%, #07111d 100%);
+      padding: 24px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+    textarea { font: inherit; }
+    .app {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+    }
+    .panel, .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 28px; }
+    .stage { padding: 22px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(79,143,255,0.12);
+      color: #caddff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3rem);
+      line-height: 1.05;
+    }
+    .lead, .tips li, .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .btn, .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 0;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #82b0ff);
+      box-shadow: 0 12px 26px rgba(79,143,255,0.22);
+    }
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.35rem;
+    }
+    .quote {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      line-height: 2;
+      font-size: 1.05rem;
+    }
+    .quote span.correct { color: #8affdc; }
+    .quote span.wrong { color: #ff8b9a; }
+    .quote span.current {
+      background: rgba(79,143,255,0.22);
+      border-radius: 6px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      resize: vertical;
+      outline: none;
+    }
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(79,143,255,0.14), rgba(45,212,191,0.08));
+      font-weight: 700;
+    }
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel, .stage { padding: 20px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">⌨️ 节奏练习</div>
+      <h1>打字挑战</h1>
+      <p class="lead">给你一段文字，看看你能多快又多准地打完。适合顺手测试一下手感。</p>
+
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">换一段重来</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>从开始输入时计时。</li>
+        <li>统计的是每分钟字符数和准确率。</li>
+        <li>打完后可以继续换下一段。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stats">
+        <div class="stat-card">用时<strong id="timeValue">0 秒</strong></div>
+        <div class="stat-card">进度<strong id="progressValue">0%</strong></div>
+        <div class="stat-card">准确率<strong id="accuracyValue">100%</strong></div>
+        <div class="stat-card">速度<strong id="speedValue">0 CPM</strong></div>
+      </div>
+
+      <div class="quote" id="quoteBox"></div>
+      <textarea id="inputBox" placeholder="在这里开始输入上方文字……"></textarea>
+      <div class="message" id="messageBox">开始输入后自动计时。</div>
+    </section>
+  </main>
+
+  <script>
+    const quotes = [
+      '趣味屋不一定非要复杂，只要打开以后真的能让人玩起来，就已经很有趣了。',
+      '有些小游戏只需要两分钟，却能把原本疲惫的注意力重新拉回来。',
+      '真正舒服的网页，不只是好看，而是点开以后马上知道自己可以做什么。',
+      '比起空空的展示页，一个能随手体验的小乐园更容易让人记住。',
+      '如果今天有点累，那就先玩一局轻松的，再继续面对后面的事情。'
+    ];
+
+    const quoteBox = document.getElementById('quoteBox');
+    const inputBox = document.getElementById('inputBox');
+    const timeValue = document.getElementById('timeValue');
+    const progressValue = document.getElementById('progressValue');
+    const accuracyValue = document.getElementById('accuracyValue');
+    const speedValue = document.getElementById('speedValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let currentQuote = '';
+    let timer = 0;
+    let timerId = null;
+    let started = false;
+
+    function pickQuote() {
+      currentQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      inputBox.value = '';
+      timer = 0;
+      started = false;
+      clearInterval(timerId);
+      timerId = null;
+      messageBox.textContent = '开始输入后自动计时。';
+      updateView();
+    }
+
+    function startTimer() {
+      if (timerId) return;
+      timerId = setInterval(() => {
+        timer += 1;
+        updateView();
+      }, 1000);
+    }
+
+    function renderQuote() {
+      const typed = inputBox.value;
+      quoteBox.innerHTML = currentQuote.split('').map((char, index) => {
+        let className = '';
+        if (index < typed.length) {
+          className = typed[index] === char ? 'correct' : 'wrong';
+        } else if (index === typed.length) {
+          className = 'current';
+        }
+        return `<span class="${className}">${char}</span>`;
+      }).join('');
+    }
+
+    function updateView() {
+      renderQuote();
+      const typed = inputBox.value;
+      const compared = Math.min(typed.length, currentQuote.length);
+      let correct = 0;
+      for (let i = 0; i < compared; i += 1) {
+        if (typed[i] === currentQuote[i]) correct += 1;
+      }
+      const accuracy = typed.length ? Math.round((correct / typed.length) * 100) : 100;
+      const progress = currentQuote.length ? Math.min(100, Math.round((typed.length / currentQuote.length) * 100)) : 0;
+      const cpm = timer > 0 ? Math.round((correct / timer) * 60) : 0;
+
+      timeValue.textContent = `${timer} 秒`;
+      progressValue.textContent = `${progress}%`;
+      accuracyValue.textContent = `${accuracy}%`;
+      speedValue.textContent = `${cpm} CPM`;
+
+      if (typed === currentQuote) {
+        clearInterval(timerId);
+        timerId = null;
+        messageBox.textContent = `完成了！准确率 ${accuracy}%，速度 ${cpm} CPM。`;
+      }
+    }
+
+    inputBox.addEventListener('input', () => {
+      if (!started && inputBox.value) {
+        started = true;
+        startTimer();
+      }
+      updateView();
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', pickQuote);
+
+    pickQuote();
+  </script>
+</body>
+</html>

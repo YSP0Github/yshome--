@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ffb048; --accent-2: #ffe07a; }
+    canvas { background: linear-gradient(180deg, #d9b075 0%, #c79653 100%); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">⚪⚫ 手写新作 · 棋盘博弈</div>
+      <h1>五子棋</h1>
+      <p class="lead">这次补的是完整的五子棋，而不是重复三连棋。你执黑先手，电脑会同时考虑进攻和防守：活四、冲四、活三都会优先处理。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新开对局</button>
+        <button class="ghost-btn" id="undoBtn" type="button">悔一步</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>当前手数</span><strong id="moveEl">0</strong></div>
+        <div class="stat"><span>当前回合</span><strong id="turnEl">你</strong></div>
+        <div class="stat"><span>战绩</span><strong id="recordEl">0 / 0</strong></div>
+        <div class="stat"><span>难度标签</span><strong>中等</strong></div>
+      </div>
+      <ul class="tips">
+        <li>点击棋盘落子，先连成五子者获胜。</li>
+        <li>电脑并不是乱下，会优先找最危险和最有利的位置。</li>
+        <li>“悔一步”会撤回你和电脑最近各一步。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">开局尽量占中，别太早贴边。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell center">
+        <canvas id="board" width="620" height="620"></canvas>
+      </div>
+      <div class="message" id="statusEl">你执黑先手。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const moveEl = document.getElementById('moveEl');
+    const turnEl = document.getElementById('turnEl');
+    const recordEl = document.getElementById('recordEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const size = 15;
+    const cell = 40;
+    const offset = 30;
+    const state = { board: [], turn: 1, over: false, history: [], wins: 0, losses: 0, thinking: false };
+
+    function init() {
+      state.board = Array.from({ length: size }, () => Array(size).fill(0));
+      state.turn = 1;
+      state.over = false;
+      state.history = [];
+      state.thinking = false;
+      updateHud();
+      statusEl.textContent = '你执黑先手。';
+      messageEl.textContent = '先占中间区域通常更稳。';
+      draw();
+    }
+
+    function updateHud() {
+      moveEl.textContent = state.history.length;
+      turnEl.textContent = state.over ? '结算' : state.turn === 1 ? '你' : '电脑';
+      recordEl.textContent = `${state.wins} / ${state.losses}`;
+    }
+
+    function inBoard(r, c) { return r >= 0 && r < size && c >= 0 && c < size; }
+
+    function checkWin(board, r, c, color) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      return dirs.some(([dr, dc]) => {
+        let count = 1;
+        for (const sign of [-1, 1]) {
+          let rr = r + dr * sign;
+          let cc = c + dc * sign;
+          while (inBoard(rr, cc) && board[rr][cc] === color) {
+            count += 1;
+            rr += dr * sign;
+            cc += dc * sign;
+          }
+        }
+        return count >= 5;
+      });
+    }
+
+    function patternScore(count, openEnds) {
+      if (count >= 5) return 1000000;
+      if (count === 4 && openEnds === 2) return 120000;
+      if (count === 4 && openEnds === 1) return 24000;
+      if (count === 3 && openEnds === 2) return 6000;
+      if (count === 3 && openEnds === 1) return 1200;
+      if (count === 2 && openEnds === 2) return 420;
+      if (count === 2 && openEnds === 1) return 90;
+      if (count === 1 && openEnds === 2) return 18;
+      return 0;
+    }
+
+    function scorePoint(board, r, c, color) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      let total = 0;
+      dirs.forEach(([dr, dc]) => {
+        let count = 1;
+        let openEnds = 0;
+        for (const sign of [-1, 1]) {
+          let rr = r + dr * sign;
+          let cc = c + dc * sign;
+          while (inBoard(rr, cc) && board[rr][cc] === color) {
+            count += 1;
+            rr += dr * sign;
+            cc += dc * sign;
+          }
+          if (inBoard(rr, cc) && board[rr][cc] === 0) openEnds += 1;
+        }
+        total += patternScore(count, openEnds);
+      });
+      return total;
+    }
+
+    function candidateMoves() {
+      const moves = [];
+      const hasStone = state.board.some(row => row.some(cell => cell !== 0));
+      for (let r = 0; r < size; r += 1) {
+        for (let c = 0; c < size; c += 1) {
+          if (state.board[r][c] !== 0) continue;
+          let near = false;
+          for (let rr = Math.max(0, r - 2); rr <= Math.min(size - 1, r + 2); rr += 1) {
+            for (let cc = Math.max(0, c - 2); cc <= Math.min(size - 1, c + 2); cc += 1) {
+              if (state.board[rr][cc] !== 0) near = true;
+            }
+          }
+          if (!hasStone || near) moves.push({ r, c });
+        }
+      }
+      return moves.length ? moves : [{ r: 7, c: 7 }];
+    }
+
+    function aiMove() {
+      if (state.over) return;
+      state.thinking = true;
+      updateHud();
+      setTimeout(() => {
+        const moves = candidateMoves();
+        let bestMove = null;
+        let bestScore = -Infinity;
+        moves.forEach(move => {
+          const attack = scorePoint(state.board, move.r, move.c, -1);
+          const defend = scorePoint(state.board, move.r, move.c, 1);
+          const center = 18 - (Math.abs(move.r - 7) + Math.abs(move.c - 7));
+          const score = Math.max(attack * 1.06, defend * 0.98) + attack * 0.14 + center;
+          if (score > bestScore) { bestScore = score; bestMove = move; }
+        });
+        place(bestMove.r, bestMove.c, -1);
+        if (checkWin(state.board, bestMove.r, bestMove.c, -1)) {
+          state.over = true;
+          state.losses += 1;
+          statusEl.textContent = '电脑赢了。';
+          messageEl.textContent = '这局防守没跟上，再来一盘。';
+        } else {
+          state.turn = 1;
+          statusEl.textContent = '轮到你。';
+        }
+        state.thinking = false;
+        updateHud();
+        draw();
+      }, 280);
+    }
+
+    function place(r, c, color) {
+      state.board[r][c] = color;
+      state.history.push({ r, c, color });
+      updateHud();
+      draw();
+    }
+
+    function boardPosition(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+      const c = Math.round((x - offset) / cell);
+      const r = Math.round((y - offset) / cell);
+      return { r, c };
+    }
+
+    canvas.addEventListener('pointerdown', (event) => {
+      if (state.turn !== 1 || state.over || state.thinking) return;
+      const { r, c } = boardPosition(event);
+      if (!inBoard(r, c) || state.board[r][c] !== 0) return;
+      place(r, c, 1);
+      if (checkWin(state.board, r, c, 1)) {
+        state.over = true;
+        state.wins += 1;
+        statusEl.textContent = '你赢了！';
+        messageEl.textContent = '漂亮，这波连线压得很好。';
+        updateHud();
+        return;
+      }
+      state.turn = -1;
+      statusEl.textContent = '电脑思考中……';
+      updateHud();
+      aiMove();
+    });
+
+    function drawStone(r, c, color) {
+      const x = offset + c * cell;
+      const y = offset + r * cell;
+      const gradient = ctx.createRadialGradient(x - 8, y - 10, 4, x, y, 20);
+      if (color === 1) {
+        gradient.addColorStop(0, '#6c7280');
+        gradient.addColorStop(1, '#11141a');
+      } else {
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(1, '#d9dde7');
+      }
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, 16, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#c79653';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(60,38,16,0.55)';
+      for (let i = 0; i < size; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(offset, offset + i * cell);
+        ctx.lineTo(offset + cell * (size - 1), offset + i * cell);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(offset + i * cell, offset);
+        ctx.lineTo(offset + i * cell, offset + cell * (size - 1));
+        ctx.stroke();
+      }
+      [[3,3],[3,11],[7,7],[11,3],[11,11]].forEach(([r, c]) => {
+        ctx.fillStyle = '#52361b';
+        ctx.beginPath();
+        ctx.arc(offset + c * cell, offset + r * cell, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      state.board.forEach((row, r) => row.forEach((cellValue, c) => { if (cellValue) drawStone(r, c, cellValue); }));
+    }
+
+    document.getElementById('newBtn').addEventListener('click', init);
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      if (state.history.length < 2 || state.thinking) return;
+      const lastTwo = state.history.splice(-2);
+      lastTwo.forEach(({ r, c }) => { state.board[r][c] = 0; });
+      state.turn = 1;
+      state.over = false;
+      statusEl.textContent = '已悔棋，轮到你。';
+      draw();
+      updateHud();
+    });
+
+    init();
+  </script>
+</body>
+</html>

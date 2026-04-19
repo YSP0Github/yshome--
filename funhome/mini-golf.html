@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>迷你高尔夫｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #63d178; --accent-2: #c4ffb8; }
+    canvas { cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">⛳ 手写新作 · 轻物理路线</div>
+      <h1>迷你高尔夫</h1>
+      <p class="lead">一杆不一定进，但每一杆都在修正路线。你需要看墙面反弹角度、控制力度，并尽量少杆数完成整套球洞。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始打球</button>
+        <button class="ghost-btn" id="resetBtn" type="button">重置当前洞</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>当前球洞</span><strong id="holeEl">1</strong></div>
+        <div class="stat"><span>本洞杆数</span><strong id="strokeEl">0</strong></div>
+        <div class="stat"><span>总杆数</span><strong id="totalEl">0</strong></div>
+        <div class="stat"><span>最佳总杆</span><strong id="bestEl">--</strong></div>
+      </div>
+      <ul class="tips">
+        <li>鼠标移动时会显示瞄准线，点击即可击球。</li>
+        <li>距离越远力度越大，但过猛反而容易多打一杆。</li>
+        <li>球速较慢且接近洞口时，才会真正进洞。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">不是每一杆都该发满力，有时轻推更稳。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🖱️ 点击击球</span>
+          <span class="legend-item">📐 反弹角度会影响路线</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“开始打球”，然后用鼠标瞄准。</div>
+    </section>
+  </main>
+
+  <script>
+    const levels = [
+      { ball: [110, 350], hole: [660, 110], walls: [{ x: 220, y: 90, w: 24, h: 240 }, { x: 430, y: 210, w: 24, h: 180 }] },
+      { ball: [100, 120], hole: [660, 340], walls: [{ x: 170, y: 190, w: 420, h: 24 }, { x: 350, y: 60, w: 24, h: 110 }] },
+      { ball: [110, 340], hole: [650, 120], walls: [{ x: 180, y: 90, w: 24, h: 280 }, { x: 340, y: 90, w: 24, h: 180 }, { x: 500, y: 190, w: 24, h: 180 }] },
+      { ball: [120, 220], hole: [640, 220], walls: [{ x: 220, y: 70, w: 24, h: 160 }, { x: 220, y: 300, w: 24, h: 90 }, { x: 420, y: 70, w: 24, h: 90 }, { x: 420, y: 230, w: 24, h: 160 }] }
+    ];
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const holeEl = document.getElementById('holeEl');
+    const strokeEl = document.getElementById('strokeEl');
+    const totalEl = document.getElementById('totalEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-mini-golf';
+
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? best : '--';
+    const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 10 };
+    const aim = { x: 0, y: 0, active: false };
+    let levelIndex = 0;
+    let strokes = 0;
+    let totalStrokes = 0;
+    let playing = false;
+    let settled = true;
+
+    function loadLevel(index) {
+      levelIndex = index;
+      const level = levels[levelIndex];
+      ball.x = level.ball[0];
+      ball.y = level.ball[1];
+      ball.vx = 0;
+      ball.vy = 0;
+      strokes = 0;
+      settled = true;
+      playing = false;
+      updateHud();
+      statusEl.textContent = `第 ${levelIndex + 1} 洞待命。`;
+      messageEl.textContent = '先看清墙面，再决定直攻还是借反弹。';
+    }
+
+    function updateHud() {
+      holeEl.textContent = `${levelIndex + 1} / ${levels.length}`;
+      strokeEl.textContent = strokes;
+      totalEl.textContent = totalStrokes + strokes;
+      bestEl.textContent = best ? best : '--';
+    }
+
+    function currentLevel() {
+      return levels[levelIndex];
+    }
+
+    function shoot(targetX, targetY) {
+      if (!settled) return;
+      const dx = ball.x - targetX;
+      const dy = ball.y - targetY;
+      const mag = Math.min(180, Math.hypot(dx, dy));
+      if (mag < 10) return;
+      ball.vx = (dx / 180) * 5.4;
+      ball.vy = (dy / 180) * 5.4;
+      strokes += 1;
+      settled = false;
+      playing = true;
+      updateHud();
+    }
+
+    function bounceOffRect(rect) {
+      const nearestX = Math.max(rect.x, Math.min(ball.x, rect.x + rect.w));
+      const nearestY = Math.max(rect.y, Math.min(ball.y, rect.y + rect.h));
+      const dist = Math.hypot(ball.x - nearestX, ball.y - nearestY);
+      if (dist > ball.r) return;
+      const overlapX = Math.min(Math.abs(ball.x - rect.x), Math.abs(ball.x - (rect.x + rect.w)));
+      const overlapY = Math.min(Math.abs(ball.y - rect.y), Math.abs(ball.y - (rect.y + rect.h)));
+      if (overlapX < overlapY) ball.vx *= -1;
+      else ball.vy *= -1;
+    }
+
+    function finishHole() {
+      totalStrokes += strokes;
+      if (levelIndex === levels.length - 1) {
+        if (!best || totalStrokes < best) {
+          best = totalStrokes;
+          localStorage.setItem(storageKey, String(best));
+        }
+        statusEl.textContent = `全部完成！总杆数 ${totalStrokes}`;
+        messageEl.textContent = '你已经把整套小球洞打完了。';
+      } else {
+        statusEl.textContent = `第 ${levelIndex + 1} 洞完成。`;
+        messageEl.textContent = '下一洞会更绕。';
+        loadLevel(levelIndex + 1);
+      }
+      updateHud();
+    }
+
+    function update() {
+      if (!playing) return;
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      ball.vx *= 0.986;
+      ball.vy *= 0.986;
+      if (Math.abs(ball.vx) + Math.abs(ball.vy) < 0.05) {
+        ball.vx = 0;
+        ball.vy = 0;
+        settled = true;
+      }
+      if (ball.x < ball.r || ball.x > canvas.width - ball.r) ball.vx *= -1;
+      if (ball.y < ball.r || ball.y > canvas.height - ball.r) ball.vy *= -1;
+      currentLevel().walls.forEach(bounceOffRect);
+
+      const [hx, hy] = currentLevel().hole;
+      if (Math.hypot(ball.x - hx, ball.y - hy) < 16 && Math.abs(ball.vx) + Math.abs(ball.vy) < 1.2) {
+        playing = false;
+        settled = true;
+        finishHole();
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#2d7a46';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      for (let i = 0; i < 20; i += 1) ctx.fillRect(i * 40, 0, 1, canvas.height);
+      currentLevel().walls.forEach(rect => {
+        ctx.fillStyle = '#d8c398';
+        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      });
+      const [hx, hy] = currentLevel().hole;
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(hx, hy, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(hx, hy - 48);
+      ctx.stroke();
+      ctx.fillStyle = '#ffeb88';
+      ctx.beginPath();
+      ctx.moveTo(hx, hy - 48);
+      ctx.lineTo(hx + 24, hy - 38);
+      ctx.lineTo(hx, hy - 28);
+      ctx.closePath();
+      ctx.fill();
+
+      if (settled && aim.active) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.moveTo(ball.x, ball.y);
+        ctx.lineTo(aim.x, aim.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#cdd4e4';
+      ctx.stroke();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener('pointermove', event => {
+      const rect = canvas.getBoundingClientRect();
+      aim.x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      aim.y = (event.clientY - rect.top) * (canvas.height / rect.height);
+      aim.active = true;
+    });
+    canvas.addEventListener('pointerdown', () => {
+      if (!playing) playing = true;
+      shoot(aim.x, aim.y);
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      totalStrokes = 0;
+      loadLevel(0);
+      playing = false;
+      statusEl.textContent = '第 1 洞开始。';
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => loadLevel(levelIndex));
+
+    loadLevel(0);
+    loop();
+  </script>
+</body>
+</html>

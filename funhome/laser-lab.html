@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>激光折射室｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff6ec7; --accent-2: #7ff2ff; }
+    .laser-board {
+      display: grid;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .laser-cell {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      display: grid;
+      place-items: center;
+      font-size: 1.45rem;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .laser-cell:hover { transform: translateY(-1px); }
+    .laser-cell.fixed { cursor: default; background: rgba(255,255,255,0.08); }
+    .laser-cell.beam { box-shadow: inset 0 0 0 2px rgba(127,242,255,0.26); background: rgba(127,242,255,0.12); }
+    .laser-cell.hit { box-shadow: inset 0 0 0 2px rgba(255,214,109,0.44); background: rgba(255,214,109,0.12); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🔦 手写新作 · 反射谜题</div>
+      <h1>激光折射室</h1>
+      <p class="lead">让激光从发射器出发，经过镜面反射，点亮所有晶体并最终命中终点。你只需要点击旋转镜子，但局面往往比看上去复杂。</p>
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">重置本关</button>
+        <button class="ghost-btn" id="prevBtn" type="button">上一关</button>
+        <button class="ghost-btn" id="nextBtn" type="button">下一关</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>关卡</span><strong id="levelEl">1</strong></div>
+        <div class="stat"><span>旋转次数</span><strong id="movesEl">0</strong></div>
+        <div class="stat"><span>命中晶体</span><strong id="crystalEl">0</strong></div>
+        <div class="stat"><span>总关卡</span><strong id="totalEl">4</strong></div>
+      </div>
+      <ul class="tips">
+        <li>镜面“／”和“＼”的反射方向完全不同。</li>
+        <li>不是到终点就算过，必须先把所有晶体都扫到。</li>
+        <li>有些镜子只是干扰项，不一定都要用上。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">优先让激光先碰到晶体，再考虑终点收束。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell center">
+        <div class="laser-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">点击镜子旋转，让光束成功折到终点。</div>
+    </section>
+  </main>
+
+  <script>
+    const levels = [
+      ['S..../', '.#..C.', '..\\...', '...#..', '.C..../', '....T.'],
+      ['S...#.', '.\\..C.', '..#../', '..C...', './...#.', '....T.'],
+      ['S.....', '.#./C.', '..\\#..', '.../..', '.C..\\.', '.....T'],
+      ['S..#..', '.\\..C.', '..#../', '.C..\\.', '..../.', '...#.T']
+    ];
+    const boardEl = document.getElementById('board');
+    const levelEl = document.getElementById('levelEl');
+    const movesEl = document.getElementById('movesEl');
+    const crystalEl = document.getElementById('crystalEl');
+    const totalEl = document.getElementById('totalEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    totalEl.textContent = levels.length;
+
+    let levelIndex = 0;
+    let board = [];
+    let original = [];
+    let moves = 0;
+
+    function parseLevel(index) {
+      return levels[index].map(row => row.split('').map(char => ({ type: char })));
+    }
+
+    function clone(grid) {
+      return grid.map(row => row.map(cell => ({ ...cell })));
+    }
+
+    function loadLevel(index) {
+      levelIndex = (index + levels.length) % levels.length;
+      original = parseLevel(levelIndex);
+      board = clone(original);
+      moves = 0;
+      statusEl.textContent = `第 ${levelIndex + 1} 关开始。`;
+      messageEl.textContent = '看清光路转向再动手。';
+      render();
+    }
+
+    function findCell(type) {
+      for (let r = 0; r < board.length; r += 1) {
+        for (let c = 0; c < board[r].length; c += 1) {
+          if (board[r][c].type === type) return { r, c };
+        }
+      }
+      return null;
+    }
+
+    function trace() {
+      const start = findCell('S');
+      let dir = 'right';
+      let r = start.r;
+      let c = start.c;
+      const path = [];
+      const hitCrystals = new Set();
+      const seen = new Set();
+      while (true) {
+        const key = `${r}-${c}-${dir}`;
+        if (seen.has(key)) break;
+        seen.add(key);
+        const delta = { up: [-1, 0], right: [0, 1], down: [1, 0], left: [0, -1] }[dir];
+        r += delta[0];
+        c += delta[1];
+        if (r < 0 || c < 0 || r >= board.length || c >= board[0].length) break;
+        path.push(`${r}-${c}`);
+        const type = board[r][c].type;
+        if (type === '#') break;
+        if (type === 'C') hitCrystals.add(`${r}-${c}`);
+        if (type === '/') dir = { up: 'right', right: 'up', down: 'left', left: 'down' }[dir];
+        if (type === '\\') dir = { up: 'left', left: 'up', down: 'right', right: 'down' }[dir];
+        if (type === 'T') {
+          const allCrystals = board.flatMap((row, rr) => row.map((cell, cc) => cell.type === 'C' ? `${rr}-${cc}` : null)).filter(Boolean);
+          return { path, hitCrystals, success: hitCrystals.size === allCrystals.length };
+        }
+      }
+      return { path, hitCrystals, success: false };
+    }
+
+    function render() {
+      const rows = board.length;
+      const cols = board[0].length;
+      boardEl.style.gridTemplateColumns = `repeat(${cols}, 58px)`;
+      const result = trace();
+      boardEl.innerHTML = '';
+      board.forEach((row, r) => row.forEach((cell, c) => {
+        const button = document.createElement('button');
+        const key = `${r}-${c}`;
+        const fixed = ['S', 'T', '#', '.','C'].includes(cell.type);
+        button.className = 'laser-cell' + (fixed ? ' fixed' : '') + (result.path.includes(key) ? ' beam' : '') + (result.hitCrystals.has(key) ? ' hit' : '');
+        button.type = 'button';
+        button.textContent = { S: '▶', T: '◎', '#': '■', '.': '', C: '✦', '/': '／', '\\': '＼' }[cell.type];
+        button.addEventListener('click', () => {
+          if (fixed) return;
+          cell.type = cell.type === '/' ? '\\' : '/';
+          moves += 1;
+          const latest = trace();
+          if (latest.success) {
+            statusEl.textContent = `第 ${levelIndex + 1} 关完成！`;
+            messageEl.textContent = levelIndex === levels.length - 1 ? '所有折射关卡都打通了。' : '继续下一关，折线会更绕。';
+          }
+          render();
+        });
+        boardEl.appendChild(button);
+      }));
+      levelEl.textContent = levelIndex + 1;
+      movesEl.textContent = moves;
+      crystalEl.textContent = `${result.hitCrystals.size} / ${board.flat().filter(cell => cell.type === 'C').length}`;
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      board = clone(original);
+      moves = 0;
+      statusEl.textContent = '本关已重置。';
+      render();
+    });
+    document.getElementById('prevBtn').addEventListener('click', () => loadLevel(levelIndex - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => loadLevel(levelIndex + 1));
+
+    loadLevel(0);
+  </script>
+</body>
+</html>

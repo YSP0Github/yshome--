@@ -1,0 +1,235 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黑白棋｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #1ec886; --accent-2: #7cf0c2; }
+    .reversi-board { display:grid; grid-template-columns: repeat(8, 58px); gap: 6px; justify-content:center; }
+    .cell { width:58px; height:58px; border-radius:14px; background:#1a6a47; border:1px solid rgba(255,255,255,0.12); display:grid; place-items:center; cursor:pointer; }
+    .cell.hint::after { content:''; width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,0.35); }
+    .disc { width:40px; height:40px; border-radius:50%; box-shadow: inset 0 4px 12px rgba(255,255,255,0.14), 0 8px 12px rgba(0,0,0,0.22); }
+    .disc.black { background: linear-gradient(180deg, #3b4150 0%, #0f1218 100%); }
+    .disc.white { background: linear-gradient(180deg, #ffffff 0%, #dfe9f5 100%); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">⚫⚪ 手写新作 · 策略棋盘</div>
+      <h1>黑白棋</h1>
+      <p class="lead">这一版不是摆设。你可以完整下一盘黑白棋，对手会优先抢角、堵你大连线，也会在局面后期尽量吃子。适合慢慢琢磨。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新开一局</button>
+        <button class="ghost-btn" id="passBtn" type="button">我无子可下</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>黑子（你）</span><strong id="blackEl">2</strong></div>
+        <div class="stat"><span>白子（电脑）</span><strong id="whiteEl">2</strong></div>
+        <div class="stat"><span>当前回合</span><strong id="turnEl">你</strong></div>
+        <div class="stat"><span>可落子数</span><strong id="movesEl">4</strong></div>
+      </div>
+      <ul class="tips">
+        <li>你执黑先手，点击带灰点的位置落子。</li>
+        <li>角落价值很高，边角附近则要谨慎。</li>
+        <li>如果双方都无子可下，就会结算胜负。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先别急着抢子数，中盘位置更重要。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell center">
+        <div class="reversi-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">你先手。</div>
+    </section>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const blackEl = document.getElementById('blackEl');
+    const whiteEl = document.getElementById('whiteEl');
+    const turnEl = document.getElementById('turnEl');
+    const movesEl = document.getElementById('movesEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+    const weights = [
+      [100,-20,10,5,5,10,-20,100],
+      [-20,-40,-2,-2,-2,-2,-40,-20],
+      [10,-2,4,1,1,4,-2,10],
+      [5,-2,1,0,0,1,-2,5],
+      [5,-2,1,0,0,1,-2,5],
+      [10,-2,4,1,1,4,-2,10],
+      [-20,-40,-2,-2,-2,-2,-40,-20],
+      [100,-20,10,5,5,10,-20,100],
+    ];
+    let board = [];
+    let current = 1;
+    let busy = false;
+
+    function init() {
+      board = Array.from({ length: 8 }, () => Array(8).fill(0));
+      board[3][3] = -1; board[3][4] = 1; board[4][3] = 1; board[4][4] = -1;
+      current = 1;
+      busy = false;
+      render();
+      statusEl.textContent = '你先手。';
+      messageEl.textContent = '开局别太贪，角和稳定边更关键。';
+    }
+
+    function inside(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+    function flipsFor(r, c, color) {
+      if (board[r][c] !== 0) return [];
+      const flipped = [];
+      dirs.forEach(([dr, dc]) => {
+        let rr = r + dr;
+        let cc = c + dc;
+        const temp = [];
+        while (inside(rr, cc) && board[rr][cc] === -color) {
+          temp.push([rr, cc]);
+          rr += dr;
+          cc += dc;
+        }
+        if (temp.length && inside(rr, cc) && board[rr][cc] === color) flipped.push(...temp);
+      });
+      return flipped;
+    }
+
+    function validMoves(color) {
+      const moves = [];
+      for (let r = 0; r < 8; r += 1) {
+        for (let c = 0; c < 8; c += 1) {
+          const flips = flipsFor(r, c, color);
+          if (flips.length) moves.push({ r, c, flips });
+        }
+      }
+      return moves;
+    }
+
+    function place(move, color) {
+      board[move.r][move.c] = color;
+      move.flips.forEach(([r, c]) => board[r][c] = color);
+    }
+
+    function counts() {
+      let black = 0, white = 0;
+      board.flat().forEach(cell => {
+        if (cell === 1) black += 1;
+        if (cell === -1) white += 1;
+      });
+      return { black, white };
+    }
+
+    function endIfNeeded() {
+      const playerMoves = validMoves(1).length;
+      const aiMoves = validMoves(-1).length;
+      if (playerMoves || aiMoves) return false;
+      const count = counts();
+      if (count.black > count.white) statusEl.textContent = '你赢了！';
+      else if (count.black < count.white) statusEl.textContent = '电脑赢了。';
+      else statusEl.textContent = '平局。';
+      messageEl.textContent = `最终比分 ${count.black}:${count.white}`;
+      current = 0;
+      render();
+      return true;
+    }
+
+    function aiTurn() {
+      if (endIfNeeded()) return;
+      const moves = validMoves(-1);
+      if (!moves.length) {
+        current = 1;
+        statusEl.textContent = '电脑无子可下，轮到你。';
+        render();
+        return;
+      }
+      busy = true;
+      setTimeout(() => {
+        let bestMove = null;
+        let bestScore = -Infinity;
+        moves.forEach(move => {
+          let score = weights[move.r][move.c] + move.flips.length * 6;
+          if ((move.r === 0 || move.r === 7) && (move.c === 0 || move.c === 7)) score += 300;
+          const fakeBoard = board.map(row => row.slice());
+          fakeBoard[move.r][move.c] = -1;
+          move.flips.forEach(([r, c]) => fakeBoard[r][c] = -1);
+          let mobility = 0;
+          for (let r = 0; r < 8; r += 1) {
+            for (let c = 0; c < 8; c += 1) {
+              if (fakeBoard[r][c] !== 0) continue;
+              dirs.forEach(([dr, dc]) => {
+                let rr = r + dr, cc = c + dc, found = false;
+                while (inside(rr, cc) && fakeBoard[rr][cc] === 1) { found = true; rr += dr; cc += dc; }
+                if (found && inside(rr, cc) && fakeBoard[rr][cc] === -1) mobility += 1;
+              });
+            }
+          }
+          score += mobility * 0.3;
+          if (score > bestScore) { bestScore = score; bestMove = move; }
+        });
+        place(bestMove, -1);
+        current = 1;
+        busy = false;
+        statusEl.textContent = '轮到你。';
+        messageEl.textContent = '电脑落子了，看看有没有角。';
+        endIfNeeded();
+        render();
+      }, 320);
+    }
+
+    function render() {
+      const moves = current === 1 ? validMoves(1) : validMoves(-1);
+      const moveMap = new Map(moves.map(move => [`${move.r}-${move.c}`, move]));
+      const count = counts();
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 8; r += 1) {
+        for (let c = 0; c < 8; c += 1) {
+          const button = document.createElement('button');
+          button.className = 'cell';
+          const key = `${r}-${c}`;
+          if (moveMap.has(key) && current === 1 && !busy) button.classList.add('hint');
+          if (board[r][c] !== 0) {
+            const disc = document.createElement('div');
+            disc.className = `disc ${board[r][c] === 1 ? 'black' : 'white'}`;
+            button.appendChild(disc);
+          }
+          button.addEventListener('click', () => {
+            if (current !== 1 || busy) return;
+            const move = moveMap.get(key);
+            if (!move) return;
+            place(move, 1);
+            current = -1;
+            statusEl.textContent = '电脑思考中……';
+            render();
+            aiTurn();
+          });
+          boardEl.appendChild(button);
+        }
+      }
+      blackEl.textContent = count.black;
+      whiteEl.textContent = count.white;
+      turnEl.textContent = current === 1 ? '你' : current === -1 ? '电脑' : '结算';
+      movesEl.textContent = current ? moves.length : 0;
+    }
+
+    document.getElementById('newBtn').addEventListener('click', init);
+    document.getElementById('passBtn').addEventListener('click', () => {
+      if (current !== 1 || busy) return;
+      if (validMoves(1).length) {
+        statusEl.textContent = '你其实还有能下的位置。';
+        return;
+      }
+      current = -1;
+      render();
+      aiTurn();
+    });
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管道工坊｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #46d6c8; --accent-2: #80fff2; }
+    .pipe-board {
+      display: grid;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .pipe-cell {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: #dffaf6;
+      font-size: 1.8rem;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .pipe-cell:hover { transform: translateY(-1px); }
+    .pipe-cell.fixed { cursor: default; background: rgba(255,255,255,0.08); }
+    .pipe-cell.lit { background: rgba(70,214,200,0.22); box-shadow: 0 0 18px rgba(70,214,200,0.22); }
+    .pipe-cell.end { color: #ffe18a; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🧪 手写新作 · 线路拼接</div>
+      <h1>管道工坊</h1>
+      <p class="lead">点击旋转管道，把起点和终点连起来。虽然规则简单，但中后段会出现分叉干扰，想一眼看清整张图并不容易。</p>
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">重置本关</button>
+        <button class="ghost-btn" id="prevBtn" type="button">上一关</button>
+        <button class="ghost-btn" id="nextBtn" type="button">下一关</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>关卡</span><strong id="levelEl">1</strong></div>
+        <div class="stat"><span>旋转次数</span><strong id="movesEl">0</strong></div>
+        <div class="stat"><span>通电格数</span><strong id="litEl">0</strong></div>
+        <div class="stat"><span>完成进度</span><strong id="progressEl">0 / 4</strong></div>
+      </div>
+      <ul class="tips">
+        <li>直管只有两种形态，拐角有四种形态。</li>
+        <li>别只盯着终点，先找从起点能稳定延伸的主干。</li>
+        <li>起点和终点本身不能旋转，方向已经固定。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先把起点附近理顺，再往远处推。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell center">
+        <div class="pipe-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">让能量从左上角一路流到终点。</div>
+    </section>
+  </main>
+
+  <script>
+    const glyphs = {
+      S: ['↑', '→', '↓', '←'],
+      E: ['◎', '◎', '◎', '◎'],
+      I: ['│', '─', '│', '─'],
+      L: ['└', '┌', '┐', '┘'],
+      T: ['┴', '├', '┬', '┤'],
+      X: ['┼', '┼', '┼', '┼'],
+      O: ['•', '•', '•', '•'],
+    };
+
+    const levels = [
+      [
+        'S1 I1 L2 O0',
+        'O0 O0 I0 O0',
+        'O0 O0 L0 E3',
+        'O0 O0 O0 O0'
+      ],
+      [
+        'S1 I1 L2 O0 O0',
+        'O0 O0 I0 O0 O0',
+        'O0 O0 L0 I1 L2',
+        'O0 O0 O0 O0 I0',
+        'O0 O0 O0 O0 E0'
+      ],
+      [
+        'S1 I1 T2 O0 O0 O0',
+        'O0 O0 I0 O0 O0 O0',
+        'O0 O0 L0 I1 L2 O0',
+        'O0 O0 O0 O0 I0 O0',
+        'O0 O0 O0 O0 L0 E3',
+        'O0 O0 O0 O0 O0 O0'
+      ],
+      [
+        'S2 O0 O0 O0 O0 O0',
+        'I0 O0 O0 O0 O0 O0',
+        'L0 I1 T2 O0 O0 O0',
+        'O0 O0 I0 O0 O0 O0',
+        'O0 O0 L0 I1 L2 O0',
+        'O0 O0 O0 O0 E0 O0'
+      ]
+    ];
+
+    const boardEl = document.getElementById('board');
+    const levelEl = document.getElementById('levelEl');
+    const movesEl = document.getElementById('movesEl');
+    const litEl = document.getElementById('litEl');
+    const progressEl = document.getElementById('progressEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+
+    let levelIndex = 0;
+    let board = [];
+    let original = [];
+    let moves = 0;
+
+    function parseLevel(rows) {
+      return rows.map(line => line.split(' ').map(token => ({ type: token[0], rot: Number(token[1]), fixed: token[0] === 'S' || token[0] === 'E' || token[0] === 'O' })));
+    }
+
+    function cloneBoard(grid) {
+      return grid.map(row => row.map(cell => ({ ...cell })));
+    }
+
+    function openings(type, rot) {
+      if (type === 'S') return [['up'], ['right'], ['down'], ['left']][rot];
+      if (type === 'E') return [['up'], ['right'], ['down'], ['left']][rot];
+      if (type === 'I') return rot % 2 === 0 ? ['up', 'down'] : ['left', 'right'];
+      if (type === 'L') return [['up', 'right'], ['right', 'down'], ['down', 'left'], ['left', 'up']][rot];
+      if (type === 'T') return [['left', 'up', 'right'], ['up', 'right', 'down'], ['right', 'down', 'left'], ['down', 'left', 'up']][rot];
+      if (type === 'X') return ['up', 'right', 'down', 'left'];
+      return [];
+    }
+
+    function opposite(dir) {
+      return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir];
+    }
+
+    function delta(dir) {
+      return { up: [-1, 0], right: [0, 1], down: [1, 0], left: [0, -1] }[dir];
+    }
+
+    function scramble(grid) {
+      grid.forEach(row => row.forEach(cell => {
+        if (!cell.fixed) cell.rot = (cell.rot + 1 + Math.floor(Math.random() * 3)) % 4;
+      }));
+      return grid;
+    }
+
+    function loadLevel(index) {
+      levelIndex = (index + levels.length) % levels.length;
+      const parsed = parseLevel(levels[levelIndex]);
+      original = scramble(cloneBoard(parsed));
+      board = cloneBoard(original);
+      moves = 0;
+      statusEl.textContent = `第 ${levelIndex + 1} 关开始。`;
+      messageEl.textContent = '优先保证主干别断。';
+      render();
+    }
+
+    function findStart() {
+      for (let r = 0; r < board.length; r += 1) {
+        for (let c = 0; c < board[r].length; c += 1) {
+          if (board[r][c].type === 'S') return { r, c };
+        }
+      }
+      return null;
+    }
+
+    function poweredCells() {
+      const start = findStart();
+      const visited = new Set();
+      const queue = [start];
+      while (queue.length) {
+        const { r, c } = queue.shift();
+        const key = `${r}-${c}`;
+        if (!start || visited.has(key)) continue;
+        visited.add(key);
+        const cell = board[r][c];
+        openings(cell.type, cell.rot).forEach(dir => {
+          const [dr, dc] = delta(dir);
+          const nr = r + dr;
+          const nc = c + dc;
+          const next = board[nr]?.[nc];
+          if (!next) return;
+          if (openings(next.type, next.rot).includes(opposite(dir))) {
+            queue.push({ r: nr, c: nc });
+          }
+        });
+      }
+      return visited;
+    }
+
+    function endReached(powered) {
+      for (const key of powered) {
+        const [r, c] = key.split('-').map(Number);
+        if (board[r][c].type === 'E') return true;
+      }
+      return false;
+    }
+
+    function render() {
+      const rows = board.length;
+      const cols = board[0].length;
+      boardEl.style.gridTemplateColumns = `repeat(${cols}, 58px)`;
+      const powered = poweredCells();
+      boardEl.innerHTML = '';
+      board.forEach((row, r) => row.forEach((cell, c) => {
+        const button = document.createElement('button');
+        button.className = 'pipe-cell' + (cell.fixed ? ' fixed' : '') + (powered.has(`${r}-${c}`) ? ' lit' : '') + (cell.type === 'E' ? ' end' : '');
+        button.type = 'button';
+        button.textContent = glyphs[cell.type][cell.rot];
+        button.addEventListener('click', () => {
+          if (cell.fixed) return;
+          cell.rot = (cell.rot + 1) % 4;
+          moves += 1;
+          const lit = poweredCells();
+          if (endReached(lit)) {
+            statusEl.textContent = `第 ${levelIndex + 1} 关接通成功！`;
+            messageEl.textContent = levelIndex === levels.length - 1 ? '所有关卡都接通了。' : '这条管线已经打通，去试试下一关。';
+          }
+          render();
+        });
+        boardEl.appendChild(button);
+      }));
+
+      const lit = poweredCells();
+      levelEl.textContent = levelIndex + 1;
+      movesEl.textContent = moves;
+      litEl.textContent = lit.size;
+      progressEl.textContent = `${levelIndex + 1} / ${levels.length}`;
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      board = cloneBoard(original);
+      moves = 0;
+      statusEl.textContent = '已恢复到开局。';
+      render();
+    });
+    document.getElementById('prevBtn').addEventListener('click', () => loadLevel(levelIndex - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => loadLevel(levelIndex + 1));
+
+    loadLevel(0);
+  </script>
+</body>
+</html>

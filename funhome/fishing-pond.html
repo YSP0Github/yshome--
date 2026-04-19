@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>悠闲钓鱼池｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #6fd1ff; --accent-2: #87ffd3; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🎣 手写新作 · 节奏时机</div>
+      <h1>悠闲钓鱼池</h1>
+      <p class="lead">鱼群会在池塘里来回游动，你要控制鱼钩下落和回收时机。金鱼分高，靴子扣分，整局节奏很轻，但想钓高分还挺考预判。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始钓鱼</button>
+        <button class="ghost-btn" id="dropBtn" type="button">放钩 / 收钩</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>得分</span><strong id="scoreEl">0</strong></div>
+        <div class="stat"><span>剩余时间</span><strong id="timeEl">45</strong></div>
+        <div class="stat"><span>连钓加成</span><strong id="comboEl">0</strong></div>
+        <div class="stat"><span>最佳分数</span><strong id="bestEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>按空格或点按钮，让鱼钩下落；再次触发则提前收回。</li>
+        <li>连续钓到鱼会提高分数倍率，钓到垃圾会清空连击。</li>
+        <li>鱼钩只能带一件东西回到水面后才算结算得分。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先别急着下钩，观察不同鱼的节奏和速度。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🐟 普通鱼 +10</span>
+          <span class="legend-item">🐠 金鱼 +25</span>
+          <span class="legend-item">👢 靴子 -15</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“开始钓鱼”，再控制鱼钩下落。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const timeEl = document.getElementById('timeEl');
+    const comboEl = document.getElementById('comboEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-fishing-pond';
+
+    const state = { running: false, over: false, score: 0, combo: 0, time: 45, last: 0, hookState: 'idle' };
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best;
+
+    const hook = { x: canvas.width / 2, y: 42, len: 42, speed: 280, dir: 1, target: null };
+    let entities = [];
+
+    function spawnEntities() {
+      entities = [];
+      for (let i = 0; i < 9; i += 1) {
+        const kind = i < 6 ? 'fish' : i < 8 ? 'gold' : 'boot';
+        entities.push({
+          kind,
+          x: 80 + Math.random() * (canvas.width - 160),
+          y: 140 + Math.random() * 250,
+          vx: (Math.random() > 0.5 ? 1 : -1) * (40 + Math.random() * 60 + (kind === 'gold' ? 25 : 0)),
+          bob: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.score = 0;
+      state.combo = 0;
+      state.time = 45;
+      state.hookState = 'idle';
+      hook.x = canvas.width / 2;
+      hook.y = 42;
+      hook.len = 42;
+      hook.dir = 1;
+      hook.target = null;
+      spawnEntities();
+      updateHud();
+      statusEl.textContent = '准备垂钓。';
+      messageEl.textContent = '鱼会横向游动，金鱼分更高。';
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      timeEl.textContent = Math.ceil(state.time);
+      comboEl.textContent = state.combo;
+      bestEl.textContent = best;
+    }
+
+    function triggerHook() {
+      if (state.over) return;
+      if (!state.running) {
+        state.running = true;
+        statusEl.textContent = '开始钓鱼。';
+        return;
+      }
+      if (state.hookState === 'idle') state.hookState = 'down';
+      else if (state.hookState === 'down') state.hookState = 'up';
+    }
+
+    function resolveCatch(target) {
+      if (!target) return;
+      if (target.kind === 'fish') {
+        state.combo += 1;
+        state.score += 10 + state.combo * 2;
+        messageEl.textContent = '钓到普通鱼，节奏稳定。';
+      } else if (target.kind === 'gold') {
+        state.combo += 1;
+        state.score += 25 + state.combo * 3;
+        messageEl.textContent = '金鱼上钩！这一杆很赚。';
+      } else {
+        state.combo = 0;
+        state.score = Math.max(0, state.score - 15);
+        messageEl.textContent = '钓到靴子了，白忙一场。';
+      }
+      if (state.score > best) {
+        best = state.score;
+        localStorage.setItem(storageKey, String(best));
+      }
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      state.time -= dt;
+      if (state.time <= 0) {
+        state.time = 0;
+        state.running = false;
+        state.over = true;
+        statusEl.textContent = '时间到，本局结束。';
+      }
+
+      if (state.hookState === 'idle') {
+        hook.x += hook.dir * hook.speed * dt;
+        if (hook.x < 60 || hook.x > canvas.width - 60) hook.dir *= -1;
+      } else if (state.hookState === 'down') {
+        hook.y += 260 * dt;
+        if (hook.y > canvas.height - 30) state.hookState = 'up';
+      } else if (state.hookState === 'up') {
+        hook.y -= 320 * dt;
+        if (hook.y <= 42) {
+          hook.y = 42;
+          state.hookState = 'idle';
+          resolveCatch(hook.target);
+          if (hook.target) {
+            hook.target.x = -1000;
+            hook.target = null;
+          }
+        }
+      }
+
+      entities.forEach(entity => {
+        if (entity.x < -120 || entity.x > canvas.width + 120) {
+          entity.x = entity.vx > 0 ? -80 : canvas.width + 80;
+          entity.y = 140 + Math.random() * 250;
+        }
+        entity.x += entity.vx * dt;
+        entity.bob += dt * 2;
+      });
+
+      if (!hook.target) {
+        hook.target = entities.find(entity => Math.abs(entity.x - hook.x) < 24 && Math.abs(entity.y - hook.y) < 20);
+      } else {
+        hook.target.x = hook.x;
+        hook.target.y = hook.y + 22;
+      }
+
+      updateHud();
+    }
+
+    function drawEntity(entity) {
+      const y = entity.y + Math.sin(entity.bob) * 5;
+      ctx.save();
+      ctx.translate(entity.x, y);
+      if (entity.vx < 0) ctx.scale(-1, 1);
+      if (entity.kind === 'boot') {
+        ctx.fillStyle = '#8a5b44';
+        ctx.beginPath();
+        ctx.roundRect(-18, -8, 26, 28, 6);
+        ctx.fill();
+        ctx.fillRect(-8, -20, 10, 14);
+      } else {
+        ctx.fillStyle = entity.kind === 'gold' ? '#ffd66d' : '#7ed0ff';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 22, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(18, 0);
+        ctx.lineTo(34, -10);
+        ctx.lineTo(34, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#18253b';
+        ctx.beginPath();
+        ctx.arc(-8, -2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      const water = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      water.addColorStop(0, '#0d3454');
+      water.addColorStop(1, '#10233d');
+      ctx.fillStyle = water;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(0, 88, canvas.width, 4);
+      for (let i = 0; i < 8; i += 1) {
+        ctx.fillStyle = `rgba(255,255,255,${0.02 + i * 0.01})`;
+        ctx.fillRect(0, 120 + i * 38, canvas.width, 1);
+      }
+      entities.filter(entity => entity !== hook.target).forEach(drawEntity);
+
+      ctx.strokeStyle = '#eaf7ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(hook.x, 0);
+      ctx.lineTo(hook.x, hook.y);
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(hook.x, hook.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(hook.x, hook.y + 10, 6, 0, Math.PI);
+      ctx.stroke();
+
+      if (hook.target) drawEntity(hook.target);
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.26)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '收杆结束' : '准备钓鱼', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击开始，然后用空格或按钮控制鱼钩', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      triggerHook();
+    });
+    document.getElementById('dropBtn').addEventListener('click', triggerHook);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        triggerHook();
+      }
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

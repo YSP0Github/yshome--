@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>流星穿云｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff8b5f; --accent-2: #ffde7b; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">☄️ 手写新作 · 反应闯关</div>
+      <h1>流星穿云</h1>
+      <p class="lead">一款手感偏丝滑的穿缝游戏。点击、空格或触屏都能让流星上扬，目标是在越飞越快的云柱之间坚持更久。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始飞行</button>
+        <button class="ghost-btn" id="restartBtn" type="button">重开一局</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>当前分</span><strong id="scoreEl">0</strong></div>
+        <div class="stat"><span>最好成绩</span><strong id="bestEl">0</strong></div>
+        <div class="stat"><span>速度档位</span><strong id="speedEl">1</strong></div>
+        <div class="stat"><span>状态</span><strong id="stateEl">待机</strong></div>
+      </div>
+      <ul class="tips">
+        <li>空格 / 点击 / 触碰画面：向上振翅。</li>
+        <li>每通过 6 根云柱，节奏会明显加快。</li>
+        <li>连过多根时，视觉会切入夕阳色调，压迫感会更强。</li>
+      </ul>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🎯 尽量穿过更多云柱</span>
+          <span class="legend-item">📱 手机点击也能玩</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="420" height="680"></canvas>
+        </div>
+      </div>
+      <div class="message" id="messageEl">准备起飞。开局后第一次点击就会真正开始。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const bestEl = document.getElementById('bestEl');
+    const speedEl = document.getElementById('speedEl');
+    const stateEl = document.getElementById('stateEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-flappy-sky';
+    const state = {
+      running: false,
+      started: false,
+      over: false,
+      score: 0,
+      best: Number(localStorage.getItem(storageKey) || 0),
+      speedLevel: 1,
+      last: 0,
+      pipeTimer: 0,
+    };
+    bestEl.textContent = state.best;
+
+    const bird = { x: 96, y: canvas.height / 2, vy: 0, r: 16 };
+    let pipes = [];
+    let clouds = Array.from({ length: 7 }, () => ({ x: Math.random() * canvas.width, y: Math.random() * 260, w: 60 + Math.random() * 90 }));
+
+    function reset() {
+      bird.y = canvas.height / 2;
+      bird.vy = 0;
+      pipes = [];
+      state.running = false;
+      state.started = false;
+      state.over = false;
+      state.score = 0;
+      state.speedLevel = 1;
+      state.pipeTimer = 0.8;
+      updateHud();
+      messageEl.textContent = '第一次点击会起飞。';
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      bestEl.textContent = state.best;
+      speedEl.textContent = state.speedLevel;
+      stateEl.textContent = state.over ? '结束' : (state.running ? '飞行中' : '待机');
+    }
+
+    function flap() {
+      if (state.over) return;
+      state.running = true;
+      state.started = true;
+      bird.vy = -280;
+      messageEl.textContent = '稳住节奏，别贪。';
+      updateHud();
+    }
+
+    function spawnPipe() {
+      const gap = Math.max(132, 170 - state.speedLevel * 8);
+      const topH = 90 + Math.random() * (canvas.height - gap - 220);
+      pipes.push({ x: canvas.width + 40, w: 68, topH, gap, passed: false });
+    }
+
+    function endGame() {
+      state.running = false;
+      state.over = true;
+      if (state.score > state.best) {
+        state.best = state.score;
+        localStorage.setItem(storageKey, String(state.best));
+      }
+      updateHud();
+      messageEl.textContent = '撞上了，点“重开一局”或者按空格再来。';
+    }
+
+    function update(dt) {
+      clouds.forEach(cloud => {
+        cloud.x -= 18 * dt * Math.max(1, state.speedLevel * 0.5);
+        if (cloud.x + cloud.w < -10) {
+          cloud.x = canvas.width + Math.random() * 40;
+          cloud.y = 20 + Math.random() * 240;
+          cloud.w = 60 + Math.random() * 90;
+        }
+      });
+
+      if (!state.running) return;
+      bird.vy += 520 * dt;
+      bird.y += bird.vy * dt;
+
+      state.pipeTimer -= dt;
+      if (state.pipeTimer <= 0) {
+        spawnPipe();
+        state.pipeTimer = Math.max(0.95, 1.55 - state.speedLevel * 0.08);
+      }
+
+      pipes.forEach(pipe => {
+        pipe.x -= (160 + state.speedLevel * 18) * dt;
+        if (!pipe.passed && pipe.x + pipe.w < bird.x) {
+          pipe.passed = true;
+          state.score += 1;
+          state.speedLevel = 1 + Math.floor(state.score / 6);
+          if (state.score > state.best) {
+            state.best = state.score;
+            localStorage.setItem(storageKey, String(state.best));
+          }
+        }
+      });
+      pipes = pipes.filter(pipe => pipe.x + pipe.w > -20);
+
+      const hitPipe = pipes.some(pipe => bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + pipe.w && (bird.y - bird.r < pipe.topH || bird.y + bird.r > pipe.topH + pipe.gap));
+      if (bird.y + bird.r >= canvas.height - 10 || bird.y - bird.r <= 0 || hitPipe) endGame();
+      updateHud();
+    }
+
+    function drawBackground() {
+      const t = Math.min(1, state.score / 24);
+      const top = `rgb(${8 + Math.round(60 * t)}, ${26 + Math.round(40 * t)}, ${44 + Math.round(20 * t)})`;
+      const bottom = `rgb(${30 + Math.round(130 * t)}, ${80 + Math.round(40 * t)}, ${125 - Math.round(45 * t)})`;
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, top);
+      gradient.addColorStop(1, bottom);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      clouds.forEach(cloud => {
+        ctx.beginPath();
+        ctx.ellipse(cloud.x, cloud.y, cloud.w * 0.35, 18, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloud.x + cloud.w * 0.22, cloud.y - 10, cloud.w * 0.22, 20, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloud.x - cloud.w * 0.24, cloud.y - 8, cloud.w * 0.2, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function draw() {
+      drawBackground();
+      pipes.forEach(pipe => {
+        ctx.fillStyle = '#f0f7ff';
+        ctx.fillRect(pipe.x, 0, pipe.w, pipe.topH);
+        ctx.fillRect(pipe.x, pipe.topH + pipe.gap, pipe.w, canvas.height - pipe.topH - pipe.gap);
+        ctx.fillStyle = '#c6dcff';
+        ctx.fillRect(pipe.x - 4, pipe.topH - 16, pipe.w + 8, 16);
+        ctx.fillRect(pipe.x - 4, pipe.topH + pipe.gap, pipe.w + 8, 16);
+      });
+
+      ctx.save();
+      ctx.translate(bird.x, bird.y);
+      ctx.rotate(Math.max(-0.6, Math.min(0.6, bird.vy / 260)));
+      ctx.fillStyle = '#fff7cf';
+      ctx.beginPath();
+      ctx.arc(0, 0, bird.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8b5f';
+      ctx.beginPath();
+      ctx.moveTo(14, 0);
+      ctx.lineTo(28, -5);
+      ctx.lineTo(28, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.arc(6, -4, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(8,12,20,0.18)';
+      ctx.fillRect(0, canvas.height - 18, canvas.width, 18);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 22px Segoe UI';
+      ctx.fillText(String(state.score), 18, 36);
+
+      if (!state.started) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText('点击开始穿云', canvas.width / 2, canvas.height / 2 - 8);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('空格、鼠标、触屏都可以', canvas.width / 2, canvas.height / 2 + 24);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function tapAction() {
+      if (state.over) {
+        reset();
+        flap();
+      } else {
+        flap();
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', tapAction);
+    document.getElementById('restartBtn').addEventListener('click', reset);
+    canvas.addEventListener('pointerdown', tapAction);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        tapAction();
+      }
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

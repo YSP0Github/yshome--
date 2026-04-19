@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>元素合成室｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff8ea2; --accent-2: #ffd874; }
+    .element-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .element {
+      min-height: 54px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor: pointer;
+      padding: 10px 12px;
+      display: grid;
+      gap: 4px;
+      justify-items: start;
+      transition: transform .16s ease, border-color .16s ease;
+    }
+    .element:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.2); }
+    .slots { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .slot {
+      min-height: 82px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed rgba(255,255,255,0.16);
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+    .history-list { display:grid; gap: 10px; margin-top: 14px; }
+    .history-item {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🧪 手写新作 · 发现式玩法</div>
+      <h1>元素合成室</h1>
+      <p class="lead">从风、火、水、土四个基础元素出发，尝试把它们两两组合，慢慢解锁新的世界。它不是拼反应，而是靠联想力和一点点“啊这也能合”的惊喜。</p>
+      <div class="actions">
+        <button class="btn" id="craftBtn" type="button">开始合成</button>
+        <button class="ghost-btn" id="clearBtn" type="button">清空选择</button>
+        <button class="ghost-btn" id="resetBtn" type="button">重置进度</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>已发现元素</span><strong id="foundEl">4</strong></div>
+        <div class="stat"><span>总元素</span><strong id="totalEl">20</strong></div>
+        <div class="stat"><span>成功合成</span><strong id="successEl">0</strong></div>
+        <div class="stat"><span>历史最佳</span><strong id="bestEl">4</strong></div>
+      </div>
+      <div class="slots">
+        <div class="slot" id="slotA">选择第一个元素</div>
+        <div class="slot" id="slotB">选择第二个元素</div>
+      </div>
+      <ul class="tips">
+        <li>同一个元素也可以和自己合成，别漏掉这种可能。</li>
+        <li>发现新元素后，尽快拿它去和旧元素试试。</li>
+        <li>如果没反应，不代表思路错，只是配方还不对。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先从常识组合开始，像“火 + 水”“土 + 水”。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="widget-shell">
+        <h3 style="margin-bottom:10px;">已发现元素</h3>
+        <div class="element-grid" id="elementGrid"></div>
+      </div>
+      <div class="message" id="statusEl">选择两个元素，然后点击“开始合成”。</div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </main>
+
+  <script>
+    const recipes = {
+      '土+水': '泥',
+      '火+水': '蒸汽',
+      '风+火': '能量',
+      '风+水': '雨',
+      '土+火': '岩浆',
+      '土+风': '沙',
+      '火+火': '太阳',
+      '水+水': '海洋',
+      '风+风': '压力',
+      '土+土': '山',
+      '泥+火': '砖',
+      '沙+火': '玻璃',
+      '蒸汽+能量': '机器',
+      '海洋+风': '波浪',
+      '岩浆+山': '火山',
+      '雨+土': '植物',
+      '植物+火': '烟',
+      '植物+水': '沼泽',
+      '机器+能量': '机器人',
+      '玻璃+沙': '时钟'
+    };
+    const allElements = ['风', '火', '水', '土', ...new Set(Object.values(recipes))];
+    const gridEl = document.getElementById('elementGrid');
+    const slotA = document.getElementById('slotA');
+    const slotB = document.getElementById('slotB');
+    const foundEl = document.getElementById('foundEl');
+    const totalEl = document.getElementById('totalEl');
+    const successEl = document.getElementById('successEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const historyList = document.getElementById('historyList');
+    const storageKey = 'funhome-best-alchemy';
+
+    let discovered = new Set(['风', '火', '水', '土']);
+    let selected = [];
+    let successCount = 0;
+    let best = Number(localStorage.getItem(storageKey) || 4);
+    bestEl.textContent = best;
+    totalEl.textContent = allElements.length;
+
+    function keyOf(a, b) {
+      return [a, b].sort((x, y) => x.localeCompare(y, 'zh')).join('+');
+    }
+
+    function renderSlots() {
+      slotA.textContent = selected[0] || '选择第一个元素';
+      slotB.textContent = selected[1] || '选择第二个元素';
+    }
+
+    function addHistory(text) {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.textContent = text;
+      historyList.prepend(item);
+      while (historyList.children.length > 8) historyList.lastElementChild.remove();
+    }
+
+    function renderElements() {
+      gridEl.innerHTML = '';
+      [...discovered].sort((a, b) => a.localeCompare(b, 'zh')).forEach(name => {
+        const button = document.createElement('button');
+        button.className = 'element';
+        button.type = 'button';
+        button.innerHTML = `<strong>${name}</strong><small>${allElements.includes(name) ? '已解锁' : ''}</small>`;
+        button.addEventListener('click', () => {
+          if (selected.length < 2) selected.push(name);
+          else selected = [selected[1], name];
+          renderSlots();
+        });
+        gridEl.appendChild(button);
+      });
+      foundEl.textContent = discovered.size;
+      successEl.textContent = successCount;
+      if (discovered.size > best) {
+        best = discovered.size;
+        localStorage.setItem(storageKey, String(best));
+      }
+      bestEl.textContent = best;
+    }
+
+    function craft() {
+      if (selected.length < 2) {
+        statusEl.textContent = '还没选满两个元素。';
+        return;
+      }
+      const [a, b] = selected;
+      const result = recipes[keyOf(a, b)];
+      if (!result) {
+        statusEl.textContent = '没有发生反应。';
+        messageEl.textContent = '换一种组合继续试。';
+        addHistory(`${a} + ${b} → 无反应`);
+        return;
+      }
+      const isNew = !discovered.has(result);
+      discovered.add(result);
+      successCount += 1;
+      statusEl.textContent = isNew ? `发现新元素：${result}` : `你已经知道 ${result}`;
+      messageEl.textContent = isNew ? '新元素往往能继续开出更多配方。' : '既然已经发现，就试试拿它去和别的元素组合。';
+      addHistory(`${a} + ${b} → ${result}${isNew ? '（新）' : ''}`);
+      renderElements();
+    }
+
+    document.getElementById('craftBtn').addEventListener('click', craft);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      selected = [];
+      renderSlots();
+      statusEl.textContent = '已清空选择。';
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      discovered = new Set(['风', '火', '水', '土']);
+      selected = [];
+      successCount = 0;
+      historyList.innerHTML = '';
+      statusEl.textContent = '进度已重置。';
+      messageEl.textContent = '再从基础元素慢慢推一遍。';
+      renderSlots();
+      renderElements();
+    });
+
+    renderSlots();
+    renderElements();
+  </script>
+</body>
+</html>

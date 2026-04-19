@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆音阵｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #0a0c1a;
+      --panel: rgba(16, 20, 38, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f7ff;
+      --muted: #a5afd1;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(255,104,120,0.14), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(255,209,102,0.12), transparent 24%),
+        linear-gradient(180deg, #050712 0%, #0a0c1a 100%);
+      padding: 24px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 24px;
+    }
+    .panel, .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 28px; }
+    .stage { padding: 22px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #eef2ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3rem);
+      line-height: 1.05;
+    }
+    .lead, .tips li, .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .btn, .ghost-btn, .pad {
+      border: 0;
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn, .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .btn {
+      color: #11131b;
+      background: linear-gradient(135deg, #ffd166, #ffe39f);
+      box-shadow: 0 12px 26px rgba(255,209,102,0.2);
+    }
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+    .pads {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .pad {
+      aspect-ratio: 1 / 1;
+      border-radius: 28px;
+      cursor: pointer;
+      filter: brightness(0.72);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .pad.active {
+      transform: scale(1.02);
+      filter: brightness(1.16);
+      box-shadow: 0 0 28px rgba(255,255,255,0.12);
+    }
+    .pad.red { background: #ff6378; }
+    .pad.blue { background: #4f8fff; }
+    .pad.green { background: #2dd4bf; }
+    .pad.yellow { background: #ffd166; }
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,209,102,0.14), rgba(79,143,255,0.08));
+      font-weight: 700;
+    }
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel, .stage { padding: 20px; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🎵 记忆小游戏</div>
+      <h1>记忆音阵</h1>
+      <p class="lead">看颜色闪烁顺序，再按同样顺序复现。轮数会不断增加，越往后越容易手忙脚乱。</p>
+
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始挑战</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>每轮会新增一步动作。</li>
+        <li>顺序错一步就结束。</li>
+        <li>建议跟着节奏默念颜色。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stats">
+        <div class="stat-card">当前轮数<strong id="roundValue">0</strong></div>
+        <div class="stat-card">本地最佳<strong id="bestValue">0</strong></div>
+        <div class="stat-card">进度<strong id="progressValue">0 / 0</strong></div>
+      </div>
+
+      <div class="pads">
+        <button class="pad red" type="button" data-color="red"></button>
+        <button class="pad blue" type="button" data-color="blue"></button>
+        <button class="pad green" type="button" data-color="green"></button>
+        <button class="pad yellow" type="button" data-color="yellow"></button>
+      </div>
+
+      <div class="message" id="messageBox">点开始后，先观察顺序，再按相同顺序点击。</div>
+    </section>
+  </main>
+
+  <script>
+    const colors = ['red', 'blue', 'green', 'yellow'];
+    const pads = [...document.querySelectorAll('.pad')];
+    const roundValue = document.getElementById('roundValue');
+    const bestValue = document.getElementById('bestValue');
+    const progressValue = document.getElementById('progressValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let sequence = [];
+    let playerIndex = 0;
+    let best = Number(localStorage.getItem('funhome-simon-best') || 0);
+    let locked = false;
+
+    function updateHud() {
+      roundValue.textContent = sequence.length;
+      bestValue.textContent = best;
+      progressValue.textContent = `${playerIndex} / ${sequence.length}`;
+    }
+
+    function flash(color) {
+      const pad = pads.find(item => item.dataset.color === color);
+      if (!pad) return;
+      pad.classList.add('active');
+      setTimeout(() => pad.classList.remove('active'), 320);
+    }
+
+    function playSequence() {
+      locked = true;
+      playerIndex = 0;
+      updateHud();
+      messageBox.textContent = '观察顺序…';
+      sequence.forEach((color, index) => {
+        setTimeout(() => flash(color), 520 * index + 240);
+      });
+      setTimeout(() => {
+        locked = false;
+        messageBox.textContent = '轮到你按了。';
+      }, 520 * sequence.length + 280);
+    }
+
+    function nextRound() {
+      sequence.push(colors[Math.floor(Math.random() * colors.length)]);
+      updateHud();
+      playSequence();
+    }
+
+    function resetGame() {
+      sequence = [];
+      playerIndex = 0;
+      locked = false;
+      updateHud();
+      messageBox.textContent = '点开始后，先观察顺序，再按相同顺序点击。';
+    }
+
+    function startGame() {
+      resetGame();
+      nextRound();
+    }
+
+    function handleInput(color) {
+      if (locked || !sequence.length) return;
+      flash(color);
+      if (sequence[playerIndex] !== color) {
+        messageBox.textContent = `顺序错了，止步第 ${sequence.length} 轮。`;
+        best = Math.max(best, sequence.length - 1);
+        localStorage.setItem('funhome-simon-best', String(best));
+        updateHud();
+        locked = true;
+        return;
+      }
+
+      playerIndex += 1;
+      updateHud();
+      if (playerIndex === sequence.length) {
+        best = Math.max(best, sequence.length);
+        localStorage.setItem('funhome-simon-best', String(best));
+        locked = true;
+        messageBox.textContent = '正确，准备下一轮。';
+        setTimeout(nextRound, 720);
+      }
+    }
+
+    pads.forEach(pad => {
+      pad.addEventListener('click', () => handleInput(pad.dataset.color));
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+
+    updateHud();
+  </script>
+</body>
+</html>

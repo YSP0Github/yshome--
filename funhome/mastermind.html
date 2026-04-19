@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>密码破译｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff6f91; --accent-2: #ffc66d; }
+    .palette { display:flex; flex-wrap:wrap; gap:10px; }
+    .swatch { width:44px; height:44px; border-radius:50%; border:2px solid rgba(255,255,255,0.14); cursor:pointer; }
+    .guess-row { display:grid; grid-template-columns: repeat(4, 52px) 1fr; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .slot, .peg { width:52px; height:52px; border-radius:16px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08); }
+    .slot.active { outline:2px solid rgba(255,255,255,0.3); }
+    .feedback { display:flex; flex-wrap:wrap; gap:8px; }
+    .peg { width:18px; height:18px; border-radius:50%; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🧩 手写新作 · 逻辑猜码</div>
+      <h1>密码破译</h1>
+      <p class="lead">电脑会生成一个四位颜色密码。你每次提交一组猜测，系统会告诉你“颜色和位置都对”的数量，以及“颜色对但位置不对”的数量。</p>
+      <div class="actions">
+        <button class="btn" id="submitBtn" type="button">提交猜测</button>
+        <button class="ghost-btn" id="clearBtn" type="button">清空当前行</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>当前回合</span><strong id="turnEl">1 / 10</strong></div>
+        <div class="stat"><span>最佳成绩</span><strong id="bestEl">--</strong></div>
+        <div class="stat"><span>颜色数</span><strong>6</strong></div>
+        <div class="stat"><span>密码位数</span><strong>4</strong></div>
+      </div>
+      <div class="palette" id="palette"></div>
+      <ul class="tips">
+        <li>可以重复颜色，所以不要轻易排除。</li>
+        <li>黑反馈 = 颜色和位置都对；白反馈 = 颜色对但位置错。</li>
+        <li>尽量让每一次猜测都带来新的信息。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">建议第一手尽量覆盖更多颜色。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div id="currentRow" class="guess-row"></div>
+        <div id="history"></div>
+      </div>
+      <div class="message" id="statusEl">先从左到右选 4 个颜色，然后提交。</div>
+    </section>
+  </main>
+
+  <script>
+    const colors = [
+      { id: 'red', hex: '#ff6f91', name: '粉红' },
+      { id: 'blue', hex: '#63a4ff', name: '蓝' },
+      { id: 'green', hex: '#4ee1a0', name: '绿' },
+      { id: 'yellow', hex: '#ffd66d', name: '黄' },
+      { id: 'purple', hex: '#b48dff', name: '紫' },
+      { id: 'orange', hex: '#ff9a5c', name: '橙' },
+    ];
+    const paletteEl = document.getElementById('palette');
+    const currentRowEl = document.getElementById('currentRow');
+    const historyEl = document.getElementById('history');
+    const turnEl = document.getElementById('turnEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-mastermind';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? `${best} 回合` : '--';
+
+    let secret = [];
+    let current = Array(4).fill(null);
+    let activeIndex = 0;
+    let turn = 1;
+    let over = false;
+
+    function newGame() {
+      secret = Array.from({ length: 4 }, () => colors[Math.floor(Math.random() * colors.length)].id);
+      current = Array(4).fill(null);
+      activeIndex = 0;
+      turn = 1;
+      over = false;
+      historyEl.innerHTML = '';
+      renderCurrent();
+      renderPalette();
+      turnEl.textContent = '1 / 10';
+      statusEl.textContent = '新密码已生成。';
+      messageEl.textContent = '先用四种不同色探路通常更稳。';
+    }
+
+    function renderPalette() {
+      paletteEl.innerHTML = '';
+      colors.forEach(color => {
+        const button = document.createElement('button');
+        button.className = 'swatch';
+        button.style.background = color.hex;
+        button.title = color.name;
+        button.addEventListener('click', () => {
+          if (over) return;
+          current[activeIndex] = color.id;
+          activeIndex = Math.min(3, activeIndex + 1);
+          renderCurrent();
+        });
+        paletteEl.appendChild(button);
+      });
+    }
+
+    function colorById(id) {
+      return colors.find(color => color.id === id);
+    }
+
+    function renderCurrent() {
+      currentRowEl.innerHTML = '';
+      current.forEach((id, index) => {
+        const slot = document.createElement('button');
+        slot.className = 'slot' + (index === activeIndex ? ' active' : '');
+        if (id) slot.style.background = colorById(id).hex;
+        slot.addEventListener('click', () => {
+          activeIndex = index;
+          renderCurrent();
+        });
+        currentRowEl.appendChild(slot);
+      });
+      const info = document.createElement('div');
+      info.className = 'meta-line';
+      info.textContent = over ? '本局已结束。' : '点击左侧颜色填入当前位置。';
+      currentRowEl.appendChild(info);
+    }
+
+    function evaluate(guess) {
+      const secretCopy = secret.slice();
+      const guessCopy = guess.slice();
+      let exact = 0;
+      let colorOnly = 0;
+      for (let i = 0; i < 4; i += 1) {
+        if (guessCopy[i] === secretCopy[i]) {
+          exact += 1;
+          guessCopy[i] = null;
+          secretCopy[i] = null;
+        }
+      }
+      for (let i = 0; i < 4; i += 1) {
+        if (!guessCopy[i]) continue;
+        const index = secretCopy.indexOf(guessCopy[i]);
+        if (index >= 0) {
+          colorOnly += 1;
+          secretCopy[index] = null;
+        }
+      }
+      return { exact, colorOnly };
+    }
+
+    function submitGuess() {
+      if (over) return;
+      if (current.some(item => !item)) {
+        statusEl.textContent = '当前行还没填满。';
+        return;
+      }
+      const result = evaluate(current);
+      const row = document.createElement('div');
+      row.className = 'guess-row';
+      current.forEach(id => {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.style.background = colorById(id).hex;
+        row.appendChild(slot);
+      });
+      const feedback = document.createElement('div');
+      feedback.className = 'feedback';
+      for (let i = 0; i < result.exact; i += 1) {
+        const peg = document.createElement('div'); peg.className = 'peg'; peg.style.background = '#ffffff'; feedback.appendChild(peg);
+      }
+      for (let i = 0; i < result.colorOnly; i += 1) {
+        const peg = document.createElement('div'); peg.className = 'peg'; peg.style.background = '#ffd66d'; feedback.appendChild(peg);
+      }
+      row.appendChild(feedback);
+      historyEl.prepend(row);
+
+      if (result.exact === 4) {
+        over = true;
+        statusEl.textContent = `破解成功！共用了 ${turn} 回合。`;
+        messageEl.textContent = '这局推理得很顺。';
+        if (!best || turn < best) {
+          best = turn;
+          localStorage.setItem(storageKey, String(best));
+          bestEl.textContent = `${best} 回合`;
+        }
+        return;
+      }
+      turn += 1;
+      if (turn > 10) {
+        over = true;
+        const reveal = secret.map(id => colorById(id).name).join(' / ');
+        statusEl.textContent = '10 回合用完了。';
+        messageEl.textContent = `答案是：${reveal}`;
+        return;
+      }
+      current = Array(4).fill(null);
+      activeIndex = 0;
+      turnEl.textContent = `${turn} / 10`;
+      statusEl.textContent = `命中 ${result.exact}，颜色错位 ${result.colorOnly}。`;
+      renderCurrent();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', submitGuess);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (over) return newGame();
+      current = Array(4).fill(null);
+      activeIndex = 0;
+      renderCurrent();
+    });
+
+    newGame();
+  </script>
+</body>
+</html>

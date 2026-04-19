@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>反应速度测试｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #081118;
+      --panel: rgba(12, 22, 34, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6fbff;
+      --muted: #9bb2c8;
+      --brand: #2dd4bf;
+      --accent: #7c5cff;
+      --danger: #ff6378;
+      --shadow: 0 24px 60px rgba(0,0,0,0.34);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(45,212,191,0.16), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(124,92,255,0.16), transparent 24%),
+        linear-gradient(180deg, #040b10 0%, #081118 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(960px, 100%);
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+    }
+
+    .panel, .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel { padding: 28px; }
+    .stage { padding: 22px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(45,212,191,0.12);
+      color: #b8fff5;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3rem);
+      line-height: 1.05;
+    }
+    .lead, .tips li, .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .btn, .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 0;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn {
+      color: #07201b;
+      background: linear-gradient(135deg, var(--brand), #89fff0);
+      box-shadow: 0 12px 26px rgba(45,212,191,0.22);
+    }
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+    .arena {
+      min-height: 420px;
+      border-radius: 28px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 28px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .arena.waiting { background: rgba(124,92,255,0.18); }
+    .arena.ready { background: rgba(45,212,191,0.26); }
+    .arena.too-soon { background: rgba(255,99,120,0.22); }
+    .arena-content strong {
+      display: block;
+      font-size: clamp(2rem, 4vw, 3rem);
+      margin-bottom: 12px;
+    }
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(45,212,191,0.14), rgba(124,92,255,0.08));
+      font-weight: 700;
+    }
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel, .stage { padding: 20px; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">⚡ 快速测试</div>
+      <h1>反应速度测试</h1>
+      <p class="lead">点击开始后，屏幕会随机时间变绿。等变绿的瞬间立刻点击，看看你的反应能有多快。</p>
+
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始测试</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>提前点击会判定抢跑。</li>
+        <li>多测几次看平均值更准。</li>
+        <li>通常 200ms 左右已经算不错。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stats">
+        <div class="stat-card">最近成绩<strong id="lastValue">--</strong></div>
+        <div class="stat-card">最佳成绩<strong id="bestValue">--</strong></div>
+        <div class="stat-card">平均成绩<strong id="avgValue">--</strong></div>
+      </div>
+
+      <div class="arena" id="arena">
+        <div class="arena-content">
+          <strong>点“开始测试”</strong>
+          <span class="subtle">等它变绿再点击。</span>
+        </div>
+      </div>
+
+      <div class="message" id="messageBox">准备就绪。</div>
+    </section>
+  </main>
+
+  <script>
+    const arena = document.getElementById('arena');
+    const lastValue = document.getElementById('lastValue');
+    const bestValue = document.getElementById('bestValue');
+    const avgValue = document.getElementById('avgValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let state = 'idle';
+    let readyTimeout = null;
+    let startAt = 0;
+    const history = [];
+
+    function updateStats() {
+      lastValue.textContent = history.length ? `${history[history.length - 1]} ms` : '--';
+      bestValue.textContent = history.length ? `${Math.min(...history)} ms` : '--';
+      avgValue.textContent = history.length ? `${Math.round(history.reduce((a, b) => a + b, 0) / history.length)} ms` : '--';
+    }
+
+    function setArena(mode, title, subtitle) {
+      arena.className = `arena ${mode}`;
+      arena.innerHTML = `
+        <div class="arena-content">
+          <strong>${title}</strong>
+          <span class="subtle">${subtitle}</span>
+        </div>
+      `;
+    }
+
+    function startTest() {
+      clearTimeout(readyTimeout);
+      state = 'waiting';
+      setArena('waiting', '等一等…', '还没变绿，不要抢跑。');
+      messageBox.textContent = '等待随机时机。';
+      const delay = Math.floor(Math.random() * 2500) + 1200;
+      readyTimeout = setTimeout(() => {
+        state = 'ready';
+        startAt = performance.now();
+        setArena('ready', '现在点！', '立刻点击看看你有多快。');
+        messageBox.textContent = '就是现在。';
+      }, delay);
+    }
+
+    arena.addEventListener('click', () => {
+      if (state === 'idle') return;
+      if (state === 'waiting') {
+        clearTimeout(readyTimeout);
+        state = 'idle';
+        setArena('too-soon', '抢跑了', '你点得太早了，重新来一次。');
+        messageBox.textContent = '还没变绿就点了。';
+        return;
+      }
+      if (state === 'ready') {
+        const result = Math.max(1, Math.round(performance.now() - startAt));
+        history.push(result);
+        updateStats();
+        state = 'idle';
+        setArena('', `${result} ms`, '点“开始测试”再来一次。');
+        messageBox.textContent = result < 180 ? '很快！这反应不错。' : result < 250 ? '挺稳的，再试试更快。' : '还能更快，再来一把。';
+      }
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startTest);
+
+    updateStats();
+  </script>
+</body>
+</html>

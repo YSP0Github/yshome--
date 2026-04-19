@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>色彩泛洪｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff75aa; --accent-2: #ffd36d; }
+    .flood-board {
+      display: grid;
+      grid-template-columns: repeat(12, 28px);
+      gap: 4px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .flood-cell {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .swatch {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: transform .16s ease;
+    }
+    .swatch:hover { transform: translateY(-2px) scale(1.03); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🌈 手写新作 · 颜色规划</div>
+      <h1>色彩泛洪</h1>
+      <p class="lead">从左上角开始，每次选择一种颜色，让已占领的区域一起“变色并扩张”。目标是在限定步数内吞掉整张棋盘，看起来轻松，实际上非常吃全局判断。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新棋盘</button>
+        <button class="ghost-btn" id="resetBtn" type="button">恢复开局</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>步数</span><strong id="movesEl">0</strong></div>
+        <div class="stat"><span>上限</span><strong id="limitEl">22</strong></div>
+        <div class="stat"><span>占领率</span><strong id="coverEl">0%</strong></div>
+        <div class="stat"><span>最佳记录</span><strong id="bestEl">--</strong></div>
+      </div>
+      <div class="palette" id="palette"></div>
+      <ul class="tips">
+        <li>优先考虑“下一步能吃到多少边界”，不要只看当前面积。</li>
+        <li>快接近终盘时，提前想好最后两步颜色非常关键。</li>
+        <li>颜色按钮没有顺序要求，核心是路线规划。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">开局通常先接中间色，不要一直沿边走。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div class="flood-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">在 22 步内把整张棋盘染成同一片。</div>
+    </section>
+  </main>
+
+  <script>
+    const size = 12;
+    const limit = 22;
+    const colors = ['#ff75aa', '#ffcd57', '#5ed8ff', '#7f79ff', '#58e5ab', '#ff9f68'];
+    const boardEl = document.getElementById('board');
+    const paletteEl = document.getElementById('palette');
+    const movesEl = document.getElementById('movesEl');
+    const limitEl = document.getElementById('limitEl');
+    const coverEl = document.getElementById('coverEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-flood-fill';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? best : '--';
+
+    let board = [];
+    let initial = [];
+    let moves = 0;
+
+    function cloneGrid(grid) {
+      return grid.map(row => row.slice());
+    }
+
+    function randomBoard() {
+      board = Array.from({ length: size }, () => Array.from({ length: size }, () => Math.floor(Math.random() * colors.length)));
+      initial = cloneGrid(board);
+      moves = 0;
+      limitEl.textContent = limit;
+      statusEl.textContent = '新棋盘已生成。';
+      messageEl.textContent = '尽量让每一步都吃到更多边界色。';
+      render();
+    }
+
+    function floodCount(targetColor = board[0][0]) {
+      const visited = new Set();
+      const stack = [[0, 0]];
+      while (stack.length) {
+        const [r, c] = stack.pop();
+        const key = `${r}-${c}`;
+        if (visited.has(key) || r < 0 || c < 0 || r >= size || c >= size || board[r][c] !== targetColor) continue;
+        visited.add(key);
+        stack.push([r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]);
+      }
+      return visited;
+    }
+
+    function chooseColor(nextColor) {
+      const currentColor = board[0][0];
+      if (currentColor === nextColor) return;
+      const area = floodCount(currentColor);
+      area.forEach(key => {
+        const [r, c] = key.split('-').map(Number);
+        board[r][c] = nextColor;
+      });
+      const expanded = floodCount(nextColor);
+      expanded.forEach(key => {
+        const [r, c] = key.split('-').map(Number);
+        board[r][c] = nextColor;
+      });
+      moves += 1;
+
+      const coverage = Math.round(expanded.size / (size * size) * 100);
+      if (expanded.size === size * size) {
+        statusEl.textContent = `成功！你用了 ${moves} 步。`;
+        messageEl.textContent = '这类游戏靠的是路线规划。';
+        if (!best || moves < best) {
+          best = moves;
+          localStorage.setItem(storageKey, String(best));
+        }
+      } else if (moves >= limit) {
+        statusEl.textContent = '步数用完了。';
+        messageEl.textContent = '差一点点，换条扩张路线试试。';
+      } else {
+        statusEl.textContent = `还剩 ${limit - moves} 步。`;
+      }
+      render();
+      coverEl.textContent = `${coverage}%`;
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      board.forEach(row => {
+        row.forEach(cell => {
+          const div = document.createElement('div');
+          div.className = 'flood-cell';
+          div.style.background = colors[cell];
+          boardEl.appendChild(div);
+        });
+      });
+
+      paletteEl.innerHTML = '';
+      colors.forEach((color, index) => {
+        const button = document.createElement('button');
+        button.className = 'swatch';
+        button.style.background = color;
+        button.type = 'button';
+        button.addEventListener('click', () => {
+          if (moves >= limit) return;
+          chooseColor(index);
+        });
+        paletteEl.appendChild(button);
+      });
+
+      movesEl.textContent = moves;
+      bestEl.textContent = best ? best : '--';
+      coverEl.textContent = `${Math.round(floodCount().size / (size * size) * 100)}%`;
+    }
+
+    document.getElementById('newBtn').addEventListener('click', randomBoard);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      board = cloneGrid(initial);
+      moves = 0;
+      statusEl.textContent = '已恢复到开局。';
+      render();
+    });
+
+    randomBoard();
+  </script>
+</body>
+</html>

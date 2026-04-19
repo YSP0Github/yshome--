@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>井字棋 AI｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #0d1222;
+      --panel: rgba(14, 24, 44, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f8ff;
+      --muted: #9fb0d4;
+      --brand: #7c5cff;
+      --accent: #2dd4bf;
+      --danger: #ff6378;
+      --shadow: 0 24px 60px rgba(0,0,0,0.36);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(124,92,255,0.24), transparent 24%),
+        radial-gradient(circle at 84% 20%, rgba(45,212,191,0.18), transparent 26%),
+        linear-gradient(180deg, #070b14 0%, #0d1222 100%);
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124,92,255,0.12);
+      color: #d0c4ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3.3rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .subtle,
+    .toggle-card p,
+    .tips li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .toggle-list {
+      margin: 22px 0 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .toggle-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .toggle-card {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .toggle-card.active {
+      border-color: rgba(124,92,255,0.42);
+      background: linear-gradient(135deg, rgba(124,92,255,0.18), rgba(45,212,191,0.08));
+    }
+
+    .toggle-card strong { display: block; margin-bottom: 4px; }
+
+    .switch-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .switch-box label {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--text);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .cell {
+      border: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #9a7eff);
+      box-shadow: 0 12px 26px rgba(124,92,255,0.25);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stage {
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .score-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .score-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.5rem;
+    }
+
+    .board-shell {
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .board {
+      width: min(100%, 480px);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+    }
+
+    .cell:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(45,212,191,0.3);
+    }
+
+    .cell:disabled { cursor: default; opacity: 0.98; }
+    .cell.x { color: #8fdcff; text-shadow: 0 0 24px rgba(143,220,255,0.22); }
+    .cell.o { color: #ffd166; text-shadow: 0 0 24px rgba(255,209,102,0.2); }
+
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,92,255,0.14), rgba(45,212,191,0.08));
+      font-weight: 700;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel,
+      .stage { padding: 20px; }
+      .toggle-row,
+      .scoreboard { grid-template-columns: 1fr; }
+      .board { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">⭕ 短平快对弈</div>
+      <h1>井字棋 AI</h1>
+      <p class="lead">想来点策略又不想太费脑？这里支持双人模式，也支持和 AI 对战。普通难度偶尔会失误，大师难度基本不让你赢。</p>
+
+      <div class="toggle-list">
+        <div>
+          <div class="subtle" style="margin-bottom:8px;">模式</div>
+          <div class="toggle-row" id="modeList"></div>
+        </div>
+        <div>
+          <div class="subtle" style="margin-bottom:8px;">AI 难度</div>
+          <div class="toggle-row" id="difficultyList"></div>
+        </div>
+        <div class="switch-box">
+          <label><input id="aiFirstToggle" type="checkbox"> 电脑先手</label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="newRoundBtn" type="button">新一局</button>
+        <button class="ghost-btn" id="resetScoreBtn" type="button">清空比分</button>
+      </div>
+
+      <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+
+      <ul class="tips">
+        <li>AI 大师模式几乎不会送你机会，平局都算打得不错。</li>
+        <li>双人模式适合两个人轮流下，比分会持续记录到你刷新前。</li>
+        <li>开启“电脑先手”后，每局都会由 AI 先落子。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <h2 style="margin:0;">对局面板</h2>
+          <div class="subtle">X 先手。AI 模式下你执 X，电脑执 O。</div>
+        </div>
+        <span class="badge" id="statusBadge">🎮 准备开始</span>
+      </div>
+
+      <div class="scoreboard">
+        <div class="score-card"><span id="leftLabel">玩家</span><strong id="leftScore">0</strong></div>
+        <div class="score-card"><span>平局</span><strong id="drawScore">0</strong></div>
+        <div class="score-card"><span id="rightLabel">电脑</span><strong id="rightScore">0</strong></div>
+      </div>
+
+      <div class="board-shell">
+        <div class="board" id="board"></div>
+      </div>
+
+      <div class="message" id="messageBox">点击“新一局”，或直接在棋盘上落子开始。</div>
+    </section>
+  </main>
+
+  <script>
+    const WIN_LINES = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    const boardEl = document.getElementById('board');
+    const modeList = document.getElementById('modeList');
+    const difficultyList = document.getElementById('difficultyList');
+    const aiFirstToggle = document.getElementById('aiFirstToggle');
+    const statusBadge = document.getElementById('statusBadge');
+    const messageBox = document.getElementById('messageBox');
+    const leftLabel = document.getElementById('leftLabel');
+    const rightLabel = document.getElementById('rightLabel');
+    const leftScore = document.getElementById('leftScore');
+    const rightScore = document.getElementById('rightScore');
+    const drawScore = document.getElementById('drawScore');
+
+    const settings = {
+      mode: 'ai',
+      difficulty: 'master'
+    };
+
+    const score = { left: 0, right: 0, draw: 0 };
+    let board = Array(9).fill('');
+    let current = 'X';
+    let active = true;
+    let thinking = false;
+
+    function renderToggles() {
+      const modeOptions = [
+        { key: 'ai', title: '对战 AI', hint: '和电脑下' },
+        { key: 'friend', title: '双人模式', hint: '本地轮流下' }
+      ];
+      const difficultyOptions = [
+        { key: 'normal', title: '普通', hint: '偶尔失误' },
+        { key: 'master', title: '大师', hint: '基本不犯错' }
+      ];
+
+      modeList.innerHTML = modeOptions.map(option => `
+        <button class="toggle-card ${settings.mode === option.key ? 'active' : ''}" type="button" data-mode="${option.key}">
+          <strong>${option.title}</strong>
+          <p>${option.hint}</p>
+        </button>
+      `).join('');
+
+      difficultyList.innerHTML = difficultyOptions.map(option => `
+        <button class="toggle-card ${settings.difficulty === option.key ? 'active' : ''}" type="button" data-difficulty="${option.key}" ${settings.mode === 'friend' ? 'disabled' : ''}>
+          <strong>${option.title}</strong>
+          <p>${option.hint}</p>
+        </button>
+      `).join('');
+
+      modeList.querySelectorAll('[data-mode]').forEach(button => {
+        button.addEventListener('click', () => {
+          settings.mode = button.dataset.mode;
+          renderToggles();
+          updateLabels();
+          resetRound();
+        });
+      });
+
+      difficultyList.querySelectorAll('[data-difficulty]').forEach(button => {
+        button.addEventListener('click', () => {
+          settings.difficulty = button.dataset.difficulty;
+          renderToggles();
+          resetRound();
+        });
+      });
+
+      aiFirstToggle.disabled = settings.mode === 'friend';
+    }
+
+    function updateLabels() {
+      leftLabel.textContent = settings.mode === 'friend' ? '玩家 X' : '玩家';
+      rightLabel.textContent = settings.mode === 'friend' ? '玩家 O' : '电脑';
+      statusBadge.textContent = settings.mode === 'friend'
+        ? '👥 双人模式'
+        : settings.difficulty === 'master'
+          ? '🤖 AI 大师'
+          : '🎯 AI 普通';
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = board.map((cell, index) => `
+        <button class="cell ${cell ? cell.toLowerCase() : ''}" type="button" data-index="${index}" ${cell || !active || thinking ? 'disabled' : ''}>
+          ${cell || ''}
+        </button>
+      `).join('');
+
+      boardEl.querySelectorAll('[data-index]').forEach(button => {
+        button.addEventListener('click', () => handlePlayerMove(Number(button.dataset.index)));
+      });
+    }
+
+    function winnerOf(state) {
+      for (const [a, b, c] of WIN_LINES) {
+        if (state[a] && state[a] === state[b] && state[a] === state[c]) {
+          return state[a];
+        }
+      }
+      if (state.every(Boolean)) return 'draw';
+      return null;
+    }
+
+    function resetRound() {
+      board = Array(9).fill('');
+      current = 'X';
+      active = true;
+      thinking = false;
+      messageBox.textContent = settings.mode === 'friend'
+        ? '双人模式：X 先手。'
+        : '你执 X，电脑执 O。';
+      renderBoard();
+
+      if (settings.mode === 'ai' && aiFirstToggle.checked) {
+        current = 'O';
+        thinking = true;
+        messageBox.textContent = '电脑先手中…';
+        renderBoard();
+        setTimeout(aiMove, 320);
+      }
+    }
+
+    function updateScore(winner) {
+      if (winner === 'draw') score.draw += 1;
+      else if (winner === 'X') score.left += 1;
+      else score.right += 1;
+
+      leftScore.textContent = score.left;
+      rightScore.textContent = score.right;
+      drawScore.textContent = score.draw;
+    }
+
+    function finishRound(winner) {
+      active = false;
+      thinking = false;
+      updateScore(winner);
+      if (winner === 'draw') {
+        messageBox.textContent = '平局。下一局可以换个开局思路。';
+      } else if (settings.mode === 'friend') {
+        messageBox.textContent = `玩家 ${winner} 获胜。点击“新一局”继续。`;
+      } else if (winner === 'X') {
+        messageBox.textContent = '你赢了这局，厉害。';
+      } else {
+        messageBox.textContent = '电脑赢了，再试一局扳回来。';
+      }
+      renderBoard();
+    }
+
+    function makeMove(index, symbol) {
+      board[index] = symbol;
+      const result = winnerOf(board);
+      renderBoard();
+      if (result) {
+        finishRound(result);
+        return true;
+      }
+      current = symbol === 'X' ? 'O' : 'X';
+      return false;
+    }
+
+    function handlePlayerMove(index) {
+      if (!active || board[index] || thinking) return;
+      if (settings.mode === 'ai' && current !== 'X') return;
+
+      const ended = makeMove(index, current);
+      if (ended) return;
+
+      if (settings.mode === 'friend') {
+        messageBox.textContent = `轮到玩家 ${current}。`;
+        return;
+      }
+
+      thinking = true;
+      messageBox.textContent = '电脑思考中…';
+      renderBoard();
+      setTimeout(aiMove, 260);
+    }
+
+    function availableMoves(state) {
+      return state.map((cell, index) => (cell ? null : index)).filter(index => index !== null);
+    }
+
+    function minimax(state, player) {
+      const result = winnerOf(state);
+      if (result === 'O') return { score: 1 };
+      if (result === 'X') return { score: -1 };
+      if (result === 'draw') return { score: 0 };
+
+      const moves = [];
+      availableMoves(state).forEach(index => {
+        const next = [...state];
+        next[index] = player;
+        const response = minimax(next, player === 'O' ? 'X' : 'O');
+        moves.push({ index, score: response.score });
+      });
+
+      if (player === 'O') {
+        return moves.reduce((best, move) => move.score > best.score ? move : best);
+      }
+      return moves.reduce((best, move) => move.score < best.score ? move : best);
+    }
+
+    function bestMove() {
+      const empty = availableMoves(board);
+      if (!empty.length) return null;
+
+      if (settings.difficulty === 'normal' && Math.random() < 0.35) {
+        return empty[Math.floor(Math.random() * empty.length)];
+      }
+
+      return minimax(board, 'O').index;
+    }
+
+    function aiMove() {
+      if (!active) return;
+      const index = bestMove();
+      thinking = false;
+      if (index == null) return;
+      const ended = makeMove(index, 'O');
+      if (!ended) {
+        messageBox.textContent = '轮到你了。';
+      }
+    }
+
+    document.getElementById('newRoundBtn').addEventListener('click', resetRound);
+    document.getElementById('resetScoreBtn').addEventListener('click', () => {
+      score.left = 0;
+      score.right = 0;
+      score.draw = 0;
+      leftScore.textContent = '0';
+      rightScore.textContent = '0';
+      drawScore.textContent = '0';
+      resetRound();
+    });
+    aiFirstToggle.addEventListener('change', resetRound);
+
+    renderToggles();
+    updateLabels();
+    resetRound();
+  </script>
+</body>
+</html>

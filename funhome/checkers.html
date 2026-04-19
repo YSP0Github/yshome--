@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>国际跳棋｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #ff8c6a; --accent-2: #ffd6aa; }
+    .checker-board {
+      display: grid;
+      grid-template-columns: repeat(8, 58px);
+      gap: 6px;
+      justify-content: center;
+    }
+    .checker-cell {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .light { background: rgba(255,255,255,0.05); }
+    .dark { background: #64452a; }
+    .checker-cell.hint::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      position: absolute;
+    }
+    .piece {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      box-shadow: inset 0 4px 12px rgba(255,255,255,0.18), 0 8px 12px rgba(0,0,0,0.2);
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    .player-piece { background: linear-gradient(180deg, #3e434d 0%, #101419 100%); color: #ffd37f; }
+    .ai-piece { background: linear-gradient(180deg, #fff 0%, #dfe8f4 100%); color: #47506b; }
+    .selected { outline: 2px solid rgba(255,214,122,0.7); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">♟️ 手写新作 · 棋盘对弈</div>
+      <h1>国际跳棋</h1>
+      <p class="lead">你执深色先手。棋子只能走斜线，但吃子和升王会让局面突然翻转。电脑会优先找吃子和升王机会，已经不是随便摆着看的棋盘了。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新开对局</button>
+        <button class="ghost-btn" id="undoBtn" type="button">悔一步</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>你的棋子</span><strong id="playerEl">12</strong></div>
+        <div class="stat"><span>电脑棋子</span><strong id="aiEl">12</strong></div>
+        <div class="stat"><span>当前回合</span><strong id="turnEl">你</strong></div>
+        <div class="stat"><span>战绩</span><strong id="recordEl">0 / 0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>有吃子机会时必须优先吃子，这是跳棋的关键规则。</li>
+        <li>如果一跳之后还能继续吃，会强制连跳。</li>
+        <li>走到最底行或最顶行后，棋子会升为王，移动空间更大。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">别急着换子，先想想对手下一步会不会反吃。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell center">
+        <div class="checker-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">你先手，深色棋向上走。</div>
+    </section>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const playerEl = document.getElementById('playerEl');
+    const aiEl = document.getElementById('aiEl');
+    const turnEl = document.getElementById('turnEl');
+    const recordEl = document.getElementById('recordEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+
+    let board = [];
+    let turn = 'player';
+    let selected = null;
+    let forced = null;
+    let history = [];
+    let busy = false;
+    const record = { win: 0, lose: 0 };
+
+    function initBoard() {
+      board = Array.from({ length: 8 }, () => Array(8).fill(0));
+      for (let r = 0; r < 3; r += 1) {
+        for (let c = 0; c < 8; c += 1) if ((r + c) % 2 === 1) board[r][c] = -1;
+      }
+      for (let r = 5; r < 8; r += 1) {
+        for (let c = 0; c < 8; c += 1) if ((r + c) % 2 === 1) board[r][c] = 1;
+      }
+      turn = 'player';
+      selected = null;
+      forced = null;
+      history = [];
+      busy = false;
+      statusEl.textContent = '你先手。';
+      messageEl.textContent = '先占中间，不要轻易送边。';
+      render();
+    }
+
+    function cloneState() {
+      return board.map(row => row.slice());
+    }
+
+    function inside(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+    function dirsFor(piece) {
+      if (Math.abs(piece) === 2) return [[1,1],[1,-1],[-1,1],[-1,-1]];
+      return piece > 0 ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
+    }
+
+    function rawMovesFor(r, c, onlyCaptures = false) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const moves = [];
+      dirsFor(piece).forEach(([dr, dc]) => {
+        const nr = r + dr;
+        const nc = c + dc;
+        const jumpR = r + dr * 2;
+        const jumpC = c + dc * 2;
+        if (inside(jumpR, jumpC) && board[nr][nc] && Math.sign(board[nr][nc]) !== Math.sign(piece) && board[jumpR][jumpC] === 0) {
+          moves.push({ from: [r, c], to: [jumpR, jumpC], capture: [nr, nc] });
+        } else if (!onlyCaptures && inside(nr, nc) && board[nr][nc] === 0) {
+          moves.push({ from: [r, c], to: [nr, nc], capture: null });
+        }
+      });
+      return moves;
+    }
+
+    function allMoves(side) {
+      let moves = [];
+      const pieces = [];
+      board.forEach((row, r) => row.forEach((cell, c) => {
+        if (side === 'player' ? cell > 0 : cell < 0) pieces.push([r, c]);
+      }));
+      pieces.forEach(([r, c]) => moves.push(...rawMovesFor(r, c, true)));
+      if (moves.length) return moves;
+      pieces.forEach(([r, c]) => moves.push(...rawMovesFor(r, c, false)));
+      return moves;
+    }
+
+    function movesForCurrentPiece(r, c, side) {
+      const global = allMoves(side);
+      return global.filter(move => move.from[0] === r && move.from[1] === c);
+    }
+
+    function applyMove(move) {
+      history.push(cloneState());
+      const [fr, fc] = move.from;
+      const [tr, tc] = move.to;
+      const piece = board[fr][fc];
+      board[fr][fc] = 0;
+      board[tr][tc] = piece;
+      if (move.capture) {
+        const [cr, cc] = move.capture;
+        board[cr][cc] = 0;
+      }
+      if (piece === 1 && tr === 0) board[tr][tc] = 2;
+      if (piece === -1 && tr === 7) board[tr][tc] = -2;
+    }
+
+    function counts() {
+      let player = 0, ai = 0;
+      board.flat().forEach(cell => {
+        if (cell > 0) player += 1;
+        if (cell < 0) ai += 1;
+      });
+      return { player, ai };
+    }
+
+    function finishIfNeeded() {
+      const count = counts();
+      const playerMoves = allMoves('player').length;
+      const aiMoves = allMoves('ai').length;
+      if (count.ai === 0 || !aiMoves) {
+        record.win += 1;
+        turn = 'over';
+        statusEl.textContent = '你赢了！';
+        render();
+        return true;
+      }
+      if (count.player === 0 || !playerMoves) {
+        record.lose += 1;
+        turn = 'over';
+        statusEl.textContent = '电脑赢了。';
+        render();
+        return true;
+      }
+      return false;
+    }
+
+    function aiTurn() {
+      if (finishIfNeeded()) return;
+      const moves = allMoves('ai');
+      if (!moves.length) return finishIfNeeded();
+      busy = true;
+      statusEl.textContent = '电脑思考中……';
+      setTimeout(() => {
+        let bestMove = moves[0];
+        let bestScore = -Infinity;
+        moves.forEach(move => {
+          const targetRow = move.to[0];
+          let score = move.capture ? 30 : 8;
+          if (targetRow === 7) score += 24;
+          if (move.to[1] >= 2 && move.to[1] <= 5) score += 4;
+          if (score > bestScore) { bestScore = score; bestMove = move; }
+        });
+        applyMove(bestMove);
+        const [r, c] = bestMove.to;
+        const further = bestMove.capture ? rawMovesFor(r, c, true).filter(move => move.capture) : [];
+        if (further.length) {
+          const next = further.sort((a, b) => (b.capture ? 1 : 0) - (a.capture ? 1 : 0))[0];
+          applyMove(next);
+        }
+        turn = 'player';
+        busy = false;
+        selected = null;
+        forced = null;
+        statusEl.textContent = '轮到你。';
+        finishIfNeeded();
+        render();
+      }, 320);
+    }
+
+    function handleCell(r, c) {
+      if (turn !== 'player' || busy) return;
+      if (forced && (r !== forced[0] || c !== forced[1]) && board[r][c] > 0) return;
+      if (board[r][c] > 0) {
+        const moves = movesForCurrentPiece(r, c, 'player');
+        if (!moves.length) return;
+        selected = [r, c];
+        render();
+        return;
+      }
+      if (!selected) return;
+      const moves = movesForCurrentPiece(selected[0], selected[1], 'player');
+      const move = moves.find(item => item.to[0] === r && item.to[1] === c);
+      if (!move) return;
+      applyMove(move);
+      const afterCaptures = move.capture ? rawMovesFor(r, c, true).filter(item => item.capture) : [];
+      if (afterCaptures.length) {
+        forced = [r, c];
+        selected = [r, c];
+        statusEl.textContent = '还能继续吃，必须连跳。';
+        render();
+        return;
+      }
+      selected = null;
+      forced = null;
+      turn = 'ai';
+      render();
+      aiTurn();
+    }
+
+    function render() {
+      const count = counts();
+      const hints = selected ? movesForCurrentPiece(selected[0], selected[1], 'player') : [];
+      boardEl.innerHTML = '';
+      board.forEach((row, r) => row.forEach((cell, c) => {
+        const button = document.createElement('button');
+        button.className = 'checker-cell ' + (((r + c) % 2 === 0) ? 'light' : 'dark');
+        if (selected && selected[0] === r && selected[1] === c) button.classList.add('selected');
+        if (hints.some(move => move.to[0] === r && move.to[1] === c)) button.classList.add('hint');
+        button.type = 'button';
+        button.addEventListener('click', () => handleCell(r, c));
+        if (cell !== 0) {
+          const piece = document.createElement('div');
+          piece.className = 'piece ' + (cell > 0 ? 'player-piece' : 'ai-piece');
+          if (Math.abs(cell) === 2) piece.textContent = '王';
+          button.appendChild(piece);
+        }
+        boardEl.appendChild(button);
+      }));
+      playerEl.textContent = count.player;
+      aiEl.textContent = count.ai;
+      turnEl.textContent = turn === 'player' ? '你' : turn === 'ai' ? '电脑' : '结算';
+      recordEl.textContent = `${record.win} / ${record.lose}`;
+    }
+
+    document.getElementById('newBtn').addEventListener('click', initBoard);
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      if (history.length < 2 || busy || turn === 'over') return;
+      board = history[history.length - 2].map(row => row.slice());
+      history = history.slice(0, -2);
+      turn = 'player';
+      selected = null;
+      forced = null;
+      statusEl.textContent = '已悔一步，轮到你。';
+      render();
+    });
+
+    initBoard();
+  </script>
+</body>
+</html>

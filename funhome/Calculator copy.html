@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>玻璃感计算器｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #09111d;
+      --panel: rgba(10, 20, 34, 0.9);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f8ff;
+      --muted: #9fb1d1;
+      --brand: #7c5cff;
+      --accent: #2dd4bf;
+      --danger: #ff6b7d;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(124,92,255,0.22), transparent 24%),
+        radial-gradient(circle at 85% 18%, rgba(45,212,191,0.16), transparent 24%),
+        linear-gradient(180deg, #050b14 0%, #09111d 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(980px, 100%);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .calc {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel { padding: 28px; }
+    .calc { padding: 22px; }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124,92,255,0.12);
+      color: #d2c6ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3.2rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .tips li,
+    .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .key {
+      border: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #9c81ff);
+      box-shadow: 0 12px 26px rgba(124,92,255,0.25);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .screen {
+      min-height: 148px;
+      padding: 20px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      align-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .screen-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .history {
+      min-height: 1.5em;
+      color: var(--muted);
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .expression,
+    .result {
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .expression {
+      margin-top: 16px;
+      font-size: 1.2rem;
+      color: #d8e2f7;
+      min-height: 1.6em;
+    }
+
+    .result {
+      margin-top: 8px;
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 800;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .key {
+      min-height: 64px;
+      border-radius: 18px;
+      color: var(--text);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .key.operator { background: rgba(124,92,255,0.16); color: #f1ecff; }
+    .key.accent { background: rgba(45,212,191,0.18); color: #dbfff8; }
+    .key.danger { background: rgba(255,107,125,0.18); color: #ffdce3; }
+    .key.wide { grid-column: span 2; }
+
+    .message {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,92,255,0.14), rgba(45,212,191,0.08));
+      font-weight: 700;
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      body { padding: 18px; }
+      .panel,
+      .calc { padding: 20px; }
+      .keys { grid-template-columns: repeat(4, 1fr); }
+      .key.wide { grid-column: span 2; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🧮 趣味小工具</div>
+      <h1>玻璃感计算器</h1>
+      <p class="lead">保留简单好用的体验，同时换成更现代的界面。支持键盘输入、括号、百分比和退格。</p>
+
+      <div class="actions">
+        <button class="btn" id="copyResultBtn" type="button">复制结果</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>支持键盘数字、运算符、回车、退格、ESC。</li>
+        <li>百分号会按“当前数字 ÷ 100”处理。</li>
+        <li>这是工具型彩蛋，适合在趣味屋里顺手打开用一下。</li>
+      </ul>
+    </section>
+
+    <section class="calc">
+      <div class="screen">
+        <div class="screen-top">
+          <span class="subtle">表达式</span>
+          <span class="subtle">按 Enter 计算</span>
+        </div>
+        <div class="history" id="historyValue">还没有计算记录</div>
+        <div class="expression" id="expressionValue">0</div>
+        <div class="result" id="resultValue">0</div>
+      </div>
+
+      <div class="keys" id="keys"></div>
+      <div class="message" id="messageBox">准备就绪。输入表达式后按“=”即可。</div>
+    </section>
+  </main>
+
+  <script>
+    const layout = [
+      ['C', 'danger'], ['⌫', 'danger'], ['(', 'operator'], [')', 'operator'], ['÷', 'operator'],
+      ['7'], ['8'], ['9'], ['×', 'operator'], ['%', 'operator'],
+      ['4'], ['5'], ['6'], ['-', 'operator'], ['+', 'operator'],
+      ['1'], ['2'], ['3'], ['.', 'operator'], ['=', 'accent'],
+      ['0', 'wide'], ['Ans', 'operator'], ['+', 'operator']
+    ];
+
+    const keys = document.getElementById('keys');
+    const historyValue = document.getElementById('historyValue');
+    const expressionValue = document.getElementById('expressionValue');
+    const resultValue = document.getElementById('resultValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let expression = '';
+    let result = '0';
+    let lastAnswer = '0';
+
+    function renderKeys() {
+      keys.innerHTML = layout.map(([label, style = '', wide = false]) => {
+        const wideClass = style === 'wide' || label === '0' ? 'wide' : '';
+        return `<button class="key ${style === 'wide' ? '' : style} ${wideClass}" type="button" data-key="${label}">${label}</button>`;
+      }).join('');
+
+      keys.querySelectorAll('[data-key]').forEach(button => {
+        button.addEventListener('click', () => handleInput(button.dataset.key));
+      });
+    }
+
+    function updateDisplay() {
+      expressionValue.textContent = expression || '0';
+      resultValue.textContent = result;
+    }
+
+    function normalizeExpression(source) {
+      return source
+        .replace(/×/g, '*')
+        .replace(/÷/g, '/')
+        .replace(/Ans/g, lastAnswer)
+        .replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+    }
+
+    function evaluateExpression() {
+      const raw = expression.trim();
+      if (!raw) return;
+      const normalized = normalizeExpression(raw);
+      if (!/^[0-9+\-*/().\s]+$/.test(normalized)) {
+        messageBox.textContent = '表达式里含有不支持的字符。';
+        return;
+      }
+
+      try {
+        const value = Function(`"use strict"; return (${normalized})`)();
+        if (!Number.isFinite(value)) throw new Error('invalid');
+        historyValue.textContent = `${raw} =`;
+        result = String(Number(value.toFixed(10)));
+        lastAnswer = result;
+        expression = result;
+        messageBox.textContent = '计算完成。你也可以继续在结果基础上运算。';
+        updateDisplay();
+      } catch {
+        messageBox.textContent = '这个表达式算不出来，请检查括号和运算符。';
+      }
+    }
+
+    function handleInput(key) {
+      if (key === 'C') {
+        expression = '';
+        result = '0';
+        historyValue.textContent = '还没有计算记录';
+        messageBox.textContent = '已清空。';
+        updateDisplay();
+        return;
+      }
+
+      if (key === '⌫') {
+        expression = expression.slice(0, -1);
+        result = expression ? result : '0';
+        messageBox.textContent = '已删除最后一个字符。';
+        updateDisplay();
+        return;
+      }
+
+      if (key === '=') {
+        evaluateExpression();
+        return;
+      }
+
+      expression += key;
+      messageBox.textContent = '继续输入，按“=”或回车计算。';
+      updateDisplay();
+    }
+
+    document.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') return;
+      const allowed = '0123456789+-*/().%';
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        evaluateExpression();
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        handleInput('⌫');
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        handleInput('C');
+      } else if (allowed.includes(event.key)) {
+        event.preventDefault();
+        handleInput(event.key === '*' ? '×' : event.key === '/' ? '÷' : event.key);
+      }
+    });
+
+    document.getElementById('copyResultBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(resultValue.textContent);
+        messageBox.textContent = '结果已复制到剪贴板。';
+      } catch {
+        messageBox.textContent = '复制失败，可以手动复制结果。';
+      }
+    });
+
+    renderKeys();
+    updateDisplay();
+  </script>
+</body>
+</html>

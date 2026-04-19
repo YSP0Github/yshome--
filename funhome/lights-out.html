@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>熄灯谜阵｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #7d9fff; --accent-2: #c8daff; }
+    .light-board {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .light-cell {
+      aspect-ratio: 1;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .light-cell:hover { transform: translateY(-1px); }
+    .light-cell.on {
+      background: radial-gradient(circle at 40% 35%, #ffffff 0%, #c8daff 28%, #7d9fff 100%);
+      box-shadow: 0 0 22px rgba(125,159,255,0.38);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">💡 手写新作 · 切换谜题</div>
+      <h1>熄灯谜阵</h1>
+      <p class="lead">点击一个灯块时，会同时切换它自己和上下左右。目标很简单：把所有灯全部熄灭。但越想一步解完，越容易乱掉。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新谜题</button>
+        <button class="ghost-btn" id="resetBtn" type="button">恢复开局</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>步数</span><strong id="movesEl">0</strong></div>
+        <div class="stat"><span>亮灯数</span><strong id="onEl">0</strong></div>
+        <div class="stat"><span>最佳步数</span><strong id="bestEl">--</strong></div>
+        <div class="stat"><span>棋盘尺寸</span><strong>5 × 5</strong></div>
+      </div>
+      <ul class="tips">
+        <li>没有时间压力，适合静下来慢慢推。</li>
+        <li>边角和边缘的点击影响范围更小，经常是突破口。</li>
+        <li>每盘都是从“全灭”状态随机打乱生成的，有解。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先看边角，不要一上来就乱点中间。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell">
+        <div class="light-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">目标：把所有灯全部关掉。</div>
+    </section>
+  </main>
+
+  <script>
+    const size = 5;
+    const boardEl = document.getElementById('board');
+    const movesEl = document.getElementById('movesEl');
+    const onEl = document.getElementById('onEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-lights-out';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best ? best : '--';
+
+    let board = [];
+    let initial = [];
+    let moves = 0;
+
+    function blankBoard() {
+      return Array.from({ length: size }, () => Array(size).fill(false));
+    }
+
+    function cloneGrid(grid) {
+      return grid.map(row => row.slice());
+    }
+
+    function toggleCell(r, c) {
+      if (r < 0 || c < 0 || r >= size || c >= size) return;
+      board[r][c] = !board[r][c];
+    }
+
+    function applyMove(r, c) {
+      [[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => toggleCell(r + dr, c + dc));
+    }
+
+    function scramble() {
+      board = blankBoard();
+      for (let i = 0; i < 14; i += 1) {
+        applyMove(Math.floor(Math.random() * size), Math.floor(Math.random() * size));
+      }
+      if (board.flat().every(cell => !cell)) return scramble();
+      initial = cloneGrid(board);
+      moves = 0;
+      statusEl.textContent = '新谜题已生成。';
+      messageEl.textContent = '把它想成一张会互相传染的网。';
+      render();
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      board.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          const button = document.createElement('button');
+          button.className = 'light-cell' + (cell ? ' on' : '');
+          button.type = 'button';
+          button.addEventListener('click', () => {
+            applyMove(r, c);
+            moves += 1;
+            const left = board.flat().filter(Boolean).length;
+            if (left === 0) {
+              statusEl.textContent = `恭喜，${moves} 步通关。`;
+              messageEl.textContent = '这种题靠“全局感”，不是靠手速。';
+              if (!best || moves < best) {
+                best = moves;
+                localStorage.setItem(storageKey, String(best));
+              }
+            }
+            render();
+          });
+          boardEl.appendChild(button);
+        });
+      });
+      movesEl.textContent = moves;
+      onEl.textContent = board.flat().filter(Boolean).length;
+      bestEl.textContent = best ? best : '--';
+    }
+
+    document.getElementById('newBtn').addEventListener('click', scramble);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      board = cloneGrid(initial);
+      moves = 0;
+      statusEl.textContent = '已恢复到开局。';
+      render();
+    });
+
+    scramble();
+  </script>
+</body>
+</html>

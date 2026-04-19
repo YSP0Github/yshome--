@@ -1,0 +1,239 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泡泡消消乐｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #52d7ff; --accent-2: #ff7edb; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🫧 手写新作 · 连团消除</div>
+      <h1>泡泡消消乐</h1>
+      <p class="lead">和三消不一样，这一版是“点击相邻同色团块清除”。数量越多得分越高，清掉之后气泡会下落，整列空了还会向左压缩，局面变化很大。</p>
+      <div class="actions">
+        <button class="btn" id="newBtn" type="button">新棋盘</button>
+        <button class="ghost-btn" id="shuffleBtn" type="button">洗一次牌</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>得分</span><strong id="scoreEl">0</strong></div>
+        <div class="stat"><span>剩余泡泡</span><strong id="leftEl">100</strong></div>
+        <div class="stat"><span>可用洗牌</span><strong id="shuffleEl">1</strong></div>
+        <div class="stat"><span>最佳分数</span><strong id="bestEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>只有两个及以上连在一起的同色泡泡才能消除。</li>
+        <li>一次消得越多，得分按平方增长。</li>
+        <li>没有可消组合时就结束，所以不要只看眼前最大的团。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">大团很诱人，但有时保留桥梁更重要。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell center">
+        <canvas id="board" width="540" height="540"></canvas>
+      </div>
+      <div class="message" id="statusEl">点击相邻同色泡泡群进行清除。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const leftEl = document.getElementById('leftEl');
+    const shuffleEl = document.getElementById('shuffleEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-bubble-pop';
+    const size = 10;
+    const cell = 50;
+    const offset = 20;
+    const palette = ['#52d7ff','#ff7edb','#ffd16d','#6ef0a4','#8f8bff'];
+    let board = [];
+    let hoverGroup = [];
+    let score = 0;
+    let shuffles = 1;
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best;
+
+    function newBoard() {
+      board = Array.from({ length: size }, () => Array.from({ length: size }, () => Math.floor(Math.random() * palette.length)));
+      hoverGroup = [];
+      score = 0;
+      shuffles = 1;
+      updateHud();
+      statusEl.textContent = '新棋盘已生成。';
+      messageEl.textContent = '先观察有哪些大团和关键连接。';
+      draw();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      leftEl.textContent = board.flat().filter(cell => cell !== null).length;
+      shuffleEl.textContent = shuffles;
+      bestEl.textContent = best;
+    }
+
+    function inBoard(r, c) { return r >= 0 && r < size && c >= 0 && c < size; }
+
+    function groupAt(r, c) {
+      const color = board[r]?.[c];
+      if (color === null || color === undefined) return [];
+      const visited = new Set();
+      const stack = [[r, c]];
+      const group = [];
+      while (stack.length) {
+        const [rr, cc] = stack.pop();
+        const key = `${rr}-${cc}`;
+        if (visited.has(key) || !inBoard(rr, cc) || board[rr][cc] !== color) continue;
+        visited.add(key);
+        group.push([rr, cc]);
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => stack.push([rr + dr, cc + dc]));
+      }
+      return group;
+    }
+
+    function collapse() {
+      for (let c = 0; c < size; c += 1) {
+        const values = [];
+        for (let r = size - 1; r >= 0; r -= 1) if (board[r][c] !== null) values.push(board[r][c]);
+        for (let r = size - 1, i = 0; r >= 0; r -= 1) {
+          board[r][c] = i < values.length ? values[i] : null;
+          if (i < values.length) i += 1;
+        }
+      }
+      const cols = [];
+      for (let c = 0; c < size; c += 1) {
+        const column = board.map(row => row[c]);
+        if (column.some(cell => cell !== null)) cols.push(column);
+      }
+      while (cols.length < size) cols.push(Array(size).fill(null));
+      board = Array.from({ length: size }, (_, r) => Array.from({ length: size }, (_, c) => cols[c][r]));
+    }
+
+    function hasMove() {
+      for (let r = 0; r < size; r += 1) {
+        for (let c = 0; c < size; c += 1) {
+          if (groupAt(r, c).length >= 2) return true;
+        }
+      }
+      return false;
+    }
+
+    function endIfNeeded() {
+      if (hasMove()) return;
+      statusEl.textContent = '没有可消组合了。';
+      messageEl.textContent = '点新棋盘再来，或者先洗一次牌。';
+      if (score > best) {
+        best = score;
+        localStorage.setItem(storageKey, String(best));
+        bestEl.textContent = best;
+      }
+    }
+
+    function removeGroup(group) {
+      if (group.length < 2) {
+        messageEl.textContent = '单个泡泡不能直接消。';
+        return;
+      }
+      group.forEach(([r, c]) => board[r][c] = null);
+      score += group.length * group.length * 5;
+      collapse();
+      hoverGroup = [];
+      updateHud();
+      statusEl.textContent = `消掉 ${group.length} 个泡泡。`;
+      endIfNeeded();
+      draw();
+    }
+
+    function boardPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+      const c = Math.floor((x - offset) / cell);
+      const r = Math.floor((y - offset) / cell);
+      return { r, c };
+    }
+
+    canvas.addEventListener('pointermove', (event) => {
+      const { r, c } = boardPos(event);
+      hoverGroup = inBoard(r, c) ? groupAt(r, c) : [];
+      draw();
+    });
+    canvas.addEventListener('pointerleave', () => { hoverGroup = []; draw(); });
+    canvas.addEventListener('pointerdown', (event) => {
+      const { r, c } = boardPos(event);
+      if (!inBoard(r, c)) return;
+      removeGroup(groupAt(r, c));
+    });
+
+    function drawBubble(r, c, color, highlighted) {
+      const x = offset + c * cell + cell / 2;
+      const y = offset + r * cell + cell / 2;
+      const radius = highlighted ? 21 : 18;
+      const gradient = ctx.createRadialGradient(x - 6, y - 8, 4, x, y, radius);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0.18, '#ffffff');
+      gradient.addColorStop(1, palette[color]);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      if (highlighted) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#0f162a');
+      bg.addColorStop(1, '#141d37');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const highlightSet = new Set(hoverGroup.map(([r, c]) => `${r}-${c}`));
+      for (let r = 0; r < size; r += 1) {
+        for (let c = 0; c < size; c += 1) {
+          ctx.fillStyle = 'rgba(255,255,255,0.04)';
+          ctx.fillRect(offset + c * cell, offset + r * cell, cell - 4, cell - 4);
+          const color = board[r][c];
+          if (color !== null) drawBubble(r, c, color, highlightSet.has(`${r}-${c}`));
+        }
+      }
+    }
+
+    document.getElementById('newBtn').addEventListener('click', newBoard);
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      if (shuffles <= 0) return;
+      const values = board.flat().filter(cell => cell !== null);
+      for (let i = values.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [values[i], values[j]] = [values[j], values[i]];
+      }
+      let index = 0;
+      for (let r = 0; r < size; r += 1) {
+        for (let c = 0; c < size; c += 1) {
+          board[r][c] = index < values.length ? values[index] : null;
+          if (index < values.length) index += 1;
+        }
+      }
+      shuffles -= 1;
+      updateHud();
+      hoverGroup = [];
+      statusEl.textContent = '已洗牌一次。';
+      draw();
+      endIfNeeded();
+    });
+
+    newBoard();
+  </script>
+</body>
+</html>

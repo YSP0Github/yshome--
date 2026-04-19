@@ -1,0 +1,284 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>霓虹车道｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #21c9ff; --accent-2: #8d7dff; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🏎️ 手写新作 · 车道闪避</div>
+      <h1>霓虹车道</h1>
+      <p class="lead">这是偏街机风的躲避赛车：左右切车道、看准空档、尽量维持高速。被撞不会立刻结束，但会损失护盾和速度节奏。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">发车</button>
+        <button class="ghost-btn" id="restartBtn" type="button">重新上路</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>里程</span><strong id="distanceEl">0 m</strong></div>
+        <div class="stat"><span>护盾</span><strong id="shieldEl">3</strong></div>
+        <div class="stat"><span>速度</span><strong id="speedEl">1x</strong></div>
+        <div class="stat"><span>最好记录</span><strong id="bestEl">0 m</strong></div>
+      </div>
+      <ul class="tips">
+        <li>方向键左右 / A D 切换车道。</li>
+        <li>越往后车流密度越高，偶尔会出现双车封锁。</li>
+        <li>被撞会掉护盾并暂时减速，三次后本局结束。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">准备发车。尽量看远一点，不要只盯着车头。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🛣️ 三车道无限奔跑</span>
+          <span class="legend-item">⚡ 活得越久，车流越猛</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="420" height="700"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">车辆待命中。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const distanceEl = document.getElementById('distanceEl');
+    const shieldEl = document.getElementById('shieldEl');
+    const speedEl = document.getElementById('speedEl');
+    const bestEl = document.getElementById('bestEl');
+    const messageEl = document.getElementById('messageEl');
+    const statusEl = document.getElementById('statusEl');
+    const storageKey = 'funhome-best-lane-racer';
+
+    const lanes = [120, 210, 300];
+    const state = {
+      running: false,
+      over: false,
+      distance: 0,
+      shields: 3,
+      speed: 1,
+      best: Number(localStorage.getItem(storageKey) || 0),
+      last: 0,
+      spawnTimer: 0,
+      roadOffset: 0,
+      lock: false,
+      crashFlash: 0,
+    };
+    const player = { lane: 1, x: lanes[1], y: 600, targetX: lanes[1], hitTimer: 0 };
+    let traffic = [];
+    bestEl.textContent = `${state.best} m`;
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.distance = 0;
+      state.shields = 3;
+      state.speed = 1;
+      state.spawnTimer = 0.8;
+      state.roadOffset = 0;
+      state.crashFlash = 0;
+      player.lane = 1;
+      player.x = lanes[1];
+      player.targetX = lanes[1];
+      player.hitTimer = 0;
+      traffic = [];
+      updateHud();
+      messageEl.textContent = '准备发车。';
+      statusEl.textContent = '控制方向，稳住。';
+    }
+
+    function updateHud() {
+      distanceEl.textContent = `${Math.floor(state.distance)} m`;
+      shieldEl.textContent = state.shields;
+      speedEl.textContent = `${state.speed.toFixed(1)}x`;
+      bestEl.textContent = `${state.best} m`;
+    }
+
+    function spawnTraffic() {
+      const difficulty = Math.floor(state.distance / 220);
+      const used = new Set();
+      const count = Math.random() < Math.min(0.55, 0.18 + difficulty * 0.04) ? 2 : 1;
+      for (let i = 0; i < count; i += 1) {
+        let laneIndex = Math.floor(Math.random() * lanes.length);
+        while (used.has(laneIndex)) laneIndex = Math.floor(Math.random() * lanes.length);
+        used.add(laneIndex);
+        traffic.push({
+          lane: laneIndex,
+          x: lanes[laneIndex],
+          y: -120 - Math.random() * 160,
+          w: 52,
+          h: 88,
+          speed: 230 + difficulty * 18 + Math.random() * 60,
+          color: ['#ff7f7f', '#ffd66b', '#7cf6d7', '#a893ff'][Math.floor(Math.random() * 4)]
+        });
+      }
+    }
+
+    function changeLane(dir) {
+      if (state.lock || !state.running) return;
+      const next = Math.max(0, Math.min(lanes.length - 1, player.lane + dir));
+      if (next !== player.lane) {
+        player.lane = next;
+        player.targetX = lanes[next];
+        state.lock = true;
+        setTimeout(() => state.lock = false, 110);
+      }
+    }
+
+    function crash() {
+      if (player.hitTimer > 0) return;
+      state.shields -= 1;
+      state.speed = Math.max(1, state.speed - 0.35);
+      player.hitTimer = 1;
+      state.crashFlash = 0.28;
+      messageEl.textContent = '撞上了！护盾减少。';
+      if (state.shields <= 0) {
+        state.running = false;
+        state.over = true;
+        if (state.distance > state.best) {
+          state.best = Math.floor(state.distance);
+          localStorage.setItem(storageKey, String(state.best));
+        }
+        statusEl.textContent = '事故停车，本局结束。';
+      }
+      updateHud();
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      state.distance += 52 * state.speed * dt;
+      state.speed = Math.min(3.6, 1 + state.distance / 650);
+      state.roadOffset = (state.roadOffset + 360 * state.speed * dt) % 120;
+      state.spawnTimer -= dt;
+      player.hitTimer = Math.max(0, player.hitTimer - dt);
+      state.crashFlash = Math.max(0, state.crashFlash - dt);
+      player.x += (player.targetX - player.x) * Math.min(1, dt * 14);
+
+      if (state.spawnTimer <= 0) {
+        spawnTraffic();
+        state.spawnTimer = Math.max(0.32, 0.9 - Math.min(0.5, state.distance / 900));
+      }
+
+      traffic.forEach(car => car.y += car.speed * dt * state.speed);
+      traffic = traffic.filter(car => {
+        if (car.y > canvas.height + 120) return false;
+        const collide = Math.abs(car.x - player.x) < 46 && Math.abs(car.y - player.y) < 86;
+        if (collide && !state.over) crash();
+        return true;
+      });
+
+      if (state.distance > state.best) {
+        state.best = Math.floor(state.distance);
+        localStorage.setItem(storageKey, String(state.best));
+      }
+      updateHud();
+      statusEl.textContent = `车流强度 ${1 + Math.floor(state.distance / 260)} 级`;
+    }
+
+    function drawCar(x, y, color, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(-26, -46, 52, 92, 18);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      ctx.fillRect(-16, -30, 32, 18);
+      ctx.fillRect(-16, 10, 32, 18);
+      ctx.fillStyle = '#101623';
+      ctx.fillRect(-20, -4, 40, 10);
+      ctx.fillStyle = '#f3f6ff';
+      ctx.fillRect(-30, -34, 6, 18);
+      ctx.fillRect(24, -34, 6, 18);
+      ctx.fillRect(-30, 16, 6, 18);
+      ctx.fillRect(24, 16, 6, 18);
+      ctx.restore();
+    }
+
+    function drawRoad() {
+      ctx.fillStyle = '#222837';
+      ctx.fillRect(50, 0, canvas.width - 100, canvas.height);
+      ctx.fillStyle = '#3a435b';
+      ctx.fillRect(48, 0, 4, canvas.height);
+      ctx.fillRect(canvas.width - 52, 0, 4, canvas.height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+      ctx.lineWidth = 4;
+      [165, 255].forEach(x => {
+        for (let y = -120 + state.roadOffset; y < canvas.height + 120; y += 120) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y + 64);
+          ctx.stroke();
+        }
+      });
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#06111b');
+      bg.addColorStop(1, '#10253b');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawRoad();
+      traffic.forEach(car => drawCar(car.x, car.y, car.color));
+      drawCar(player.x, player.y, '#21c9ff', player.hitTimer > 0 ? 0.45 + Math.sin(player.hitTimer * 24) * 0.18 : 1);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(14, 14, 154, 54);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px Segoe UI';
+      ctx.fillText(`里程 ${Math.floor(state.distance)}m`, 26, 37);
+      ctx.fillText(`护盾 ${state.shields}`, 26, 58);
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.36)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '事故停车' : '准备上路', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击左侧按钮开始', canvas.width / 2, canvas.height / 2 + 24);
+        ctx.textAlign = 'left';
+      }
+      if (state.crashFlash > 0) {
+        ctx.fillStyle = `rgba(255,100,100,${state.crashFlash})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowLeft', 'a', 'A'].includes(event.key)) changeLane(-1);
+      if (['ArrowRight', 'd', 'D'].includes(event.key)) changeLane(1);
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '发车！';
+    });
+    document.getElementById('restartBtn').addEventListener('click', reset);
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

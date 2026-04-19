@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>轨道闪避｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #7a8cff; --accent-2: #60f0d1; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🪐 手写新作 · 轨道生存</div>
+      <h1>轨道闪避</h1>
+      <p class="lead">角色围着核心旋转，外圈和内圈上会不断刷出障碍。你可以切换轨道，也可以反转旋转方向。规则简单，但玩起来很上头。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始绕圈</button>
+        <button class="ghost-btn" id="switchBtn" type="button">切换轨道</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>生存秒数</span><strong id="scoreEl">0.0</strong></div>
+        <div class="stat"><span>收集星核</span><strong id="starsEl">0</strong></div>
+        <div class="stat"><span>速度档</span><strong id="speedEl">1</strong></div>
+        <div class="stat"><span>最好成绩</span><strong id="bestEl">0.0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>空格 / 点击按钮：在内外轨道间切换。</li>
+        <li>方向键左右 / A D：立刻反转旋转方向。</li>
+        <li>撞到障碍会结束，碰到星核会加分并短暂减压。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先熟悉节奏：轨道切换比方向反转更重要。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🔄 两条轨道</span>
+          <span class="legend-item">💥 障碍只要同轨同角就会碰撞</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="520" height="520"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">按开始后，用空格和左右方向键躲障碍。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const starsEl = document.getElementById('starsEl');
+    const speedEl = document.getElementById('speedEl');
+    const bestEl = document.getElementById('bestEl');
+    const messageEl = document.getElementById('messageEl');
+    const statusEl = document.getElementById('statusEl');
+    const storageKey = 'funhome-best-orbit-dodge';
+    const center = { x: canvas.width / 2, y: canvas.height / 2 };
+    const radii = [110, 180];
+    const state = {
+      running: false,
+      over: false,
+      score: 0,
+      stars: 0,
+      best: Number(localStorage.getItem(storageKey) || 0),
+      last: 0,
+      spawnTimer: 0,
+      starTimer: 3,
+      direction: 1,
+      speedLevel: 1,
+    };
+    const player = { angle: -Math.PI / 2, ring: 1, pulse: 0 };
+    let hazards = [];
+    let bonuses = [];
+    bestEl.textContent = state.best.toFixed(1);
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.score = 0;
+      state.stars = 0;
+      state.spawnTimer = 0.7;
+      state.starTimer = 2.5;
+      state.direction = 1;
+      state.speedLevel = 1;
+      player.angle = -Math.PI / 2;
+      player.ring = 1;
+      hazards = [];
+      bonuses = [];
+      updateHud();
+      statusEl.textContent = '准备绕圈。';
+      messageEl.textContent = '优先看前方 1/4 圈的位置。';
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score.toFixed(1);
+      starsEl.textContent = state.stars;
+      speedEl.textContent = state.speedLevel;
+      bestEl.textContent = state.best.toFixed(1);
+    }
+
+    function switchRing() {
+      if (!state.running || state.over) return;
+      player.ring = player.ring === 0 ? 1 : 0;
+      player.pulse = 0.22;
+    }
+
+    function flipDirection() {
+      if (!state.running || state.over) return;
+      state.direction *= -1;
+      player.pulse = 0.22;
+    }
+
+    function spawnHazard() {
+      const angle = Math.random() * Math.PI * 2;
+      const ring = Math.random() < 0.5 ? 0 : 1;
+      hazards.push({ angle, ring, size: 0.18 + Math.random() * 0.06, rotate: (Math.random() - 0.5) * 0.45, color: ring ? '#ff8d7a' : '#8b97ff' });
+      if (Math.random() < Math.min(0.42, state.score / 45)) {
+        hazards.push({ angle: angle + Math.PI * (0.22 + Math.random() * 0.22), ring: 1 - ring, size: 0.15, rotate: (Math.random() - 0.5) * 0.35, color: '#ffc56d' });
+      }
+      if (hazards.length > 20) hazards = hazards.slice(-20);
+    }
+
+    function spawnBonus() {
+      bonuses = [{ angle: Math.random() * Math.PI * 2, ring: Math.random() < 0.5 ? 0 : 1, size: 0.12 }];
+    }
+
+    function angleDiff(a, b) {
+      const d = Math.atan2(Math.sin(a - b), Math.cos(a - b));
+      return Math.abs(d);
+    }
+
+    function endGame(text) {
+      state.running = false;
+      state.over = true;
+      if (state.score > state.best) {
+        state.best = state.score;
+        localStorage.setItem(storageKey, String(state.best));
+      }
+      updateHud();
+      statusEl.textContent = text;
+      messageEl.textContent = '差一点就过去了，再来一局会更顺。';
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      state.score += dt;
+      state.speedLevel = 1 + Math.floor(state.score / 8);
+      player.angle += state.direction * (1.55 + state.speedLevel * 0.09) * dt;
+      player.pulse = Math.max(0, player.pulse - dt);
+      state.spawnTimer -= dt;
+      state.starTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnHazard();
+        state.spawnTimer = Math.max(0.38, 1.1 - state.speedLevel * 0.05);
+      }
+      if (state.starTimer <= 0) {
+        spawnBonus();
+        state.starTimer = 5 + Math.random() * 2;
+      }
+
+      hazards.forEach(h => h.angle += h.rotate * dt);
+      bonuses.forEach(b => b.angle += 0.3 * dt);
+
+      for (const hazard of hazards) {
+        if (hazard.ring === player.ring && angleDiff(hazard.angle, player.angle) < hazard.size + 0.08) {
+          endGame('撞上轨道障碍，本局结束。');
+          return;
+        }
+      }
+      bonuses = bonuses.filter(b => {
+        const hit = b.ring === player.ring && angleDiff(b.angle, player.angle) < b.size + 0.09;
+        if (hit) {
+          state.stars += 1;
+          state.score += 2.5;
+          messageEl.textContent = '收到了星核，顺手加了点分。';
+          return false;
+        }
+        return true;
+      });
+
+      if (state.score > state.best) {
+        state.best = state.score;
+        localStorage.setItem(storageKey, String(state.best));
+      }
+      updateHud();
+      statusEl.textContent = `外圈更危险，当前旋转方向：${state.direction > 0 ? '顺时针' : '逆时针'}`;
+    }
+
+    function drawRing(radius, alpha = 1) {
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function drawArcItem(item, radius, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 16;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, item.angle - item.size, item.angle + item.size);
+      ctx.stroke();
+    }
+
+    function draw() {
+      const bg = ctx.createRadialGradient(center.x, center.y, 40, center.x, center.y, 260);
+      bg.addColorStop(0, '#101932');
+      bg.addColorStop(1, '#050911');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawRing(radii[0], 0.22);
+      drawRing(radii[1], 0.22);
+
+      ctx.fillStyle = 'rgba(124,92,255,0.35)';
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f4f7ff';
+      ctx.font = 'bold 18px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText('CORE', center.x, center.y + 6);
+      ctx.textAlign = 'left';
+
+      hazards.forEach(h => drawArcItem(h, radii[h.ring], h.color));
+      bonuses.forEach(b => drawArcItem(b, radii[b.ring], '#8ff7cf'));
+
+      const r = radii[player.ring];
+      const x = center.x + Math.cos(player.angle) * r;
+      const y = center.y + Math.sin(player.angle) * r;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = player.ring ? '#60f0d1' : '#7a8cff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14 + player.pulse * 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(16, 16, 160, 58);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px Segoe UI';
+      ctx.fillText(`生存 ${state.score.toFixed(1)}s`, 28, 39);
+      ctx.fillText(`星核 ${state.stars}`, 28, 61);
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.36)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '轨道碰撞' : '准备入轨', center.x, center.y - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击左侧开始，然后空格切轨道', center.x, center.y + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '轨道启动。';
+    });
+    document.getElementById('switchBtn').addEventListener('click', switchRing);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        switchRing();
+      }
+      if (['ArrowLeft', 'a', 'A', 'ArrowRight', 'd', 'D'].includes(event.key)) flipDirection();
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

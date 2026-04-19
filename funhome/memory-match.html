@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆翻翻乐｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #0a1020;
+      --panel: rgba(12, 21, 39, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f5f7ff;
+      --muted: #9db1d8;
+      --brand: #8f63ff;
+      --accent: #2dd4bf;
+      --shadow: 0 24px 60px rgba(0,0,0,0.38);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(143,99,255,0.24), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(45,212,191,0.18), transparent 24%),
+        linear-gradient(180deg, #050914 0%, #0a1020 100%);
+      padding: 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .board-shell {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(45,212,191,0.12);
+      color: #aef5ea;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3.4rem);
+      line-height: 1.05;
+    }
+
+    .lead,
+    .difficulty-card p,
+    .tips li,
+    .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .difficulty-list {
+      margin: 22px 0 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .difficulty-card {
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.05);
+      text-align: left;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .difficulty-card.active {
+      border-color: rgba(143,99,255,0.4);
+      background: linear-gradient(135deg, rgba(143,99,255,0.2), rgba(45,212,191,0.1));
+    }
+
+    .difficulty-card strong { display: block; font-size: 1.05rem; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .btn,
+    .ghost-btn,
+    .card {
+      border: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .btn,
+    .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #ae90ff);
+      box-shadow: 0 12px 26px rgba(143,99,255,0.25);
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .board-shell { padding: 22px; position: relative; }
+
+    .board-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      aspect-ratio: 1 / 1.12;
+      background: transparent;
+      cursor: pointer;
+      perspective: 900px;
+      padding: 0;
+    }
+
+    .card[disabled] {
+      cursor: default;
+      opacity: 0.95;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.45s ease;
+    }
+
+    .card.flipped .card-inner,
+    .card.matched .card-inner { transform: rotateY(180deg); }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      backface-visibility: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .face.front {
+      background: linear-gradient(135deg, rgba(143,99,255,0.24), rgba(45,212,191,0.14));
+      color: #f1f4ff;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+    }
+
+    .face.back {
+      transform: rotateY(180deg);
+      background: rgba(255,255,255,0.08);
+      font-size: clamp(2rem, 4vw, 3rem);
+    }
+
+    .card.matched .face.back {
+      background: linear-gradient(135deg, rgba(45,212,191,0.3), rgba(143,99,255,0.2));
+      box-shadow: inset 0 0 0 1px rgba(173,255,244,0.18);
+    }
+
+    .footer-msg {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(143,99,255,0.14), rgba(45,212,191,0.08));
+      font-weight: 700;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 22px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7, 13, 24, 0.8);
+      border-radius: 24px;
+      backdrop-filter: blur(8px);
+      padding: 24px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-box {
+      max-width: 420px;
+      text-align: center;
+      display: grid;
+      gap: 14px;
+    }
+
+    .overlay-box h2 {
+      margin: 0;
+      font-size: 2.2rem;
+    }
+
+    .overlay-box p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .stars {
+      font-size: 1.6rem;
+      letter-spacing: 0.18em;
+      color: #ffd97d;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel,
+      .board-shell { padding: 20px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .grid { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🃏 轻松又上头</div>
+      <h1>记忆翻翻乐</h1>
+      <p class="lead">翻开卡牌，找出对应配对。难度越高，牌越多，越考验记忆。适合放松，也适合作为小游戏热身。</p>
+
+      <div class="difficulty-list" id="difficultyList"></div>
+
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">重新洗牌</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>尽量记住已经翻过的牌位，别只靠碰运气。</li>
+        <li>步数越少、速度越快，结算星级越高。</li>
+        <li>每个难度都会单独记录你的最佳时间。</li>
+      </ul>
+    </section>
+
+    <section class="board-shell">
+      <div class="board-head">
+        <div>
+          <h2 style="margin:0;">翻牌区</h2>
+          <div class="subtle" id="bestText">当前难度最佳：暂无记录</div>
+        </div>
+        <span class="eyebrow" id="difficultyBadge">默认难度</span>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">难度<strong id="difficultyValue">经典</strong></div>
+        <div class="stat-card">用时<strong id="timeValue">0 秒</strong></div>
+        <div class="stat-card">步数<strong id="movesValue">0</strong></div>
+        <div class="stat-card">配对<strong id="pairsValue">0 / 0</strong></div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+      <div class="footer-msg" id="messageBox">先选一个难度，翻开第一张牌后计时才会开始。</div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay-box">
+          <h2>配对完成</h2>
+          <div class="stars" id="starsValue">★★★</div>
+          <p id="summaryText">这局打得很稳，继续试试更高难度？</p>
+          <div class="actions" style="justify-content:center; margin:0;">
+            <button class="btn" id="playAgainBtn" type="button">再来一局</button>
+            <button class="ghost-btn" id="closeOverlayBtn" type="button">看看牌面</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const EMOJIS = ['🌙','⭐','🍓','🍊','🎈','🎵','🐳','🌵','🍄','🪐','🎯','🧁','🦊','🎨','🚀'];
+    const DIFFICULTIES = {
+      easy: { label: '轻松', pairs: 6, columns: 3, hint: '3 × 4，适合热身' },
+      classic: { label: '经典', pairs: 8, columns: 4, hint: '4 × 4，最平衡' },
+      hard: { label: '挑战', pairs: 10, columns: 5, hint: '5 × 4，容易翻车' }
+    };
+
+    const difficultyList = document.getElementById('difficultyList');
+    const grid = document.getElementById('grid');
+    const messageBox = document.getElementById('messageBox');
+    const bestText = document.getElementById('bestText');
+    const difficultyBadge = document.getElementById('difficultyBadge');
+    const difficultyValue = document.getElementById('difficultyValue');
+    const timeValue = document.getElementById('timeValue');
+    const movesValue = document.getElementById('movesValue');
+    const pairsValue = document.getElementById('pairsValue');
+    const overlay = document.getElementById('overlay');
+    const starsValue = document.getElementById('starsValue');
+    const summaryText = document.getElementById('summaryText');
+
+    let difficulty = 'classic';
+    let deck = [];
+    let flipped = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let seconds = 0;
+    let timerId = null;
+    let started = false;
+    let lockBoard = false;
+
+    function buildDifficultyList() {
+      difficultyList.innerHTML = Object.entries(DIFFICULTIES).map(([key, config]) => `
+        <button class="difficulty-card ${key === difficulty ? 'active' : ''}" type="button" data-difficulty="${key}">
+          <strong>${config.label}</strong>
+          <p>${config.hint}</p>
+        </button>
+      `).join('');
+
+      difficultyList.querySelectorAll('[data-difficulty]').forEach(button => {
+        button.addEventListener('click', () => {
+          difficulty = button.dataset.difficulty;
+          buildDifficultyList();
+          startGame();
+        });
+      });
+    }
+
+    function shuffle(source) {
+      const list = [...source];
+      for (let i = list.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      return list;
+    }
+
+    function getBestSeconds() {
+      return Number(localStorage.getItem(`funhome-memory-best-${difficulty}`) || 0);
+    }
+
+    function updateBestText() {
+      const best = getBestSeconds();
+      const config = DIFFICULTIES[difficulty];
+      bestText.textContent = best ? `当前难度最佳：${best} 秒` : `当前难度最佳：暂无记录`;
+      difficultyBadge.textContent = `${config.label} · ${config.hint}`;
+    }
+
+    function startTimer() {
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(() => {
+        seconds += 1;
+        updateStats();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+    }
+
+    function createDeck() {
+      const config = DIFFICULTIES[difficulty];
+      const chosen = EMOJIS.slice(0, config.pairs);
+      const cards = shuffle([...chosen, ...chosen]).map((emoji, index) => ({
+        id: index,
+        emoji,
+        flipped: false,
+        matched: false
+      }));
+      return cards;
+    }
+
+    function updateStats() {
+      const config = DIFFICULTIES[difficulty];
+      difficultyValue.textContent = config.label;
+      timeValue.textContent = `${seconds} 秒`;
+      movesValue.textContent = moves;
+      pairsValue.textContent = `${matchedPairs} / ${config.pairs}`;
+      updateBestText();
+    }
+
+    function render() {
+      const config = DIFFICULTIES[difficulty];
+      grid.style.gridTemplateColumns = `repeat(${config.columns}, minmax(0, 1fr))`;
+      grid.innerHTML = deck.map(card => `
+        <button class="card ${card.flipped ? 'flipped' : ''} ${card.matched ? 'matched' : ''}" type="button" data-id="${card.id}" ${card.matched ? 'disabled' : ''}>
+          <span class="card-inner">
+            <span class="face front">?</span>
+            <span class="face back">${card.emoji}</span>
+          </span>
+        </button>
+      `).join('');
+
+      grid.querySelectorAll('[data-id]').forEach(button => {
+        button.addEventListener('click', () => handleCardClick(Number(button.dataset.id)));
+      });
+    }
+
+    function handleCardClick(id) {
+      const card = deck.find(item => item.id === id);
+      if (!card || card.flipped || card.matched || lockBoard) return;
+
+      if (!started) {
+        started = true;
+        startTimer();
+        messageBox.textContent = '计时开始。尽量记住刚翻开的牌位。';
+      }
+
+      card.flipped = true;
+      flipped.push(card);
+      render();
+
+      if (flipped.length < 2) return;
+
+      moves += 1;
+      updateStats();
+      const [first, second] = flipped;
+
+      if (first.emoji === second.emoji) {
+        first.matched = true;
+        second.matched = true;
+        matchedPairs += 1;
+        flipped = [];
+        messageBox.textContent = matchedPairs === DIFFICULTIES[difficulty].pairs
+          ? '全部配对完成，恭喜！'
+          : '配对成功，继续保持节奏。';
+        render();
+        if (matchedPairs === DIFFICULTIES[difficulty].pairs) finishGame();
+        updateStats();
+        return;
+      }
+
+      lockBoard = true;
+      messageBox.textContent = '没配上，记住它们的位置。';
+      setTimeout(() => {
+        first.flipped = false;
+        second.flipped = false;
+        flipped = [];
+        lockBoard = false;
+        render();
+      }, 750);
+    }
+
+    function rating() {
+      const pairs = DIFFICULTIES[difficulty].pairs;
+      if (moves <= pairs * 1.6) return '★★★';
+      if (moves <= pairs * 2.2) return '★★';
+      return '★';
+    }
+
+    function finishGame() {
+      stopTimer();
+      const best = getBestSeconds();
+      if (!best || seconds < best) {
+        localStorage.setItem(`funhome-memory-best-${difficulty}`, String(seconds));
+      }
+      starsValue.textContent = rating();
+      summaryText.textContent = `本局用时 ${seconds} 秒，共 ${moves} 步。${(!best || seconds < best) ? '刷新了该难度最佳成绩。' : '再来一局试着更快一点。'}`;
+      overlay.classList.add('show');
+      updateBestText();
+    }
+
+    function startGame() {
+      stopTimer();
+      deck = createDeck();
+      flipped = [];
+      matchedPairs = 0;
+      moves = 0;
+      seconds = 0;
+      started = false;
+      lockBoard = false;
+      overlay.classList.remove('show');
+      messageBox.textContent = '先选一个难度，翻开第一张牌后计时才会开始。';
+      updateStats();
+      render();
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+    document.getElementById('playAgainBtn').addEventListener('click', startGame);
+    document.getElementById('closeOverlayBtn').addEventListener('click', () => overlay.classList.remove('show'));
+
+    buildDifficultyList();
+    startGame();
+  </script>
+</body>
+</html>

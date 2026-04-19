@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数字滑块拼图｜趣味屋</title>
+  <style>
+    :root {
+      --bg: #101014;
+      --panel: rgba(24, 24, 32, 0.92);
+      --line: rgba(255,255,255,0.08);
+      --text: #f6f7fb;
+      --muted: #afb4c9;
+      --brand: #9f7aea;
+      --accent: #6ee7b7;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(159,122,234,0.18), transparent 24%),
+        radial-gradient(circle at 84% 18%, rgba(110,231,183,0.14), transparent 24%),
+        linear-gradient(180deg, #08080c 0%, #101014 100%);
+      padding: 24px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .btn, .ghost-btn, .button, .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button { font: inherit; }
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 24px;
+    }
+    .panel, .stage {
+      background: var(--panel);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 28px; }
+    .stage { padding: 22px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(159,122,234,0.12);
+      color: #e2d8ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 {
+      margin: 16px 0 12px;
+      font-size: clamp(2rem, 4.4vw, 3rem);
+      line-height: 1.05;
+    }
+    .lead, .tips li, .subtle {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .btn, .ghost-btn, .tile {
+      border: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn, .ghost-btn {
+      flex: 1 1 120px;
+      min-height: 48px;
+      border-radius: 16px;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .btn {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #bea2ff);
+      box-shadow: 0 12px 26px rgba(159,122,234,0.24);
+    }
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tips {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+    }
+    .stat-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.45rem;
+    }
+    .board {
+      width: min(100%, 520px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tile {
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      cursor: pointer;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(159,122,234,0.26), rgba(110,231,183,0.12));
+    }
+    .tile.empty {
+      background: rgba(255,255,255,0.04);
+      cursor: default;
+    }
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(159,122,234,0.14), rgba(110,231,183,0.08));
+      font-weight: 700;
+    }
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 18px; }
+      .panel, .stage { padding: 20px; }
+      .stats { grid-template-columns: 1fr; }
+      .board { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="eyebrow">🧩 经典拼图</div>
+      <h1>数字滑块拼图</h1>
+      <p class="lead">把 1 到 15 的数字按顺序排好。空格可以和相邻数字互换，步数越少越好。</p>
+
+      <div class="actions">
+        <button class="btn" id="shuffleBtn" type="button">打乱重来</button>
+        <a class="ghost-btn" href="funhome.html#library" style="display:flex;align-items:center;justify-content:center;">← 返回趣味屋</a>
+      </div>
+
+      <ul class="tips">
+        <li>只允许移动与空格相邻的数字。</li>
+        <li>打乱会保证可解。</li>
+        <li>适合一边发呆一边慢慢拼。</li>
+      </ul>
+    </section>
+
+    <section class="stage">
+      <div class="stats">
+        <div class="stat-card">步数<strong id="moveValue">0</strong></div>
+        <div class="stat-card">用时<strong id="timeValue">0 秒</strong></div>
+        <div class="stat-card">状态<strong id="stateValue">未完成</strong></div>
+      </div>
+
+      <div class="board" id="board"></div>
+      <div class="message" id="messageBox">点击相邻数字，让它滑进空格里。</div>
+    </section>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const moveValue = document.getElementById('moveValue');
+    const timeValue = document.getElementById('timeValue');
+    const stateValue = document.getElementById('stateValue');
+    const messageBox = document.getElementById('messageBox');
+
+    let board = [];
+    let moves = 0;
+    let seconds = 0;
+    let timerId = null;
+    let started = false;
+
+    function solvedBoard() {
+      return [...Array(15).keys()].map(n => n + 1).concat(0);
+    }
+
+    function updateHud() {
+      moveValue.textContent = moves;
+      timeValue.textContent = `${seconds} 秒`;
+      stateValue.textContent = isSolved() ? '完成' : '未完成';
+    }
+
+    function render() {
+      boardEl.innerHTML = board.map((value, index) => `
+        <button class="tile ${value === 0 ? 'empty' : ''}" type="button" data-index="${index}" ${value === 0 ? 'disabled' : ''}>
+          ${value === 0 ? '' : value}
+        </button>
+      `).join('');
+
+      boardEl.querySelectorAll('[data-index]').forEach(button => {
+        button.addEventListener('click', () => handleMove(Number(button.dataset.index)));
+      });
+    }
+
+    function startTimer() {
+      if (timerId) return;
+      timerId = setInterval(() => {
+        seconds += 1;
+        updateHud();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+    }
+
+    function isAdjacent(a, b) {
+      const ar = Math.floor(a / 4);
+      const ac = a % 4;
+      const br = Math.floor(b / 4);
+      const bc = b % 4;
+      return Math.abs(ar - br) + Math.abs(ac - bc) === 1;
+    }
+
+    function handleMove(index) {
+      const empty = board.indexOf(0);
+      if (!isAdjacent(index, empty)) return;
+      if (!started) {
+        started = true;
+        startTimer();
+      }
+      [board[index], board[empty]] = [board[empty], board[index]];
+      moves += 1;
+      updateHud();
+      render();
+
+      if (isSolved()) {
+        stopTimer();
+        messageBox.textContent = `完成了！共 ${moves} 步，用时 ${seconds} 秒。`;
+      } else {
+        messageBox.textContent = '继续，把数字送回正确位置。';
+      }
+    }
+
+    function isSolved() {
+      return board.every((value, index) => value === solvedBoard()[index]);
+    }
+
+    function shuffleBoard() {
+      board = solvedBoard();
+      moves = 0;
+      seconds = 0;
+      started = false;
+      stopTimer();
+      let empty = board.indexOf(0);
+      for (let i = 0; i < 240; i += 1) {
+        const choices = board.map((_, idx) => idx).filter(idx => isAdjacent(idx, empty));
+        const chosen = choices[Math.floor(Math.random() * choices.length)];
+        [board[chosen], board[empty]] = [board[empty], board[chosen]];
+        empty = chosen;
+      }
+      if (isSolved()) {
+        [board[14], board[15]] = [board[15], board[14]];
+      }
+      messageBox.textContent = '点击相邻数字，让它滑进空格里。';
+      updateHud();
+      render();
+    }
+
+    document.getElementById('shuffleBtn').addEventListener('click', shuffleBoard);
+
+    shuffleBoard();
+  </script>
+</body>
+</html>

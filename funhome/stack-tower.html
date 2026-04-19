@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云端叠塔｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #b767ff; --accent-2: #4ce2ff; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🏗️ 手写新作 · 时机游戏</div>
+      <h1>云端叠塔</h1>
+      <p class="lead">玩法很简单，但越玩越上头：移动中的方块经过塔顶时点一下落下，只保留重叠部分。切得越准，连击越高；完全没重叠就直接结束。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始叠塔</button>
+        <button class="ghost-btn" id="dropBtn" type="button">现在放下</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>层数</span><strong id="levelEl">0</strong></div>
+        <div class="stat"><span>完美连击</span><strong id="comboEl">0</strong></div>
+        <div class="stat"><span>塔高</span><strong id="heightEl">0</strong></div>
+        <div class="stat"><span>最好成绩</span><strong id="bestEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>空格 / Enter / 点击“现在放下” 都能落块。</li>
+        <li>如果切得非常准，会判定为完美落点并稍微修正。</li>
+        <li>方块越窄越难叠，但视觉反馈也会更爽。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">准备开始。先观察节奏，再动手。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🎯 看准时机切重叠</span>
+          <span class="legend-item">✨ 完美落点会累计连击</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="420" height="620"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">还没开工。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const levelEl = document.getElementById('levelEl');
+    const comboEl = document.getElementById('comboEl');
+    const heightEl = document.getElementById('heightEl');
+    const bestEl = document.getElementById('bestEl');
+    const messageEl = document.getElementById('messageEl');
+    const statusEl = document.getElementById('statusEl');
+    const storageKey = 'funhome-best-stack-tower';
+    const state = {
+      running: false,
+      over: false,
+      level: 0,
+      combo: 0,
+      best: Number(localStorage.getItem(storageKey) || 0),
+      camera: 0,
+      last: 0,
+      direction: 1,
+    };
+    bestEl.textContent = state.best;
+
+    let blocks = [];
+    let active = null;
+    let particles = [];
+
+    function reset() {
+      blocks = [{ x: 80, y: canvas.height - 70, w: 260, h: 28, color: '#4ce2ff' }];
+      active = { x: -60, y: canvas.height - 110, w: 260, h: 28, color: '#b767ff', speed: 180 };
+      particles = [];
+      state.running = false;
+      state.over = false;
+      state.level = 0;
+      state.combo = 0;
+      state.camera = 0;
+      state.direction = 1;
+      updateHud();
+      statusEl.textContent = '点击开始后再落第一块。';
+      messageEl.textContent = '第一块通常最容易，找找手感。';
+    }
+
+    function updateHud() {
+      levelEl.textContent = state.level;
+      comboEl.textContent = state.combo;
+      heightEl.textContent = `${state.level * 28}`;
+      bestEl.textContent = state.best;
+    }
+
+    function newActive() {
+      const top = blocks[blocks.length - 1];
+      active = {
+        x: state.direction > 0 ? -top.w - 20 : canvas.width + 20,
+        y: top.y - 40,
+        w: top.w,
+        h: 28,
+        color: `hsl(${(state.level * 29 + 210) % 360} 85% 65%)`,
+        speed: Math.min(340, 180 + state.level * 9)
+      };
+      state.direction *= -1;
+    }
+
+    function burst(x, y, color) {
+      for (let i = 0; i < 14; i += 1) {
+        particles.push({ x, y, vx: (Math.random() - 0.5) * 140, vy: -40 - Math.random() * 140, life: 0.7, color });
+      }
+    }
+
+    function dropBlock() {
+      if (!state.running || state.over || !active) return;
+      const top = blocks[blocks.length - 1];
+      const overlapLeft = Math.max(active.x, top.x);
+      const overlapRight = Math.min(active.x + active.w, top.x + top.w);
+      let overlap = overlapRight - overlapLeft;
+      if (overlap <= 0) {
+        state.running = false;
+        state.over = true;
+        statusEl.textContent = '没接住，整塔结束。';
+        messageEl.textContent = '这类游戏就差那一点点。';
+        if (state.level > state.best) {
+          state.best = state.level;
+          localStorage.setItem(storageKey, String(state.best));
+        }
+        updateHud();
+        return;
+      }
+      const perfect = Math.abs(active.x - top.x) < 8;
+      if (perfect) {
+        overlap = top.w;
+        active.x = top.x;
+        state.combo += 1;
+        messageEl.textContent = `完美落点！连击 ${state.combo}`;
+      } else {
+        state.combo = 0;
+      }
+      const block = { x: overlapLeft, y: active.y, w: overlap, h: active.h, color: active.color };
+      blocks.push(block);
+      burst(overlapLeft + overlap / 2, active.y + 8, active.color);
+      state.level += 1;
+      state.camera = Math.max(0, canvas.height - 180 - block.y);
+      if (state.level > state.best) {
+        state.best = state.level;
+        localStorage.setItem(storageKey, String(state.best));
+      }
+      updateHud();
+      statusEl.textContent = perfect ? '完美切齐！' : '稳住，继续往上。';
+      newActive();
+    }
+
+    function update(dt) {
+      if (state.running && active && !state.over) {
+        active.x += active.speed * dt * state.direction;
+        if (state.direction > 0 && active.x > canvas.width + 12) active.x = -active.w - 12;
+        if (state.direction < 0 && active.x + active.w < -12) active.x = canvas.width + 12;
+      }
+      particles.forEach(p => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 240 * dt;
+        p.life -= dt;
+      });
+      particles = particles.filter(p => p.life > 0);
+    }
+
+    function drawBlock(block, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const y = block.y + state.camera;
+      ctx.fillStyle = block.color;
+      ctx.beginPath();
+      ctx.roundRect(block.x, y, block.w, block.h, 12);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.24)';
+      ctx.fillRect(block.x + 10, y + 5, Math.max(0, block.w - 20), 5);
+      ctx.restore();
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#101325');
+      bg.addColorStop(1, '#241647');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 7; i += 1) {
+        ctx.fillStyle = `rgba(255,255,255,${0.03 + i * 0.01})`;
+        ctx.fillRect(0, canvas.height - i * 90 + (state.camera * 0.2 % 90), canvas.width, 1);
+      }
+
+      blocks.forEach(block => drawBlock(block));
+      if (active) drawBlock(active, 0.95);
+
+      particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y + state.camera, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '塔塌了' : '准备开叠', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点开始，然后空格或按钮落块', canvas.width / 2, canvas.height / 2 + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      state.running = true;
+      statusEl.textContent = '开始！看准就放。';
+    });
+    document.getElementById('dropBtn').addEventListener('click', dropBlock);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space' || event.code === 'Enter') {
+        event.preventDefault();
+        if (!state.running && !state.over) state.running = true;
+        else dropBlock();
+      }
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

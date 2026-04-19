@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>趣味屋｜手写精品游戏库</title>
+  <meta name="description" content="趣味屋重新整理为手写精品游戏库：30款手写游戏 + 15款经典老游戏 + 3个趣味实验。">
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(11, 21, 38, 0.88);
+      --line: rgba(255,255,255,0.08);
+      --text: #f7f9ff;
+      --muted: #9eb1cf;
+      --brand: #7c5cff;
+      --brand-2: #2dd4bf;
+      --accent: #ff9860;
+      --shadow: 0 22px 60px rgba(0,0,0,0.34);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(124,92,255,0.24), transparent 26%),
+        radial-gradient(circle at 84% 18%, rgba(45,212,191,0.18), transparent 24%),
+        linear-gradient(180deg, #08111f 0%, #07111f 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    .container { width: min(1280px, calc(100vw - 28px)); margin: 0 auto; }
+    .topbar {
+      position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px);
+      background: rgba(6, 12, 24, 0.72); border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav {
+      min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:700; }
+    .brand-mark {
+      width: 42px; height: 42px; display:grid; place-items:center; border-radius:14px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 10px 20px rgba(124,92,255,0.26);
+      font-size: 1.25rem;
+    }
+    .brand-copy strong { display:block; }
+    .brand-copy span { display:block; color: var(--muted); font-size: .84rem; }
+    .hero {
+      padding: 18px 0 14px; display:grid; grid-template-columns: 1.15fr .85fr; gap: 16px;
+    }
+    .card, .hero-card, .side-card, .section-card {
+      background: var(--panel); border:1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow);
+    }
+    .hero-card, .side-card, .section-card { padding: 18px; }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:8px; padding: 8px 14px; border-radius:999px;
+      background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#dce7ff; font-size:.9rem;
+    }
+    h1 { margin: 14px 0 10px; font-size: clamp(2rem, 4vw, 3.35rem); line-height: 1.05; }
+    p, .muted, .section-head p, .list li { color: var(--muted); line-height: 1.75; }
+    .hero-actions, .nav-actions, .toolbar, .quick-links { display:flex; flex-wrap:wrap; gap:10px; }
+    .btn, .ghost-btn, .chip {
+      min-height: 44px; padding: 0 16px; border-radius: 14px; border: 0; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items:center; justify-content:center; transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    .btn { background: linear-gradient(135deg, var(--brand), #9c80ff); color: #fff; font-weight:700; box-shadow:0 12px 28px rgba(124,92,255,0.24); }
+    .ghost-btn, .chip { background: rgba(255,255,255,0.06); color: var(--text); border:1px solid rgba(255,255,255,0.08); }
+    .btn:hover, .ghost-btn:hover, .chip:hover, .game-card:hover { transform: translateY(-2px); }
+    .metrics { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top: 16px; }
+    .metric { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); }
+    .metric strong { display:block; font-size: 1.5rem; margin-bottom: 6px; }
+    .search-bar {
+      margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:10px;
+    }
+    .search-bar input {
+      flex: 1 1 260px; min-height:44px; border-radius: 14px; border:0; outline:none; color: var(--text);
+      background: rgba(255,255,255,0.04); padding: 0 14px;
+    }
+    .list { padding-left: 18px; margin: 14px 0 0; display:grid; gap:8px; }
+    section { padding: 10px 0; }
+    .section-head { display:flex; justify-content:space-between; gap:12px; align-items:end; flex-wrap:wrap; margin-bottom: 12px; }
+    .section-title { margin:0; font-size: clamp(1.45rem, 2.4vw, 2.2rem); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .game-card {
+      padding: 14px; min-height: 152px; display:grid; gap:8px; border-radius: 20px;
+      background: var(--panel); border:1px solid var(--line); box-shadow: var(--shadow);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .game-card.hidden { display:none; }
+    .game-card:hover { border-color: rgba(146,255,240,.28); }
+    .game-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+    .emoji { width: 38px; height: 38px; border-radius: 12px; display:grid; place-items:center; background: rgba(255,255,255,0.1); font-size:1.2rem; }
+    .badge { padding: 6px 10px; border-radius:999px; font-size:.78rem; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.08); }
+    .badge.new { background: rgba(45,212,191,0.16); color:#b9fff5; }
+    .badge.classic { background: rgba(124,92,255,0.18); color:#e6ddff; }
+    .badge.lab { background: rgba(255,152,96,0.16); color:#ffd7c1; }
+    .game-card h3 { margin:0; font-size: 1rem; }
+    .game-card p { margin:0; font-size:.85rem; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+    .pill { display:inline-flex; align-items:center; padding: 6px 10px; border-radius:999px; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); font-size:.78rem; }
+    .empty { display:none; padding: 22px; text-align:center; border-radius: 20px; border:1px dashed rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); }
+    @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) {
+      .container { width: min(100vw - 18px, 1280px); }
+      .hero-card, .side-card, .section-card { padding: 16px; }
+      .metrics { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <div class="brand-mark">🎪</div>
+        <div class="brand-copy">
+          <strong>趣味屋</strong>
+          <span>手写精品游戏库</span>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <a class="ghost-btn" href="../index.html">🏠 返回主页</a>
+        <button class="btn" id="randomBtn" type="button">🎲 随机来一款</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" id="top">
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">🛠️ 这次不凑数，先做真正能玩的内容</div>
+        <h1>趣味屋<br><span style="color:#92fff0;">手写 30 款新游戏</span></h1>
+        <p>这次继续按你说的标准往前做：不拿模板页凑数，继续补<strong>真正不同类型、单独手写</strong>的新游戏。现在首页里主推的是 30 款手写新作，尽量把“真的值得点开”的内容放在最前面。</p>
+        <div class="hero-actions">
+          <a class="btn" href="#library">🚀 先看手写新作</a>
+          <a class="ghost-btn" href="#classics">🎮 经典老游戏</a>
+          <a class="ghost-btn" href="#lab">🧪 趣味实验</a>
+        </div>
+        <div class="metrics">
+          <div class="metric"><strong>30</strong><span class="muted">手写新游戏总数</span></div>
+          <div class="metric"><strong>15</strong><span class="muted">保留的经典老游戏</span></div>
+          <div class="metric"><strong>48</strong><span class="muted">首页直达入口总数</span></div>
+        </div>
+        <div class="search-bar">
+          <input id="searchInput" type="search" placeholder="搜索游戏名或类型，例如：塔防、推箱子、数独、高尔夫、坦克、激光">
+          <button class="ghost-btn" id="clearBtn" type="button">清空搜索</button>
+        </div>
+      </article>
+
+      <article class="side-card">
+        <div class="eyebrow">📌 本次调整</div>
+        <ul class="list">
+          <li>首页不再主推那批自动拼出来的轻量页。</li>
+          <li>现在已经有 30 款游戏是独立手写页面。</li>
+          <li>返回按钮统一回到 <strong>手写新作区</strong>，不用再从顶部重找。</li>
+          <li>保留一批原来就比较好玩的经典页，避免完全推倒重来。</li>
+        </ul>
+        <div class="quick-links" style="margin-top:14px;">
+          <span class="chip">射击</span>
+          <span class="chip">动作</span>
+          <span class="chip">节奏</span>
+          <span class="chip">卡牌</span>
+          <span class="chip">棋盘</span>
+          <span class="chip">益智</span>
+          <span class="chip">物理</span>
+          <span class="chip">塔防</span>
+        </div>
+      </article>
+    </section>
+
+    <section id="library">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">✨ 手写新作</div>
+          <h2 class="section-title">30 款真正手写的新游戏</h2>
+          <p>最新追加的 15 款也放在这里了，依旧不是配置模板页。</p>
+        </div>
+      </div>
+      <div class="grid" data-section="new">
+        <a class="game-card" href="warehouse-sokoban.html" data-key="仓库推箱子 sokoban 推箱子 空间谜题 手写新作">
+          <div class="game-top"><div class="emoji">📦</div><span class="badge new">NEW</span></div><h3>仓库推箱子</h3><p>只能推不能拉，关卡虽少但每一步都得提前想退路。</p><div class="meta"><span class="pill">空间谜题</span><span class="pill">经典难题</span></div>
+        </a>
+        <a class="game-card" href="lights-out.html" data-key="熄灯谜阵 lights out 切换 逻辑 手写新作">
+          <div class="game-top"><div class="emoji">💡</div><span class="badge new">NEW</span></div><h3>熄灯谜阵</h3><p>点击会连带切换周围灯块，目标是把整盘灯全部熄灭。</p><div class="meta"><span class="pill">逻辑</span><span class="pill">切换谜题</span></div>
+        </a>
+        <a class="game-card" href="flood-fill.html" data-key="色彩泛洪 flood fill 颜色 规划 手写新作">
+          <div class="game-top"><div class="emoji">🌈</div><span class="badge new">NEW</span></div><h3>色彩泛洪</h3><p>在限定步数内吞掉整张棋盘，是很考全局规划的颜色游戏。</p><div class="meta"><span class="pill">颜色规划</span><span class="pill">益智</span></div>
+        </a>
+        <a class="game-card" href="pipe-builder.html" data-key="管道工坊 管道 连线 旋转 手写新作">
+          <div class="game-top"><div class="emoji">🧪</div><span class="badge new">NEW</span></div><h3>管道工坊</h3><p>旋转管道接通能源，主干和分叉会越做越绕。</p><div class="meta"><span class="pill">连线</span><span class="pill">旋转拼接</span></div>
+        </a>
+        <a class="game-card" href="sea-battle.html" data-key="海战雷达 battleship 战舰 猜格 手写新作">
+          <div class="game-top"><div class="emoji">⚓</div><span class="badge new">NEW</span></div><h3>海战雷达</h3><p>隐藏舰队搜索猎杀，先搜再补刀，节奏感很强。</p><div class="meta"><span class="pill">猜格</span><span class="pill">搜索猎杀</span></div>
+        </a>
+        <a class="game-card" href="alchemy-lab.html" data-key="元素合成室 炼金 合成 发现 手写新作">
+          <div class="game-top"><div class="emoji">🧪</div><span class="badge new">NEW</span></div><h3>元素合成室</h3><p>从风火水土开始试配方，慢慢开出越来越多的新元素。</p><div class="meta"><span class="pill">发现式玩法</span><span class="pill">组合</span></div>
+        </a>
+        <a class="game-card" href="mancala.html" data-key="曼卡拉 石子棋 kalah 棋盘 策略 手写新作">
+          <div class="game-top"><div class="emoji">🪨</div><span class="badge new">NEW</span></div><h3>曼卡拉石子棋</h3><p>算最后一颗石子的落点，靠额外回合和抢子压制对手。</p><div class="meta"><span class="pill">棋盘策略</span><span class="pill">资源计算</span></div>
+        </a>
+        <a class="game-card" href="laser-lab.html" data-key="激光折射室 激光 镜子 反射 谜题 手写新作">
+          <div class="game-top"><div class="emoji">🔦</div><span class="badge new">NEW</span></div><h3>激光折射室</h3><p>旋转镜面反射激光，点亮晶体并最终命中终点。</p><div class="meta"><span class="pill">反射谜题</span><span class="pill">路线</span></div>
+        </a>
+        <a class="game-card" href="fishing-pond.html" data-key="悠闲钓鱼池 钓鱼 时机 休闲 手写新作">
+          <div class="game-top"><div class="emoji">🎣</div><span class="badge new">NEW</span></div><h3>悠闲钓鱼池</h3><p>放钩、收钩、钓对鱼种，一局节奏轻但很考预判。</p><div class="meta"><span class="pill">时机</span><span class="pill">休闲</span></div>
+        </a>
+        <a class="game-card" href="lunar-lander.html" data-key="月面着陆 登月 物理 模拟 手写新作">
+          <div class="game-top"><div class="emoji">🌕</div><span class="badge new">NEW</span></div><h3>月面着陆</h3><p>低重力着陆模拟，最后两秒的控速尤其考验手感。</p><div class="meta"><span class="pill">物理模拟</span><span class="pill">操作</span></div>
+        </a>
+        <a class="game-card" href="checkers.html" data-key="国际跳棋 checkers 棋盘 对弈 手写新作">
+          <div class="game-top"><div class="emoji">♟️</div><span class="badge new">NEW</span></div><h3>国际跳棋</h3><p>有强制吃子和连跳规则的完整对局，不是装饰棋盘。</p><div class="meta"><span class="pill">对弈</span><span class="pill">吃子博弈</span></div>
+        </a>
+        <a class="game-card" href="mini-golf.html" data-key="迷你高尔夫 golf 轻物理 路线 手写新作">
+          <div class="game-top"><div class="emoji">⛳</div><span class="badge new">NEW</span></div><h3>迷你高尔夫</h3><p>看反弹角、控力度，用更少杆数打完整套球洞。</p><div class="meta"><span class="pill">轻物理</span><span class="pill">路线</span></div>
+        </a>
+        <a class="game-card" href="claw-crane.html" data-key="抓娃娃机 claw crane 时机 抓取 手写新作">
+          <div class="game-top"><div class="emoji">🧸</div><span class="badge new">NEW</span></div><h3>抓娃娃机</h3><p>看准位置放爪，把奖品完整带回上方出口才算得分。</p><div class="meta"><span class="pill">时机抓取</span><span class="pill">休闲</span></div>
+        </a>
+        <a class="game-card" href="lane-defense.html" data-key="三线塔防 tower defense 塔防 策略 手写新作">
+          <div class="game-top"><div class="emoji">🛡️</div><span class="badge new">NEW</span></div><h3>三线塔防</h3><p>三条路、两种塔、逐渐加快的波次，资源分配很关键。</p><div class="meta"><span class="pill">塔防</span><span class="pill">资源分配</span></div>
+        </a>
+        <a class="game-card" href="tank-battle.html" data-key="坦克突围战 tank 双摇杆 射击 手写新作">
+          <div class="game-top"><div class="emoji">🛞</div><span class="badge new">NEW</span></div><h3>坦克突围战</h3><p>WASD 移动加鼠标瞄准的双摇杆风格小战场。</p><div class="meta"><span class="pill">动作射击</span><span class="pill">走位</span></div>
+        </a>
+        <a class="game-card" href="sky-shooter.html" data-key="星际小飞机 飞机大战 射击 动作 手写新作">
+          <div class="game-top"><div class="emoji">🚀</div><span class="badge new">NEW</span></div><h3>星际小飞机</h3><p>轻量飞机大战：移动、射击、连击和逐步提速都有。</p><div class="meta"><span class="pill">飞行射击</span><span class="pill">爽快</span></div>
+        </a>
+        <a class="game-card" href="flappy-sky.html" data-key="流星穿云 flappy 反应 点击 穿云 手写新作">
+          <div class="game-top"><div class="emoji">☄️</div><span class="badge new">NEW</span></div><h3>流星穿云</h3><p>空格或点击控制上扬，节奏越来越紧，适合反复刷分。</p><div class="meta"><span class="pill">反应</span><span class="pill">一键操作</span></div>
+        </a>
+        <a class="game-card" href="lane-racer.html" data-key="霓虹车道 赛车 闪避 街机 手写新作">
+          <div class="game-top"><div class="emoji">🏎️</div><span class="badge new">NEW</span></div><h3>霓虹车道</h3><p>三车道无尽闪避，切车道躲车流，越活越快。</p><div class="meta"><span class="pill">街机</span><span class="pill">躲避</span></div>
+        </a>
+        <a class="game-card" href="stack-tower.html" data-key="云端叠塔 叠叠高 时机 放置 手写新作">
+          <div class="game-top"><div class="emoji">🏗️</div><span class="badge new">NEW</span></div><h3>云端叠塔</h3><p>移动方块精准叠高，越往后越考验手感和稳定性。</p><div class="meta"><span class="pill">时机</span><span class="pill">上头</span></div>
+        </a>
+        <a class="game-card" href="frog-cross.html" data-key="青蛙过河 frogger 过河 动作 手写新作">
+          <div class="game-top"><div class="emoji">🐸</div><span class="badge new">NEW</span></div><h3>青蛙过河</h3><p>上躲车流下踩木头，一次次把青蛙送回终点。</p><div class="meta"><span class="pill">闯关</span><span class="pill">经典玩法</span></div>
+        </a>
+        <a class="game-card" href="orbit-dodge.html" data-key="轨道闪避 环绕 生存 手写新作">
+          <div class="game-top"><div class="emoji">🪐</div><span class="badge new">NEW</span></div><h3>轨道闪避</h3><p>切换内外轨道并反转方向，在绕圈中躲过障碍。</p><div class="meta"><span class="pill">生存</span><span class="pill">一局很快</span></div>
+        </a>
+        <a class="game-card" href="target-hunter.html" data-key="靶心猎手 打靶 点击 准度 手写新作">
+          <div class="game-top"><div class="emoji">🎯</div><span class="badge new">NEW</span></div><h3>靶心猎手</h3><p>45 秒点击打靶，连击和准度都会影响最后得分。</p><div class="meta"><span class="pill">点击射击</span><span class="pill">准度</span></div>
+        </a>
+        <a class="game-card" href="cannon-chaos.html" data-key="风炮打靶 炮台 物理 抛物线 手写新作">
+          <div class="game-top"><div class="emoji">💣</div><span class="badge new">NEW</span></div><h3>风炮打靶</h3><p>调角度、力度和风力，打掉空中的气球阵列。</p><div class="meta"><span class="pill">物理</span><span class="pill">预判</span></div>
+        </a>
+        <a class="game-card" href="music-tiles.html" data-key="节奏落键 钢琴块 节奏 键盘 手写新作">
+          <div class="game-top"><div class="emoji">🎹</div><span class="badge new">NEW</span></div><h3>节奏落键</h3><p>四列落块节奏挑战，D/F/J/K 接住方块连击刷分。</p><div class="meta"><span class="pill">节奏</span><span class="pill">连击</span></div>
+        </a>
+        <a class="game-card" href="blackjack.html" data-key="黑杰克 21点 卡牌 扑克 手写新作">
+          <div class="game-top"><div class="emoji">🃏</div><span class="badge new">NEW</span></div><h3>黑杰克 21 点</h3><p>完整可玩的 21 点：筹码、加倍、庄家逻辑都做了。</p><div class="meta"><span class="pill">卡牌</span><span class="pill">策略</span></div>
+        </a>
+        <a class="game-card" href="reversi.html" data-key="黑白棋 奥赛罗 棋盘 策略 手写新作">
+          <div class="game-top"><div class="emoji">⚫⚪</div><span class="badge new">NEW</span></div><h3>黑白棋</h3><p>完整棋盘博弈，电脑会抢角、会防守，不是摆设 AI。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">策略</span></div>
+        </a>
+        <a class="game-card" href="sudoku.html" data-key="数独 工坊 逻辑 益智 手写新作">
+          <div class="game-top"><div class="emoji">🔢</div><span class="badge new">NEW</span></div><h3>数独工坊</h3><p>随机题目、计时、检查和提示都有，适合认真坐下来玩。</p><div class="meta"><span class="pill">逻辑</span><span class="pill">益智</span></div>
+        </a>
+        <a class="game-card" href="mastermind.html" data-key="密码破译 mastermind 猜颜色 推理 手写新作">
+          <div class="game-top"><div class="emoji">🧩</div><span class="badge new">NEW</span></div><h3>密码破译</h3><p>四位颜色密码推理，靠反馈一步步逼近正确答案。</p><div class="meta"><span class="pill">推理</span><span class="pill">信息博弈</span></div>
+        </a>
+        <a class="game-card" href="gomoku.html" data-key="五子棋 棋盘 对弈 手写新作">
+          <div class="game-top"><div class="emoji">⚪⚫</div><span class="badge new">NEW</span></div><h3>五子棋</h3><p>中等强度电脑对手，会同时考虑进攻和防守。</p><div class="meta"><span class="pill">对弈</span><span class="pill">五连珠</span></div>
+        </a>
+        <a class="game-card" href="bubble-pop.html" data-key="泡泡消消乐 连团消除 益智 手写新作">
+          <div class="game-top"><div class="emoji">🫧</div><span class="badge new">NEW</span></div><h3>泡泡消消乐</h3><p>点击同色连团清除，气泡下落和列压缩会持续改变局势。</p><div class="meta"><span class="pill">消除</span><span class="pill">局面规划</span></div>
+        </a>
+      </div>
+    </section>
+
+    <section id="classics">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">🎮 经典保留</div>
+          <h2 class="section-title">原来就比较能打的老游戏</h2>
+          <p>不是全部保留，只留下相对完整、值得继续玩的内容。</p>
+        </div>
+      </div>
+      <div class="grid" data-section="classic">
+        <a class="game-card" href="2048.html" data-key="2048 数字 合并 经典 老游戏"><div class="game-top"><div class="emoji">🔢</div><span class="badge classic">CLASSIC</span></div><h3>2048 进阶版</h3><p>保留了平滑移动、合并反馈和撤销功能的新版 2048。</p><div class="meta"><span class="pill">数字</span><span class="pill">合并</span></div></a>
+        <a class="game-card" href="minesweeper.html" data-key="扫雷 经典 推理 老游戏"><div class="game-top"><div class="emoji">💣</div><span class="badge classic">CLASSIC</span></div><h3>扫雷</h3><p>带首击保护的老朋友，适合安静地思考一局。</p><div class="meta"><span class="pill">推理</span><span class="pill">经典</span></div></a>
+        <a class="game-card" href="snake.html" data-key="贪吃蛇 反应 老游戏"><div class="game-top"><div class="emoji">🐍</div><span class="badge classic">CLASSIC</span></div><h3>贪吃蛇</h3><p>熟悉又耐玩，适合拿来短暂放空和刷手感。</p><div class="meta"><span class="pill">街机</span><span class="pill">反应</span></div></a>
+        <a class="game-card" href="breakout.html" data-key="打砖块 弹球 街机 老游戏"><div class="game-top"><div class="emoji">🧱</div><span class="badge classic">CLASSIC</span></div><h3>打砖块</h3><p>接球、清砖、找角度，老派街机味道很足。</p><div class="meta"><span class="pill">弹球</span><span class="pill">街机</span></div></a>
+        <a class="game-card" href="connect-four.html" data-key="四子连珠 棋盘 策略 老游戏"><div class="game-top"><div class="emoji">🔴</div><span class="badge classic">CLASSIC</span></div><h3>四子连珠</h3><p>比三连棋更讲布局，适合快速来一盘脑力对抗。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">布局</span></div></a>
+        <a class="game-card" href="maze-escape.html" data-key="迷宫 逃脱 路径 老游戏"><div class="game-top"><div class="emoji">🌀</div><span class="badge classic">CLASSIC</span></div><h3>迷宫逃脱</h3><p>偏轻度但节奏不错，适合快速闯关。</p><div class="meta"><span class="pill">迷宫</span><span class="pill">路径</span></div></a>
+        <a class="game-card" href="memory-match.html" data-key="记忆翻翻乐 记忆 老游戏"><div class="game-top"><div class="emoji">🧠</div><span class="badge classic">CLASSIC</span></div><h3>记忆翻翻乐</h3><p>翻牌配对，适合轻松玩和练一下记忆。</p><div class="meta"><span class="pill">记忆</span><span class="pill">配对</span></div></a>
+        <a class="game-card" href="sliding-puzzle.html" data-key="滑块拼图 拼图 老游戏"><div class="game-top"><div class="emoji">🧩</div><span class="badge classic">CLASSIC</span></div><h3>滑块拼图</h3><p>传统数字拼图，适合爱琢磨最少步数的人。</p><div class="meta"><span class="pill">拼图</span><span class="pill">耐玩</span></div></a>
+        <a class="game-card" href="typing-challenge.html" data-key="打字挑战 速度 老游戏"><div class="game-top"><div class="emoji">⌨️</div><span class="badge classic">CLASSIC</span></div><h3>打字挑战</h3><p>轻量但实用，拿来热手或测试手速都很合适。</p><div class="meta"><span class="pill">打字</span><span class="pill">速度</span></div></a>
+        <a class="game-card" href="reaction-test.html" data-key="反应测试 手速 老游戏"><div class="game-top"><div class="emoji">⚡</div><span class="badge classic">CLASSIC</span></div><h3>反应测试</h3><p>就看你什么时候点得够快，适合和朋友比手速。</p><div class="meta"><span class="pill">反应</span><span class="pill">极短局</span></div></a>
+        <a class="game-card" href="simon.html" data-key="西蒙 记忆 节奏 老游戏"><div class="game-top"><div class="emoji">🎵</div><span class="badge classic">CLASSIC</span></div><h3>西蒙记忆</h3><p>跟灯光顺序复现，越到后面越容易慌。</p><div class="meta"><span class="pill">记忆</span><span class="pill">节奏</span></div></a>
+        <a class="game-card" href="color-hunt.html" data-key="找色块 眼力 老游戏"><div class="game-top"><div class="emoji">🎨</div><span class="badge classic">CLASSIC</span></div><h3>找色块</h3><p>颜色极其接近时很考眼力，属于短小但挺上头的类型。</p><div class="meta"><span class="pill">眼力</span><span class="pill">反应</span></div></a>
+        <a class="game-card" href="whack-a-mole.html" data-key="打地鼠 手速 老游戏"><div class="game-top"><div class="emoji">🔨</div><span class="badge classic">CLASSIC</span></div><h3>打地鼠</h3><p>快速点击和视线切换都要跟上节奏。</p><div class="meta"><span class="pill">手速</span><span class="pill">街机</span></div></a>
+        <a class="game-card" href="tic-tac-toe.html" data-key="井字棋 经典 棋盘 老游戏"><div class="game-top"><div class="emoji">⭕</div><span class="badge classic">CLASSIC</span></div><h3>井字棋</h3><p>虽然简单，但仍然适合快速开一局解闷。</p><div class="meta"><span class="pill">棋盘</span><span class="pill">极简</span></div></a>
+        <a class="game-card" href="block-master.html" data-key="方块大师 方块 益智 老游戏"><div class="game-top"><div class="emoji">🧊</div><span class="badge classic">CLASSIC</span></div><h3>方块大师</h3><p>偏方块规划类，适合喜欢图形布局的人。</p><div class="meta"><span class="pill">方块</span><span class="pill">益智</span></div></a>
+      </div>
+    </section>
+
+    <section id="lab">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">🧪 趣味实验</div>
+          <h2 class="section-title">不是游戏，但也值得点开</h2>
+          <p>保留几个轻松的小实验，和主游戏库区分开。</p>
+        </div>
+      </div>
+      <div class="grid" data-section="lab">
+        <a class="game-card" href="Calculator.html" data-key="计算器 工具 实验"><div class="game-top"><div class="emoji">🧮</div><span class="badge lab">LAB</span></div><h3>玻璃感计算器</h3><p>顺手好用的小工具，适合在趣味屋里临时打开。</p><div class="meta"><span class="pill">工具</span><span class="pill">彩蛋</span></div></a>
+        <a class="game-card" href="confess.html" data-key="表白 小剧场 实验"><div class="game-top"><div class="emoji">💘</div><span class="badge lab">LAB</span></div><h3>表白小剧场</h3><p>一个会躲躲闪闪的轻松小玩具，不走严肃路线。</p><div class="meta"><span class="pill">互动</span><span class="pill">轻松</span></div></a>
+        <a class="game-card" href="Taiji.html" data-key="太极 动画 实验"><div class="game-top"><div class="emoji">☯️</div><span class="badge lab">LAB</span></div><h3>太极小实验</h3><p>偏视觉和动效的小页面，适合放松点开看看。</p><div class="meta"><span class="pill">动效</span><span class="pill">视觉</span></div></a>
+      </div>
+    </section>
+
+    <div class="empty" id="emptyState">
+      <h3>没有找到匹配内容</h3>
+      <p>试试换个关键词，比如“射击”、“棋盘”、“数独”、“节奏”、“贪吃蛇”。</p>
+    </div>
+  </main>
+
+  <script>
+    const cards = [...document.querySelectorAll('.game-card')];
+    const searchInput = document.getElementById('searchInput');
+    const emptyState = document.getElementById('emptyState');
+    const randomBtn = document.getElementById('randomBtn');
+
+    function filterCards() {
+      const key = searchInput.value.trim().toLowerCase();
+      let shown = 0;
+      cards.forEach(card => {
+        const text = (card.dataset.key || '').toLowerCase();
+        const matched = !key || text.includes(key);
+        card.classList.toggle('hidden', !matched);
+        if (matched) shown += 1;
+      });
+      emptyState.style.display = shown ? 'none' : 'block';
+    }
+
+    searchInput.addEventListener('input', filterCards);
+    document.getElementById('clearBtn').addEventListener('click', () => { searchInput.value = ''; filterCards(); });
+    randomBtn.addEventListener('click', () => {
+      const visible = cards.filter(card => !card.classList.contains('hidden'));
+      const pool = visible.length ? visible : cards;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      window.location.href = pick.getAttribute('href');
+    });
+
+    filterCards();
+  </script>
+</body>
+</html>

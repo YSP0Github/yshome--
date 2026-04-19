@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>抓娃娃机｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #8f7cff; --accent-2: #ff9edc; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">🧸 手写新作 · 抓取时机</div>
+      <h1>抓娃娃机</h1>
+      <p class="lead">爪子会来回移动，你要在合适时机让它下降，抓住奖品再带回出口。每种玩具有不同分值，也会有故意扰乱节奏的小陷阱。</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">开始营业</button>
+        <button class="ghost-btn" id="dropBtn" type="button">放爪 / 收爪</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>得分</span><strong id="scoreEl">0</strong></div>
+        <div class="stat"><span>剩余时间</span><strong id="timeEl">60</strong></div>
+        <div class="stat"><span>抓取次数</span><strong id="grabEl">0</strong></div>
+        <div class="stat"><span>最佳分数</span><strong id="bestEl">0</strong></div>
+      </div>
+      <ul class="tips">
+        <li>空格或按钮都可以控制爪子下落和提前回收。</li>
+        <li>玩偶分值高，礼盒次之，石头会白白浪费一次抓取。</li>
+        <li>爪子必须把东西带回上方出口才会结算得分。</li>
+      </ul>
+      <p class="meta-line" id="messageEl">先练位置判断，别急着去追高分玩偶。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-shell">
+        <div class="legend">
+          <span class="legend-item">🧸 +30</span>
+          <span class="legend-item">🎁 +18</span>
+          <span class="legend-item">🪨 0 分</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:12px;">
+          <canvas id="game" width="760" height="460"></canvas>
+        </div>
+      </div>
+      <div class="message" id="statusEl">点击“开始营业”，等爪子来回移动后再放下。</div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreEl');
+    const timeEl = document.getElementById('timeEl');
+    const grabEl = document.getElementById('grabEl');
+    const bestEl = document.getElementById('bestEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const storageKey = 'funhome-best-claw-crane';
+    let best = Number(localStorage.getItem(storageKey) || 0);
+    bestEl.textContent = best;
+
+    const state = { running: false, over: false, time: 60, score: 0, grabs: 0, last: 0, clawState: 'idle' };
+    const claw = { x: 80, y: 44, dir: 1, speed: 2.2, target: null };
+    let prizes = [];
+
+    function spawnPrizes() {
+      prizes = [];
+      for (let i = 0; i < 10; i += 1) {
+        const kind = i < 4 ? 'bear' : i < 8 ? 'gift' : 'rock';
+        prizes.push({ kind, x: 110 + (i % 5) * 120 + Math.random() * 18, y: 330 + Math.floor(i / 5) * 70 });
+      }
+    }
+
+    function reset() {
+      state.running = false;
+      state.over = false;
+      state.time = 60;
+      state.score = 0;
+      state.grabs = 0;
+      state.clawState = 'idle';
+      claw.x = 80;
+      claw.y = 44;
+      claw.dir = 1;
+      claw.target = null;
+      spawnPrizes();
+      updateHud();
+      statusEl.textContent = '抓娃娃机待命。';
+      messageEl.textContent = '先练准度，再去追高分奖品。';
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      timeEl.textContent = Math.ceil(state.time);
+      grabEl.textContent = state.grabs;
+      bestEl.textContent = best;
+    }
+
+    function triggerClaw() {
+      if (state.over) return;
+      if (!state.running) {
+        state.running = true;
+        statusEl.textContent = '营业开始。';
+        return;
+      }
+      if (state.clawState === 'idle') {
+        state.clawState = 'down';
+        state.grabs += 1;
+      } else if (state.clawState === 'down') {
+        state.clawState = 'up';
+      }
+      updateHud();
+    }
+
+    function resolvePrize(target) {
+      if (!target) return;
+      if (target.kind === 'bear') state.score += 30;
+      if (target.kind === 'gift') state.score += 18;
+      if (target.kind === 'rock') state.score += 0;
+      if (target.kind === 'rock') messageEl.textContent = '抓到石头了，这杆白忙。';
+      else messageEl.textContent = `抓到了${target.kind === 'bear' ? '玩偶' : '礼盒'}！`;
+      if (state.score > best) {
+        best = state.score;
+        localStorage.setItem(storageKey, String(best));
+      }
+      prizes = prizes.filter(item => item !== target);
+      claw.target = null;
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      state.time -= dt;
+      if (state.time <= 0) {
+        state.time = 0;
+        state.running = false;
+        state.over = true;
+        statusEl.textContent = '打烊了，本局结束。';
+      }
+
+      if (state.clawState === 'idle') {
+        claw.x += claw.dir * claw.speed * 120 * dt;
+        if (claw.x < 80 || claw.x > canvas.width - 80) claw.dir *= -1;
+      } else if (state.clawState === 'down') {
+        claw.y += 280 * dt;
+        if (!claw.target) {
+          const caught = prizes.find(item => Math.abs(item.x - claw.x) < 26 && Math.abs(item.y - claw.y) < 26);
+          if (caught) claw.target = caught;
+        }
+        if (claw.y >= canvas.height - 54) state.clawState = 'up';
+      } else if (state.clawState === 'up') {
+        claw.y -= 320 * dt;
+        if (claw.y <= 44) {
+          claw.y = 44;
+          state.clawState = 'idle';
+          resolvePrize(claw.target);
+        }
+      }
+
+      if (claw.target) {
+        claw.target.x = claw.x;
+        claw.target.y = claw.y + 38;
+      }
+      updateHud();
+    }
+
+    function drawPrize(prize) {
+      ctx.save();
+      ctx.translate(prize.x, prize.y);
+      if (prize.kind === 'bear') {
+        ctx.fillStyle = '#ffb5d7';
+        ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-14, -16, 9, 0, Math.PI * 2); ctx.arc(14, -16, 9, 0, Math.PI * 2); ctx.fill();
+      } else if (prize.kind === 'gift') {
+        ctx.fillStyle = '#8ce1ff';
+        ctx.fillRect(-18, -18, 36, 36);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-4, -18, 8, 36);
+        ctx.fillRect(-18, -4, 36, 8);
+      } else {
+        ctx.fillStyle = '#8d7d72';
+        ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#17192b');
+      bg.addColorStop(1, '#251536');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(0, 72, canvas.width, 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(0, 300, canvas.width, 160);
+      prizes.filter(item => item !== claw.target).forEach(drawPrize);
+
+      ctx.strokeStyle = '#eef6ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(claw.x, 20);
+      ctx.lineTo(claw.x, claw.y);
+      ctx.stroke();
+      ctx.strokeStyle = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(claw.x - 18, claw.y);
+      ctx.lineTo(claw.x - 6, claw.y + 16);
+      ctx.lineTo(claw.x, claw.y + 10);
+      ctx.moveTo(claw.x + 18, claw.y);
+      ctx.lineTo(claw.x + 6, claw.y + 16);
+      ctx.lineTo(claw.x, claw.y + 10);
+      ctx.stroke();
+
+      if (claw.target) drawPrize(claw.target);
+
+      if (!state.running) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px Segoe UI';
+        ctx.fillText(state.over ? '营业结束' : '准备开抓', canvas.width / 2, canvas.height / 2 - 12);
+        ctx.font = '17px Segoe UI';
+        ctx.fillText('点击开始后，用空格或按钮控制爪子', canvas.width / 2, canvas.height / 2 + 18);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.032, (ts - state.last) / 1000 || 0.016);
+      state.last = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (state.over) reset();
+      triggerClaw();
+    });
+    document.getElementById('dropBtn').addEventListener('click', triggerClaw);
+    document.addEventListener('keydown', event => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        triggerClaw();
+      }
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

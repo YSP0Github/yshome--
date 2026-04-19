@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仓库推箱子｜趣味屋</title>
+  <link rel="stylesheet" href="handmade-game.css">
+  <style>
+    :root { --accent: #f0a84f; --accent-2: #ffd97c; }
+    .soko-shell {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .soko-board {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .tile {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.45rem;
+      user-select: none;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .wall { background: linear-gradient(180deg, #3f4b68 0%, #21283b 100%); }
+    .floor { background: rgba(255,255,255,0.06); }
+    .goal { background: rgba(255,212,109,0.18); box-shadow: inset 0 0 0 2px rgba(255,212,109,0.36); }
+    .box { background: linear-gradient(180deg, #d89a53 0%, #9b6232 100%); }
+    .box-goal { background: linear-gradient(180deg, #ffe6ab 0%, #d1a241 100%); box-shadow: 0 0 0 2px rgba(255,255,255,0.16) inset; }
+    .player { background: linear-gradient(180deg, #8fe0ff 0%, #4f7bff 100%); }
+    .player-goal { background: linear-gradient(180deg, #aafad6 0%, #2dd4bf 100%); }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.02rem;
+    }
+    .selector-card,
+    .record-card {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .selector-card .input {
+      margin-top: 12px;
+    }
+    .record-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .record-chip {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .record-chip span {
+      display: block;
+      color: #9bb0cf;
+      font-size: .84rem;
+    }
+    .record-chip strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+    .ranking-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .ranking-item {
+      display: grid;
+      grid-template-columns: 34px minmax(0,1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .ranking-item.top {
+      background: linear-gradient(135deg, rgba(240,168,79,0.16), rgba(255,255,255,0.04));
+      border-color: rgba(240,168,79,0.35);
+    }
+    .ranking-rank {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.08);
+      font-weight: 700;
+    }
+    .ranking-body strong {
+      display: block;
+      font-size: .96rem;
+    }
+    .ranking-meta {
+      margin-top: 3px;
+      color: #9bb0cf;
+      font-size: .82rem;
+    }
+    .ranking-score {
+      text-align: right;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .ranking-score span {
+      display: block;
+      color: #9bb0cf;
+      font-size: .82rem;
+      font-weight: 400;
+    }
+    .ranking-empty {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed rgba(255,255,255,0.12);
+      color: #9bb0cf;
+    }
+    .legend-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .legend-card { padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); }
+    .celebration-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 3;
+    }
+    .confetti {
+      position: absolute;
+      top: -14px;
+      width: 10px;
+      height: 20px;
+      border-radius: 6px;
+      opacity: 0;
+      transform: translate3d(0, -24px, 0) rotate(0deg);
+      animation: confettiDrop 1.2s ease-out forwards;
+    }
+    .victory-banner {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      z-index: 4;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(240,168,79,0.95), rgba(255,217,124,0.9));
+      color: #1a2030;
+      font-weight: 900;
+      box-shadow: 0 14px 40px rgba(240,168,79,0.28);
+      opacity: 0;
+      transform: translate(-50%, -20px) scale(0.92);
+      transition: opacity .28s ease, transform .35s ease;
+    }
+    .victory-banner.show {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+    .board-shell.is-cleared {
+      box-shadow: 0 0 0 1px rgba(255,215,128,.45), 0 24px 60px rgba(240,168,79,0.18);
+    }
+    .board-shell.is-cleared .soko-board {
+      animation: boardWin .8s ease;
+    }
+    .board-shell.is-cleared .tile {
+      animation: tileCelebrate .72s ease;
+    }
+    .btn:disabled,
+    .ghost-btn:disabled,
+    .mini-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      pointer-events: none;
+      filter: none;
+      transform: none;
+    }
+    @keyframes confettiDrop {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -24px, 0) rotate(0deg);
+      }
+      15% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate3d(var(--drift, 0px), 280px, 0) rotate(var(--spin, 180deg));
+      }
+    }
+    @keyframes boardWin {
+      0% { transform: scale(.98); }
+      45% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    @keyframes tileCelebrate {
+      0% { transform: scale(1); }
+      40% { transform: translateY(-4px) scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    @media (max-width: 760px) {
+      .soko-shell { min-height: auto; }
+      .ranking-item {
+        grid-template-columns: 30px minmax(0,1fr);
+      }
+      .ranking-score {
+        grid-column: 2;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div class="badge">📦 手写新作 · 空间谜题</div>
+      <h1>仓库推箱子</h1>
+      <p class="lead">真正耐玩的老派谜题之一。你只能推箱子，不能拉箱子，所以每一步都要预留退路。关卡不多，但每关都不是瞎推能过的。</p>
+      <div class="actions">
+        <button class="btn" id="restartBtn" type="button">重开本关</button>
+        <button class="ghost-btn" id="undoBtn" type="button">撤销一步</button>
+        <button class="ghost-btn" id="prevBtn" type="button">上一关</button>
+        <button class="ghost-btn" id="nextBtn" type="button">下一关</button>
+        <a class="ghost-btn" href="funhome.html#library">← 返回趣味屋</a>
+      </div>
+      <div class="selector-card">
+        <div class="section-head">
+          <h2>关卡选择器</h2>
+          <span class="pill" id="levelCountEl">4 关</span>
+        </div>
+        <select class="input" id="levelSelect" aria-label="选择推箱子关卡"></select>
+        <p class="meta-line" id="levelHintEl" style="margin:10px 0 0;">先选一关开始练手。</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><span>当前关卡</span><strong id="levelEl">1</strong></div>
+        <div class="stat"><span>步数</span><strong id="movesEl">0</strong></div>
+        <div class="stat"><span>推箱次数</span><strong id="pushEl">0</strong></div>
+        <div class="stat"><span>完成进度</span><strong id="progressEl">0 / 4</strong></div>
+      </div>
+      <div class="record-card">
+        <div class="section-head">
+          <h2>本地纪录榜</h2>
+          <span class="pill" id="recordScopeEl">第 1 关</span>
+        </div>
+        <div class="record-summary">
+          <div class="record-chip"><span>最佳步数</span><strong id="bestMovesEl">—</strong></div>
+          <div class="record-chip"><span>最少推箱</span><strong id="bestPushRecordEl">—</strong></div>
+          <div class="record-chip"><span>通关次数</span><strong id="clearCountEl">0</strong></div>
+        </div>
+        <div class="ranking-list" id="leaderboardEl"></div>
+      </div>
+      <ul class="tips">
+        <li>方向键 / WASD 控制移动。</li>
+        <li>按 Z 可以撤销上一步，适合修正试探性推箱。</li>
+        <li>箱子被推进死角通常就废了，所以不要只看眼前。</li>
+        <li>如果卡住了，直接重开这关比硬耗更有效。</li>
+      </ul>
+      <div class="legend-grid">
+        <div class="legend-card">🧍 你自己</div>
+        <div class="legend-card">📦 箱子</div>
+        <div class="legend-card">✨ 目标点</div>
+        <div class="legend-card">🧱 墙体</div>
+      </div>
+      <p class="meta-line" id="messageEl" style="margin-top:14px;">先观察箱子和目标点的相对位置。</p>
+    </aside>
+
+    <section class="stage">
+      <div class="board-shell center soko-shell" id="boardShell">
+        <div class="celebration-layer" id="celebrationEl" aria-hidden="true"></div>
+        <div class="victory-banner" id="victoryBanner">通关！</div>
+        <div class="soko-board" id="board"></div>
+      </div>
+      <div class="message" id="statusEl">用方向键推箱子，把所有箱子都送上目标点。</div>
+    </section>
+  </main>
+
+  <script>
+    const levels = [
+      [
+        '########',
+        '#  .   #',
+        '#  $$  #',
+        '#  @.  #',
+        '#      #',
+        '########'
+      ],
+      [
+        '########',
+        '#  .   #',
+        '#  $   #',
+        '#  ##  #',
+        '#  $ . #',
+        '#  @   #',
+        '########'
+      ],
+      [
+        '##########',
+        '#   .    #',
+        '# $$##   #',
+        '# @  ## .#',
+        '#   $    #',
+        '#     .  #',
+        '##########'
+      ],
+      [
+        '###########',
+        '#   .     #',
+        '# ### $$  #',
+        '# # . @   #',
+        '# # $$ .  #',
+        '#     .   #',
+        '###########'
+      ]
+    ];
+
+    const levelMeta = [
+      { name: '热身搬运', hint: '两只箱子，两处目标，先熟悉推箱子的节奏。' },
+      { name: '转角试压', hint: '中间的墙体会限制回旋空间，先给第二只箱子留路。' },
+      { name: '分流仓库', hint: '三只箱子的先后顺序很关键，别把主通道提前堵死。' },
+      { name: '四箱试炼', hint: '目标点更分散，优先处理靠墙又难回头的箱子。' }
+    ];
+
+    const RECORDS_KEY = 'funhome:sokoban:records:v2';
+    const boardEl = document.getElementById('board');
+    const boardShellEl = document.getElementById('boardShell');
+    const celebrationEl = document.getElementById('celebrationEl');
+    const victoryBannerEl = document.getElementById('victoryBanner');
+    const levelEl = document.getElementById('levelEl');
+    const movesEl = document.getElementById('movesEl');
+    const pushEl = document.getElementById('pushEl');
+    const progressEl = document.getElementById('progressEl');
+    const statusEl = document.getElementById('statusEl');
+    const messageEl = document.getElementById('messageEl');
+    const undoBtn = document.getElementById('undoBtn');
+    const levelSelect = document.getElementById('levelSelect');
+    const levelCountEl = document.getElementById('levelCountEl');
+    const levelHintEl = document.getElementById('levelHintEl');
+    const recordScopeEl = document.getElementById('recordScopeEl');
+    const bestMovesEl = document.getElementById('bestMovesEl');
+    const bestPushRecordEl = document.getElementById('bestPushRecordEl');
+    const clearCountEl = document.getElementById('clearCountEl');
+    const leaderboardEl = document.getElementById('leaderboardEl');
+
+    let levelIndex = 0;
+    let board = [];
+    let width = 0;
+    let height = 0;
+    let moves = 0;
+    let pushes = 0;
+    let autoNextTimer = null;
+    let celebrationTimer = null;
+    let historyStack = [];
+    let records = loadRecords();
+
+    function cloneLevel(index) {
+      return levels[index].map(row => row.split(''));
+    }
+
+    function cloneBoard(sourceBoard = board) {
+      return sourceBoard.map(row => [...row]);
+    }
+
+    function getLevelLabel(index) {
+      const meta = levelMeta[index];
+      return meta?.name ? `第 ${index + 1} 关 · ${meta.name}` : `第 ${index + 1} 关`;
+    }
+
+    function getLevelHint(index) {
+      return levelMeta[index]?.hint || '观察箱子与目标点的相对位置，再决定第一步。';
+    }
+
+    function clearAutoNext() {
+      if (autoNextTimer) {
+        clearTimeout(autoNextTimer);
+        autoNextTimer = null;
+      }
+    }
+
+    function clearCelebration() {
+      if (celebrationTimer) {
+        clearTimeout(celebrationTimer);
+        celebrationTimer = null;
+      }
+      boardShellEl.classList.remove('is-cleared');
+      victoryBannerEl.classList.remove('show');
+      celebrationEl.innerHTML = '';
+    }
+
+    function populateLevelSelect() {
+      levelSelect.innerHTML = '';
+      levels.forEach((_, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = getLevelLabel(index);
+        levelSelect.appendChild(option);
+      });
+      levelCountEl.textContent = `${levels.length} 关`;
+    }
+
+    function loadRecords() {
+      if (typeof localStorage === 'undefined') return {};
+      try {
+        const raw = JSON.parse(localStorage.getItem(RECORDS_KEY) || '{}');
+        const normalized = {};
+        for (let index = 0; index < levels.length; index += 1) {
+          const bucket = raw[String(index)] ?? raw[index];
+          if (Array.isArray(bucket)) {
+            normalized[index] = {
+              clears: bucket.length,
+              attempts: bucket
+                .map(item => ({
+                  moves: Number(item.moves),
+                  pushes: Number(item.pushes),
+                  playedAt: item.playedAt || new Date().toISOString()
+                }))
+                .filter(item => Number.isFinite(item.moves) && Number.isFinite(item.pushes))
+            };
+          } else {
+            normalized[index] = {
+              clears: Number(bucket?.clears) || 0,
+              attempts: Array.isArray(bucket?.attempts)
+                ? bucket.attempts
+                  .map(item => ({
+                    moves: Number(item.moves),
+                    pushes: Number(item.pushes),
+                    playedAt: item.playedAt || new Date().toISOString()
+                  }))
+                  .filter(item => Number.isFinite(item.moves) && Number.isFinite(item.pushes))
+                : []
+            };
+          }
+        }
+        return normalized;
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveRecords() {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+    }
+
+    function getRecordBucket(index) {
+      const key = String(index);
+      if (!records[key]) {
+        records[key] = { clears: 0, attempts: [] };
+      }
+      return records[key];
+    }
+
+    function sortAttempts(attempts) {
+      return [...attempts].sort((a, b) => (
+        a.moves - b.moves ||
+        a.pushes - b.pushes ||
+        new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime()
+      ));
+    }
+
+    function formatPlayedAt(playedAt) {
+      try {
+        return new Date(playedAt).toLocaleString('zh-CN', {
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      } catch (error) {
+        return '刚刚';
+      }
+    }
+
+    function updateRecordPanel() {
+      const bucket = getRecordBucket(levelIndex);
+      bucket.attempts = sortAttempts(bucket.attempts).slice(0, 5);
+      const attempts = bucket.attempts;
+      const best = attempts[0];
+
+      recordScopeEl.textContent = getLevelLabel(levelIndex);
+      bestMovesEl.textContent = best ? best.moves : '—';
+      bestPushRecordEl.textContent = best ? best.pushes : '—';
+      clearCountEl.textContent = bucket.clears;
+      leaderboardEl.innerHTML = '';
+
+      if (!attempts.length) {
+        const empty = document.createElement('div');
+        empty.className = 'ranking-empty';
+        empty.textContent = '还没有通关纪录，先把这一关解出来吧。';
+        leaderboardEl.appendChild(empty);
+        return;
+      }
+
+      attempts.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = `ranking-item${index === 0 ? ' top' : ''}`;
+        row.innerHTML = `
+          <div class="ranking-rank">${index + 1}</div>
+          <div class="ranking-body">
+            <strong>${item.moves} 步 · ${item.pushes} 推</strong>
+            <div class="ranking-meta">${formatPlayedAt(item.playedAt)}</div>
+          </div>
+          <div class="ranking-score">
+            ${index === 0 ? '当前最佳' : '优秀成绩'}
+            <span>${index === 0 ? '继续挑战更少步数' : '再压缩路线试试'}</span>
+          </div>
+        `;
+        leaderboardEl.appendChild(row);
+      });
+    }
+
+    function registerWin() {
+      const bucket = getRecordBucket(levelIndex);
+      bucket.clears += 1;
+
+      if (!bucket.attempts.some(item => item.moves === moves && item.pushes === pushes)) {
+        bucket.attempts.push({
+          moves,
+          pushes,
+          playedAt: new Date().toISOString()
+        });
+      }
+
+      bucket.attempts = sortAttempts(bucket.attempts).slice(0, 5);
+      saveRecords();
+      updateRecordPanel();
+    }
+
+    function loadLevel(index) {
+      clearAutoNext();
+      clearCelebration();
+      levelIndex = (index + levels.length) % levels.length;
+      board = cloneLevel(levelIndex);
+      height = board.length;
+      width = board[0].length;
+      moves = 0;
+      pushes = 0;
+      historyStack = [];
+      levelSelect.value = String(levelIndex);
+      levelHintEl.textContent = getLevelHint(levelIndex);
+      statusEl.textContent = `${getLevelLabel(levelIndex)} 开始。`;
+      messageEl.textContent = getLevelHint(levelIndex);
+      updateRecordPanel();
+      render();
+    }
+
+    function findPlayer() {
+      for (let r = 0; r < height; r += 1) {
+        for (let c = 0; c < width; c += 1) {
+          if (board[r][c] === '@' || board[r][c] === '+') return { r, c };
+        }
+      }
+      return null;
+    }
+
+    function isSolved() {
+      return !board.flat().some(cell => cell === '.' || cell === '+');
+    }
+
+    function getProgress() {
+      const totalGoals = board.flat().filter(cell => cell === '.' || cell === '+' || cell === '*').length;
+      const boxesOnGoal = board.flat().filter(cell => cell === '*').length;
+      return { totalGoals, boxesOnGoal };
+    }
+
+    function snapshotState() {
+      return {
+        board: cloneBoard(),
+        moves,
+        pushes
+      };
+    }
+
+    function updateUndoState() {
+      undoBtn.disabled = historyStack.length === 0;
+    }
+
+    function restoreState(snapshot) {
+      board = cloneBoard(snapshot.board);
+      height = board.length;
+      width = board[0].length;
+      moves = snapshot.moves;
+      pushes = snapshot.pushes;
+    }
+
+    function undoMove() {
+      clearAutoNext();
+      clearCelebration();
+      const snapshot = historyStack.pop();
+      if (!snapshot) {
+        statusEl.textContent = `${getLevelLabel(levelIndex)} 没有可撤销的步骤。`;
+        messageEl.textContent = '已经回到本关起点了。';
+        updateUndoState();
+        return;
+      }
+      restoreState(snapshot);
+      statusEl.textContent = `已撤销一步，回到 ${getLevelLabel(levelIndex)}。`;
+      messageEl.textContent = '路线可以反悔，死角不行。';
+      render();
+    }
+
+    function launchCelebration() {
+      clearCelebration();
+      const colors = ['#ffd166', '#7c5cff', '#2dd4bf', '#ff7aa2', '#8fe0ff', '#f59e0b'];
+      boardShellEl.classList.add('is-cleared');
+      victoryBannerEl.textContent = levelIndex === levels.length - 1 ? '全部通关！' : '过关！';
+      victoryBannerEl.classList.add('show');
+
+      for (let index = 0; index < 22; index += 1) {
+        const confetti = document.createElement('span');
+        confetti.className = 'confetti';
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.background = colors[index % colors.length];
+        confetti.style.setProperty('--drift', `${(Math.random() - 0.5) * 160}px`);
+        confetti.style.setProperty('--spin', `${(Math.random() - 0.5) * 300}deg`);
+        confetti.style.animationDelay = `${(Math.random() * 0.18).toFixed(2)}s`;
+        confetti.style.animationDuration = `${(1 + Math.random() * 0.45).toFixed(2)}s`;
+        celebrationEl.appendChild(confetti);
+      }
+
+      celebrationTimer = setTimeout(() => {
+        clearCelebration();
+      }, 1400);
+    }
+
+    function scheduleAutoNext() {
+      if (levelIndex >= levels.length - 1) return;
+      clearAutoNext();
+      autoNextTimer = setTimeout(() => {
+        autoNextTimer = null;
+        loadLevel(levelIndex + 1);
+      }, 1200);
+    }
+
+    function tryMove(dr, dc) {
+      if (isSolved()) return;
+      const player = findPlayer();
+      if (!player) return;
+
+      const nr = player.r + dr;
+      const nc = player.c + dc;
+      const beyondR = nr + dr;
+      const beyondC = nc + dc;
+      const next = board[nr]?.[nc];
+      const current = board[player.r][player.c];
+      if (!next || next === '#') return;
+
+      const leaveCell = current === '+' ? '.' : ' ';
+      const snapshot = snapshotState();
+
+      if (next === ' ' || next === '.') {
+        historyStack.push(snapshot);
+        board[player.r][player.c] = leaveCell;
+        board[nr][nc] = next === '.' ? '+' : '@';
+        moves += 1;
+      } else if (next === '$' || next === '*') {
+        const beyond = board[beyondR]?.[beyondC];
+        if (!beyond || beyond === '#' || beyond === '$' || beyond === '*') return;
+        historyStack.push(snapshot);
+        board[player.r][player.c] = leaveCell;
+        board[beyondR][beyondC] = beyond === '.' ? '*' : '$';
+        board[nr][nc] = next === '*' ? '+' : '@';
+        moves += 1;
+        pushes += 1;
+      } else {
+        return;
+      }
+
+      if (historyStack.length > 240) {
+        historyStack.shift();
+      }
+
+      if (isSolved()) {
+        registerWin();
+        launchCelebration();
+        statusEl.textContent = `${getLevelLabel(levelIndex)} 通关！`;
+        messageEl.textContent = levelIndex === levels.length - 1
+          ? '全部关卡都打通了，成绩已经写入本地纪录榜。'
+          : '成绩已写入本地纪录榜，稍后自动进入下一关。';
+        scheduleAutoNext();
+      }
+
+      render();
+    }
+
+    function render() {
+      boardEl.style.gridTemplateColumns = `repeat(${width}, 48px)`;
+      boardEl.innerHTML = '';
+      board.forEach(row => {
+        row.forEach(cell => {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          if (cell === '#') tile.classList.add('wall');
+          if (cell === ' ') tile.classList.add('floor');
+          if (cell === '.') tile.classList.add('goal');
+          if (cell === '$') tile.classList.add('box');
+          if (cell === '*') tile.classList.add('box-goal');
+          if (cell === '@') tile.classList.add('player');
+          if (cell === '+') tile.classList.add('player-goal');
+
+          if (cell === '#') tile.textContent = '🧱';
+          if (cell === '$' || cell === '*') tile.textContent = '📦';
+          if (cell === '@' || cell === '+') tile.textContent = '🧍';
+          if (cell === '.') tile.textContent = '✨';
+          boardEl.appendChild(tile);
+        });
+      });
+
+      const progress = getProgress();
+      levelEl.textContent = levelIndex + 1;
+      movesEl.textContent = moves;
+      pushEl.textContent = pushes;
+      progressEl.textContent = `${progress.boxesOnGoal} / ${progress.totalGoals}`;
+      levelSelect.value = String(levelIndex);
+      levelHintEl.textContent = getLevelHint(levelIndex);
+      updateUndoState();
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const tagName = event.target?.tagName;
+      if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') return;
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        undoMove();
+        return;
+      }
+
+      if (['z', 'Z'].includes(event.key)) {
+        event.preventDefault();
+        undoMove();
+        return;
+      }
+
+      if (isSolved()) return;
+
+      if (['ArrowUp', 'w', 'W'].includes(event.key)) {
+        event.preventDefault();
+        tryMove(-1, 0);
+      }
+      if (['ArrowDown', 's', 'S'].includes(event.key)) {
+        event.preventDefault();
+        tryMove(1, 0);
+      }
+      if (['ArrowLeft', 'a', 'A'].includes(event.key)) {
+        event.preventDefault();
+        tryMove(0, -1);
+      }
+      if (['ArrowRight', 'd', 'D'].includes(event.key)) {
+        event.preventDefault();
+        tryMove(0, 1);
+      }
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', () => loadLevel(levelIndex));
+    document.getElementById('prevBtn').addEventListener('click', () => loadLevel(levelIndex - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => loadLevel(levelIndex + 1));
+    undoBtn.addEventListener('click', undoMove);
+    levelSelect.addEventListener('change', (event) => loadLevel(Number(event.target.value)));
+
+    populateLevelSelect();
+    loadLevel(0);
+  </script>
+</body>
+</html>
