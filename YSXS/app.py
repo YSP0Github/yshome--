@@ -76,6 +76,7 @@ from .services.morning_report import (
     summarize_paper_with_ai,
     today_cn_date,
     trigger_due_morning_report_in_background,
+    trigger_morning_report_generation_in_background,
 )
 from .services.security import admin_required, super_admin_required
 from .blueprints.admin import admin_bp
@@ -1318,6 +1319,17 @@ def _ensure_due_morning_report():
     if not current_user.is_authenticated:
         return
     if getattr(g, '_morning_report_due_checked', False):
+        return
+    if request.endpoint in {
+        'morning_report_home',
+        'morning_report_settings_view',
+        'morning_report_run_now',
+        'morning_report_status',
+        'morning_report_mark_seen',
+        'morning_report_summarize',
+        'morning_report_import',
+    }:
+        g._morning_report_due_checked = True
         return
     try:
         trigger_due_morning_report_in_background(
@@ -4016,14 +4028,19 @@ def literature_search_import():
 @login_required
 def morning_report_run_now():
     try:
-        run = generate_morning_report_for_user(current_user.id, trigger_source='manual', force=True)
+        triggered = trigger_morning_report_generation_in_background(
+            current_app._get_current_object(),
+            current_user.id,
+            trigger_source='manual',
+            force=True,
+        )
     except Exception as exc:
         current_app.logger.exception("手动生成晨报失败: %s", exc)
         return jsonify({'error': str(exc) or '生成晨报失败'}), 500
     return jsonify({
-        'message': '今日晨报已更新。',
-        'report_date': run.report_date,
-        'paper_count': run.paper_count,
+        'message': '已开始后台搜索晨报，请稍等片刻自动刷新。',
+        'status': 'running',
+        'triggered': bool(triggered),
         'redirect_url': url_for('morning_report_home'),
     })
 

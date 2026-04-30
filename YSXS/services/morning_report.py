@@ -36,6 +36,7 @@ CROSSREF_WORKS_URL = "https://api.crossref.org/works"
 ARXIV_API_URL = "https://export.arxiv.org/api/query"
 NASA_ADS_SEARCH_URL = "https://api.adsabs.harvard.edu/v1/search/query"
 CN_TZ = ZoneInfo("Asia/Shanghai")
+RUNNING_STALE_MINUTES = 20
 SUPPORTED_SOURCES = {
     "openalex": "OpenAlex",
     "crossref": "Crossref",
@@ -591,6 +592,31 @@ def ensure_morning_report_settings(user_id: int, *, commit: bool = True) -> Morn
     return settings
 
 
+
+
+def _is_stale_running_run(run: MorningReportRun | None) -> bool:
+    if not run or run.status != 'running':
+        return False
+    reference_time = run.updated_at or run.generated_at
+    if not reference_time:
+        return False
+    return (utc_now() - reference_time) >= timedelta(minutes=RUNNING_STALE_MINUTES)
+
+
+def _mark_stale_running_run_failed(run: MorningReportRun | None, settings: MorningReportSettings | None = None) -> bool:
+    if not _is_stale_running_run(run):
+        return False
+    message = f'晨报生成已超过 {RUNNING_STALE_MINUTES} 分钟未完成，系统已自动重置，请重新生成。'
+    if run:
+        run.status = 'failed'
+        run.last_error = message
+    if settings:
+        settings.last_error = message
+        settings.last_run_finished_at = utc_now()
+    db.session.commit()
+    _get_logger().warning('检测到用户 %s 的晨报任务长时间处于 running，已自动标记为 failed。', getattr(run, 'user_id', None))
+    return True
+
 def ensure_due_morning_report_for_user(user_id: int) -> MorningReportRun | None:
     settings = ensure_morning_report_settings(user_id)
     if not settings.enabled or not settings.auto_run_enabled:
@@ -600,7 +626,11 @@ def ensure_due_morning_report_for_user(user_id: int) -> MorningReportRun | None:
         return MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
 
     run = MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
+    if _mark_stale_running_run_failed(run, settings):
+        run = MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
     if run and run.status == 'ready' and run.paper_count > 0:
+        return run
+    if run and run.status == 'running':
         return run
     if run and run.status == 'failed' and run.updated_at and (utc_now() - run.updated_at) < timedelta(minutes=30):
         return run
@@ -623,6 +653,28 @@ def trigger_due_morning_report_in_background(app: Flask, user_id: int) -> bool:
     return True
 
 
+def trigger_morning_report_generation_in_background(
+    app: Flask,
+    user_id: int,
+    *,
+    trigger_source: str = 'manual',
+    force: bool = True,
+) -> bool:
+    with _on_demand_generation_lock:
+        if user_id in _on_demand_generation_users:
+            return False
+        _on_demand_generation_users.add(user_id)
+
+    thread = threading.Thread(
+        target=_background_generate_report_worker,
+        args=(app, user_id, trigger_source, force),
+        name=f"ysxs-morning-report-manual-{user_id}",
+        daemon=True,
+    )
+    thread.start()
+    return True
+
+
 def _background_due_report_worker(app: Flask, user_id: int) -> None:
     try:
         with app.app_context():
@@ -634,8 +686,34 @@ def _background_due_report_worker(app: Flask, user_id: int) -> None:
             _on_demand_generation_users.discard(user_id)
 
 
+def _background_generate_report_worker(
+    app: Flask,
+    user_id: int,
+    trigger_source: str,
+    force: bool,
+) -> None:
+    try:
+        with app.app_context():
+            generate_morning_report_for_user(
+                user_id,
+                trigger_source=trigger_source,
+                force=force,
+            )
+    except Exception as exc:
+        app.logger.warning("后台手动生成今日晨报失败(user=%s): %s", user_id, exc)
+    finally:
+        with _on_demand_generation_lock:
+            _on_demand_generation_users.discard(user_id)
+
+
 def get_today_morning_report(user_id: int) -> MorningReportRun | None:
-    return MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
+    run = MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
+    if not run:
+        return None
+    settings = MorningReportSettings.query.filter_by(user_id=user_id).first()
+    if _mark_stale_running_run_failed(run, settings):
+        run = MorningReportRun.query.filter_by(user_id=user_id, report_date=today_cn_date()).first()
+    return run
 
 
 def is_morning_report_generation_running(user_id: int) -> bool:
@@ -665,7 +743,11 @@ def generate_morning_report_for_user(
     settings = ensure_morning_report_settings(user_id)
     report_date = today_cn_date()
     run = MorningReportRun.query.filter_by(user_id=user_id, report_date=report_date).first()
+    if _mark_stale_running_run_failed(run, settings):
+        run = MorningReportRun.query.filter_by(user_id=user_id, report_date=report_date).first()
     if run and run.status == 'ready' and run.paper_count > 0 and not force:
+        return run
+    if run and run.status == 'running':
         return run
 
     if run is None:
@@ -3372,6 +3454,7 @@ __all__ = [
     'ensure_morning_report_settings',
     'ensure_due_morning_report_for_user',
     'trigger_due_morning_report_in_background',
+    'trigger_morning_report_generation_in_background',
     'ai_summary_available',
     'find_existing_document_for_user',
     'get_ai_client_config',
