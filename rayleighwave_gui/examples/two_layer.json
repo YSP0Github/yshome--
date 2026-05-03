@@ -1,0 +1,62 @@
+{
+  "title": "二维面波正演 - 双层模型",
+  "grid": {
+    "nx": 301,
+    "nz": 151,
+    "dx": 1.0,
+    "dz": 1.0,
+    "dt": 0.000159,
+    "tmax": 0.8
+  },
+  "boundary": {
+    "top_boundary": "free_surface",
+    "pml_thickness": 20,
+    "pml_strength": 2.0,
+    "taper_power": 2.0
+  },
+  "source": {
+    "source_type": "vertical_force",
+    "wavelet": "ricker",
+    "frequency": 20.0,
+    "amplitude": 1.0,
+    "delay": 0.06,
+    "x": 95.0,
+    "z": 2.0
+  },
+  "receivers": {
+    "count": 48,
+    "start_x": 20.0,
+    "start_z": 2.0,
+    "spacing": 3.0
+  },
+  "model": {
+    "name": "two_layer",
+    "property_to_display": "vs",
+    "layers": [
+      {
+        "name": "Layer 1",
+        "top_depth": 0.0,
+        "dip_deg": 0.0,
+        "vp": 900.0,
+        "vs": 320.0,
+        "density": 1750.0
+      },
+      {
+        "name": "Layer 2",
+        "top_depth": 24.0,
+        "dip_deg": 0.0,
+        "vp": 1600.0,
+        "vs": 780.0,
+        "density": 2100.0
+      }
+    ]
+  },
+  "simulation": {
+    "wavefield_display": "vmag",
+    "seismogram_display": "vz",
+    "display_stride": 8,
+    "record_stride": 1,
+    "snapshot_stride": 12,
+    "store_animation_frames": true
+  }
+}

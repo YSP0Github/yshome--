@@ -1,0 +1,25 @@
+﻿app:
+  name: SeisRTMonitor
+  theme: dark
+
+realtime:
+  seedlink_server: rtserve.iris.washington.edu
+  network: IU
+  station: TATO
+  location: "00"
+  channel: BHZ
+  buffer_seconds: 3600
+  plot_window_seconds: 600
+
+plot:
+  fps: 20
+  max_points_per_trace: 20000
+  downsample: auto
+
+detector:
+  enabled: false
+  algorithm: sta_lta
+  sta_seconds: 1.0
+  lta_seconds: 20.0
+  trigger_on: 3.5
+  trigger_off: 1.0

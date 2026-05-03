@@ -1,0 +1,77 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PendulumLab - Double / Triple / Quad Pendulum</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <h1>PendulumLab</h1>
+      <p class="lead">独立摆动实验工具：演示双摆、三摆和四摆的混沌运动。拖动画布中的摆球可改变初始姿态。</p>
+
+      <section class="card">
+        <h2>模式</h2>
+        <label>
+          <span>摆的数量</span>
+          <select id="pendulumCount">
+            <option value="2">双摆 Double pendulum</option>
+            <option value="3">三摆 Triple pendulum</option>
+            <option value="4">四摆 Quadruple pendulum</option>
+          </select>
+        </label>
+        <div class="preset-grid">
+          <button class="ghost preset" data-count="2">双摆</button>
+          <button class="ghost preset" data-count="3">三摆</button>
+          <button class="ghost preset" data-count="4">四摆</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>控制</h2>
+        <div class="actions">
+          <button id="toggleRun" class="primary">暂停</button>
+          <button id="reset" class="ghost">重置</button>
+          <button id="randomize" class="ghost">随机姿态</button>
+          <button id="clearTrail" class="ghost">清除轨迹</button>
+        </div>
+        <label>
+          <span class="value-row"><span>模拟速度</span><output id="speedValue">1.0x</output></span>
+          <input id="speed" type="range" min="0.1" max="10" value="1" step="0.1" />
+        </label>
+        <label>
+          <span class="value-row"><span>重力</span><output id="gravityValue">9.8</output></span>
+          <input id="gravity" type="range" min="1" max="20" value="9.8" step="0.1" />
+        </label>
+        <label>
+          <span class="value-row"><span>空气阻尼</span><output id="dampingValue">0.015</output></span>
+          <input id="damping" type="range" min="0" max="0.08" value="0.015" step="0.001" />
+        </label>
+        <label>
+          <span class="value-row"><span>轨迹长度</span><output id="trailValue">900</output></span>
+          <input id="trailLength" type="range" min="10" max="2200" value="900" step="20" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>说明</h2>
+        <p class="hint">多重摆对初始角度极敏感。三摆或四摆中，微小差异会快速放大，轨迹表现出混沌特征。</p>
+        <p class="hint">数值方法：四阶 Runge-Kutta 积分，并在每一步求解广义坐标质量矩阵。</p>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <canvas id="pendulumCanvas"></canvas>
+      <div class="hud">
+        <div class="metric"><strong id="modeLabel">双摆</strong><span>当前模式</span></div>
+        <div class="metric"><strong id="energyLabel">--</strong><span>相对能量</span></div>
+        <div class="metric"><strong id="timeLabel">0.0s</strong><span>模拟时间</span></div>
+        <div class="metric"><strong id="fpsLabel">--</strong><span>FPS</span></div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

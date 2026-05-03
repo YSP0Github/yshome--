@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RayleighWaveLab - 面波教学实验</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <div class="brand-row">
+        <div class="brand-mark">R</div>
+        <div>
+          <h1>RayleighWaveLab</h1>
+          <p class="lead">纯前端面波教学简化版。保留 rayleighwave_gui 最核心的教学链路：层状模型 → 近地表激发 → 波场传播 → 炮集记录 → 频散曲线认知。</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>教学预设</h2>
+          <span class="chip">方案 B</span>
+        </div>
+        <label>
+          <span>模型场景</span>
+          <select id="preset">
+            <option value="lowVelocityCap">低速覆盖层</option>
+            <option value="twoLayer">双层地基</option>
+            <option value="homogeneous">均匀半空间</option>
+            <option value="dipping">缓倾界面</option>
+          </select>
+        </label>
+        <div class="preset-grid">
+          <button class="ghost preset" data-preset="lowVelocityCap">低速层</button>
+          <button class="ghost preset" data-preset="twoLayer">双层</button>
+          <button class="ghost preset" data-preset="homogeneous">均匀</button>
+          <button class="ghost preset" data-preset="dipping">倾斜</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>模型参数</h2>
+        <label>
+          <span class="value-row"><span>覆盖层厚度</span><output id="layerDepthValue">8 m</output></span>
+          <input id="layerDepth" type="range" min="4" max="24" step="1" value="8" />
+        </label>
+        <label>
+          <span class="value-row"><span>上层 Vs</span><output id="vs1Value">180 m/s</output></span>
+          <input id="vs1" type="range" min="120" max="420" step="10" value="180" />
+        </label>
+        <label>
+          <span class="value-row"><span>下层 Vs</span><output id="vs2Value">420 m/s</output></span>
+          <input id="vs2" type="range" min="220" max="900" step="10" value="420" />
+        </label>
+        <label>
+          <span class="value-row"><span>界面倾角</span><output id="slopeValue">0.0°</output></span>
+          <input id="slope" type="range" min="-8" max="8" step="0.5" value="0" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>采集与激发</h2>
+        <label>
+          <span class="value-row"><span>主频 f0</span><output id="frequencyValue">18 Hz</output></span>
+          <input id="frequency" type="range" min="6" max="36" step="1" value="18" />
+        </label>
+        <label>
+          <span class="value-row"><span>震源位置</span><output id="sourceXValue">15 m</output></span>
+          <input id="sourceX" type="range" min="8" max="40" step="1" value="15" />
+        </label>
+        <label>
+          <span class="value-row"><span>检波器数量</span><output id="receiverCountValue">24</output></span>
+          <input id="receiverCount" type="range" min="12" max="36" step="2" value="24" />
+        </label>
+        <label>
+          <span class="value-row"><span>道间距</span><output id="receiverSpacingValue">2 m</output></span>
+          <input id="receiverSpacing" type="range" min="1" max="5" step="0.5" value="2" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>实验操作</h2>
+        <div class="actions">
+          <button id="toggleRun" class="primary">暂停</button>
+          <button id="reset" class="ghost">重置模型</button>
+          <button id="fire" class="ghost">重新激发</button>
+          <button id="clearGather" class="ghost">清空炮集</button>
+          <button id="toggleBoundary" class="ghost wide">侧底边界：吸收</button>
+        </div>
+        <p class="hint">点击波场窗口也可在近地表重新激发。该模型强调“面波教学观感”，并非严格反演求解器。</p>
+      </section>
+
+      <section class="card stats-grid">
+        <div class="stat"><span>运行状态</span><strong id="runLabel">运行中</strong></div>
+        <div class="stat"><span>边界条件</span><strong id="boundaryLabel">自由表面 + 吸收层</strong></div>
+        <div class="stat"><span>估计 Rayleigh 速度</span><strong id="rayleighLabel">166 m/s</strong></div>
+        <div class="stat"><span>主导波长</span><strong id="wavelengthLabel">9.2 m</strong></div>
+        <div class="stat"><span>模拟时间</span><strong id="timeLabel">0.00 s</strong></div>
+        <div class="stat"><span>峰值振幅</span><strong id="peakLabel">0.000</strong></div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <section class="glass hero-panel">
+        <div class="section-head">
+          <div>
+            <h2>二维面波波场</h2>
+            <p>顶部自由表面增强近地表响应；颜色越亮表示位移振幅越强。浅色线为界面，白点为检波器。</p>
+          </div>
+          <div class="toolbar">
+            <span class="mini-chip" id="modelTag">低速覆盖层</span>
+            <span class="mini-chip accent" id="sourceTag">Ricker 18 Hz</span>
+          </div>
+        </div>
+        <canvas id="waveCanvas"></canvas>
+      </section>
+
+      <section class="grid-row">
+        <section class="glass gather-panel">
+          <div class="section-head small">
+            <div>
+              <h3>近地表炮集记录</h3>
+              <p>按时间向下滚动；亮带主要反映面波沿测线传播的能量。</p>
+            </div>
+          </div>
+          <canvas id="gatherCanvas"></canvas>
+        </section>
+
+        <section class="glass profile-panel">
+          <div class="section-head small">
+            <div>
+              <h3>Vs 剖面 / 频散认知</h3>
+              <p>右上为速度-深度，右下为教学化 Rayleigh 相速度曲线。</p>
+            </div>
+          </div>
+          <canvas id="profileCanvas"></canvas>
+          <canvas id="dispersionCanvas"></canvas>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

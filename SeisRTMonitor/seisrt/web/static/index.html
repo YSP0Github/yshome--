@@ -1,0 +1,121 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SeisRTMonitor Web</title>
+  <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg" />
+  <link rel="shortcut icon" href="/static/assets/favicon.svg" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar glass">
+      <div class="lang-switch"><button id="langZh" class="secondary small">中文</button><button id="langEn" class="secondary small">EN</button></div>
+      <div class="brand">
+        <img class="logo" src="/static/assets/favicon.svg" alt="" aria-hidden="true" />
+        <div>
+          <h1>SeisRT</h1>
+          <p data-i18n="subtitle">Realtime Seismic Monitor</p>
+        </div>
+      </div>
+
+      <section class="panel-section">
+        <h2 data-i18n="source">SeedLink Source</h2>
+        <label><span data-i18n="server">Server</span><input id="server" value="rtserve.iris.washington.edu" /></label>
+        <div class="grid-2">
+          <label><span data-i18n="network">Network</span><input id="network" value="IU" /></label>
+          <label><span data-i18n="station">Station</span><input id="station" value="TATO" /></label>
+          <label><span data-i18n="location">Location</span><input id="location" value="00" /></label>
+          <label><span data-i18n="channel">Channel</span><input id="channel" value="BHZ" /></label>
+        </div>
+        <div class="actions station-actions">
+          <button id="addStationBtn" class="primary" data-i18n="addStation">Add Station</button>
+          <button id="stopAllBtn" class="secondary" data-i18n="stopAll">Stop All</button>
+        </div>
+      </section>
+
+
+      <section class="panel-section map-section">
+        <h2 data-i18n="stationMap">Station Map</h2>
+        <div class="map-actions">
+          <input id="networkFilter" value="IU,II,IC,CU,GE" />
+          <button id="loadStationsBtn" class="secondary small" data-i18n="loadMap">Load</button>
+        </div>
+        <div class="map-toolbar">
+          <button id="mapZoomIn" class="secondary small">＋</button>
+          <button id="mapZoomOut" class="secondary small">－</button>
+          <button id="mapReset" class="secondary small" data-i18n="resetMap">Reset</button>
+          <span id="mapCoord">Lon --, Lat --</span>
+        </div>
+        <canvas id="stationMapCanvas"></canvas>
+        <label><span data-i18n="selectStation">Select station</span><select id="stationSelect"></select></label>
+        <div class="grid-2">
+          <label><span data-i18n="selectLocation">Location</span><select id="locationSelect"></select></label>
+          <label><span data-i18n="selectChannel">Channel</span><select id="channelSelect"></select></label>
+        </div>
+        <div id="stationInfo" class="station-info">--</div>
+      </section>
+      <section class="panel-section">
+        <h2 data-i18n="stations">Stations</h2>
+        <div id="stationList" class="station-list"></div>
+      </section>
+
+      <section class="panel-section">
+        <h2 data-i18n="display">Display</h2>
+        <label><span data-i18n="window">Window seconds</span><input id="windowSeconds" type="number" min="10" max="3600" value="300" /></label>
+        <label><span data-i18n="delay">Playback delay seconds</span><input id="delaySeconds" type="number" min="5" max="1800" value="300" /></label>
+        <label><span data-i18n="gain">Gain</span><input id="gain" type="range" min="0.2" max="8" value="1" step="0.1" /></label>
+      </section>
+
+
+      <section class="panel-section detector-section">
+        <h2 data-i18n="detector">Detector</h2>
+        <label><span data-i18n="triggerThreshold">STA/LTA trigger</span><input id="triggerThreshold" type="number" min="1.5" max="20" step="0.1" value="4.0" /></label>
+        <label><span data-i18n="magnitudeThreshold">Alarm magnitude</span><input id="magnitudeThreshold" type="number" min="0" max="10" step="0.1" value="4.5" /></label>
+      </section>
+      <section class="status-card">
+        <span id="statusDot" class="dot muted"></span>
+        <div>
+          <strong id="statusTitle">Idle</strong>
+          <p id="statusText" data-i18n="idleText">Waiting for realtime data source</p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="workspace multi-workspace">
+      <header class="topbar glass">
+        <div>
+          <p class="eyebrow" data-i18n="dashboard">Live Dashboard</p>
+          <h2 id="streamTitle" data-i18n="multiTitle">Multi-station Waveform Wall</h2>
+        </div>
+        <div class="metrics">
+          <div><span id="stationCount">0</span><small data-i18n="stationCount">Stations</small></div>
+          <div><span id="totalSamples">0</span><small data-i18n="samples">Samples</small></div>
+          <div><span id="globalLatency">--</span><small data-i18n="latency">Latency</small></div>
+        </div>
+      </header>
+
+      <section id="waveformGrid" class="waveform-grid"></section>
+
+
+      <section class="event-panel glass">
+        <div class="event-panel-head">
+          <h3 data-i18n="eventRecords">Event Records</h3>
+          <div class="event-panel-actions">
+            <button id="clearEventsBtn" class="secondary small" data-i18n="clearEvents">Clear</button>
+            <span id="eventCount" class="pill">0</span>
+          </div>
+        </div>
+        <div id="eventRecords" class="event-records"></div>
+      </section>
+      <section class="log-card glass">
+        <h3 data-i18n="eventLog">Event Log</h3>
+        <div id="log"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,19 @@
+﻿[project]
+name = "seisrt-monitor"
+version = "0.1.0"
+description = "Web realtime seismic data monitoring system"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "obspy>=1.4",
+    "pydantic>=2",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+]
+
+[project.optional-dependencies]
+qt = ["PyQt6>=6.6", "pyqtgraph>=0.13"]
+dev = ["pytest", "ruff"]
+
+[tool.ruff]
+line-length = 100

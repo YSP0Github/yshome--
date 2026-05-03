@@ -1,0 +1,7 @@
+﻿PyQt6>=6.6
+numpy>=1.26
+obspy>=1.4
+pyqtgraph>=0.13
+pydantic>=2
+fastapi>=0.110
+uvicorn[standard]>=0.27

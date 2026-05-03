@@ -1,0 +1,6 @@
+numpy>=1.26
+PySide6>=6.7
+pyqtgraph>=0.13
+imageio>=2.34
+matplotlib>=3.8
+numba>=0.60

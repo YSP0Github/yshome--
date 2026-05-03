@@ -1,0 +1,62 @@
+{
+  "title": "二维面波正演 - 倾斜界面",
+  "grid": {
+    "nx": 301,
+    "nz": 151,
+    "dx": 1.0,
+    "dz": 1.0,
+    "dt": 0.000150,
+    "tmax": 0.8
+  },
+  "boundary": {
+    "top_boundary": "free_surface",
+    "pml_thickness": 20,
+    "pml_strength": 2.0,
+    "taper_power": 2.0
+  },
+  "source": {
+    "source_type": "vertical_force",
+    "wavelet": "ricker",
+    "frequency": 20.0,
+    "amplitude": 1.0,
+    "delay": 0.06,
+    "x": 85.0,
+    "z": 2.0
+  },
+  "receivers": {
+    "count": 48,
+    "start_x": 15.0,
+    "start_z": 2.0,
+    "spacing": 3.0
+  },
+  "model": {
+    "name": "dipping_interface",
+    "property_to_display": "vs",
+    "layers": [
+      {
+        "name": "Layer 1",
+        "top_depth": 0.0,
+        "dip_deg": 0.0,
+        "vp": 850.0,
+        "vs": 280.0,
+        "density": 1720.0
+      },
+      {
+        "name": "Layer 2",
+        "top_depth": 18.0,
+        "dip_deg": 8.0,
+        "vp": 1700.0,
+        "vs": 820.0,
+        "density": 2150.0
+      }
+    ]
+  },
+  "simulation": {
+    "wavefield_display": "vmag",
+    "seismogram_display": "vz",
+    "display_stride": 8,
+    "record_stride": 1,
+    "snapshot_stride": 12,
+    "store_animation_frames": true
+  }
+}

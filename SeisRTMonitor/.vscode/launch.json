@@ -1,0 +1,13 @@
+﻿{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SeisRTMonitor",
+      "type": "python",
+      "request": "launch",
+      "module": "seisrt.app.main",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

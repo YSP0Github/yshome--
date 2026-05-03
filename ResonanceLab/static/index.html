@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ResonanceLab - 振动与共振实验</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <h1>ResonanceLab</h1>
+      <p class="lead">单自由度受迫振动实验。观察驱动频率接近系统固有频率时，振幅放大的共振现象，以及阻尼对响应与相位的影响。</p>
+
+      <section class="card">
+        <h2>参数控制</h2>
+        <label>
+          <span class="value-row"><span>驱动频率</span><output id="driveFreqValue">1.00</output></span>
+          <input id="driveFreq" type="range" min="0.2" max="3.0" step="0.01" value="1.0" />
+        </label>
+        <label>
+          <span class="value-row"><span>固有频率</span><output id="naturalFreqValue">1.00</output></span>
+          <input id="naturalFreq" type="range" min="0.4" max="2.5" step="0.01" value="1.0" />
+        </label>
+        <label>
+          <span class="value-row"><span>阻尼系数</span><output id="dampingValue">0.08</output></span>
+          <input id="damping" type="range" min="0.00" max="0.80" step="0.01" value="0.08" />
+        </label>
+        <label>
+          <span class="value-row"><span>驱动力幅值</span><output id="forceValue">0.90</output></span>
+          <input id="force" type="range" min="0.10" max="2.00" step="0.01" value="0.90" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>实验操作</h2>
+        <div class="actions">
+          <button id="toggleRun" class="primary">暂停</button>
+          <button id="reset" class="ghost">重置</button>
+          <button id="kick" class="ghost">施加脉冲</button>
+          <button id="scan" class="ghost">扫频演示</button>
+        </div>
+        <p class="hint">将驱动频率缓慢调到接近固有频率，观察位移曲线与系统振幅变化。阻尼越小，共振峰越尖锐。</p>
+      </section>
+
+      <section class="card stats-grid">
+        <div class="stat"><span>位移峰值</span><strong id="ampLabel">0.00</strong></div>
+        <div class="stat"><span>相位差</span><strong id="phaseLabel">0°</strong></div>
+        <div class="stat"><span>平均能量</span><strong id="energyLabel">0.00</strong></div>
+        <div class="stat"><span>状态判断</span><strong id="stateLabel">稳定</strong></div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <section class="viz-card glass">
+        <div class="section-head">
+          <div>
+            <h2>受迫振动动画</h2>
+            <p>左侧弹簧-质量系统为实际响应，右侧小圆点代表外部周期驱动。</p>
+          </div>
+          <span class="pill" id="statusPill">运行中</span>
+        </div>
+        <canvas id="oscillatorCanvas"></canvas>
+      </section>
+
+      <section class="viz-grid">
+        <div class="glass mini-viz">
+          <div class="section-head small"><h3>位移时间历程</h3><p>蓝色：位移 x(t)</p></div>
+          <canvas id="historyCanvas"></canvas>
+        </div>
+        <div class="glass mini-viz">
+          <div class="section-head small"><h3>响应谱示意</h3><p>当前参数下的频率响应与共振峰位置</p></div>
+          <canvas id="spectrumCanvas"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
