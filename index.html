@@ -57,6 +57,62 @@
         transform: translateY(-5px);
         box-shadow: 0 10px 25px -5px rgba(22, 93, 255, 0.1), 0 8px 10px -6px rgba(22, 93, 255, 0.1);
       }
+      .project-card {
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+      }
+      .project-media {
+        position: relative;
+        padding: 1rem 1rem 0;
+        background:
+          radial-gradient(circle at top left, rgba(54, 207, 201, 0.16), transparent 34%),
+          radial-gradient(circle at top right, rgba(22, 93, 255, 0.22), transparent 30%),
+          linear-gradient(180deg, #101827 0%, #0b1220 100%);
+      }
+      .project-media::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 88px;
+        background: linear-gradient(180deg, rgba(11, 18, 32, 0) 0%, rgba(17, 24, 39, 0.96) 100%);
+        pointer-events: none;
+      }
+      .project-shot {
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(2, 6, 23, 0.84);
+        box-shadow: 0 22px 54px rgba(0, 0, 0, 0.32);
+      }
+      .project-shot-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 2rem;
+        padding: 0 0.875rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .project-shot-dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 9999px;
+      }
+      .project-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        background: rgba(22, 93, 255, 0.1);
+        color: #9CC1FF;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        line-height: 1;
+      }
     }
   </style>
 </head>
@@ -350,18 +406,34 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- 项目卡片1 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_ysxs.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-primary text-white text-xs px-3 py-1 rounded-full">
-              云凇学术
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">YSXS Workspace</span>
+              </div>
+              <img src="static/images/project_covers/project_ysxs_st.png" alt="云松学术界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              文献管理
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2"> 云凇学术</h3>
-            <p class="text-gray-400 text-sm mb-4">
-              开发了一个云凇学术网站，提供科研文献管理和搜索功能。
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">云松学术</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">YSXS</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              面向个人科研工作流的学术资料平台，支持文献检索、分类整理、收藏追踪与晨报辅助。
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Flask</span>
+              <span class="project-chip">SQLite</span>
+              <span class="project-chip">文献管理</span>
+            </div>
             <a href="YSXS" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
@@ -369,18 +441,34 @@
         </div>
         
         <!-- 项目卡片2 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_seisy.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-primary text-white text-xs px-3 py-1 rounded-full">
-              SeisY
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisY Desktop</span>
+              </div>
+              <img src="static/images/project_covers/SeisY-main.png" alt="SeisY 软件界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              桌面软件
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">地震数据处理软件</h3>
-            <p class="text-gray-400 text-sm mb-4">
-              开发了一款地震数据处理软件，支持数据预处理、特征提取和可视化分析
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地震数据处理软件</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">SeisY</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              面向地球物理数据处理的桌面工具，支持波形浏览、事件分析、数据组织与处理结果可视化。
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Python</span>
+              <span class="project-chip">PyQt</span>
+              <span class="project-chip">波形分析</span>
+            </div>
             <a href="HTML/SeisY.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
@@ -388,18 +476,34 @@
         </div>
         
         <!-- 项目卡片3 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_seisrt.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-secondary text-white text-xs px-3 py-1 rounded-full">
-              SeisRT
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisRT Live Monitor</span>
+              </div>
+              <img src="static/images/project_covers/SeisRT.png" alt="SeisRT 监测界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              实时监测
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">地震实时监测系统</h3>
-            <p class="text-gray-400 text-sm mb-4">
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地震实时监测系统</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">SeisRT</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
               开发了一个 SeisRT 地震实时监测系统，支持实时采集、自动处理、监测可视化与教学演示入口
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">SeedLink</span>
+              <span class="project-chip">实时波形</span>
+              <span class="project-chip">台站地图</span>
+            </div>
             <a href="HTML/SeisRT.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
@@ -407,37 +511,69 @@
         </div>
         
         <!-- 项目卡片4 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_ysky.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-primary text-white text-xs px-3 py-1 rounded-full">
-              YSKY
+        <!-- <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">YunSong Research</span>
+              </div>
+              <img src="static/images/project_covers/project_ysky.svg" alt="云凇科研网站封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              科研展示
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">云凇科研网站</h3>
-            <p class="text-gray-400 text-sm mb-4">
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">云凇科研网站</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">YSKY</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
               开发了一个云凇科研网站，提供科研项目展示和用户互动功能
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">项目归档</span>
+              <span class="project-chip">科研主页</span>
+              <span class="project-chip">内容展示</span>
+            </div>
             <a href="HTML/YSKY.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
           </div>
-        </div>
+        </div> -->
 
         <!-- 项目卡片5 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_funhome.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-primary text-white text-xs px-3 py-1 rounded-full">
-              funhome
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">FunHome Playground</span>
+              </div>
+              <img src="static/images/project_covers/project_funhome.svg" alt="趣味屋项目封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-fuchsia-500/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              趣味互动
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">趣味屋</h3>
-            <p class="text-gray-400 text-sm mb-4">
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">趣味屋</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-fuchsia-300">funhome</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
               开发了一个趣味屋网站，提供趣味项目展示和用户互动功能
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">小游戏</span>
+              <span class="project-chip">互动页面</span>
+              <span class="project-chip">创意 UI</span>
+            </div>
             <a href="funhome/funhome.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
@@ -445,18 +581,34 @@
         </div> 
 
        <!-- 项目卡片6 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_yunji.png" alt="项目图片" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-primary text-white text-xs px-3 py-1 rounded-full">
-              yunji
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">Yunji Editor</span>
+              </div>
+              <img src="static/images/project_covers/project_yunji.png" alt="云记编辑器封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              轻量工具
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">云记编辑器</h3>
-            <p class="text-gray-400 text-sm mb-4">
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">云记编辑器</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">yunji</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
               开发了一个云记编辑器，一款轻量级、高效的Python文本编辑器，专为开发者设计，简单易用且功能强大。
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Python</span>
+              <span class="project-chip">文本编辑</span>
+              <span class="project-chip">效率工具</span>
+            </div>
             <a href="HTML/yunji.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
@@ -464,18 +616,34 @@
         </div>
 
        <!-- 项目卡片7 -->
-        <div class="bg-gray-900 rounded-xl overflow-hidden hover-lift">
-          <div class="relative overflow-hidden">
-            <img src="static/images/project_covers/project_sciencelab.png" alt="科学小实验项目" class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-            <div class="absolute top-4 right-4 bg-secondary text-white text-xs px-3 py-1 rounded-full">
-              ScienceLab
+        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">Science Lab Collection</span>
+              </div>
+              <img src="static/images/project_covers/project_sciencelab.png" alt="科学小实验项目封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              交互实验
             </div>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold mb-2">科学小实验项目</h3>
-            <p class="text-gray-400 text-sm mb-4">
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">科学小实验项目</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">ScienceLab</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
               整理并展示可交互的科学小实验页面，当前已接入 PendulumLab、ResonanceLab 与 RayleighWaveLab，用于观察摆动、共振与面波传播。
             </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">PendulumLab</span>
+              <span class="project-chip">Resonance</span>
+              <span class="project-chip">WaveLab</span>
+            </div>
             <a href="HTML/ScienceLab.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>

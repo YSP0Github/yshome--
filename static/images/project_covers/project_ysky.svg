@@ -1,0 +1,98 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="70" x2="1480" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#15264B"/>
+      <stop offset="0.55" stop-color="#212A63"/>
+      <stop offset="1" stop-color="#0C1733"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0C1328"/>
+      <stop offset="1" stop-color="#101B37"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#63A3FF"/>
+      <stop offset="1" stop-color="#67E8F9"/>
+    </linearGradient>
+    <linearGradient id="cardLight" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#DCE8FF" stop-opacity="0.96"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="36" fill="url(#bg)"/>
+  <circle cx="1300" cy="170" r="180" fill="#5275FF" fill-opacity="0.16" filter="url(#glow)"/>
+  <circle cx="320" cy="760" r="220" fill="#4DD7C8" fill-opacity="0.12" filter="url(#glow)"/>
+
+  <rect x="74" y="58" width="1452" height="784" rx="30" fill="#101A33" fill-opacity="0.42" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="94" y="88" width="1412" height="724" rx="28" fill="url(#panel)" stroke="#314169" stroke-opacity="0.55"/>
+
+  <g opacity="0.95">
+    <circle cx="132" cy="120" r="8" fill="#FF7B7B"/>
+    <circle cx="160" cy="120" r="8" fill="#FFD34D"/>
+    <circle cx="188" cy="120" r="8" fill="#48D597"/>
+    <text x="215" y="127" fill="#9DAECC" font-size="22" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" letter-spacing="8">YUNSONG RESEARCH</text>
+  </g>
+
+  <rect x="116" y="148" width="540" height="112" rx="22" fill="#091225"/>
+  <text x="146" y="204" fill="#F4F8FF" font-size="54" font-family="DejaVu Sans, Arial, sans-serif" font-weight="800">YunSong Research</text>
+  <text x="146" y="236" fill="#A8B7D6" font-size="24" font-family="DejaVu Sans, Arial, sans-serif">Research Portal · Projects · Publications · Archive</text>
+
+  <rect x="116" y="314" width="1368" height="382" rx="28" fill="#0C1326" stroke="#D9E4FF" stroke-opacity="0.7" stroke-width="2"/>
+
+  <rect x="154" y="352" width="420" height="256" rx="26" fill="url(#cardLight)"/>
+  <rect x="184" y="384" width="220" height="20" rx="10" fill="#D6E2FF"/>
+  <rect x="184" y="426" width="162" height="14" rx="7" fill="#A7BEF8"/>
+  <rect x="184" y="452" width="190" height="14" rx="7" fill="#A7BEF8"/>
+  <rect x="184" y="478" width="178" height="14" rx="7" fill="#A7BEF8"/>
+  <text x="184" y="532" fill="#1A2D57" font-size="58" font-family="DejaVu Sans, Arial, sans-serif" font-weight="800">YSKY</text>
+  <text x="184" y="568" fill="#4E6A98" font-size="22" font-family="DejaVu Sans, Arial, sans-serif">Academic profile · project archive · team updates</text>
+
+  <g>
+    <rect x="676" y="360" width="238" height="142" rx="24" fill="#F7FAFF"/>
+    <rect x="714" y="404" width="134" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="714" y="438" width="118" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="714" y="472" width="142" height="14" rx="7" fill="#8BAAF5"/>
+    <circle cx="855" cy="530" r="18" fill="#5DE1D3"/>
+  </g>
+
+  <g>
+    <rect x="962" y="360" width="238" height="142" rx="24" fill="#F7FAFF"/>
+    <rect x="1000" y="404" width="134" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="1000" y="438" width="118" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="1000" y="472" width="142" height="14" rx="7" fill="#8BAAF5"/>
+    <circle cx="1141" cy="530" r="18" fill="#5DE1D3"/>
+  </g>
+
+  <g>
+    <rect x="1248" y="360" width="186" height="142" rx="24" fill="#F7FAFF"/>
+    <rect x="1286" y="404" width="118" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="1286" y="438" width="104" height="14" rx="7" fill="#8BAAF5"/>
+    <rect x="1286" y="472" width="124" height="14" rx="7" fill="#8BAAF5"/>
+    <circle cx="1365" cy="530" r="18" fill="#5DE1D3"/>
+  </g>
+
+  <path d="M170 654H468" stroke="#7EA0E8" stroke-width="6" stroke-linecap="round" stroke-dasharray="128 34"/>
+  <path d="M530 654H808" stroke="#7EA0E8" stroke-width="6" stroke-linecap="round" stroke-dasharray="116 34"/>
+  <path d="M874 654H1148" stroke="#7EA0E8" stroke-width="6" stroke-linecap="round" stroke-dasharray="116 34"/>
+  <path d="M1210 654H1404" stroke="#7EA0E8" stroke-width="6" stroke-linecap="round" stroke-dasharray="98 30"/>
+  <circle cx="206" cy="654" r="12" fill="#F9FBFF"/>
+  <circle cx="476" cy="654" r="12" fill="#F9FBFF"/>
+  <circle cx="736" cy="654" r="12" fill="#F9FBFF"/>
+  <circle cx="982" cy="654" r="12" fill="#F9FBFF"/>
+  <circle cx="1234" cy="654" r="12" fill="#F9FBFF"/>
+
+  <rect x="118" y="742" width="264" height="58" rx="29" fill="url(#accent)"/>
+  <text x="170" y="780" fill="#EFF7FF" font-size="28" font-family="DejaVu Sans, Arial, sans-serif" font-weight="800">Research Web</text>
+
+  <g opacity="0.34">
+    <path d="M1180 246C1238 240 1284 250 1322 278C1366 309 1406 373 1420 454" stroke="#7DD3FC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1138 258C1186 266 1222 292 1248 330C1274 368 1288 414 1292 470" stroke="#67E8F9" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

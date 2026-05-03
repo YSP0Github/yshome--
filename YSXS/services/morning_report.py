@@ -7,7 +7,6 @@ import os
 import re
 import threading
 import time
-import tomllib
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from html import escape, unescape
@@ -15,6 +14,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
 
 import requests
 from flask import Flask, current_app, has_app_context

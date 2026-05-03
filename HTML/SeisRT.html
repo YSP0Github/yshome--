@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeisRT - Seismic Real-Time Monitor</title>
+    <title>SeisRT - 地震实时监测系统</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A3D62'/%3E%3Cpath d='M10 35h8l5-16 8 30 7-23 5 9h11' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <!-- 引入外部资源 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -81,10 +82,12 @@
         
         /* 地图容器样式 */
         #map-container {
-            height: 500px;
+            height: 420px;
             width: 100%;
-            border-radius: 0.75rem;
+            border-radius: 0.5rem;
             z-index: 10;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.24);
         }
         
         /* 延迟动画类 */
@@ -98,17 +101,87 @@
             scrollbar-width: thin;
         }
 
-        .monitor-embed-frame {
-            width: 100%;
-            min-height: 720px;
-            border: 0;
-            border-radius: 1rem;
-            background: linear-gradient(135deg, #07111f, #10243a);
+        .seisrt-logo-mark {
+            width: 1.55rem;
+            height: 1.55rem;
+            display: block;
+            background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M7 35h9l5-17 8 31 7-24 6 10h15' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         }
 
-        .monitor-placeholder {
-            min-height: 320px;
-            border: 1px dashed rgba(10, 61, 98, 0.25);
+        .seisrt-logo-mark-primary {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M7 35h9l5-17 8 31 7-24 6 10h15' fill='none' stroke='%230A3D62' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        }
+
+        .monitoring-console {
+            background:
+                linear-gradient(180deg, #0f172a 0%, #111827 44%, #f3f6fa 44%, #f3f6fa 100%);
+        }
+
+        .monitoring-console .console-title,
+        .monitoring-console .console-copy {
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .monitor-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 0.5rem;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+        }
+
+        .monitor-panel-dark {
+            background: #07111f;
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            border-radius: 0.5rem;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 18px 40px rgba(2, 6, 23, 0.22);
+        }
+
+        .chart-frame {
+            position: relative;
+            height: 260px;
+            min-height: 260px;
+            max-height: 260px;
+        }
+
+        .chart-frame canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .monitor-waveform-canvas {
+            width: 100%;
+            height: 320px;
+            display: block;
+            border-radius: 0.5rem;
+            background: linear-gradient(180deg, #020617 0%, #07111f 100%);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .monitor-metric-card {
+            border-radius: 0.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
+            padding: 1rem;
+        }
+
+        .monitor-mini-event {
+            border-radius: 0.5rem;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: #fff;
+            padding: 0.9rem 1rem;
+        }
+
+        @media (max-width: 768px) {
+            #map-container {
+                height: 320px;
+            }
+
+            .chart-frame {
+                height: 220px;
+                min-height: 220px;
+                max-height: 220px;
+            }
         }
 
         .status-chip {
@@ -154,7 +227,7 @@
                 <!-- Logo -->
                 <a href="#hero" class="flex items-center space-x-2">
                     <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                        <i class="fa fa-waves text-white text-xl"></i>
+                        <span class="seisrt-logo-mark" aria-hidden="true"></span>
                     </div>
                     <span class="font-bold text-xl">SeisRT</span>
                 </a>
@@ -164,9 +237,9 @@
                     <a href="#overview" class="text-dark/80 hover:text-primary transition-colors">系统概述</a>
                     <a href="#realtime" class="text-dark/80 hover:text-primary transition-colors">实时监测</a>
                     <a href="#features" class="text-dark/80 hover:text-primary transition-colors">核心功能</a>
-                    <a href="#cases" class="text-dark/80 hover:text-primary transition-colors">预警案例</a>
+                    <a href="#roadmap" class="text-dark/80 hover:text-primary transition-colors">项目进展</a>
                     <a href="#contact" class="px-5 py-2 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors shadow-lg shadow-warning/20">
-                        紧急联系
+                        联系作者
                     </a>
                 </div>
                 
@@ -183,9 +256,9 @@
                 <a href="#overview" class="block py-2 text-dark/80 hover:text-primary transition-colors">系统概述</a>
                 <a href="#realtime" class="block py-2 text-dark/80 hover:text-primary transition-colors">实时监测</a>
                 <a href="#features" class="block py-2 text-dark/80 hover:text-primary transition-colors">核心功能</a>
-                <a href="#cases" class="block py-2 text-dark/80 hover:text-primary transition-colors">预警案例</a>
+                <a href="#roadmap" class="block py-2 text-dark/80 hover:text-primary transition-colors">项目进展</a>
                 <a href="#contact" class="block py-2 px-4 bg-warning text-white rounded-lg text-center hover:bg-warning/90 transition-colors">
-                    紧急联系
+                    联系作者
                 </a>
             </div>
         </div>
@@ -203,43 +276,43 @@
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
             <div class="max-w-4xl">
                 <div class="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6 slide-in">
-                    实时监测 · 快速响应 · 智能预警
+                    SeedLink 接入 · 多台站波形 · 监测演示入口
                 </div>
                 <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold leading-tight mb-6 text-white text-shadow slide-in delay-100">
                     SeisRT<br>
                     <span class="text-warning">地震实时监测系统</span>
                 </h1>
                 <p class="text-lg md:text-xl text-white/90 mb-10 max-w-2xl slide-in delay-200">
-                    集地震监测、数据分析、实时预警于一体的综合系统，为防震减灾提供精准数据支持和决策依据
+                    面向实时波形观测与教学演示的个人项目，当前聚焦 SeedLink 接入、多台站波形墙、事件记录与监测可视化入口。
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 slide-in delay-300">
                     <a href="#realtime" class="px-8 py-3 bg-warning text-white rounded-lg font-medium hover:bg-warning/90 transition-colors shadow-lg shadow-warning/30 flex items-center justify-center">
-                        <i class="fa fa-chart-line mr-2"></i> 查看实时数据
+                        <i class="fa fa-chart-line mr-2"></i> 查看实时界面
                     </a>
                     <a href="#features" class="px-8 py-3 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center justify-center">
-                        <i class="fa fa-info-circle mr-2"></i> 了解系统功能
+                        <i class="fa fa-info-circle mr-2"></i> 查看核心能力
                     </a>
                 </div>
                 
                 <!-- 状态指标 -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 slide-in delay-400">
                     <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                        <div class="text-white/80 text-sm mb-1">监测台站</div>
-                        <div class="text-white text-2xl font-bold">2,387</div>
+                        <div class="text-white/80 text-sm mb-1">项目阶段</div>
+                        <div class="text-white text-2xl font-bold">原型开发</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                        <div class="text-white/80 text-sm mb-1">覆盖区域</div>
-                        <div class="text-white text-2xl font-bold">96.8%</div>
+                        <div class="text-white/80 text-sm mb-1">数据接入</div>
+                        <div class="text-white text-2xl font-bold">SeedLink</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                        <div class="text-white/80 text-sm mb-1">响应时间</div>
-                        <div class="text-white text-2xl font-bold">&lt;3秒</div>
+                        <div class="text-white/80 text-sm mb-1">展示形态</div>
+                        <div class="text-white text-2xl font-bold">波形墙</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                        <div class="text-white/80 text-sm mb-1">系统状态</div>
+                        <div class="text-white/80 text-sm mb-1">当前状态</div>
                         <div class="text-white text-2xl font-bold flex items-center">
                             <span class="w-2 h-2 bg-success rounded-full mr-2 pulse-animation"></span>
-                            正常运行
+                            持续迭代
                         </div>
                     </div>
                 </div>
@@ -260,19 +333,19 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">系统概述</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisRT 地震实时监测系统是一套集成化的地震监测解决方案，采用先进的传感技术和人工智能算法</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">SeisRT 当前更适合被理解为一个正在持续完善的实时监测项目页面，而不是已经大规模部署的商业预警平台。</p>
             </div>
             
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div class="order-2 md:order-1">
                     <h3 class="text-2xl font-semibold mb-6 text-primary">关于 SeisRT 系统</h3>
                     <p class="text-dark/80 mb-6 leading-relaxed">
-                        SeisRT 地震实时监测系统通过分布在各地的地震监测台站网络，实时采集地震波数据，
-                        结合人工智能算法快速识别地震事件，计算震源参数，并生成精确的地震预警信息。
+                        SeisRTMonitor 项目当前目标是构建一个稳定、低延迟、可扩展的地震数据实时监测系统，重点包括
+                        SeedLink 实时数据接入、滚动波形显示、多台站扩展、事件触发检测以及事件记录保存。
                     </p>
                     <p class="text-dark/80 mb-8 leading-relaxed">
-                        系统可在地震发生后数秒内完成分析并发布预警信息，为震中周边地区争取宝贵的应急响应时间，
-                        有效减少人员伤亡和财产损失。
+                        这一页面主要承担项目介绍、实时入口和演示说明的作用；下方提供轻量化实时监测面板，完整版
+                        SeisRTMonitor 控制台可按需在新窗口打开。
                     </p>
                     
                     <div class="space-y-4">
@@ -282,7 +355,7 @@
                             </div>
                             <div>
                                 <h4 class="font-semibold text-lg mb-1">实时数据采集</h4>
-                                <p class="text-dark/70">通过高密度监测网络，实时采集地震波数据，采样率高达1000Hz</p>
+                                <p class="text-dark/70">支持接入 SeedLink 实时流，并为后续多台站、多通道扩展保留接口。</p>
                             </div>
                         </div>
                         
@@ -291,8 +364,8 @@
                                 <i class="fa fa-brain"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-lg mb-1">智能算法分析</h4>
-                                <p class="text-dark/70">采用深度学习算法，快速识别地震信号，准确计算震级、震源深度和位置</p>
+                                <h4 class="font-semibold text-lg mb-1">事件检测与记录</h4>
+                                <p class="text-dark/70">当前以事件触发、日志记录、事件前后波形保存和监测状态展示为主。</p>
                             </div>
                         </div>
                         
@@ -301,8 +374,8 @@
                                 <i class="fa fa-bell"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-lg mb-1">多渠道预警发布</h4>
-                                <p class="text-dark/70">通过多种渠道及时发布预警信息，包括短信、APP推送、广播电视和专用接收终端</p>
+                                <h4 class="font-semibold text-lg mb-1">教学演示入口</h4>
+                                <p class="text-dark/70">可直接接入 Web 监测接口，用于实时波形观测、演示和功能验证。</p>
                             </div>
                         </div>
                     </div>
@@ -310,7 +383,7 @@
                 
                 <div class="order-1 md:order-2 relative">
                     <div class="rounded-2xl overflow-hidden shadow-xl">
-                        <img src="https://picsum.photos/id/1015/800/600" alt="地震监测系统架构" class="w-full h-auto">
+                        <img src="../static/images/project_covers/SeisRT.png" alt="SeisRT 实时监测界面" class="w-full h-auto">
                     </div>
                     <div class="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg hidden md:block">
                         <div class="flex items-center space-x-4">
@@ -318,8 +391,8 @@
                                 <i class="fa fa-shield text-xl"></i>
                             </div>
                             <div>
-                                <div class="font-medium">系统可靠性</div>
-                                <div class="text-dark/70 text-sm">99.9% 连续运行时间</div>
+                                <div class="font-medium">当前阶段</div>
+                                <div class="text-dark/70 text-sm">架构设计与项目骨架阶段</div>
                             </div>
                         </div>
                     </div>
@@ -329,21 +402,21 @@
     </section>
 
     <!-- 实时监测 -->
-    <section id="realtime" class="section-padding bg-gray-50">
+    <section id="realtime" class="section-padding monitoring-console">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">实时监测数据</h2>
-                <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">实时展示地震活动监测数据，包括最近地震事件、地震活动趋势和监测台站状态</p>
+                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4 console-title">实时监测台</h2>
+                <div class="w-20 h-1 bg-warning mx-auto mb-6"></div>
+                <p class="console-copy max-w-2xl mx-auto">面向 SeedLink 实时流的轻量观测面板，保留地图、事件、统计和单台站波形预览。</p>
             </div>
             
             <div class="grid lg:grid-cols-3 gap-8">
                 <!-- 实时监测地图 -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6 card-hover">
+                <div class="lg:col-span-2 monitor-panel p-5">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold">地震活动实时监测地图</h3>
+                        <h3 class="text-lg font-semibold">事件空间视图</h3>
                         <div class="text-sm text-dark/60">
-                            最后更新: <span id="last-update">2023-06-15 14:32:45</span>
+                            地图源: 高德 | 最后更新: <span id="last-update">--</span>
                         </div>
                     </div>
                     <div id="map-container" class="relative">
@@ -366,99 +439,172 @@
                 </div>
                 
                 <!-- 最近地震事件 -->
-                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
-                    <h3 class="text-xl font-semibold mb-6">最近地震事件</h3>
-                    <div id="recent-earthquakes" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 realtime-event-list"></div>
-                    <p class="text-primary/80 font-medium flex items-center mt-6">
-                        实时窗口支持接入 SeisRTMonitor，下面可直接加载监测器界面 <i class="fa fa-arrow-down ml-2"></i>
+                <div class="monitor-panel p-5">
+                    <h3 class="text-lg font-semibold mb-5">最近触发记录</h3>
+                    <div id="recent-earthquakes" class="space-y-3 max-h-[420px] overflow-y-auto pr-2 realtime-event-list"></div>
+                    <p class="text-primary/80 font-medium flex items-center mt-5 text-sm">
+                        下方可启动单台站轻量监测 <i class="fa fa-arrow-down ml-2"></i>
                     </p>
                 </div>
             </div>
             
             <!-- 地震活动统计 -->
             <div class="grid md:grid-cols-2 gap-8 mt-8">
-                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
-                    <h3 class="text-xl font-semibold mb-6">地震活动月度统计</h3>
-                    <canvas id="monthlyChart" height="250"></canvas>
+                <div class="monitor-panel p-5">
+                    <h3 class="text-lg font-semibold mb-5">月度触发统计</h3>
+                    <div class="chart-frame">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
-                    <h3 class="text-xl font-semibold mb-6">地震震级分布</h3>
-                    <canvas id="magnitudeChart" height="250"></canvas>
+                <div class="monitor-panel p-5">
+                    <h3 class="text-lg font-semibold mb-5">震级估计分布</h3>
+                    <div class="chart-frame">
+                        <canvas id="magnitudeChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-8 bg-white rounded-2xl shadow-md p-6 md:p-8 card-hover">
-                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
+            <div class="mt-8 monitor-panel p-5 md:p-6">
+                <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6 mb-6">
                     <div>
                         <div class="flex items-center gap-3 mb-3">
-                            <h3 class="text-2xl font-semibold text-primary">SeisRTMonitor 实时波形观测接口</h3>
-                            <span id="monitor-status" class="status-chip checking">正在检查</span>
+                            <h3 class="text-2xl font-semibold text-primary">公共单台站监测面板</h3>
+                            <span id="monitor-status" class="status-chip checking">正在同步</span>
                         </div>
-                        <p class="text-dark/70 max-w-3xl">
-                            这里保留 SeisRT 的总览能力，并在实时观测窗口中接入 SeisRTMonitor。可填写监测器地址并直接嵌入，
-                            也可在新窗口打开完整多台站波形墙。
+                        <p class="text-dark/70 max-w-3xl leading-7">
+                            页面默认读取服务器端轻量缓存：后台定时更新公开地震目录，并轮询一个固定台站的小窗口波形。
+                            普通访客不需要在本地运行 SeisRTMonitor；公开页采用定时更新快照，不是连续流动画。
                         </p>
                     </div>
-                    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 w-full lg:w-auto">
-                        <input id="monitor-base-url" type="url" value="http://127.0.0.1:8765/" class="sm:col-span-2 xl:min-w-[20rem] px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="SeisRTMonitor 地址，例如 http://127.0.0.1:8765/">
-                        <button id="check-monitor-btn" class="px-5 py-3 bg-white border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors font-medium">
-                            检查连接
-                        </button>
-                        <button id="load-monitor-btn" class="px-5 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-lg shadow-primary/20">
-                            加载监测器
-                        </button>
+                    <div class="xl:max-w-md rounded-lg bg-primary/5 border border-primary/10 px-5 py-4 text-sm text-primary leading-7">
+                        <div class="font-semibold mb-1">当前策略</div>
+                        后端固定台湾 IU.TATO 宽频台站、5 分钟窗口、3 秒缓存刷新；地震目录来自 USGS、EMSC 与中国地震台网速报。
                     </div>
                 </div>
 
-                <div class="grid xl:grid-cols-[1.35fr_0.65fr] gap-6 mb-6">
-                    <div class="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-lg">嵌入参数</h4>
-                            <button id="open-monitor-btn" class="text-primary hover:text-primary/80 font-medium flex items-center transition-colors">
-                                新窗口打开 <i class="fa fa-up-right-from-square ml-2"></i>
-                            </button>
+                <div class="grid xl:grid-cols-[1.2fr_0.8fr] gap-6 mb-6">
+                    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">目录来源</div>
+                            <div id="catalog-sources" class="text-lg font-semibold text-primary">USGS / EMSC</div>
                         </div>
-                        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-                            <label class="block text-sm font-medium text-dark/80">网络
-                                <input id="monitor-network" type="text" value="IU" class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors">
-                            </label>
-                            <label class="block text-sm font-medium text-dark/80">台站
-                                <input id="monitor-station" type="text" value="TATO" class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors">
-                            </label>
-                            <label class="block text-sm font-medium text-dark/80">位置
-                                <input id="monitor-location" type="text" value="00" class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors">
-                            </label>
-                            <label class="block text-sm font-medium text-dark/80">通道
-                                <input id="monitor-channel" type="text" value="BHZ" class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors">
-                            </label>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">目录状态</div>
+                            <div id="catalog-status" class="text-lg font-semibold text-dark">同步中</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">目录事件数</div>
+                            <div id="catalog-count" class="text-lg font-semibold text-dark">0</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">目录更新时间</div>
+                            <div id="catalog-updated" class="text-sm font-semibold text-dark leading-6">--</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">监测网络</div>
+                            <div id="public-monitor-network" class="text-lg font-semibold text-dark">IU</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">台站</div>
+                            <div id="public-monitor-station" class="text-lg font-semibold text-dark">TATO</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">位置</div>
+                            <div id="public-monitor-location" class="text-lg font-semibold text-dark">00</div>
+                        </div>
+                        <div class="monitor-metric-card">
+                            <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">通道</div>
+                            <div id="public-monitor-channel" class="text-lg font-semibold text-dark">BHZ</div>
                         </div>
                     </div>
 
-                    <div class="bg-primary text-white rounded-xl p-5">
-                        <h4 class="font-semibold text-lg mb-3">接入说明</h4>
-                        <ul class="space-y-2 text-white/85 text-sm leading-6">
-                            <li>1. 先启动 SeisRTMonitor Web 服务。</li>
-                            <li>2. 在此填写服务地址并检查连接。</li>
-                            <li>3. 选择默认网络/台站后即可在页面内嵌入实时波形。</li>
-                            <li>4. 若需要完整控制台，可点击“新窗口打开”。</li>
+                    <div class="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                        <h4 class="font-semibold text-lg mb-3 text-primary">公共模式说明</h4>
+                        <ul class="space-y-2 text-dark/75 text-sm leading-7">
+                            <li>1. 服务器端定时抓取公开地震目录，并缓存在仓库外的 var 目录。</li>
+                            <li>2. 单台站波形采用台湾 IU.TATO.00.BHZ 的短窗口 ASCII 请求和降采样。</li>
+                            <li>3. 当前检测只用于演示单台站波形异常，不等同于正式地震预警或连续直播。</li>
+                            <li>4. 前端每 3 秒读取本站台站缓存，普通访客无需运行本地程序。</li>
+                            <li>5. 需要多台站波形墙时，再使用本地完整版 SeisRTMonitor。</li>
                         </ul>
                     </div>
                 </div>
 
-                <div id="monitor-placeholder" class="monitor-placeholder rounded-2xl bg-gray-50 flex flex-col items-center justify-center text-center px-6 py-12">
-                    <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-                        <i class="fa fa-wave-square text-2xl"></i>
-                    </div>
-                    <h4 class="text-xl font-semibold mb-3">等待加载 SeisRTMonitor</h4>
-                    <p class="text-dark/70 max-w-2xl mb-6">
-                        当前 SeisRT 页面负责总览与入口，SeisRTMonitor 负责多台站实时波形、事件记录和回放。点击“加载监测器”后将在此处嵌入实时观测窗口。
-                    </p>
-                    <button id="placeholder-load-btn" class="px-6 py-3 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors shadow-lg shadow-warning/20">
-                        立即接入实时监测
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button id="check-monitor-btn" class="px-5 py-3 bg-white border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors font-medium">
+                        刷新事件目录
+                    </button>
+                    <button id="load-monitor-btn" class="px-5 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-lg shadow-primary/20">
+                        刷新台站波形
+                    </button>
+                    <button id="refresh-monitor-btn" class="px-5 py-3 bg-white border border-gray-300 text-dark rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                        刷新全部
+                    </button>
+                    <button id="open-monitor-btn" class="px-5 py-3 bg-dark text-white rounded-lg hover:bg-dark/90 transition-colors font-medium">
+                        本地完整版
                     </button>
                 </div>
-                <iframe id="monitor-frame" class="monitor-embed-frame hidden" title="SeisRTMonitor 实时波形窗口" loading="lazy"></iframe>
+
+                <div class="grid xl:grid-cols-[1.35fr_0.65fr] gap-6">
+                    <div class="monitor-panel-dark p-4 md:p-5 text-white">
+                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+                            <div>
+                                <div class="text-sm text-white/60 mb-1">当前台站</div>
+                                <div id="monitor-current-key" class="text-xl font-semibold tracking-wide">IU.TATO.00.BHZ</div>
+                            </div>
+                            <div class="sm:text-right">
+                                <div class="text-sm text-white/60 mb-1">波形摘要</div>
+                                <div id="monitor-wave-summary" class="text-sm text-white/85">等待服务器缓存</div>
+                            </div>
+                        </div>
+                        <canvas id="monitor-waveform" class="monitor-waveform-canvas"></canvas>
+                        <p id="monitor-wave-status" class="text-sm text-white/65 mt-3 leading-6">
+                            后端允许每 3 秒刷新一次该台站 5 分钟窗口波形，默认显示延迟为 1 分钟；这不是连续流动画。
+                        </p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">监测器状态</div>
+                                <div id="monitor-current-state" class="text-lg font-semibold text-primary">同步中</div>
+                            </div>
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">触发状态</div>
+                                <div id="monitor-current-id" class="text-lg font-semibold text-dark">未触发</div>
+                            </div>
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">缓存样本数</div>
+                                <div id="monitor-current-samples" class="text-lg font-semibold text-dark">0</div>
+                            </div>
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">最后收到数据</div>
+                                <div id="monitor-current-packet" class="text-sm font-semibold text-dark leading-6">--</div>
+                            </div>
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">阈值</div>
+                                <div id="monitor-current-threshold" class="text-lg font-semibold text-dark">4.0</div>
+                            </div>
+                            <div class="monitor-metric-card">
+                                <div class="text-xs uppercase tracking-[0.16em] text-dark/45 mb-2">预览点数</div>
+                                <div id="monitor-current-points" class="text-lg font-semibold text-dark">0</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                            <div class="flex items-center justify-between gap-3 mb-4">
+                                <h4 class="font-semibold text-lg">当前台站触发记录</h4>
+                                <span class="text-xs text-dark/50">仅显示当前轻量监测目标</span>
+                            </div>
+                            <div id="monitor-events" class="space-y-3 max-h-[360px] overflow-y-auto pr-1 realtime-event-list"></div>
+                        </div>
+
+                        <div id="monitor-action-hint" class="rounded-lg bg-primary/5 text-primary px-4 py-3 text-sm leading-6">
+                            当前采用公共轻量模式：后台缓存公开事件目录和单台站短窗口波形，优先保证服务器低负载。
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -469,24 +615,23 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">核心功能</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisRT 地震实时监测系统具备全方位的地震监测与预警功能，为防震减灾提供全面支持</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">以下能力描述以当前仓库中的 SeisRTMonitor 设计目标与已实现方向为准，尽量避免宣传式夸张表述。</p>
             </div>
             
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- 功能1 -->
                 <div class="bg-gray-50 p-8 rounded-xl shadow-md card-hover">
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
-                        <i class="fa fa-waves"></i>
+                        <i class="fa fa-chart-line"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">实时地震监测</h3>
+                    <h3 class="text-xl font-semibold mb-4">实时波形监测</h3>
                     <p class="text-dark/70 mb-4">
-                        全天候监测地震活动，通过分布式传感器网络实时采集地震波数据，
-                        实现地震事件的快速检测与定位。
+                        面向单台站到多台站扩展的实时波形观测界面，重点保证持续刷新、低延迟滚动显示和基本状态可读性。
                     </p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 毫秒级数据采集</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 高精度定位</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 自动事件识别</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> SeedLink 实时接入</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 低延迟滚动波形</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 多台站波形墙扩展</li>
                     </ul>
                 </div>
                 
@@ -495,15 +640,14 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-bell"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">地震预警发布</h3>
+                    <h3 class="text-xl font-semibold mb-4">事件触发与报警</h3>
                     <p class="text-dark/70 mb-4">
-                        在地震波到达前发布预警信息，根据震级和距离计算预警时间，
-                        为用户争取宝贵的应急避险时间。
+                        以事件触发检测、报警提示和事件片段保存为主，当前更偏向监测平台能力建设，而不是成熟的社会化预警发布系统。
                     </p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 多级预警级别</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 多渠道发布</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 定制化预警范围</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 事件记录</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 日志面板</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 报警提示预留</li>
                     </ul>
                 </div>
                 
@@ -512,15 +656,14 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-chart-line"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">数据分析与建模</h3>
+                    <h3 class="text-xl font-semibold mb-4">数据分析与回放基础</h3>
                     <p class="text-dark/70 mb-4">
-                        采用先进算法对地震数据进行深度分析，建立地震活动模型，
-                        提供地震趋势预测和风险评估。
+                        为后续震相识别、简单定位、震级估计和回放分析保留结构，先把实时流、缓存和展示链路打稳。
                     </p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 机器学习分析</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 地震趋势预测</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 风险评估报告</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 环形缓冲区</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 事件片段保存</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 分析模块可扩展</li>
                     </ul>
                 </div>
                 
@@ -529,15 +672,14 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-map-marker-alt"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">震害快速评估</h3>
+                    <h3 class="text-xl font-semibold mb-4">地图与台站视图</h3>
                     <p class="text-dark/70 mb-4">
-                        地震发生后，结合地质条件和建筑物分布，快速评估震害影响范围和程度，
-                        为应急救援提供决策支持。
+                        项目中已经包含台站地图、台站列表和事件位置展示方向，用于补充实时波形之外的空间信息。
                     </p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 影响范围划定</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 损失评估模型</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 救援资源调度</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 台站地图</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 事件列表</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 站点信息联动</li>
                     </ul>
                 </div>
                 
@@ -548,12 +690,12 @@
                     </div>
                     <h3 class="text-xl font-semibold mb-4">台站网络管理</h3>
                     <p class="text-dark/70 mb-4">
-                        对分布在各地的监测台站进行远程管理和状态监控，确保数据采集的连续性和可靠性。
+                        支持网络、台站、位置和通道等参数输入，便于在实验与演示过程中快速切换目标台站。
                     </p>
                     <ul class="text-dark/70 space-y-2">
                         <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 远程状态监控</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 故障自动报警</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 数据质量评估</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 多通道切换</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 台站参数配置</li>
                     </ul>
                 </div>
                 
@@ -562,170 +704,118 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-file-export"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">数据共享与发布</h3>
+                    <h3 class="text-xl font-semibold mb-4">Web 嵌入与演示发布</h3>
                     <p class="text-dark/70 mb-4">
-                        提供标准化的数据接口和共享平台，支持与政府部门、科研机构和公众的信息共享。
+                        页面提供项目总览与轻量实时入口，完整版 SeisRTMonitor 控制台可按需新开窗口，适合本地部署后的演示、教学和内部测试。
                     </p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 开放API接口</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 数据可视化展示</li>
-                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 定制化报表生成</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 轻量 API 接入面板</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 单台站低负载预览</li>
+                        <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i> 完整控制台独立打开</li>
                     </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 预警案例 -->
-    <section id="cases" class="section-padding bg-gray-50">
+    <!-- 项目进展 -->
+    <section id="roadmap" class="section-padding bg-gray-50">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">预警成功案例</h2>
+                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">项目进展</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisRT 系统在多次地震事件中成功实现预警，为防灾减灾做出重要贡献</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">这里保留真实的开发方向与阶段信息，不再展示虚构的“成功预警案例”。</p>
             </div>
             
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- 案例1 -->
-                <div class="bg-white rounded-xl overflow-hidden shadow-md card-hover">
-                    <div class="relative">
-                        <img src="https://picsum.photos/id/1019/800/500" alt="四川雅安地震预警案例" class="w-full h-64 object-cover">
-                        <div class="absolute top-4 left-4 bg-warning text-white text-sm px-3 py-1 rounded-full">
-                            成功预警
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold mb-3">四川雅安6.1级地震</h3>
-                        <p class="text-dark/70 mb-4">
-                            2023年4月20日，四川雅安发生6.1级地震，SeisRT 系统在地震波到达前12秒发出预警，
-                            震中周边城市获得了3-48秒不等的预警时间，学校、医院等人员密集场所及时采取了应急措施，
-                            有效减少了人员伤亡。
-                        </p>
-                        <div class="flex flex-wrap gap-2 mb-4">
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">预警时间12秒</span>
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">影响范围200km</span>
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">50万人受益</span>
-                        </div>
-                        <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center transition-colors">
-                            查看详细报告 <i class="fa fa-arrow-right ml-2"></i>
-                        </a>
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-md p-8 card-hover">
+                    <h3 class="text-xl font-semibold mb-5 text-primary">当前项目状态</h3>
+                    <p class="text-dark/70 leading-7 mb-6">
+                        根据仓库中的 README 与架构说明，SeisRTMonitor 目前仍处于“架构设计与项目骨架”阶段，
+                        已经具备实时监测页面、基础数据流与监测入口的方向，但仍在持续完善中。
+                    </p>
+                    <div class="space-y-4 text-dark/75">
+                        <div class="flex items-start"><i class="fa fa-check text-success mr-3 mt-1"></i><span>M1：单台站/单通道实时波形监控</span></div>
+                        <div class="flex items-start"><i class="fa fa-check text-success mr-3 mt-1"></i><span>M2：多台站、多通道管理与断线重连</span></div>
+                        <div class="flex items-start"><i class="fa fa-check text-success mr-3 mt-1"></i><span>M3：事件检测、事件保存与报警</span></div>
+                        <div class="flex items-start"><i class="fa fa-check text-success mr-3 mt-1"></i><span>M4：台站地图、事件列表与简单定位</span></div>
                     </div>
                 </div>
-                
-                <!-- 案例2 -->
-                <div class="bg-white rounded-xl overflow-hidden shadow-md card-hover">
-                    <div class="relative">
-                        <img src="https://picsum.photos/id/1036/800/500" alt="青海海北地震预警案例" class="w-full h-64 object-cover">
-                        <div class="absolute top-4 left-4 bg-warning text-white text-sm px-3 py-1 rounded-full">
-                            成功预警
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold mb-3">青海海北5.3级地震</h3>
-                        <p class="text-dark/70 mb-4">
-                            2022年11月17日，青海海北州发生5.3级地震，SeisRT 系统在地震发生后2.3秒完成参数测定，
-                            向周边城镇和重要基础设施发布预警信息，青藏铁路部分路段紧急停车，
-                            避免了可能发生的次生灾害。
-                        </p>
-                        <div class="flex flex-wrap gap-2 mb-4">
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">预警时间8秒</span>
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">铁路应急响应</span>
-                            <span class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full">无人员伤亡</span>
-                        </div>
-                        <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center transition-colors">
-                            查看详细报告 <i class="fa fa-arrow-right ml-2"></i>
-                        </a>
+
+                <div class="bg-white rounded-xl shadow-md p-8 card-hover">
+                    <h3 class="text-xl font-semibold mb-5 text-primary">项目定位</h3>
+                    <p class="text-dark/70 leading-7 mb-6">
+                        这是一个围绕地震数据实时观测展开的个人项目页面，重点是把实时波形、事件记录、台站切换和演示入口整合在一起，
+                        方便后续本地部署、教学展示和功能验证。
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">PyQt6</span>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">FastAPI</span>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">SeedLink</span>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">WebSocket</span>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">实时波形</span>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">事件记录</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 联系我们 -->
+    <!-- 联系作者 -->
     <section id="contact" class="section-padding bg-white">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">联系我们</h2>
+                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">联系作者</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">如有任何问题或需要技术支持，请通过以下方式联系我们</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">以下信息来自个人主页，保留真实可公开的联系方式，不再展示虚构机构和热线。</p>
             </div>
             
-            <div class="grid md:grid-cols-2 gap-12">
-                <div>
-                    <form class="bg-gray-50 p-8 rounded-xl shadow-md">
-                        <h3 class="text-xl font-semibold mb-6">发送咨询</h3>
-                        
-                        <div class="mb-6">
-                            <label for="name" class="block text-dark font-medium mb-2">姓名</label>
-                            <input type="text" id="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="请输入您的姓名">
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="org" class="block text-dark font-medium mb-2">单位/机构</label>
-                            <input type="text" id="org" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="请输入您的单位或机构名称">
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="email" class="block text-dark font-medium mb-2">邮箱</label>
-                            <input type="email" id="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="请输入您的邮箱">
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="message" class="block text-dark font-medium mb-2">咨询内容</label>
-                            <textarea id="message" rows="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="请输入您的咨询内容"></textarea>
-                        </div>
-                        
-                        <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-                            提交咨询
-                        </button>
-                    </form>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-gray-50 p-8 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold mb-6">项目说明</h3>
+                    <p class="text-dark/70 leading-7 mb-6">
+                        SeisRT 页面用于介绍项目定位、展示实时入口，并与 SeisRTMonitor 轻量监测面板联动。
+                        如果你只想直接看实时波形，建议在上方“实时监测”区域启动轻量监测，或新窗口打开完整界面。
+                    </p>
+                    <div class="space-y-4 text-dark/75">
+                        <div class="flex items-start"><i class="fa fa-user text-primary mr-3 mt-1"></i><span>作者：云凇</span></div>
+                        <div class="flex items-start"><i class="fa fa-code text-primary mr-3 mt-1"></i><span>身份：地球物理工作者、全栈开发者</span></div>
+                        <div class="flex items-start"><i class="fa fa-location-dot text-primary mr-3 mt-1"></i><span>所在地：武汉市</span></div>
+                    </div>
                 </div>
-                
+
                 <div>
                     <div class="bg-gray-50 h-full p-8 rounded-xl shadow-md">
-                        <h3 class="text-xl font-semibold mb-6">联系方式</h3>
-                        
+                        <h3 class="text-xl font-semibold mb-6">真实联系方式</h3>
                         <div class="space-y-6 mb-8">
-                            <div class="flex items-start">
-                                <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                    <i class="fa fa-map-marker"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold mb-1">办公地址</h4>
-                                    <p class="text-dark/70">北京市海淀区中关村南大街5号地球物理研究所</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start">
-                                <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                    <i class="fa fa-phone"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold mb-1">联系电话</h4>
-                                    <p class="text-dark/70">技术支持: +86 10 8888 6666</p>
-                                    <p class="text-dark/70">紧急联系: +86 10 8888 6661</p>
-                                </div>
-                            </div>
-                            
                             <div class="flex items-start">
                                 <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                                     <i class="fa fa-envelope"></i>
                                 </div>
                                 <div>
-                                    <h4 class="font-semibold mb-1">电子邮箱</h4>
-                                    <p class="text-dark/70">info@seisd.org</p>
-                                    <p class="text-dark/70">support@seisd.org</p>
+                                    <h4 class="font-semibold mb-1">邮箱</h4>
+                                    <p class="text-dark/70">yusp519@qq.com</p>
+                                    <a href="mailto:yusp519@qq.com" class="text-primary hover:text-primary/80 transition-colors">发送邮件</a>
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-start">
                                 <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                    <i class="fa fa-clock"></i>
+                                    <i class="fa-brands fa-github"></i>
                                 </div>
                                 <div>
-                                    <h4 class="font-semibold mb-1">工作时间</h4>
-                                    <p class="text-dark/70">周一至周五: 9:00 - 18:00</p>
-                                    <p class="text-dark/70">节假日: 24小时应急值守</p>
+                                    <h4 class="font-semibold mb-1">GitHub</h4>
+                                    <a href="https://github.com/YSP0Github" target="_blank" class="text-primary hover:text-primary/80 transition-colors"><i class="fa-brands fa-github mr-1"></i>github.com/YSP0Github</a>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                    <i class="fa fa-comment"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-1">说明</h4>
+                                    <p class="text-dark/70">当前页面为个人项目介绍与演示入口，不提供公开值班热线或虚构机构信息。</p>
                                 </div>
                             </div>
                         </div>
@@ -733,17 +823,14 @@
                         <div>
                             <h4 class="font-semibold mb-4">关注我们</h4>
                             <div class="flex space-x-4">
-                                <a href="#" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
-                                    <i class="fa fa-weixin"></i>
+                                <a href="wechat_qrcode.html" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+                                    <i class="fa-brands fa-weixin"></i>
                                 </a>
-                                <a href="#" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
-                                    <i class="fa fa-weibo"></i>
+                                <a href="https://weibo.com/yunsong519" target="_blank" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+                                    <i class="fa-brands fa-weibo"></i>
                                 </a>
-                                <a href="#" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
-                                    <i class="fa fa-youtube"></i>
-                                </a>
-                                <a href="#" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
-                                    <i class="fa fa-github"></i>
+                                <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+                                    <i class="fa-brands fa-github"></i>
                                 </a>
                             </div>
                         </div>
@@ -760,26 +847,22 @@
                 <div>
                     <div class="flex items-center space-x-2 mb-6">
                         <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                            <i class="fa fa-waves text-primary text-xl"></i>
+                            <span class="seisrt-logo-mark seisrt-logo-mark-primary" aria-hidden="true"></span>
                         </div>
                         <span class="font-bold text-xl">SeisRT</span>
                     </div>
                     <p class="text-white/70 mb-6">
-                        地震实时监测系统，为防震减灾提供精准数据支持和决策依据，
-                        守护人民生命财产安全。
+                        面向实时波形监测、事件记录与教学演示的个人项目页面，配套轻量监测面板与完整版 SeisRTMonitor 控制台。
                     </p>
                     <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
-                            <i class="fa fa-weixin"></i>
+                        <a href="wechat_qrcode.html" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
+                            <i class="fa-brands fa-weixin"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
-                            <i class="fa fa-weibo"></i>
+                        <a href="https://weibo.com/yunsong519" target="_blank" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
+                            <i class="fa-brands fa-weibo"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
-                            <i class="fa fa-youtube"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
-                            <i class="fa fa-github"></i>
+                        <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
+                            <i class="fa-brands fa-github"></i>
                         </a>
                     </div>
                 </div>
@@ -790,36 +873,35 @@
                         <li><a href="#overview" class="text-white/70 hover:text-white transition-colors">系统概述</a></li>
                         <li><a href="#realtime" class="text-white/70 hover:text-white transition-colors">实时监测</a></li>
                         <li><a href="#features" class="text-white/70 hover:text-white transition-colors">核心功能</a></li>
-                        <li><a href="#cases" class="text-white/70 hover:text-white transition-colors">预警案例</a></li>
-                        <li><a href="#contact" class="text-white/70 hover:text-white transition-colors">联系我们</a></li>
+                        <li><a href="#roadmap" class="text-white/70 hover:text-white transition-colors">项目进展</a></li>
+                        <li><a href="#contact" class="text-white/70 hover:text-white transition-colors">联系作者</a></li>
                     </ul>
                 </div>
                 
                 <div>
-                    <h4 class="font-semibold text-lg mb-6">资源中心</h4>
+                    <h4 class="font-semibold text-lg mb-6">项目相关</h4>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-white/70 hover:text-white transition-colors">系统手册</a></li>
-                        <li><a href="#" class="text-white/70 hover:text-white transition-colors">技术文档</a></li>
-                        <li><a href="#" class="text-white/70 hover:text-white transition-colors">地震科普</a></li>
-                        <li><a href="#" class="text-white/70 hover:text-white transition-colors">预警指南</a></li>
-                        <li><a href="#" class="text-white/70 hover:text-white transition-colors">数据共享</a></li>
+                        <li><a href="../SeisRTMonitor/README.html" class="text-white/70 hover:text-white transition-colors">README</a></li>
+                        <li><a href="../SeisRTMonitor/docs/ARCHITECTURE.html" class="text-white/70 hover:text-white transition-colors">架构说明</a></li>
+                        <li><a href="#realtime" class="text-white/70 hover:text-white transition-colors">实时入口</a></li>
+                        <li><a href="../index.html#projects" class="text-white/70 hover:text-white transition-colors">返回项目区</a></li>
                     </ul>
                 </div>
                 
                 <div>
-                    <h4 class="font-semibold text-lg mb-6">紧急联系</h4>
+                    <h4 class="font-semibold text-lg mb-6">作者信息</h4>
                     <ul class="space-y-3">
                         <li class="flex items-center">
-                            <i class="fa fa-phone mr-3 text-white/70"></i>
-                            <span class="text-white/70">+86 10 8888 6661</span>
+                            <i class="fa fa-user mr-3 text-white/70"></i>
+                            <span class="text-white/70">云凇</span>
                         </li>
                         <li class="flex items-center">
                             <i class="fa fa-envelope mr-3 text-white/70"></i>
-                            <span class="text-white/70">emergency@seisd.org</span>
+                            <span class="text-white/70">yusp519@qq.com</span>
                         </li>
                         <li class="flex items-center">
                             <i class="fa fa-map-marker mr-3 text-white/70"></i>
-                            <span class="text-white/70">全国地震应急热线: 12322</span>
+                            <span class="text-white/70">武汉市</span>
                         </li>
                     </ul>
                 </div>
@@ -827,14 +909,14 @@
             
             <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-white/50 text-sm mb-4 md:mb-0">
-                    &copy; <span id="current-year"></span> SeisRT 地震实时监测系统 版权所有 All Rights Reserved
+                    &copy; <span id="current-year"></span> SeisRT 项目页面
                     <span class="block md:inline ml-0 md:ml-2">|</span>
                     <a href="https://beian.miit.gov.cn" target="_blank" class="text-slate-500 hover:text-blue-600 transition-colors">鄂ICP备2026000757号-1</a>
                 </p>
                 <div class="flex space-x-6">
                     <a href="Privacy_policy.html" class="text-white/50 hover:text-white text-sm transition-colors">隐私政策</a>
                     <a href="About_us.html" class="text-white/50 hover:text-white text-sm transition-colors">关于我们</a>
-                    <a href="#" class="text-white/50 hover:text-white text-sm transition-colors">使用条款</a>
+                    <a href="../index.html" class="text-white/50 hover:text-white text-sm transition-colors">返回首页</a>
                 </div>
             </div>
         </div>
@@ -850,15 +932,22 @@
 
         const liveState = {
             events: [],
-            stationCache: new Map(),
             map: null,
             mapLoaded: false,
             markers: [],
             monthlyChart: null,
             magnitudeChart: null,
-            ws: null,
-            reconnectTimer: null,
-            syncPromise: null
+            syncPromise: null,
+            eventPollTimer: null,
+            monitorPollTimer: null,
+            statusPollTimer: null,
+            activeMonitorId: null,
+            activeMonitorKey: '',
+            ownedMonitorIds: new Set(),
+            lastMonitorInfo: null,
+            lastSnapshot: null,
+            isMonitorOnline: false,
+            mapNoticeEl: null
         };
 
         function formatDateTime(date) {
@@ -874,7 +963,7 @@
         }
 
         function formatUnixTime(ts) {
-            if (!Number.isFinite(ts)) return '--';
+            if (!Number.isFinite(ts) || ts <= 0) return '--';
             return formatDateTime(new Date(ts * 1000));
         }
 
@@ -890,45 +979,39 @@
             return '#3B82F6';
         }
 
-        function normalizeBaseUrl(url) {
-            const normalized = (url || '').trim();
-            if (!normalized) return '';
-            return normalized.endsWith('/') ? normalized : `${normalized}/`;
-        }
-
-        function getMonitorBaseUrl() {
-            return normalizeBaseUrl(document.getElementById('monitor-base-url')?.value || '');
-        }
-
-        function buildMonitorApiUrl(path) {
-            const base = getMonitorBaseUrl();
-            if (!base) return '';
-            return new URL(path.replace(/^\//, ''), base).toString();
-        }
-
-        function buildMonitorWsUrl(path) {
-            const base = getMonitorBaseUrl();
-            if (!base) return '';
-            const url = new URL(base);
-            url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            url.pathname = path;
-            url.search = '';
-            url.hash = '';
-            return url.toString();
-        }
-
         function buildMonitorUrl() {
-            const base = getMonitorBaseUrl();
-            if (!base) return '';
-            const url = new URL(base, window.location.href);
-            url.searchParams.set('embed', '1');
+            const cfg = readMonitorConfig();
+            const url = new URL('http://127.0.0.1:8765/');
             url.searchParams.set('lang', 'zh');
             url.searchParams.set('autostart', '1');
-            url.searchParams.set('network', document.getElementById('monitor-network').value.trim() || 'IU');
-            url.searchParams.set('station', document.getElementById('monitor-station').value.trim() || 'TATO');
-            url.searchParams.set('location', document.getElementById('monitor-location').value.trim() || '00');
-            url.searchParams.set('channel', document.getElementById('monitor-channel').value.trim() || 'BHZ');
+            url.searchParams.set('network', cfg.network);
+            url.searchParams.set('station', cfg.station);
+            url.searchParams.set('location', cfg.location);
+            url.searchParams.set('channel', cfg.channel);
             return url.toString();
+        }
+
+        function normalizeCode(value, fallback) {
+            const text = String(value || fallback || '').trim();
+            return text ? text.toUpperCase() : String(fallback || '').toUpperCase();
+        }
+
+        function readMonitorConfig() {
+            return {
+                server: 'service.iris.edu',
+                network: normalizeCode(liveState.lastMonitorInfo?.station?.network, 'IU'),
+                station: normalizeCode(liveState.lastMonitorInfo?.station?.station, 'TATO'),
+                location: normalizeCode(liveState.lastMonitorInfo?.station?.location, '00'),
+                channel: normalizeCode(liveState.lastMonitorInfo?.station?.channel, 'BHZ'),
+                window_seconds: Number(liveState.lastMonitorInfo?.station?.window_seconds || 300),
+                playback_delay_seconds: Number(liveState.lastMonitorInfo?.station?.data_delay_seconds || 60),
+                buffer_seconds: 900,
+                trigger_threshold: Number(liveState.lastMonitorInfo?.detector?.trigger_threshold || 4)
+            };
+        }
+
+        function monitorKeyFromConfig(config) {
+            return [config.network, config.station, config.location, config.channel].join('.');
         }
 
         function eventTimestamp(event) {
@@ -939,9 +1022,31 @@
             return String(event?.station || event?.trace_id || '--');
         }
 
-        function eventStationKey(event) {
-            const parts = eventStationCode(event).split('.');
-            return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : eventStationCode(event);
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function eventDisplayPlace(event) {
+            return String(event?.display_place || event?.place || eventStationCode(event));
+        }
+
+        function eventCatalogSources(event) {
+            if (Array.isArray(event?.catalog_sources) && event.catalog_sources.length) {
+                return event.catalog_sources.join(' / ');
+            }
+            return event?.source || eventStationCode(event);
+        }
+
+        function eventRegionBasisText(event) {
+            if (event?.region_basis === 'amap') return '区域: 高德地图';
+            if (event?.region_basis === 'amap_unresolved') return '区域: 高德未解析';
+            return '区域: 目录缓存';
         }
 
         function updateLastUpdateTime() {
@@ -988,15 +1093,38 @@
             return {
                 version: 8,
                 sources: {
-                    'osm-tiles': {
+                    'china-tiles': {
                         type: 'raster',
-                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tiles: ['https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'],
                         tileSize: 256,
-                        attribution: '© OpenStreetMap contributors'
+                        attribution: '© 高德地图'
                     }
                 },
-                layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm-tiles' }]
+                layers: [{ id: 'china-tiles', type: 'raster', source: 'china-tiles' }]
             };
+        }
+
+        function getMapNoticeElement() {
+            if (liveState.mapNoticeEl) return liveState.mapNoticeEl;
+            const container = document.getElementById('map-container');
+            if (!container) return null;
+            const notice = document.createElement('div');
+            notice.className = 'absolute inset-x-4 bottom-4 rounded-xl bg-white/92 backdrop-blur-sm text-dark/75 text-sm leading-6 shadow-md px-4 py-3 z-20';
+            notice.style.display = 'none';
+            container.appendChild(notice);
+            liveState.mapNoticeEl = notice;
+            return notice;
+        }
+
+        function setMapNotice(message) {
+            const notice = getMapNoticeElement();
+            if (!notice) return;
+            if (message) {
+                notice.textContent = message;
+                notice.style.display = 'block';
+            } else {
+                notice.style.display = 'none';
+            }
         }
 
         function clearMapMarkers() {
@@ -1007,8 +1135,19 @@
         function renderMapEvents() {
             if (!liveState.map || !liveState.mapLoaded) return;
             clearMapMarkers();
-            const plotted = liveState.events.filter(event => Number.isFinite(event.latitude) && Number.isFinite(event.longitude)).slice(0, 12);
-            if (!plotted.length) return;
+            const plotted = liveState.events
+                .filter(event => Number.isFinite(Number(event.latitude)) && Number.isFinite(Number(event.longitude)))
+                .slice(0, 12);
+
+            if (!liveState.events.length) {
+                setMapNotice('等待事件数据后再绘制地图。');
+                return;
+            }
+            if (!plotted.length) {
+                setMapNotice('当前事件记录未附带台站坐标，本页为减轻后端负担，暂不自动抓取完整台站目录。');
+                return;
+            }
+            setMapNotice('');
 
             const bounds = new maplibregl.LngLatBounds();
             plotted.forEach(event => {
@@ -1029,19 +1168,18 @@
                 }
 
                 const popup = new maplibregl.Popup({ offset: 20 }).setHTML(`
-                    <div style="font-weight:700;margin-bottom:4px;">${event.displayName || eventStationCode(event)}</div>
+                    <div style="font-weight:700;margin-bottom:4px;">${escapeHtml(eventDisplayPlace(event))}</div>
                     <div>时间: ${formatUnixTime(eventTimestamp(event))}</div>
-                    <div>站点: ${eventStationCode(event)}</div>
-                    <div>STA/LTA: ${Number(event.ratio || 0).toFixed(2)}</div>
+                    <div>来源: ${escapeHtml(eventCatalogSources(event))}</div>
                     <div>M~: ${Number(event.magnitude || 0).toFixed(2)}</div>
                 `);
 
                 const marker = new maplibregl.Marker(el)
-                    .setLngLat([event.longitude, event.latitude])
+                    .setLngLat([Number(event.longitude), Number(event.latitude)])
                     .setPopup(popup)
                     .addTo(liveState.map);
                 liveState.markers.push(marker);
-                bounds.extend([event.longitude, event.latitude]);
+                bounds.extend([Number(event.longitude), Number(event.latitude)]);
             });
 
             if (!bounds.isEmpty()) {
@@ -1094,8 +1232,13 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        resizeDelay: 150,
+                        animation: false,
                         plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, title: { display: true, text: '事件次数' } } }
+                        scales: {
+                            x: { grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#64748B' } },
+                            y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#64748B' }, title: { display: true, text: '事件次数' } }
+                        }
                     }
                 });
             }
@@ -1111,6 +1254,8 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        resizeDelay: 150,
+                        animation: false,
                         plugins: { legend: { position: 'right' } }
                     }
                 });
@@ -1159,45 +1304,13 @@
             }
         }
 
-        async function ensureStationCatalog(force = false) {
-            if (liveState.stationCache.size && !force) return;
-            const stationsUrl = buildMonitorApiUrl('/api/stations');
-            if (!stationsUrl) return;
-            const response = await fetch(stationsUrl);
-            if (!response.ok) throw new Error(`station catalog HTTP ${response.status}`);
-            const payload = await response.json();
-            liveState.stationCache.clear();
-            (payload.stations || []).forEach(station => {
-                liveState.stationCache.set(`${station.network}.${station.station}`, station);
-            });
-        }
-
-        async function enrichEvents(events) {
-            try {
-                await ensureStationCatalog(false);
-            } catch (error) {
-                console.warn('station catalog unavailable', error);
-            }
-            return events.map(event => {
-                const station = liveState.stationCache.get(eventStationKey(event));
-                return {
-                    ...event,
-                    latitude: station ? Number(station.latitude) : null,
-                    longitude: station ? Number(station.longitude) : null,
-                    displayName: station?.site || null,
-                    network: station?.network || null,
-                    stationCode: station?.station || null
-                };
-            });
-        }
-
         function renderEarthquakeList() {
             const container = document.getElementById('recent-earthquakes');
             if (!container) return;
             if (!liveState.events.length) {
                 container.innerHTML = `
                     <div class="rounded-xl bg-gray-50 border border-gray-200 p-5 text-dark/70 leading-7">
-                        当前尚未从 SeisRTMonitor 收到事件记录。请先启动监测器并添加台站，页面会自动拉取 <code>/api/events</code> 和 <code>/ws/monitors</code> 的实时更新。
+                        当前尚未从公共目录缓存收到事件记录，页面会自动拉取 <code>/YSXS/api/seisrt/events</code>。
                     </div>`;
                 return;
             }
@@ -1205,20 +1318,70 @@
             container.innerHTML = liveState.events.slice(0, 10).map((event) => {
                 const mag = Number(event.magnitude || 0);
                 const color = getMagnitudeColorClass(mag);
-                const site = event.displayName ? ` | 站点: ${event.displayName}` : '';
-                const coord = Number.isFinite(event.latitude) && Number.isFinite(event.longitude)
-                    ? `纬度 ${event.latitude.toFixed(2)}°，经度 ${event.longitude.toFixed(2)}°`
-                    : '站点坐标待加载';
+                const place = escapeHtml(eventDisplayPlace(event));
+                const source = `来源: ${escapeHtml(eventCatalogSources(event))}`;
+                const regionBasis = escapeHtml(eventRegionBasisText(event));
                 return `
                     <article class="border-l-4 ${color.line} pl-4 py-2">
                         <div class="flex justify-between items-start gap-3">
                             <div>
-                                <h4 class="font-medium">${eventStationCode(event)} 监测事件</h4>
-                                <p class="text-dark/70 text-sm">${formatUnixTime(eventTimestamp(event))}${site}</p>
+                                <h4 class="font-medium">${place}</h4>
+                                <p class="text-dark/70 text-sm">${formatUnixTime(eventTimestamp(event))} · ${source} · ${regionBasis}</p>
                             </div>
                             <span class="${color.badge} px-2 py-1 rounded text-sm font-medium whitespace-nowrap">M~ ${mag.toFixed(2)}</span>
                         </div>
-                        <p class="text-dark/70 text-sm mt-2">STA/LTA: ${Number(event.ratio || 0).toFixed(2)} | 烈度: ${event.intensity || '--'} | ${coord}</p>
+                        <p class="text-dark/70 text-sm mt-2">深度: ${Number.isFinite(Number(event.depth_km)) ? Number(event.depth_km).toFixed(1) + ' km' : '--'} | 烈度: ${event.intensity || '--'}</p>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function currentMonitorEvents() {
+            if (!liveState.activeMonitorId && !liveState.activeMonitorKey) return [];
+            return liveState.events
+                .filter(event => {
+                    if (liveState.activeMonitorId && String(event.monitor_id || '') === String(liveState.activeMonitorId)) return true;
+                    return liveState.activeMonitorKey && eventStationCode(event) === liveState.activeMonitorKey;
+                })
+                .slice(0, 8);
+        }
+
+        function renderMonitorEvents() {
+            const container = document.getElementById('monitor-events');
+            if (!container) return;
+            const events = currentMonitorEvents();
+            if (!events.length) {
+                const detector = liveState.lastMonitorInfo?.detector || {};
+                const ratio = Number(detector.ratio || 0);
+                const peak = Number(detector.peak || 0);
+                const triggered = Boolean(detector.triggered);
+                container.innerHTML = `
+                    <article class="monitor-mini-event border-l-4 ${triggered ? 'border-warning' : 'border-success'}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="font-medium text-dark">${triggered ? '单台站波形异常' : '当前台站平稳'}</div>
+                                <div class="text-sm text-dark/60 mt-1">${liveState.activeMonitorKey || 'IU.TATO.00.BHZ'}</div>
+                            </div>
+                            <span class="${triggered ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'} px-2 py-1 rounded text-xs font-semibold">${triggered ? '触发' : '正常'}</span>
+                        </div>
+                        <div class="text-sm text-dark/70 mt-3 leading-6">STA/LTA: ${ratio.toFixed(2)} · 阈值: ${Number(detector.trigger_threshold || 4).toFixed(1)} · 峰值: ${Number.isFinite(peak) ? peak.toFixed(0) : '--'}</div>
+                    </article>`;
+                return;
+            }
+
+            container.innerHTML = events.map(event => {
+                const mag = Number(event.magnitude || 0);
+                const color = getMagnitudeColorClass(mag);
+                return `
+                    <article class="monitor-mini-event border-l-4 ${color.line}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="font-medium text-dark">${escapeHtml(eventDisplayPlace(event))}</div>
+                                <div class="text-sm text-dark/60 mt-1">${formatUnixTime(eventTimestamp(event))} · ${escapeHtml(eventStationCode(event))}</div>
+                            </div>
+                            <span class="${color.badge} px-2 py-1 rounded text-xs font-semibold">M~ ${mag.toFixed(2)}</span>
+                        </div>
+                        <div class="text-sm text-dark/70 mt-3 leading-6">STA/LTA: ${Number(event.ratio || 0).toFixed(2)} · 烈度: ${event.intensity || '--'}</div>
                     </article>
                 `;
             }).join('');
@@ -1229,122 +1392,323 @@
                 .sort((a, b) => eventTimestamp(b) - eventTimestamp(a))
                 .slice(0, 100);
             renderEarthquakeList();
+            renderMonitorEvents();
             updateCharts();
             renderMapEvents();
         }
 
-        function upsertEvent(event) {
-            const id = String(event.id || `${eventStationCode(event)}_${Math.round(eventTimestamp(event))}`);
-            liveState.events = liveState.events.filter(item => String(item.id || '') !== id);
-            liveState.events.unshift(event);
-            replaceEvents(liveState.events);
+        async function fetchJson(url, options = {}) {
+            const response = await fetch(url, options);
+            let payload = null;
+            try {
+                payload = await response.json();
+            } catch (error) {
+                payload = null;
+            }
+            if (!response.ok && !payload) throw new Error(`HTTP ${response.status}`);
+            if (payload && !response.ok) payload._httpStatus = response.status;
+            return payload;
         }
 
-        function removeEventById(id) {
-            liveState.events = liveState.events.filter(event => String(event.id || '') !== String(id));
-            replaceEvents(liveState.events);
+        function publicApiUrl(path, params = {}) {
+            const origin = window.location.protocol === 'file:' ? 'http://127.0.0.1:5050' : window.location.origin;
+            const url = new URL(`/YSXS/api/seisrt/${path.replace(/^\//, '')}`, origin);
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
+            });
+            return url.toString();
         }
 
-        async function syncMonitorEvents(forceCatalog = false) {
+        function updateCatalogSummary(payload) {
+            const sourcesEl = document.getElementById('catalog-sources');
+            const statusEl = document.getElementById('catalog-status');
+            const countEl = document.getElementById('catalog-count');
+            const updatedEl = document.getElementById('catalog-updated');
+            if (sourcesEl) sourcesEl.textContent = (payload.sources || ['USGS', 'EMSC']).join(' / ');
+            if (statusEl) statusEl.textContent = payload.status === 'ok' ? '正常' : payload.stale ? '使用缓存' : '异常';
+            if (countEl) countEl.textContent = String((payload.events || []).length);
+            if (updatedEl) updatedEl.textContent = formatUnixTime(Number(payload.updated_at || 0));
+        }
+
+        async function syncMonitorEvents(force = false) {
             if (liveState.syncPromise) return liveState.syncPromise;
             liveState.syncPromise = (async () => {
-                if (forceCatalog) await ensureStationCatalog(true);
-                const eventsUrl = buildMonitorApiUrl('/api/events');
-                if (!eventsUrl) return;
-                const response = await fetch(eventsUrl);
-                if (!response.ok) throw new Error(`events HTTP ${response.status}`);
-                const payload = await response.json();
-                const enriched = await enrichEvents(payload.events || []);
-                replaceEvents(enriched);
+                const payload = await fetchJson(publicApiUrl('events', { force: force ? '1' : '' }));
+                updateCatalogSummary(payload || {});
+                replaceEvents(payload.events || []);
             })().finally(() => {
                 liveState.syncPromise = null;
             });
             return liveState.syncPromise;
         }
 
-        function connectMonitorStream() {
-            const wsUrl = buildMonitorWsUrl('/ws/monitors');
-            if (!wsUrl) return;
-            if (liveState.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(liveState.ws.readyState)) return;
-
-            const ws = new WebSocket(wsUrl);
-            liveState.ws = ws;
-            ws.onmessage = async (event) => {
-                const payload = JSON.parse(event.data);
-                if (payload.type === 'event') {
-                    const [enriched] = await enrichEvents([payload]);
-                    upsertEvent(enriched);
-                } else if (payload.type === 'event_deleted') {
-                    removeEventById(payload.id);
-                } else if (payload.type === 'events_cleared') {
-                    replaceEvents([]);
-                }
-            };
-            ws.onclose = () => {
-                clearTimeout(liveState.reconnectTimer);
-                liveState.reconnectTimer = setTimeout(() => {
-                    liveState.ws = null;
-                    connectMonitorStream();
-                }, 3000);
-            };
-            ws.onerror = () => ws.close();
+        function setMonitorStatus(kind, text) {
+            const status = document.getElementById('monitor-status');
+            if (!status) return;
+            status.className = `status-chip ${kind}`;
+            status.textContent = text;
         }
 
-        async function updateMonitorStatus() {
-            const status = document.getElementById('monitor-status');
-            const base = getMonitorBaseUrl();
-            if (!status || !base) return;
-            status.className = 'status-chip checking';
-            status.textContent = '正在检查';
-            try {
-                const healthUrl = buildMonitorApiUrl('/api/health');
-                const response = await fetch(healthUrl, { method: 'GET' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                status.className = 'status-chip online';
-                status.textContent = '服务在线';
-                await syncMonitorEvents(false);
-                connectMonitorStream();
-            } catch (error) {
-                status.className = 'status-chip offline';
-                status.textContent = '无法连接';
+        function setMonitorActionHint(text, theme = 'primary') {
+            const el = document.getElementById('monitor-action-hint');
+            if (!el) return;
+            const classes = {
+                primary: 'rounded-lg bg-primary/5 text-primary px-4 py-3 text-sm leading-6',
+                warning: 'rounded-lg bg-warning/10 text-warning px-4 py-3 text-sm leading-6',
+                success: 'rounded-lg bg-success/10 text-success px-4 py-3 text-sm leading-6'
+            };
+            el.className = classes[theme] || classes.primary;
+            el.textContent = text;
+        }
+
+        function updateMonitorStats(info = null, snapshot = null) {
+            const stateEl = document.getElementById('monitor-current-state');
+            const idEl = document.getElementById('monitor-current-id');
+            const samplesEl = document.getElementById('monitor-current-samples');
+            const packetEl = document.getElementById('monitor-current-packet');
+            const thresholdEl = document.getElementById('monitor-current-threshold');
+            const pointsEl = document.getElementById('monitor-current-points');
+            const keyEl = document.getElementById('monitor-current-key');
+            const summaryEl = document.getElementById('monitor-wave-summary');
+
+            const station = info?.station || liveState.lastMonitorInfo?.station || readMonitorConfig();
+            const detector = info?.detector || liveState.lastMonitorInfo?.detector || null;
+            const key = station?.key || monitorKeyFromConfig(station) || liveState.activeMonitorKey || 'IU.TATO.00.BHZ';
+            const statusText = info?.status === 'ok' ? '在线' : info?.status === 'stale' ? '缓存' : info?.status ? '异常' : '同步中';
+            if (stateEl) stateEl.textContent = statusText;
+            if (idEl) idEl.textContent = detector?.triggered ? '已触发' : '未触发';
+            if (samplesEl) samplesEl.textContent = String(info?.samples || snapshot?.raw_npts || snapshot?.npts || 0);
+            if (packetEl) packetEl.textContent = formatUnixTime(Number(info?.last_packet_at || snapshot?.endtime || 0));
+            if (thresholdEl) thresholdEl.textContent = detector ? Number(detector.trigger_threshold || 0).toFixed(1) : Number(readMonitorConfig().trigger_threshold).toFixed(1);
+            if (pointsEl) pointsEl.textContent = String(snapshot?.npts || 0);
+            if (keyEl) keyEl.textContent = key;
+            document.getElementById('public-monitor-network').textContent = station?.network || '--';
+            document.getElementById('public-monitor-station').textContent = station?.station || '--';
+            document.getElementById('public-monitor-location').textContent = station?.location || '--';
+            document.getElementById('public-monitor-channel').textContent = station?.channel || '--';
+            if (summaryEl) {
+                if (snapshot?.npts) {
+                    summaryEl.textContent = `${formatUnixTime(Number(snapshot.starttime || 0))} 至 ${formatUnixTime(Number(snapshot.endtime || 0))}`;
+                } else if (station) {
+                    summaryEl.textContent = `${station.window_seconds || 300}s 窗口 · ${station.data_delay_seconds || 60}s 数据延迟`;
+                } else {
+                    summaryEl.textContent = '等待服务器缓存';
+                }
             }
         }
 
-        function loadMonitorFrame() {
-            const monitorUrl = buildMonitorUrl();
-            if (!monitorUrl) return;
-            const frame = document.getElementById('monitor-frame');
-            const placeholder = document.getElementById('monitor-placeholder');
-            frame.src = monitorUrl;
-            frame.classList.remove('hidden');
-            placeholder.classList.add('hidden');
+        function drawEmptyWaveform(message) {
+            const canvas = document.getElementById('monitor-waveform');
+            if (!canvas) return;
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            const width = Math.max(320, Math.floor(rect.width || canvas.clientWidth || 640));
+            const height = Math.max(220, Math.floor(rect.height || 320));
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#07111f';
+            ctx.fillRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(148,163,184,0.18)';
+            for (let i = 1; i < 4; i += 1) {
+                const y = (height / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            ctx.fillStyle = 'rgba(226,232,240,0.85)';
+            ctx.font = '15px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, width / 2, height / 2);
+        }
+
+        function renderWaveform(snapshot) {
+            const canvas = document.getElementById('monitor-waveform');
+            const statusEl = document.getElementById('monitor-wave-status');
+            if (!canvas) return;
+            if (!snapshot || !snapshot.npts || !(snapshot.data || []).length) {
+                drawEmptyWaveform('等待服务器缓存');
+                if (statusEl) {
+                    statusEl.textContent = '后端尚未返回可绘制的台站波形，页面会继续每 3 秒刷新。';
+                }
+                return;
+            }
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            const width = Math.max(320, Math.floor(rect.width || canvas.clientWidth || 640));
+            const height = Math.max(220, Math.floor(rect.height || 320));
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = '#07111f';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 4; i += 1) {
+                const y = (height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            for (let i = 1; i <= 5; i += 1) {
+                const x = (width / 6) * i;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            const values = snapshot.data.map(Number).filter(Number.isFinite);
+            if (!values.length) {
+                drawEmptyWaveform('等待波形数据');
+                return;
+            }
+            const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1e-6);
+            const mid = height / 2;
+            const scaleY = (height * 0.38) / maxAbs;
+
+            ctx.beginPath();
+            values.forEach((value, index) => {
+                const x = (index / Math.max(values.length - 1, 1)) * width;
+                const y = mid - value * scaleY;
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = '#38BDF8';
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(244,114,182,0.5)';
+            ctx.beginPath();
+            ctx.moveTo(0, mid);
+            ctx.lineTo(width, mid);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(226,232,240,0.82)';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(formatUnixTime(Number(snapshot.starttime || 0)), 12, 18);
+            ctx.textAlign = 'right';
+            ctx.fillText(formatUnixTime(Number(snapshot.endtime || 0)), width - 12, 18);
+            ctx.textAlign = 'left';
+            ctx.fillText(`点数 ${snapshot.npts} · 采样率 ${Number(snapshot.sampling_rate || 0).toFixed(2)} Hz`, 12, height - 12);
+
+            if (statusEl) {
+                statusEl.textContent = `当前采用定时快照预览，${snapshot.npts} 个点，时间范围 ${formatUnixTime(Number(snapshot.starttime || 0))} 至 ${formatUnixTime(Number(snapshot.endtime || 0))}。`;
+            }
+        }
+
+        async function checkMonitorHealth({ quiet = false } = {}) {
+            if (!quiet) setMonitorStatus('checking', '正在同步');
+            try {
+                const payload = await fetchJson(publicApiUrl('station-status'));
+                liveState.isMonitorOnline = true;
+                liveState.activeMonitorId = 'public-station';
+                liveState.lastMonitorInfo = payload;
+                liveState.activeMonitorKey = payload.station?.key || liveState.activeMonitorKey || 'IU.TATO.00.BHZ';
+                setMonitorStatus(payload.status === 'ok' ? 'online' : 'checking', payload.status === 'ok' ? '公共数据在线' : '使用缓存');
+                updateMonitorStats(payload, liveState.lastSnapshot);
+                renderMonitorEvents();
+                if (!quiet) setMonitorActionHint('已同步服务器端公共单台站状态。', 'success');
+                return true;
+            } catch (error) {
+                liveState.isMonitorOnline = false;
+                setMonitorStatus('offline', '同步失败');
+                if (!quiet) setMonitorActionHint('当前无法同步服务器端 SeisRT 公共数据，请稍后重试。', 'warning');
+                return false;
+            }
+        }
+
+        async function syncActiveMonitorInfo() {
+            try {
+                const info = await fetchJson(publicApiUrl('station-status'));
+                liveState.lastMonitorInfo = info;
+                liveState.activeMonitorKey = info.station?.key || liveState.activeMonitorKey;
+                updateMonitorStats(info, liveState.lastSnapshot);
+                renderMonitorEvents();
+                return info;
+            } catch (error) {
+                console.warn('sync monitor info failed', error);
+                return liveState.lastMonitorInfo;
+            }
+        }
+
+        async function fetchActiveSnapshot() {
+            try {
+                const payload = await fetchJson(publicApiUrl('station-snapshot'));
+                const snapshot = payload.snapshot || payload;
+                liveState.lastSnapshot = snapshot;
+                liveState.lastMonitorInfo = payload;
+                liveState.activeMonitorId = 'public-station';
+                liveState.activeMonitorKey = payload.station?.key || liveState.activeMonitorKey || 'IU.TATO.00.BHZ';
+                updateMonitorStats(payload, snapshot);
+                renderWaveform(snapshot);
+                renderMonitorEvents();
+                return snapshot;
+            } catch (error) {
+                console.warn('snapshot failed', error);
+                setMonitorActionHint('波形刷新失败，可能是远程台站服务暂时不可用。', 'warning');
+                return null;
+            }
+        }
+
+        function startMonitorPolling() {
+            clearInterval(liveState.monitorPollTimer);
+            liveState.monitorPollTimer = setInterval(async () => {
+                await fetchActiveSnapshot();
+                await syncActiveMonitorInfo();
+            }, 3000);
+        }
+
+        async function stopMonitorAndRelease() {
+            clearInterval(liveState.monitorPollTimer);
+            liveState.monitorPollTimer = null;
+            setMonitorActionHint('已停止本页自动轮询，服务器端公共缓存仍会按计划更新。', 'primary');
+        }
+
+        async function startLightweightMonitor() {
+            try {
+                await fetchActiveSnapshot();
+                await syncActiveMonitorInfo();
+                startMonitorPolling();
+                setMonitorActionHint(`已同步公共台站 ${liveState.activeMonitorKey} 的 5 分钟窗口波形，页面将每 3 秒自动刷新。`, 'success');
+            } catch (error) {
+                console.error(error);
+                setMonitorActionHint(`刷新台站波形失败：${error.message || error}`, 'warning');
+            }
         }
 
         function openMonitorWindow() {
             const monitorUrl = buildMonitorUrl();
-            if (!monitorUrl) return;
             window.open(monitorUrl, '_blank', 'noopener');
         }
 
         function setupMonitorBridge() {
             document.getElementById('check-monitor-btn')?.addEventListener('click', async () => {
-                await updateMonitorStatus();
+                await syncMonitorEvents(true);
+                setMonitorActionHint('已刷新公开地震目录缓存。', 'success');
             });
-            document.getElementById('load-monitor-btn')?.addEventListener('click', async () => {
-                loadMonitorFrame();
-                await updateMonitorStatus();
+            document.getElementById('load-monitor-btn')?.addEventListener('click', startLightweightMonitor);
+            document.getElementById('refresh-monitor-btn')?.addEventListener('click', async () => {
+                await fetchActiveSnapshot();
+                await syncMonitorEvents(true);
+                await syncActiveMonitorInfo();
+                setMonitorActionHint('已刷新公共事件目录与单台站波形。', 'success');
             });
-            document.getElementById('placeholder-load-btn')?.addEventListener('click', async () => {
-                loadMonitorFrame();
-                await updateMonitorStatus();
-            });
+            document.getElementById('stop-monitor-btn')?.addEventListener('click', stopMonitorAndRelease);
             document.getElementById('open-monitor-btn')?.addEventListener('click', openMonitorWindow);
-            document.getElementById('monitor-base-url')?.addEventListener('change', async () => {
-                liveState.stationCache.clear();
-                replaceEvents([]);
-                if (liveState.ws) liveState.ws.close();
-                await updateMonitorStatus();
-            });
+            window.addEventListener('resize', () => renderWaveform(liveState.lastSnapshot));
         }
 
         function initWaveAnimation() {
@@ -1386,18 +1750,10 @@
             document.querySelectorAll('section > div > div:not(.text-center)').forEach(section => observer.observe(section));
         }
 
-        function setupContactForm() {
-            const form = document.querySelector('#contact form');
-            if (!form) return;
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                alert('当前页面为静态演示页，咨询表单尚未接入后端提交接口。');
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             setupNavigation();
             renderEarthquakeList();
+            renderMonitorEvents();
             updateLastUpdateTime();
             setInterval(updateLastUpdateTime, 10000);
             initMap();
@@ -1405,10 +1761,28 @@
             initWaveAnimation();
             setupSectionAnimation();
             setupMonitorBridge();
-            setupContactForm();
-            await updateMonitorStatus();
+            drawEmptyWaveform('等待服务器缓存');
+            updateMonitorStats();
+            document.getElementById('monitor-current-key').textContent = monitorKeyFromConfig(readMonitorConfig());
+
+            await syncMonitorEvents();
+            await checkMonitorHealth({ quiet: true });
+            await fetchActiveSnapshot();
+            startMonitorPolling();
+
+            liveState.eventPollTimer = setInterval(async () => {
+                try {
+                    await syncMonitorEvents();
+                } catch (error) {
+                    console.warn('event poll failed', error);
+                }
+            }, 60000);
+
+            liveState.statusPollTimer = setInterval(async () => {
+                await checkMonitorHealth({ quiet: true });
+            }, 30000);
         });
-    </script>    </script>
+    </script>
 </body>
 </html>
     

@@ -52,6 +52,12 @@ from .services.runtime_metrics import (
     runtime_metrics_after_request,
     runtime_metrics_before_request,
 )
+from .services.seisrt_public import (
+    refresh_catalog,
+    refresh_station_snapshot,
+    start_seisrt_public_scheduler,
+    station_status,
+)
 from .services.morning_report import (
     SUPPORTED_SOURCES,
     ai_summary_available,
@@ -4146,6 +4152,27 @@ def broadcast_mark_seen(broadcast_id: int):
     return jsonify({'ok': True})
 
 
+@app.route('/api/seisrt/events')
+def seisrt_public_events():
+    force = request.args.get('force') == '1'
+    payload = refresh_catalog(force=force)
+    status_code = 200 if payload.get('events') else 503
+    return jsonify(payload), status_code
+
+
+@app.route('/api/seisrt/station-status')
+def seisrt_public_station_status():
+    return jsonify(station_status())
+
+
+@app.route('/api/seisrt/station-snapshot')
+def seisrt_public_station_snapshot():
+    force = request.args.get('force') == '1'
+    payload = refresh_station_snapshot(force=force)
+    status_code = 200 if payload.get('snapshot', {}).get('npts') else 503
+    return jsonify(payload), status_code
+
+
 @app.route('/api/morning-report/paper/<int:paper_id>/summary', methods=['POST'])
 @login_required
 def morning_report_summarize(paper_id: int):
@@ -6824,6 +6851,7 @@ def register_blueprints(app: Flask) -> None:
 ensure_database_initialized()
 ensure_morning_report_schema()
 register_blueprints(app)
+start_seisrt_public_scheduler(app)
 
 import traceback  # 新增：用于打印完整错误栈
 

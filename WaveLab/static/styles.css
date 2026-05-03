@@ -134,7 +134,7 @@ button.ghost { background: rgba(15, 23, 42, 0.76); }
 .stat strong { font-size: 16px; line-height: 1.35; }
 .stage {
   display: grid;
-  grid-template-rows: minmax(420px, 58vh) minmax(280px, 36vh);
+  grid-template-rows: minmax(400px, 56vh) minmax(220px, 30vh);
   gap: 18px;
   min-width: 0;
 }
@@ -147,12 +147,15 @@ button.ghost { background: rgba(15, 23, 42, 0.76); }
   grid-template-columns: 1.15fr 0.85fr;
   gap: 18px;
   min-height: 0;
+  align-items: stretch;
 }
 .profile-panel {
   display: grid;
   grid-template-rows: auto 1fr 1fr;
   gap: 12px;
+  min-height: 0;
 }
+.gather-panel { min-height: 0; }
 canvas {
   width: 100%;
   display: block;
@@ -160,9 +163,9 @@ canvas {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(4,10,20,.98), rgba(8,16,28,.9));
 }
-#waveCanvas { height: calc(100% - 60px); min-height: 340px; cursor: crosshair; image-rendering: pixelated; }
-#gatherCanvas { height: calc(100% - 42px); min-height: 220px; }
-#profileCanvas, #dispersionCanvas { height: 100%; min-height: 120px; }
+#waveCanvas { height: calc(100% - 60px); min-height: 340px; cursor: crosshair; image-rendering: auto; }
+#gatherCanvas { height: clamp(180px, 26vh, 280px); min-height: 180px; }
+#profileCanvas, #dispersionCanvas { height: clamp(110px, 12.5vh, 160px); min-height: 110px; }
 @media (max-width: 1120px) {
   .shell { grid-template-columns: 1fr; }
   .panel { max-height: none; }

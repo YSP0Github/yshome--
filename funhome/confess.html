@@ -1,63 +1,291 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表白神器</title>
+    <title>表白小剧场</title>
     <style>
-        a{ 
-            font-size: 25px;
-            text-decoration: none; 
-            color:brown; 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #1a0a1a;
         }
+        canvas { position: fixed; inset: 0; z-index: 0; }
+        .scene {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 32px;
+            padding: 48px 56px;
+            text-align: center;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardIn 1s 0.5s ease forwards;
+        }
+        @keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+        .emoji-top { font-size: 3.5rem; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .question {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.95rem;
+            margin-bottom: 36px;
+        }
+        .btns { display: flex; gap: 16px; justify-content: center; position: relative; min-height: 56px; }
+        .btn-yes {
+            padding: 14px 40px;
+            border: none;
+            border-radius: 999px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f472b6, #e879f9, #a78bfa);
+            color: #fff;
+            box-shadow: 0 8px 32px rgba(236,72,153,0.35);
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        .btn-yes:hover {
+            transform: scale(1.08);
+            box-shadow: 0 12px 40px rgba(236,72,153,0.5);
+        }
+        .btn-no {
+            padding: 14px 32px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 999px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            transition: all 0.3s ease;
+            position: absolute;
+            z-index: 2;
+        }
+        .success-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .success-overlay.show { opacity: 1; pointer-events: auto; }
+        .success-text {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f472b6, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .success-sub { color: rgba(255,255,255,0.6); margin-top: 12px; font-size: 1.1rem; }
+        .back-link {
+            position: fixed; top: 20px; left: 20px; z-index: 10;
+            color: rgba(255,255,255,0.4); text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #fff; }
     </style>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
+    <a class="back-link" href="funhome.html">&#8592; 返回趣味屋</a>
 
-    <h1 style="position:absolute; left:280px; top:155px; width:auto; height:210px;">你喜欢我吗?</h1>
-    <div id="By" style="position:absolute; left:285px; top:235px;">
-        <input type="button" value=" 是的！ " onclick="f1()">
+    <div class="scene">
+        <div class="card">
+            <div class="emoji-top">&#10084;&#65039;</div>
+            <div class="question">你...喜欢我吗？</div>
+            <div class="subtitle">认真想好了再回答哦~</div>
+            <div class="btns" id="btns">
+                <button class="btn-yes" id="yesBtn">&#10024; 喜欢！</button>
+                <button class="btn-no" id="noBtn">再想想...</button>
+            </div>
+        </div>
     </div>
-    <div id="Bn" style="position:absolute; left:360px; top:235px;">
-        <input type="button" value=" 喜欢个锤子！ " onmouseover="f()" onclick="f2()">
+
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-text">&#127881; 太好了！</div>
+        <div class="success-sub">那今晚一起吃饭看电影吧~</div>
     </div>
 
     <script>
+    // Particle system
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
 
-        function f1(){
-            alert("太好来，晚上一起吃饭看电影！！！") 
-        } 
-        var flag=1;
-        function f(){ 
-            var Bn = document.getElementById('Bn');
-            var aWidth= document.body.clientWidth || document.documentElement.clientWidth;
-            var aHeight= document.body.clientHeight || document.documentElement.clientHeight;
-            var sJs1=Math.floor(Math.random()*aHeight);
-            var sJs2=Math.floor(Math.random()*aWidth);
-            if(flag==1){
-            Bn.style.top=sJs1 + 'px';
-            Bn.style.left=sJs2+'px'; 
-            flag=2;
-        
-            }else if(flag==2){
-            Bn.style.top=sJs1+'px';
-            Bn.style.left=sJs2+'px';
-            flag=3;
-            }else if(flag==3){
-            Bn.style.top=235 + 'px';
-            Bn.style.left=286 + 'px';
-            flag=4;
-            }else if(flag==4){
-            Bn.style.top=235 + 'px';
-            Bn.style.left=360 + 'px';
-            flag=1;
-            }
+    function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const hearts = [];
+    const sparkles = [];
+
+    class Heart {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * W;
+            this.y = H + 20;
+            this.size = 8 + Math.random() * 16;
+            this.speed = 0.3 + Math.random() * 0.8;
+            this.wobble = Math.random() * Math.PI * 2;
+            this.wobbleSpeed = 0.01 + Math.random() * 0.02;
+            this.wobbleAmp = 20 + Math.random() * 40;
+            this.opacity = 0.15 + Math.random() * 0.35;
+            this.rotation = Math.random() * 0.4 - 0.2;
+            const pinks = ['#f472b6','#ec4899','#f9a8d4','#e879f9','#c084fc'];
+            this.color = pinks[Math.floor(Math.random() * pinks.length)];
         }
-        function f2(){
-            alert('这不是你的真心话！');
+        update() {
+            this.y -= this.speed;
+            this.wobble += this.wobbleSpeed;
+            this.x += Math.sin(this.wobble) * 0.5;
+            if (this.y < -30) this.reset();
         }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            const s = this.size;
+            ctx.moveTo(0, s * 0.3);
+            ctx.bezierCurveTo(-s * 0.5, -s * 0.3, -s, s * 0.1, 0, s);
+            ctx.bezierCurveTo(s, s * 0.1, s * 0.5, -s * 0.3, 0, s * 0.3);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class Sparkle {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.vx = (Math.random() - 0.5) * 6;
+            this.vy = (Math.random() - 0.5) * 6 - 2;
+            this.life = 1;
+            this.decay = 0.015 + Math.random() * 0.02;
+            this.size = 2 + Math.random() * 3;
+            const colors = ['#f472b6','#e879f9','#a78bfa','#fbbf24','#fff'];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.05;
+            this.life -= this.decay;
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    for (let i = 0; i < 25; i++) {
+        const h = new Heart();
+        h.y = Math.random() * H;
+        hearts.push(h);
+    }
+
+    function burst(x, y, count) {
+        for (let i = 0; i < count; i++) sparkles.push(new Sparkle(x, y));
+    }
+
+    function animate() {
+        ctx.fillStyle = 'rgba(26,10,26,0.15)';
+        ctx.fillRect(0, 0, W, H);
+
+        hearts.forEach(h => { h.update(); h.draw(); });
+
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+            sparkles[i].update();
+            sparkles[i].draw();
+            if (sparkles[i].life <= 0) sparkles.splice(i, 1);
+        }
+
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // No button escapes
+    const noBtn = document.getElementById('noBtn');
+    const btns = document.getElementById('btns');
+    let escapeCount = 0;
+    const messages = ['再想想...', '真的吗？', '确定？', '不许点！', '哼！', '抓不到我~', '嘻嘻~', '别追了！'];
+
+    function escapeNo() {
+        escapeCount++;
+        const card = document.querySelector('.card');
+        const rect = card.getBoundingClientRect();
+        const noRect = noBtn.getBoundingClientRect();
+        const maxX = rect.width - noRect.width - 20;
+        const maxY = 60;
+
+        const newX = 20 + Math.random() * maxX;
+        const newY = -20 + Math.random() * maxY;
+
+        noBtn.style.left = newX + 'px';
+        noBtn.style.top = newY + 'px';
+        noBtn.textContent = messages[escapeCount % messages.length];
+
+        // Sparkle burst at old position
+        const oldRect = noBtn.getBoundingClientRect();
+        burst(oldRect.left + oldRect.width / 2, oldRect.top + oldRect.height / 2, 5);
+    }
+
+    noBtn.addEventListener('mouseenter', escapeNo);
+    noBtn.addEventListener('click', escapeNo);
+    noBtn.addEventListener('touchstart', e => { e.preventDefault(); escapeNo(); });
+
+    // Yes button
+    document.getElementById('yesBtn').addEventListener('click', () => {
+        const overlay = document.getElementById('successOverlay');
+        overlay.classList.add('show');
+        // Big burst
+        burst(innerWidth / 2, innerHeight / 2, 60);
+        // Continuous sparkles
+        let count = 0;
+        const iv = setInterval(() => {
+            burst(Math.random() * innerWidth, Math.random() * innerHeight, 8);
+            if (++count > 20) clearInterval(iv);
+        }, 200);
+    });
+
+    // Click anywhere for sparkles
+    document.addEventListener('click', e => burst(e.clientX, e.clientY, 8));
     </script>
-
-    
 </body>
 </html>

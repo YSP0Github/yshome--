@@ -1,0 +1,119 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="70" y1="60" x2="1500" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#23183F"/>
+      <stop offset="0.55" stop-color="#3B165D"/>
+      <stop offset="1" stop-color="#111D3F"/>
+    </linearGradient>
+    <linearGradient id="tileBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#65C1FF"/>
+      <stop offset="1" stop-color="#428FE6"/>
+    </linearGradient>
+    <linearGradient id="tileOrange" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFB158"/>
+      <stop offset="1" stop-color="#FF8A3D"/>
+    </linearGradient>
+    <linearGradient id="tileMint" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7EE5BF"/>
+      <stop offset="1" stop-color="#57D2BD"/>
+    </linearGradient>
+    <linearGradient id="tilePink" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FF67B2"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="tilePurple" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#C18BFF"/>
+      <stop offset="1" stop-color="#9C6BE8"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="36" fill="url(#bg2)"/>
+  <circle cx="1324" cy="180" r="200" fill="#F04DB4" fill-opacity="0.14" filter="url(#softGlow)"/>
+  <circle cx="212" cy="706" r="218" fill="#4EA3FF" fill-opacity="0.12" filter="url(#softGlow)"/>
+
+  <g opacity="0.95">
+    <circle cx="156" cy="136" r="8" fill="#FF7B7B"/>
+    <circle cx="184" cy="136" r="8" fill="#FFD34D"/>
+    <circle cx="212" cy="136" r="8" fill="#48D597"/>
+    <text x="240" y="144" fill="#B8AED9" font-size="22" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" letter-spacing="8">FUNHOME PLAYGROUND</text>
+  </g>
+
+  <rect x="114" y="160" width="570" height="120" rx="24" fill="#091225"/>
+  <text x="144" y="220" fill="#F4F8FF" font-size="58" font-family="DejaVu Sans, Arial, sans-serif" font-weight="800">FunHome</text>
+  <text x="144" y="254" fill="#B9C5E2" font-size="24" font-family="DejaVu Sans, Arial, sans-serif">Interactive Toys · Small Projects · Playful UI</text>
+
+  <g opacity="0.95">
+    <circle cx="132" cy="54" r="6" fill="#5EEAD4"/>
+    <circle cx="246" cy="40" r="9" fill="#F472B6"/>
+    <circle cx="332" cy="30" r="5" fill="#FBBF24"/>
+    <circle cx="418" cy="56" r="6" fill="#86EFAC"/>
+    <circle cx="1494" cy="110" r="7" fill="#60A5FA"/>
+    <circle cx="1408" cy="72" r="5" fill="#FBBF24"/>
+  </g>
+
+  <g opacity="0.92">
+    <circle cx="150" cy="782" r="9" fill="#60A5FA"/>
+    <circle cx="234" cy="820" r="10" fill="#F472B6"/>
+    <circle cx="298" cy="760" r="5" fill="#FBBF24"/>
+    <circle cx="380" cy="782" r="7" fill="#86EFAC"/>
+    <circle cx="430" cy="710" r="8" fill="#60A5FA"/>
+    <circle cx="1460" cy="764" r="10" fill="#F472B6"/>
+    <circle cx="1518" cy="816" r="6" fill="#86EFAC"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <rect x="176" y="360" width="212" height="286" rx="34" fill="url(#tileBlue)" stroke="#F6FBFF" stroke-width="3"/>
+    <rect x="194" y="384" width="176" height="18" rx="9" fill="#F0F7FF" fill-opacity="0.28"/>
+    <rect x="224" y="514" width="116" height="26" rx="13" fill="#F6FBFF"/>
+    <rect x="238" y="560" width="88" height="20" rx="10" fill="#F6FBFF"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <rect x="446" y="408" width="214" height="254" rx="34" fill="url(#tileOrange)" stroke="#FFF7EF" stroke-width="3"/>
+    <rect x="464" y="432" width="178" height="18" rx="9" fill="#FFF7EF" fill-opacity="0.24"/>
+    <rect x="498" y="566" width="112" height="24" rx="12" fill="#FFF7EF"/>
+    <rect x="510" y="610" width="88" height="18" rx="9" fill="#FFF7EF"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <rect x="712" y="360" width="226" height="288" rx="34" fill="url(#tileMint)" stroke="#F4FFFB" stroke-width="3"/>
+    <rect x="730" y="386" width="190" height="18" rx="9" fill="#F4FFFB" fill-opacity="0.22"/>
+    <circle cx="848" cy="468" r="10" fill="#61A5FF" fill-opacity="0.88"/>
+    <rect x="762" y="514" width="118" height="26" rx="13" fill="#F6FFFB"/>
+    <rect x="776" y="560" width="90" height="20" rx="10" fill="#F6FFFB"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <rect x="1000" y="410" width="224" height="252" rx="34" fill="url(#tilePink)" stroke="#FFF1F7" stroke-width="3"/>
+    <rect x="1018" y="434" width="188" height="18" rx="9" fill="#FFF1F7" fill-opacity="0.2"/>
+    <rect x="1050" y="568" width="114" height="26" rx="13" fill="#FFF8FC"/>
+    <rect x="1062" y="610" width="88" height="18" rx="9" fill="#FFF8FC"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <rect x="1290" y="360" width="218" height="286" rx="34" fill="url(#tilePurple)" stroke="#FBF5FF" stroke-width="3"/>
+    <rect x="1308" y="386" width="182" height="18" rx="9" fill="#FBF5FF" fill-opacity="0.2"/>
+    <rect x="1348" y="514" width="108" height="26" rx="13" fill="#FBF5FF"/>
+    <rect x="1360" y="560" width="84" height="20" rx="10" fill="#FBF5FF"/>
+  </g>
+
+  <g opacity="0.95">
+    <circle cx="860" cy="334" r="9" fill="#F472B6"/>
+    <circle cx="918" cy="378" r="8" fill="#60A5FA"/>
+    <circle cx="986" cy="338" r="7" fill="#FBBF24"/>
+    <circle cx="1064" cy="390" r="9" fill="#86EFAC"/>
+    <circle cx="1166" cy="310" r="8" fill="#F472B6"/>
+    <circle cx="1246" cy="354" r="8" fill="#60A5FA"/>
+    <circle cx="1408" cy="332" r="7" fill="#86EFAC"/>
+  </g>
+
+  <rect x="112" y="742" width="274" height="62" rx="31" fill="#EC4899" fill-opacity="0.92"/>
+  <text x="168" y="783" fill="#FFF4FB" font-size="29" font-family="DejaVu Sans, Arial, sans-serif" font-weight="800">Fun Projects</text>
+</svg>

@@ -1,56 +1,374 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>太极小实验</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #ccc;
+            min-height: 100vh;
+            background: #0a0a0f;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #fff;
+            overflow-x: hidden;
         }
-
-        .taiji {
-            width: 150px;
-            height: 300px;
-            margin: 100px auto;
-            border-right: 150px solid #000;
-            background-color: #fff;
-            border-radius: 150px;
-            animation: rotate 2s infinite linear;
+        canvas { position: fixed; inset: 0; z-index: 0; }
+        .ui {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-
-        .taiji::before,
-        .taiji::after {
-            content: '';
-            margin-left: 50%;
-            display: block;
-            width: 50px;
-            height: 50px;
-            background-color: #fff;
-            border: 50px solid #000;
-            border-radius: 75px;
+        .title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-
-        .taiji::after {
-            background-color: #000;
-            border: 50px solid #fff;
+        .subtitle {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.95rem;
+            margin-bottom: 32px;
         }
-
-        @keyframes rotate {
-            from {}
-
-            to {
-                transform: rotate(-360deg);
-            }
+        .canvas-wrap {
+            position: relative;
+            width: 360px;
+            height: 360px;
         }
+        #taijiCanvas {
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+        }
+        .controls {
+            margin-top: 32px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .ctrl-group {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ctrl-label {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 4px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(255,255,255,0.3);
+        }
+        .btn-theme {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-theme:hover, .btn-theme.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-color: rgba(255,255,255,0.3);
+        }
+        .philosophy {
+            margin-top: 36px;
+            max-width: 420px;
+            text-align: center;
+        }
+        .philosophy p {
+            color: rgba(255,255,255,0.35);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        .philosophy .quote {
+            font-size: 1.15rem;
+            color: rgba(255,255,255,0.55);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        .stats {
+            display: flex; gap: 24px; margin-top: 20px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.7);
+        }
+        .stat-lbl {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.3);
+        }
+        .back-link {
+            position: fixed; top: 20px; left: 20px; z-index: 10;
+            color: rgba(255,255,255,0.4); text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #fff; }
     </style>
 </head>
 <body>
-    <div class="taiji"></div>
+    <canvas id="bgCanvas"></canvas>
+    <a class="back-link" href="funhome.html">&#8592; 返回趣味屋</a>
+
+    <div class="ui">
+        <div class="title">太极 · Taiji</div>
+        <div class="subtitle">阴 阳 互 生 · 万 物 归 一</div>
+
+        <div class="canvas-wrap">
+            <canvas id="taijiCanvas" width="720" height="720"></canvas>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="stat-val" id="speedVal">1.0</div><div class="stat-lbl">转速</div></div>
+            <div class="stat"><div class="stat-val" id="particleVal">60</div><div class="stat-lbl">粒子</div></div>
+            <div class="stat"><div class="stat-val" id="angleVal">0</div><div class="stat-lbl">角度</div></div>
+        </div>
+
+        <div class="controls">
+            <div class="ctrl-group">
+                <span class="ctrl-label">转速</span>
+                <input type="range" id="speedRange" min="0.1" max="3" step="0.1" value="1">
+            </div>
+            <div class="ctrl-group">
+                <span class="ctrl-label">粒子</span>
+                <input type="range" id="particleRange" min="0" max="120" step="10" value="60">
+            </div>
+            <div class="ctrl-group">
+                <button class="btn-theme active" data-theme="classic">经典</button>
+                <button class="btn-theme" data-theme="neon">霓虹</button>
+                <button class="btn-theme" data-theme="golden">金光</button>
+            </div>
+        </div>
+
+        <div class="philosophy">
+            <p class="quote">"道生一，一生二，二生三，三生万物。"</p>
+            <p>太极图以黑白双鱼象征阴阳，阴中有阳，阳中有阴，互根互用，消长转化。旋转之间，万物生息之理尽在其中。</p>
+        </div>
+    </div>
+
+    <script>
+    // Background particles
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let bgW, bgH;
+    function bgResize() { bgW = bgCanvas.width = innerWidth; bgH = bgCanvas.height = innerHeight; }
+    bgResize();
+    window.addEventListener('resize', bgResize);
+
+    const bgDots = [];
+    for (let i = 0; i < 60; i++) {
+        bgDots.push({
+            x: Math.random() * 2000, y: Math.random() * 2000,
+            r: 1 + Math.random() * 1.5,
+            speed: 0.1 + Math.random() * 0.3,
+            opacity: 0.1 + Math.random() * 0.2
+        });
+    }
+    function drawBg() {
+        bgCtx.fillStyle = '#0a0a0f';
+        bgCtx.fillRect(0, 0, bgW, bgH);
+        bgDots.forEach(d => {
+            d.y -= d.speed;
+            if (d.y < -5) { d.y = bgH + 5; d.x = Math.random() * bgW; }
+            bgCtx.beginPath();
+            bgCtx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+            bgCtx.fillStyle = `rgba(255,255,255,${d.opacity})`;
+            bgCtx.fill();
+        });
+        requestAnimationFrame(drawBg);
+    }
+    drawBg();
+
+    // Taiji canvas
+    const tc = document.getElementById('taijiCanvas');
+    const tctx = tc.getContext('2d');
+    const CX = 360, CY = 360, R = 140;
+
+    let speed = 1;
+    let angle = 0;
+    let particleCount = 60;
+    let theme = 'classic';
+    const particles = [];
+
+    const themes = {
+        classic: { yang: '#ffffff', yin: '#1a1a2e', yangEye: '#1a1a2e', yinEye: '#ffffff', glow: 'rgba(255,255,255,0.08)', particleA: '#fff', particleB: '#888' },
+        neon:    { yang: '#00f5ff', yin: '#ff00ff', yangEye: '#ff00ff', yinEye: '#00f5ff', glow: 'rgba(0,245,255,0.12)', particleA: '#00f5ff', particleB: '#ff00ff' },
+        golden:  { yang: '#ffd700', yin: '#2d1b00', yangEye: '#2d1b00', yinEye: '#ffd700', glow: 'rgba(255,215,0,0.1)', particleA: '#ffd700', particleB: '#ff8c00' }
+    };
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.angle = Math.random() * Math.PI * 2;
+            this.radius = R + 20 + Math.random() * 60;
+            this.speed = (0.005 + Math.random() * 0.015) * (Math.random() > 0.5 ? 1 : -1);
+            this.size = 1 + Math.random() * 2.5;
+            this.opacity = 0.3 + Math.random() * 0.5;
+            this.isYang = Math.random() > 0.5;
+        }
+        update() { this.angle += this.speed * speed; }
+        draw() {
+            const t = themes[theme];
+            const x = CX + Math.cos(this.angle) * this.radius;
+            const y = CY + Math.sin(this.angle) * this.radius;
+            tctx.beginPath();
+            tctx.arc(x, y, this.size, 0, Math.PI * 2);
+            tctx.fillStyle = this.isYang ? t.particleA : t.particleB;
+            tctx.globalAlpha = this.opacity;
+            tctx.fill();
+            tctx.globalAlpha = 1;
+        }
+    }
+
+    function syncParticles() {
+        while (particles.length < particleCount) particles.push(new Particle());
+        while (particles.length > particleCount) particles.pop();
+    }
+
+    function drawTaiji() {
+        tctx.clearRect(0, 0, 720, 720);
+
+        const t = themes[theme];
+
+        // Outer glow
+        const glow = tctx.createRadialGradient(CX, CY, R * 0.5, CX, CY, R * 2);
+        glow.addColorStop(0, t.glow);
+        glow.addColorStop(1, 'transparent');
+        tctx.fillStyle = glow;
+        tctx.fillRect(0, 0, 720, 720);
+
+        tctx.save();
+        tctx.translate(CX, CY);
+        tctx.rotate(angle);
+
+        // Outer circle clip
+        tctx.beginPath();
+        tctx.arc(0, 0, R, 0, Math.PI * 2);
+        tctx.clip();
+
+        // Yang (white) half - right
+        tctx.fillStyle = t.yang;
+        tctx.beginPath();
+        tctx.arc(0, 0, R, -Math.PI / 2, Math.PI / 2);
+        tctx.fill();
+
+        // Yin (dark) half - left
+        tctx.fillStyle = t.yin;
+        tctx.beginPath();
+        tctx.arc(0, 0, R, Math.PI / 2, -Math.PI / 2);
+        tctx.fill();
+
+        // Yang bump (top) - yin colored
+        tctx.fillStyle = t.yin;
+        tctx.beginPath();
+        tctx.arc(0, -R / 2, R / 2, 0, Math.PI * 2);
+        tctx.fill();
+
+        // Yin bump (bottom) - yang colored
+        tctx.fillStyle = t.yang;
+        tctx.beginPath();
+        tctx.arc(0, R / 2, R / 2, 0, Math.PI * 2);
+        tctx.fill();
+
+        // Yang eye (small yin dot in yang bump)
+        tctx.fillStyle = t.yangEye;
+        tctx.beginPath();
+        tctx.arc(0, -R / 2, R / 8, 0, Math.PI * 2);
+        tctx.fill();
+
+        // Yin eye (small yang dot in yin bump)
+        tctx.fillStyle = t.yinEye;
+        tctx.beginPath();
+        tctx.arc(0, R / 2, R / 8, 0, Math.PI * 2);
+        tctx.fill();
+
+        tctx.restore();
+
+        // Outer ring
+        tctx.strokeStyle = theme === 'neon' ? 'rgba(0,245,255,0.3)' : 'rgba(255,255,255,0.15)';
+        tctx.lineWidth = 2;
+        tctx.beginPath();
+        tctx.arc(CX, CY, R + 4, 0, Math.PI * 2);
+        tctx.stroke();
+
+        // Particles
+        syncParticles();
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        // Update stats
+        angle += 0.008 * speed;
+        document.getElementById('angleVal').textContent = Math.round((angle * 180 / Math.PI) % 360) + '°';
+
+        requestAnimationFrame(drawTaiji);
+    }
+    drawTaiji();
+
+    // Controls
+    document.getElementById('speedRange').addEventListener('input', e => {
+        speed = parseFloat(e.target.value);
+        document.getElementById('speedVal').textContent = speed.toFixed(1);
+    });
+    document.getElementById('particleRange').addEventListener('input', e => {
+        particleCount = parseInt(e.target.value);
+        document.getElementById('particleVal').textContent = particleCount;
+    });
+
+    document.querySelectorAll('.btn-theme').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.btn-theme').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            theme = btn.dataset.theme;
+    });
+    });
+
+    // Mouse interaction - particles follow cursor
+    tc.addEventListener('mousemove', e => {
+        const rect = tc.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (720 / rect.width);
+        const my = (e.clientY - rect.top) * (720 / rect.height);
+        particles.forEach(p => {
+            const px = CX + Math.cos(p.angle) * p.radius;
+            const py = CY + Math.sin(p.angle) * p.radius;
+            const dx = mx - px, dy = my - py;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 80) {
+                p.angle += 0.02 * speed;
+            }
+        });
+    });
+    </script>
 </body>
 </html>

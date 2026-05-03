@@ -1,108 +1,319 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>计算器</title>
+    <title>玻璃感计算器</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-        background-color: #f2f2f2;
-        font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+            background: #0a0a1a;
         }
-
-        .container {
-        margin: auto;
-        margin-top: 100px;
-        width: 300px;
-        padding: 10px;
-        border: 1px solid #ccc;
-        background-color: #fff;
-        box-shadow: 0px 0px 10px #ccc;
+        .bg-canvas { position: fixed; inset: 0; z-index: 0; }
+        .calc {
+            position: relative; z-index: 1;
+            width: 340px;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
         }
-
-        .output {
-        font-size: 2em;
-        text-align: right;
-        padding: 10px;
-        background-color: #eee;
-        border: 1px solid #ccc;
+        .display {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
         }
-
-        .button {
-        font-size: 1.5em;
-        margin: 5px;
-        width: 50px;
-        height: 50px;
-        border: none;
-        background-color: #ccc;
-        color: #fff;
-        cursor: pointer;
+        .display .expr {
+            color: rgba(255,255,255,0.45);
+            font-size: 0.95rem;
+            min-height: 24px;
+            word-break: break-all;
+            transition: color 0.2s;
         }
-
-        .button:hover {
-        background-color: #999;
+        .display .result {
+            color: #fff;
+            font-size: 2.6rem;
+            font-weight: 300;
+            letter-spacing: -1px;
+            line-height: 1.2;
+            transition: font-size 0.2s;
         }
-
-        .clear {
-        background-color: #ff6666;
+        .display .result.small { font-size: 1.8rem; }
+        .btns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
         }
-
-        .equals {
-        background-color: #66cc66;
+        .btn {
+            height: 58px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        a{ 
-            font-size: 25px;
-            text-decoration: none; 
-            color:brown; 
+        .btn:hover { background: rgba(255,255,255,0.16); transform: translateY(-1px); }
+        .btn:active { transform: translateY(1px) scale(0.97); background: rgba(255,255,255,0.22); }
+        .btn.op { background: rgba(99,102,241,0.3); color: #a5b4fc; }
+        .btn.op:hover { background: rgba(99,102,241,0.45); }
+        .btn.fn { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 1rem; }
+        .btn.fn:hover { background: rgba(255,255,255,0.1); }
+        .btn.eq {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
         }
+        .btn.eq:hover { box-shadow: 0 6px 24px rgba(99,102,241,0.5); }
+        .btn.clear { color: #f87171; }
+        .btn .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: scale(0);
+            animation: ripple 0.5s ease-out;
+            pointer-events: none;
+        }
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+        .title {
+            text-align: center;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        .back-link {
+            position: fixed; top: 20px; left: 20px; z-index: 10;
+            color: rgba(255,255,255,0.5); text-decoration: none;
+            font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #fff; }
     </style>
 </head>
 <body>
+    <canvas class="bg-canvas" id="bgCanvas"></canvas>
+    <a class="back-link" href="funhome.html">&#8592; 返回趣味屋</a>
 
-    <div class="container">
-        <div class="output" id="output">0</div>
-        <button class="button" onclick="clearOutput()" id="clear">C</button>
-        <button class="button" onclick="appendToOutput('%')">%</button>
-        <button class="button" onclick="appendToOutput('/')">/</button>
-        <button class="button" onclick="appendToOutput('*')">*</button>
-        <button class="button" onclick="appendToOutput('7')">7</button>
-        <button class="button" onclick="appendToOutput('8')">8</button>
-        <button class="button" onclick="appendToOutput('9')">9</button>
-        <button class="button" onclick="appendToOutput('-')">-</button>
-        <button class="button" onclick="appendToOutput('4')">4</button>
-        <button class="button" onclick="appendToOutput('5')">5</button>
-        <button class="button" onclick="appendToOutput('6')">6</button>
-        <button class="button" onclick="appendToOutput('+')">+</button>
-        <button class="button" onclick="appendToOutput('1')">1</button>
-        <button class="button" onclick="appendToOutput('2')">2</button>
-        <button class="button" onclick="appendToOutput('3')">3</button>
-        <button class="button equals" onclick="calculate()">=</button>
-        <button class="button" onclick="appendToOutput('0')">0</button>
-        <button class="button" onclick="appendToOutput('.')">.</button>
+    <div class="calc">
+        <div class="title">Glass Calculator</div>
+        <div class="display">
+            <div class="expr" id="expr"></div>
+            <div class="result" id="result">0</div>
+        </div>
+        <div class="btns">
+            <button class="btn fn clear" data-action="clear">AC</button>
+            <button class="btn fn" data-action="toggle">&#177;</button>
+            <button class="btn fn" data-action="percent">%</button>
+            <button class="btn op" data-op="/">&#247;</button>
+
+            <button class="btn" data-num="7">7</button>
+            <button class="btn" data-num="8">8</button>
+            <button class="btn" data-num="9">9</button>
+            <button class="btn op" data-op="*">&#215;</button>
+
+            <button class="btn" data-num="4">4</button>
+            <button class="btn" data-num="5">5</button>
+            <button class="btn" data-num="6">6</button>
+            <button class="btn op" data-op="-">&#8722;</button>
+
+            <button class="btn" data-num="1">1</button>
+            <button class="btn" data-num="2">2</button>
+            <button class="btn" data-num="3">3</button>
+            <button class="btn op" data-op="+">+</button>
+
+            <button class="btn" data-num="0" style="grid-column:span 2;">0</button>
+            <button class="btn" data-num=".">.</button>
+            <button class="btn eq" data-action="equals">=</button>
+        </div>
     </div>
 
-
-
     <script>
-    let output = document.getElementById("output");
+    // Animated background
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, orbs = [];
 
-    function appendToOutput(value) {
-    if (output.innerHTML === "0") {
-        output.innerHTML = value;
-    } else {
-        output.innerHTML += value;
+    function resize() {
+        W = canvas.width = innerWidth;
+        H = canvas.height = innerHeight;
     }
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Orb {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * W;
+            this.y = Math.random() * H;
+            this.r = 80 + Math.random() * 200;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            const hues = [250, 270, 200, 320, 180];
+            this.hue = hues[Math.floor(Math.random() * hues.length)];
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < -this.r) this.x = W + this.r;
+            if (this.x > W + this.r) this.x = -this.r;
+            if (this.y < -this.r) this.y = H + this.r;
+            if (this.y > H + this.r) this.y = -this.r;
+        }
+        draw() {
+            const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+            g.addColorStop(0, `hsla(${this.hue},80%,60%,0.25)`);
+            g.addColorStop(1, `hsla(${this.hue},80%,60%,0)`);
+            ctx.fillStyle = g;
+            ctx.fillRect(this.x - this.r, this.y - this.r, this.r * 2, this.r * 2);
+        }
     }
 
-    function clearOutput() {
-    output.innerHTML = "0";
+    for (let i = 0; i < 5; i++) orbs.push(new Orb());
+
+    function drawBg() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, W, H);
+        orbs.forEach(o => { o.update(); o.draw(); });
+        requestAnimationFrame(drawBg);
+    }
+    drawBg();
+
+    // Calculator logic
+    const exprEl = document.getElementById('expr');
+    const resultEl = document.getElementById('result');
+    let current = '0';
+    let expression = '';
+    let lastOp = null;
+    let resetNext = false;
+    let hasDot = false;
+
+    function updateDisplay() {
+        resultEl.textContent = current;
+        exprEl.textContent = expression;
+        resultEl.classList.toggle('small', current.length > 10);
+    }
+
+    function inputNum(n) {
+        if (n === '.') {
+            if (hasDot) return;
+            hasDot = true;
+            if (resetNext) { current = '0'; resetNext = false; }
+            current += '.';
+            updateDisplay();
+            return;
+        }
+        if (resetNext) { current = ''; resetNext = false; hasDot = false; }
+        if (current === '0' && n !== '.') current = n;
+        else current += n;
+        updateDisplay();
+    }
+
+    function inputOp(op) {
+        const opSymbols = {'+':' + ','-':' - ','*':' × ','/':' ÷ '};
+        if (lastOp && !resetNext) calculate();
+        expression = current + (opSymbols[op] || op);
+        lastOp = { op, value: current };
+        resetNext = true;
+        hasDot = false;
+        updateDisplay();
     }
 
     function calculate() {
-    output.innerHTML = eval(output.innerHTML);
+        if (!lastOp) return;
+        const a = parseFloat(lastOp.value);
+        const b = parseFloat(current);
+        let r;
+        switch (lastOp.op) {
+            case '+': r = a + b; break;
+            case '-': r = a - b; break;
+            case '*': r = a * b; break;
+            case '/': r = b === 0 ? 'Error' : a / b; break;
+        }
+        expression = lastOp.value + {'+':' + ','-':' - ','*':' × ','/':' ÷ '}[lastOp.op] + current + ' =';
+        if (r === 'Error') { current = 'Error'; }
+        else {
+            r = Math.round(r * 1e12) / 1e12;
+            current = String(r);
+            hasDot = current.includes('.');
+        }
+        lastOp = null;
+        resetNext = true;
+        updateDisplay();
     }
+
+    function clearAll() { current = '0'; expression = ''; lastOp = null; resetNext = false; hasDot = false; updateDisplay(); }
+    function toggleSign() { if (current !== '0' && current !== 'Error') { current = current.startsWith('-') ? current.slice(1) : '-' + current; updateDisplay(); } }
+    function percent() { if (current !== 'Error') { current = String(parseFloat(current) / 100); hasDot = current.includes('.'); updateDisplay(); } }
+
+    // Ripple effect
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const r = document.createElement('span');
+            r.className = 'ripple';
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            r.style.width = r.style.height = size + 'px';
+            r.style.left = (e.clientX - rect.left - size / 2) + 'px';
+            r.style.top = (e.clientY - rect.top - size / 2) + 'px';
+            this.appendChild(r);
+            setTimeout(() => r.remove(), 500);
+        });
+    });
+
+    // Button handlers
+    document.querySelector('.btns').addEventListener('click', e => {
+        const btn = e.target.closest('.btn');
+        if (!btn) return;
+        if (btn.dataset.num !== undefined) inputNum(btn.dataset.num);
+        else if (btn.dataset.op) inputOp(btn.dataset.op);
+        else if (btn.dataset.action === 'clear') clearAll();
+        else if (btn.dataset.action === 'toggle') toggleSign();
+        else if (btn.dataset.action === 'percent') percent();
+        else if (btn.dataset.action === 'equals') calculate();
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', e => {
+        if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+        else if (e.key === '.') inputNum('.');
+        else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') inputOp(e.key);
+        else if (e.key === 'Enter' || e.key === '=') calculate();
+        else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') clearAll();
+        else if (e.key === 'Backspace') {
+            if (current.length > 1) current = current.slice(0, -1);
+            else current = '0';
+            hasDot = current.includes('.');
+            updateDisplay();
+        }
+        else if (e.key === '%') percent();
+    });
     </script>
-
-
 </body>
 </html>

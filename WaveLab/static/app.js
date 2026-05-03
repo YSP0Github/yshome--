@@ -50,22 +50,27 @@
     toggleBoundary: $("toggleBoundary"),
   };
 
-  const cols = 220;
-  const rows = 124;
+  const cols = 320;
+  const rows = 180;
   const dx = 1;
   const dz = 1;
   const dt = 1 / 180;
   const maxGatherSamples = 320;
+  const maxReceivers = 36;
 
   let curr = new Float32Array(cols * rows);
   let prev = new Float32Array(cols * rows);
   let next = new Float32Array(cols * rows);
   let velocity = new Float32Array(cols * rows);
   let interfaceDepth = new Float32Array(cols);
-  let gather = new Float32Array(maxGatherSamples * 36);
+  let gather = new Float32Array(maxGatherSamples * maxReceivers);
   let gatherSamples = 0;
   let imageData = null;
   let gatherImage = null;
+  let waveBufferCanvas = null;
+  let waveBufferCtx = null;
+  let gatherBufferCanvas = null;
+  let gatherBufferCtx = null;
   let running = true;
   let absorbing = true;
   let simTime = 0;
@@ -95,6 +100,29 @@
     canvas.height = Math.max(1, Math.round(rect.height * dpr));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { w: rect.width, h: rect.height };
+  }
+
+  function ensureWaveBuffer() {
+    if (!waveBufferCanvas) {
+      waveBufferCanvas = document.createElement("canvas");
+      waveBufferCtx = waveBufferCanvas.getContext("2d", { alpha: false });
+    }
+    if (waveBufferCanvas.width !== cols || waveBufferCanvas.height !== rows) {
+      waveBufferCanvas.width = cols;
+      waveBufferCanvas.height = rows;
+    }
+  }
+
+  function ensureGatherBuffer(width) {
+    if (!gatherBufferCanvas) {
+      gatherBufferCanvas = document.createElement("canvas");
+      gatherBufferCtx = gatherBufferCanvas.getContext("2d", { alpha: false });
+    }
+    const safeWidth = Math.max(1, width);
+    if (gatherBufferCanvas.width !== safeWidth || gatherBufferCanvas.height !== maxGatherSamples) {
+      gatherBufferCanvas.width = safeWidth;
+      gatherBufferCanvas.height = maxGatherSamples;
+    }
   }
 
   function applyPreset(name) {
@@ -290,14 +318,14 @@
     if (gatherSamples < maxGatherSamples) {
       gatherSamples += 1;
     } else {
-      gather.copyWithin(0, 36, maxGatherSamples * 36);
+      gather.copyWithin(0, maxReceivers, maxGatherSamples * maxReceivers);
     }
     const rowIndex = gatherSamples - 1;
     const y = 3;
-    for (let i = 0; i < 36; i += 1) gather[rowIndex * 36 + i] = 0;
+    for (let i = 0; i < maxReceivers; i += 1) gather[rowIndex * maxReceivers + i] = 0;
     xs.forEach((x, i) => {
       const val = curr[idx(x, y)] * 1.25 + curr[idx(x, y + 1)] * 0.35;
-      gather[rowIndex * 36 + i] = val;
+      gather[rowIndex * maxReceivers + i] = val;
     });
   }
 
@@ -311,8 +339,9 @@
   }
 
   function drawWavefield() {
-    const { w, h } = fitCanvas(waveCanvas, wctx, 1.0);
+    const { w, h } = fitCanvas(waveCanvas, wctx, 1.15);
     if (!imageData || imageData.width !== cols || imageData.height !== rows) imageData = wctx.createImageData(cols, rows);
+    ensureWaveBuffer();
     let peak = 0;
     for (let i = 0; i < curr.length; i += 1) {
       const v = curr[i];
@@ -324,13 +353,10 @@
       imageData.data[off + 2] = b;
       imageData.data[off + 3] = 255;
     }
-    const temp = document.createElement("canvas");
-    temp.width = cols;
-    temp.height = rows;
-    temp.getContext("2d").putImageData(imageData, 0, 0);
+    waveBufferCtx.putImageData(imageData, 0, 0);
     wctx.clearRect(0, 0, w, h);
     wctx.imageSmoothingEnabled = false;
-    wctx.drawImage(temp, 0, 0, w, h);
+    wctx.drawImage(waveBufferCanvas, 0, 0, w, h);
 
     wctx.strokeStyle = "rgba(255,255,255,.16)";
     wctx.lineWidth = 2;
@@ -367,29 +393,27 @@
   }
 
   function drawGather() {
-    const { w, h } = fitCanvas(gatherCanvas, gctx, 1.0);
+    const { w, h } = fitCanvas(gatherCanvas, gctx, 1.1);
     const count = Number(controls.receiverCount.value);
-    if (!gatherImage || gatherImage.width !== 36 || gatherImage.height !== maxGatherSamples) {
-      gatherImage = gctx.createImageData(36, maxGatherSamples);
+    if (!gatherImage || gatherImage.width !== count || gatherImage.height !== maxGatherSamples) {
+      gatherImage = gctx.createImageData(count, maxGatherSamples);
     }
+    ensureGatherBuffer(count);
     for (let y = 0; y < maxGatherSamples; y += 1) {
-      for (let x = 0; x < 36; x += 1) {
-        const v = gather[y * 36 + x];
+      for (let x = 0; x < count; x += 1) {
+        const v = gather[y * maxReceivers + x];
         const shade = clamp(128 + v * 600, 12, 244);
-        const off = (y * 36 + x) * 4;
+        const off = (y * count + x) * 4;
         gatherImage.data[off] = shade;
         gatherImage.data[off + 1] = shade;
         gatherImage.data[off + 2] = shade + 6;
-        gatherImage.data[off + 3] = x < count ? 255 : 18;
+        gatherImage.data[off + 3] = 255;
       }
     }
-    const temp = document.createElement("canvas");
-    temp.width = 36;
-    temp.height = maxGatherSamples;
-    temp.getContext("2d").putImageData(gatherImage, 0, 0);
+    gatherBufferCtx.putImageData(gatherImage, 0, 0);
     gctx.clearRect(0, 0, w, h);
     gctx.imageSmoothingEnabled = false;
-    gctx.drawImage(temp, 0, 0, w, h);
+    gctx.drawImage(gatherBufferCanvas, 0, 0, w, h);
 
     gctx.strokeStyle = "rgba(148,163,184,.18)";
     for (let i = 0; i <= 4; i += 1) {

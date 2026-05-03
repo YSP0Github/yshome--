@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SeisY 使用说明</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --sidebar: #f8fafc;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #1f2937;
+      --muted: #66758a;
+      --line: #d7e0ea;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      --sidebar-w: 320px;
+    }
+    [data-theme="dark"] {
+      --bg: #111827;
+      --sidebar: #0f172a;
+      --panel: #111827;
+      --panel-soft: #172033;
+      --text: #e5eef9;
+      --muted: #96a7bf;
+      --line: #243247;
+      --accent: #7db2ff;
+      --accent-soft: #18263d;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.75 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    code {
+      background: #eef2f7;
+      border-radius: 6px;
+      padding: 0.1em 0.4em;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: .95em;
+    }
+    [data-theme="dark"] code { background: #0f1b2d; }
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 20px 16px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+    }
+    .brand, .nav-block {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .brand-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.1;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .sidebar-actions {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      padding: 10px 4px 0;
+    }
+    .toggle-btn {
+      min-width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-soft);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+      padding: 0 10px;
+      font-weight: 700;
+    }
+    .toggle-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .theme-toggle svg {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .theme-toggle .icon-moon { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+    .lang-toggle { min-width: 60px; }
+    .nav-block {
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .nav-block h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .nav-block a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 10px;
+      color: var(--muted);
+    }
+    .nav-block a:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .main { padding: 26px; }
+    .hero, .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 22px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: center;
+    }
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 100%;
+      justify-content: center;
+    }
+    .hero h2 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.12;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .hero-shot {
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .hero-shot img {
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+    .hero-shot small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 2px;
+    }
+    .stat {
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .section { margin-bottom: 20px; }
+    .section-header { padding: 22px 22px 10px; }
+    .section-header h2 { margin: 0 0 6px; font-size: 28px; }
+    .section-header p { margin: 0; color: var(--muted); }
+    .section-body { padding: 0 22px 22px; }
+    .grid-3, .grid-2 { display: grid; gap: 14px; }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card {
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .card h4 { margin: 0 0 8px; font-size: 18px; }
+    .card p, .card li, .card small { color: var(--muted); }
+    .card ul, .card ol { margin: 8px 0 0; padding-left: 20px; }
+    details {
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    summary::-webkit-details-marker { display: none; }
+    .detail-body { padding: 0 16px 16px; color: var(--muted); }
+    .detail-body h5 { margin: 12px 0 6px; color: var(--text); font-size: 15px; }
+    .detail-body ul, .detail-body ol { margin: 8px 0 0; padding-left: 20px; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .chip {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid #bfdbfe;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    [data-theme="dark"] .chip { border-color: #33517a; }
+    .lang-pane { display: none; }
+    [data-lang="zh"] .lang-pane[data-lang-pane="zh"] { display: block; }
+    [data-lang="en"] .lang-pane[data-lang-pane="en"] { display: block; }
+    .footer { text-align: center; color: var(--muted); padding: 8px 0 4px; }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+      .hero-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .main { padding: 14px; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  
+    .search-box {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      margin: 8px 0;
+    }
+    .search-box::placeholder { color: var(--muted); }
+    .math-inline, .math-block { color: var(--text); }
+    .math-block {
+      overflow-x: auto;
+      padding: 8px 0;
+      margin: 8px 0;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-top">
+          <div>
+            <h1>SeisY</h1>
+            <p class="lang-pane" data-lang-pane="zh">行星地震综合分析平台 · 用户使用说明</p>
+            <p class="lang-pane" data-lang-pane="en">Planetary Seismology Integrated Analysis Platform · User Guide</p>
+          </div>
+
+
+        </div>
+      </div>
+
+      <div class="lang-pane" data-lang-pane="zh">
+        <div class="nav-block">
+          <h3>快速导航</h3>
+          <a href="#overview">软件概览</a>
+          <a href="#layout">主界面布局</a>
+          <a href="#menus">菜单系统</a>
+          <a href="#toolbar">工具栏</a>
+          <a href="#tool-matrix">专业工具矩阵</a>
+          <a href="#project-file">项目文件结构</a>
+          <a href="#eventlist">事件列表</a>
+          <a href="#workflow">推荐流程</a>
+          <a href="#references">文档依据</a>
+        </div>
+        <div class="nav-block">
+          <h3>菜单对应</h3>
+          <a href="#file-menu">文件</a>
+          <a href="#data-menu">数据</a>
+          <a href="#tools-menu">工具</a>
+          <a href="#simulation-menu">模拟</a>
+          <a href="#settings-menu">设置</a>
+          <a href="#help-menu">帮助</a>
+        </div>
+      </div>
+
+      <div class="lang-pane" data-lang-pane="en">
+        <div class="nav-block">
+          <h3>Quick Navigation</h3>
+          <a href="#overview">Overview</a>
+          <a href="#layout">Main Layout</a>
+          <a href="#menus">Menus</a>
+          <a href="#toolbar">Toolbar</a>
+          <a href="#tool-matrix">Tool Matrix</a>
+          <a href="#project-file">Project Structure</a>
+          <a href="#eventlist">Event List</a>
+          <a href="#workflow">Recommended Workflow</a>
+          <a href="#references">References</a>
+        </div>
+        <div class="nav-block">
+          <h3>Software Menus</h3>
+          <a href="#file-menu">File</a>
+          <a href="#data-menu">Data</a>
+          <a href="#tools-menu">Tools</a>
+          <a href="#simulation-menu">Simulation</a>
+          <a href="#settings-menu">Settings</a>
+          <a href="#help-menu">Help</a>
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="toggle-btn lang-toggle" id="langToggle" type="button" aria-label="切换语言" title="切换语言">EN</button>
+        <button class="toggle-btn theme-toggle" id="themeToggle" type="button" aria-label="切换浅色或深色模式" title="切换浅色或深色模式">
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2"></circle>
+            <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.7 5.3l-1.7 1.7M7 17l-1.7 1.7M18.7 18.7 17 17M7 7 5.3 5.3"></path>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 14.2A7.8 7.8 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"></path>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="lang-pane" data-lang-pane="zh">
+        <section class="hero">
+          <div class="badge">SeisY 使用说明</div>
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <div>
+                <h2>SeisY 行星地震综合分析平台</h2>
+                <p>面向地震、月震与行星地震研究的数据处理、分析与模拟工具集。</p>
+                <div class="chips">
+                  <span class="chip">行星地震</span>
+                  <span class="chip">月震数据处理</span>
+                  <span class="chip">简正模分析</span>
+                  <span class="chip">射线追踪</span>
+                </div>
+              </div>
+              <div class="stats">
+                <div class="stat"><strong>6</strong><span>一级菜单</span></div>
+                <div class="stat"><strong>24</strong><span>工具栏按钮</span></div>
+                <div class="stat"><strong>15+</strong><span>专业工具</span></div>
+                <div class="stat"><strong>8</strong><span>数据格式</span></div>
+              </div>
+            </div>
+            <div class="hero-shot">
+              <img src="../seisy/images/SeisY-main.png" alt="SeisY 主界面截图" />
+              <small>主界面：左侧资源管理与球体区，中部三块绘图区，右侧终端与事件列表。</small>
+            </div>
+          </div>
+        </section>
+
+        <section id="overview" class="section">
+          <div class="section-header">
+            <h2>软件概览</h2>
+            <p>SeisY 是一个综合性的地震、月震与行星地震数据处理和模拟分析平台。</p>
+          </div>
+          <div class="section-body">
+            <div class="grid-3">
+              <div class="card"><h4>基础数据工作</h4><p>支持 8 种数据格式导入（MiniSEED、SAC、SEG-Y、SEG2、ASCII、TXT、CSV 及自动检测），工作目录浏览、项目保存与载入、文件树管理、日志显示和内置命令终端。</p></div>
+              <div class="card"><h4>波形与频谱处理</h4><p>支持去均值、去趋势、去响应、10 种插值方法、6 种加窗函数、带通 / 中值滤波、归一化、去脉冲、频谱分析、滑动相关及多事件对比等 20 余种处理操作。</p></div>
+              <div class="card"><h4>行星地震工具链</h4><p>集成震源定位器、行星台站地图、射线追踪工作台、简正模工作台、模型设计器、月震工作流、PDDM 去噪、噪声提取器、ULF 信号重构器和 Apollo 月震系统。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="layout" class="section">
+          <div class="section-header">
+            <h2>主界面布局</h2>
+            <p>网页中的布局说明已统一改写为中文，并与当前软件界面结构保持一致。</p>
+          </div>
+          <div class="section-body">
+            <div class="grid-2">
+              <div class="card"><h4>左侧资源管理区</h4><ul><li>浏览工作目录与文件树</li><li>支持排序、右键菜单和多选</li><li>用于导入数据、打开脚本与配置文件</li><li>下方连接球体区 / 地图区</li></ul></div>
+              <div class="card"><h4>左下地图区 / 球体区</h4><ul><li>基于 OpenGL 的天体可视化区域</li><li>支持地球、月球、火星等球体显示</li><li>可与台站、震源、路径和贴图显示联动</li><li>适合行星地震几何关系的直观展示</li></ul></div>
+              <div class="card"><h4>中间三块绘图区</h4><ul><li><code>canvas_top</code></li><li><code>canvas_mid</code></li><li><code>canvas_bottom</code></li><li>用于波形、频谱、多事件对比及处理前后展示</li></ul></div>
+              <div class="card"><h4>右侧终端与事件列表</h4><ul><li>右上：日志与内置命令终端</li><li>右下左：事件列表</li><li>右下右：事件详情与附加显示区域</li><li>底部状态栏显示路径、已选数、事件数和版本</li></ul></div>
+            </div>
+            <div class="grid-2" style="margin-top:14px;">
+              <div class="card"><h4>绘图区示意</h4><img src="../seisy/images/SeisY-plot.png" alt="SeisY 绘图区截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div>
+              <div class="card"><h4>事件列表区域示意</h4><img src="../seisy/images/SeisY-EventList.png" alt="SeisY 事件列表截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="menus" class="section">
+          <div class="section-header">
+            <h2>菜单系统</h2>
+            <p>菜单名称已按软件翻译文件统一为中文，必要时保留功能英文原名。</p>
+          </div>
+          <div class="section-body">
+            <details id="file-menu" open>
+              <summary>文件</summary>
+              <div class="detail-body"><ul><li><strong>导入文件</strong>：导入 SAC、MiniSEED、SEGY、SEG2、TXT、ASCII、CSV 等数据。</li><li><strong>用编辑器打开文件 / 打开云记编辑器</strong>：查看文本、配置与脚本文件。</li><li><strong>配置文件</strong>：设置工作目录、加载配置、更新配置。</li><li><strong>保存数据</strong>：导出 <code>.mseed .sac .ascii .txt .csv .sgy .seg2</code>。</li><li><strong>保存项目 / 打开项目</strong>：使用 <code>.seisyproj</code> 项目文件。</li><li><strong>导出事件列表</strong>：导出当前事件列表结果。</li></ul></div>
+            </details>
+            <details id="data-menu" open>
+              <summary>数据</summary>
+              <div class="detail-body"><h5>数据准备</h5><ul><li>输入日期</li><li>下载地震数据</li></ul><h5>预处理</h5><ul><li>去均值、去趋势、多项式去趋势、样条去趋势</li><li>去除仪器响应、输出运行模式、单位转换</li><li>自定义去趋势</li><li>归一化、自定义归一化、标准化</li><li>平滑、去噪、反转、共轭</li></ul><h5>子菜单</h5><ul><li><strong>缺失值插值</strong>：支持 10 种方法 — 线性、最近邻、多项式、样条、重心、Krogh、分段多项式、PCHIP、Akima、三次样条</li><li><strong>加窗</strong>：Hamming、Hann、Blackman、矩形、Bartlett、Flattop，以及窗口可视化</li><li><strong>滤波</strong>：带通 / 低通滤波、中值滤波、自定义中值窗口大小</li></ul><h5>显示与分析</h5><ul><li>去脉冲并绘图</li><li>地震数据相关性分析</li><li>地震数据稀疏化</li><li>绘制振幅谱 / 绘制多个振幅谱 / 绘制时频图</li><li>导出当前频谱到文件</li><li>发送频谱到简正模工作台</li></ul><h5>波形绘制</h5><ul><li>绘制当前数据流</li><li>绘制数据流 2.0（归一化）</li><li>绘制数据流 3.0（全采样 / 设置采样）</li></ul></div>
+            </details>
+            <details id="tools-menu" open>
+              <summary>工具</summary>
+              <div class="detail-body"><h5>SeisRT</h5><p>在线实时地震数据工具，可直接在浏览器中访问。</p><h5>震源定位器</h5><p>包括台站、波形、拾取、速度模型、初始震源猜测、结果与地图联动的完整定位流程。支持地球、月球和自定义行星速度模型。</p><h5>行星台站地图</h5><p>支持台站 / 震源管理、震中距计算、到时预测、CSV 与图像导出，并可联动射线追踪工作台与简正模工作台。</p><h5>射线追踪工作台</h5><p>用于射线路径、起射角搜索与传播几何分析。支持分层速度模型的正演与反求。</p><h5>月震工作流</h5><p>月震反演多步骤流程：下载、拾取、定位、分析一体化。</p><h5>Apollo 系统</h5><p>用于 Apollo 月震数据的批量下载、同步、提取、导出和覆盖查看。支持 XA 网络 S12/S14/S15/S16 台站。</p><h5>其它工具</h5><ul><li><strong>ULF-VLSNR-SE 重构器</strong>：超低频极低信噪比信号重构</li><li><strong>噪声提取器</strong>：自动地震噪声提取，含滑动窗口稳定性分析与质量评估</li><li><strong>分段去异常（交互式）</strong>：交互式选择性异常去除</li><li><strong>波形道合并工具</strong>：合并多个波形道列表</li><li><strong>数据查看器</strong>：查看波形道详细信息与头段</li><li><strong>频谱分析查看器</strong>：完整的频谱分析工具</li><li><strong>滑动相关分析器</strong>：滑动窗口噪声 - 信号相关分析</li></ul></div>
+            </details>
+            <details id="simulation-menu" open>
+              <summary>模拟</summary>
+              <div class="detail-body"><ul><li><strong>地震相位模拟</strong>：震相模拟入口。</li><li><strong>简正模工作台</strong>：提供模型、模态、激发与合成分析能力。</li><li><strong>模型设计器</strong>：用于层状模型设计、模型体检、导出及发送到简正模工作台。</li></ul></div>
+            </details>
+            <details id="settings-menu" open>
+              <summary>设置</summary>
+              <div class="detail-body"><h5>配置</h5><ul><li><strong>修改配置</strong>：编辑软件核心参数</li><li><strong>绘图采样设置</strong>：配置波形绘制的采样参数</li><li><strong>频谱绘图设置</strong>：配置频谱显示参数</li></ul><h5>地图设置</h5><ul><li><strong>添加地图标记</strong>：在行星地图上添加标记点</li><li><strong>修改地图标记</strong>：编辑已有标记的属性</li><li><strong>修改地图纹理</strong>：更换行星表面贴图</li><li><strong>设置 Apollo 数据库路径</strong>：指定本地 Apollo 数据存储位置</li></ul><h5>数据流管理</h5><ul><li><strong>显示数据流列表</strong>：查看当前内存中的所有数据流</li><li><strong>合并数据流列表</strong>：合并多个数据流</li><li><strong>保存 CSL</strong>：保存当前数据流列表</li><li><strong>清除 CSL</strong>：支持清除最近一个 / 两个 / 全部 / 自定义数据流</li></ul><h5>系统</h5><ul><li><strong>显示内存使用</strong>：查看当前内存占用情况</li></ul></div>
+            </details>
+            <details id="help-menu" open>
+              <summary>帮助</summary>
+              <div class="detail-body"><h5>外部资源</h5><ul><li><strong>Wilber 3</strong>：打开 IRIS Wilber 事件搜索页面</li><li><strong>Gmap</strong>：打开 IRIS GMap 台站地图</li><li><strong>SAGE 工具</strong>：打开 IRIS DMC 工具页面</li><li><strong>台站列表</strong>：打开本地台站列表文件</li><li><strong>地学网站合集</strong>：包含 CENC、USGS、IRIS、NOAA、UNAVCO、EarthquakeTrack 等常用网站</li></ul><h5>文档</h5><ul><li><strong>用户指南</strong>：打开本使用说明（F1）</li><li><strong>去脉冲帮助</strong>：去脉冲功能的详细说明</li><li><strong>插值帮助</strong>：插值功能的详细说明</li><li><strong>关于</strong>：软件版本与版权信息</li></ul><h5>外观</h5><ul><li><strong>主题</strong>：默认模式、浅色模式、深色模式、自定义模式</li><li><strong>语言</strong>：简体中文 / English</li></ul></div>
+            </details>
+          </div>
+        </section>
+
+        <section id="toolbar" class="section">
+          <div class="section-header"><h2>工具栏</h2><p>工具栏负责把高频操作直接放到主窗口顶部，减少菜单层级切换。主工具栏位于窗口顶部，底部工具栏位于事件列表区域。</p></div>
+          <div class="section-body">
+            <h4>主工具栏（5 组，共 22 个按钮）</h4>
+            <div class="grid-2">
+              <div class="card"><h4>第一组 · 文件操作</h4><ul><li><strong>导入</strong>：导入波形数据文件</li><li><strong>打开</strong>：用编辑器打开文件</li><li><strong>打开文件夹</strong>：浏览工作目录（Ctrl+K）</li><li><strong>保存</strong>：保存当前数据（Ctrl+S）</li></ul></div>
+              <div class="card"><h4>第二组 · 通用工具</h4><ul><li><strong>撤销 / 重做</strong>：操作历史回退（Ctrl+Z / Ctrl+Y）</li><li><strong>查找</strong>：搜索功能（Ctrl+F）</li><li><strong>视图</strong>：切换显示模式与布局</li><li><strong>帮助</strong>：打开用户指南（F1）</li><li><strong>设置</strong>：软件设置面板</li><li><strong>导出</strong>：导出数据（Ctrl+E）</li><li><strong>转换</strong>：频谱类型切换（F5）</li><li><strong>全屏</strong>：全屏模式切换（F11）</li><li><strong>日志</strong>：显示运行日志</li></ul></div>
+              <div class="card"><h4>第三组 · 信号处理</h4><ul><li><strong>插值</strong>：缺失值线性插值</li><li><strong>滤波</strong>：带通 / 低通滤波</li><li><strong>去脉冲</strong>：异常脉冲去除与绘图</li><li><strong>分段去异常</strong>：交互式分段异常去除</li><li><strong>去均值</strong>：去除直流偏移</li><li><strong>样条</strong>：样条去趋势</li><li><strong>绘制频谱</strong>：绘制振幅谱</li><li><strong>绘制时频图</strong>：时域 + 频域联合显示</li><li><strong>导出频谱</strong>：将频谱数据导出为文件</li><li><strong>发送到简正模工作台</strong>：将频谱发送至简正模分析</li><li><strong>频谱分析查看器</strong>：完整的频谱分析工具</li><li><strong>数据查看器</strong>：查看波形道的详细信息与头段</li></ul></div>
+              <div class="card"><h4>第四组 · 配置与外部资源</h4><ul><li><strong>修改配置</strong>：编辑软件参数配置</li><li><strong>输入日期</strong>：设置数据时间范围</li><li><strong>下载地震数据</strong>：通过 FDSN 协议下载波形</li><li><strong>STA/LTA</strong>：经典 STA/LTA 震相拾取器</li><li><strong>Wilber 3</strong>：打开 IRIS Wilber 事件搜索</li><li><strong>Gmap</strong>：打开 IRIS GMap 台站地图</li><li><strong>SAGE</strong>：打开 IRIS DMC 工具页面</li><li><strong>台站列表</strong>：打开本地台站列表文件</li><li><strong>地学网站</strong>：打开常用地学网站合集</li></ul></div>
+              <div class="card"><h4>第五组 · 专业模块快捷入口</h4><ul><li><strong>SeisRT</strong>：在线实时地震工具</li><li><strong>Apollo 系统</strong>：Apollo 月震数据管理</li><li><strong>震源定位器</strong>：震源反演定位窗口</li><li><strong>行星台站地图</strong>：台站与震源可视化管理</li><li><strong>射线追踪工作台</strong>：射线路径与走时分析</li><li><strong>月震工作流</strong>：月震反演多步骤流程</li><li><strong>简正模工作台</strong>：自由振荡与简正模分析</li><li><strong>模型设计器</strong>：分层地球 / 行星模型设计</li><li><strong>噪声提取器</strong>：自动地震噪声提取</li><li><strong>PDDM</strong>：相依去噪方法</li></ul></div>
+            </div>
+            <h4 style="margin-top:18px;">底部工具栏（事件列表区域）</h4>
+            <div class="grid-2">
+              <div class="card"><h4>事件相关性分析</h4><ul><li><strong>互相关</strong>：两个事件之间的互相关计算</li><li><strong>自相关</strong>：单个事件的自相关计算</li></ul></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tool-matrix" class="section">
+          <div class="section-header"><h2>专业工具矩阵</h2><p>把“工具”和“模拟”中的核心模块集中呈现，便于快速理解 SeisY 的能力范围。</p></div>
+          <div class="section-body"><div class="grid-3"><div class="card"><h4>震源定位器</h4><p>台站、波形、拾取、模型、结果与地图一体化定位窗口。</p><img src="../seisy/images/SeisY-Hypocenter_locator.png" alt="震源定位器截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>行星台站地图</h4><p>用于台站 / 震源管理、震中距计算、到时预测与导出。</p><img src="../seisy/images/SeisY-Planetary_station_map.png" alt="行星台站地图截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>射线追踪工作台</h4><p>用于射线路径和起射角搜索。</p><img src="../seisy/images/SeisY-RayTracer.png" alt="射线追踪工作台截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>简正模工作台</h4><p>执行简正模计算、模态分析、观测谱对照与合成。</p><img src="../seisy/images/SeisY-normal_mode.png" alt="简正模工作台截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>模型设计器</h4><p>1D / 准 1D 模型设计器，是简正模模块的上游工具。</p><img src="../seisy/images/SeisY-models_design.png" alt="模型设计器截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Apollo 系统</h4><p>用于 Apollo 月震数据的批量下载、提取与可视化。</p><img src="../seisy/images/SeisY-Apollo_data_management.png" alt="Apollo 系统截图" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div></div></div>
+        </section>
+
+        <section id="project-file" class="section">
+          <div class="section-header"><h2>项目文件结构</h2><p>项目格式为 <code>.seisyproj</code>，由旧手册与当前代码结构共同确认。</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>manifest.json</h4><ul><li>app / version</li><li>saved_at</li><li>operation_count</li><li>dataset_events</li></ul></div><div class="card"><h4>state.pkl</h4><ul><li>global_config</li><li>seismic_config</li><li>dataset</li><li>undo / operation_history</li><li>current_event_id / selected_event_ids</li><li>界面与状态快照</li></ul></div></div></div>
+        </section>
+
+        <section id="eventlist" class="section">
+          <div class="section-header"><h2>事件列表</h2><p>事件列表是 SeisY 中最关键的数据对象管理工作区之一。</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>常见分组</h4><ul><li>数据流</li><li>相关性数据</li><li>噪声数据</li><li>阵列数据</li><li>自定义分组</li></ul></div><div class="card"><h4>常用右键能力</h4><ul><li>分组事件</li><li>计算 / 更多 子菜单</li><li>复制事件ID / 复制事件 / 粘贴事件</li><li>删除事件 / 撤销事件 / 重做事件</li></ul></div></div></div>
+        </section>
+
+        <section id="workflow" class="section">
+          <div class="section-header"><h2>推荐流程</h2><p>以下流程用于帮助首次使用者快速建立处理思路。</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>常规数据处理</h4><ol><li>使用“导入文件”导入波形数据。</li><li>在事件列表中选中目标事件。</li><li>依次执行去均值、去趋势、滤波和去除仪器响应。</li><li>使用绘制当前数据流查看波形。</li><li>使用“绘制振幅谱”查看频谱。</li><li>使用“保存数据”或“保存项目”保存结果。</li></ol></div><div class="card"><h4>行星地震模拟</h4><ol><li>先用模型设计器设计模型。</li><li>发送到简正模工作台。</li><li>计算模态并查看结果。</li><li>使用行星台站地图配置台站与震源。</li><li>必要时使用射线追踪工作台分析传播路径。</li></ol></div></div></div>
+        </section>
+
+
+        <section id="science" class="section">
+          <div class="section-header"><h2>科学计算与公式索引</h2><p>本节把 SeisY 中涉及科学计算的核心模块按“代码入口 → 计算逻辑 → 关键公式 → 结果含义”组织起来，便于展示、检索与查阅。</p></div>
+          <div class="section-body">
+            <div class="card" style="margin-bottom:14px;">
+              <h4>检索与目录</h4>
+              <input class="search-box" type="search" data-science-search placeholder="输入关键词，例如：normal mode、eigenfunction、hypocenter、least squares、PSD、ray tracer" />
+              <small>支持按模块名、公式术语、中英文别名与代码关键词实时过滤。</small>
+              <div class="chips" style="margin-top:12px;">
+                <a class="chip" href="#science-zh-overview">总览</a>
+                <a class="chip" href="#science-zh-preprocess">预处理 / FFT / PSD</a>
+                <a class="chip" href="#science-zh-hypocenter">震源定位</a>
+                <a class="chip" href="#science-zh-raytracer">射线追踪</a>
+                <a class="chip" href="#science-zh-normal-1">Normal Modes I</a>
+                <a class="chip" href="#science-zh-normal-2">Normal Modes II</a>
+                <a class="chip" href="#science-zh-normal-3">Normal Modes III</a>
+                <a class="chip" href="#science-zh-other">月震 / PDDM / SWI</a>
+              </div>
+            </div>
+
+            <details id="science-zh-overview" data-science-item data-keywords="science overview 科学计算 总览 formula processing locator raytracer normal mode" open>
+              <summary>0. 科学计算总览与代码索引</summary>
+              <div class="detail-body">
+                <p>SeisY 当前最具方法代表性的模块包括 <strong>数据预处理与频谱分析</strong>、<strong>Hypocenter Locator</strong>、<strong>RayTracer</strong> 和 <strong>Normal Mode Workbench</strong>。其中 <code>seisy/core/normal_modes.py</code> 已形成“模型 → 模态 → 激发 → 合成 → 观测匹配”的完整链条。</p>
+                <ul>
+                  <li><strong>频谱 / PSD</strong>：<code>seisy/core/processing.py</code>、<code>seisy/tools/spectrum_analysis.py</code>、<code>seisy/tools/power_spectrum.py</code></li>
+                  <li><strong>震源定位</strong>：<code>seisy/core/hypocenter_locator.py</code></li>
+                  <li><strong>射线追踪</strong>：<code>seisy/core/raytracer.py</code></li>
+                  <li><strong>简正模</strong>：<code>seisy/core/normal_modes.py</code></li>
+                  <li><strong>月震流程 / PDDM / SWI / 合成记录</strong>：<code>seisy/core/lunar_pipeline.py</code>、<code>seisy/core/PDDM.py</code>、<code>seisy/core/SWI.py</code>、<code>seisy/core/SeismicSynthesizer.py</code></li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-preprocess" data-science-item data-keywords="预处理 processing normalization demean detrend fft dft amplitude spectrum psd welch parseval nyquist snr power spectrum" open>
+              <summary>1. 数据预处理 / 频谱 / PSD</summary>
+              <div class="detail-body">
+                <p><strong>对应代码：</strong><code>seisy/core/processing.py</code>、<code>seisy/tools/spectrum_analysis.py</code>、<code>seisy/tools/power_spectrum.py</code></p>
+                <ul>
+                  <li><strong>异常值稳定化</strong>：先处理 <code>NaN / +Inf / -Inf</code>，保证归一化、滤波与 FFT 输入有限。</li>
+                  <li><strong>Min-Max 归一化</strong>：<span class="math-inline">\( x'=(x-x_{\min})/(x_{\max}-x_{\min}) \)</span>；若 <span class="math-inline">\( x_{\max}=x_{\min} \)</span>，则该道置零。</li>
+                  <li><strong>离散傅里叶变换</strong>：<span class="math-inline">\( X[k]=\sum_{n=0}^{N-1} x[n]e^{-i2\pi kn/N} \)</span>；频率轴为 <span class="math-inline">\( f_k = kf_s/N \)</span>。</li>
+                  <li><strong>双边谱与功率谱密度</strong>：<span class="math-inline">\( A_2(f)=|X(f)|/N \)</span>，<span class="math-inline">\( PSD_2(f)=|X(f)|^2/(f_sN) \)</span>。</li>
+                  <li><strong>Welch 平均</strong>：分段、加窗、逐段 FFT 后平均，以降低方差并改善 PSD 稳定性。</li>
+                  <li><strong>Parseval 背景</strong>：时域平方和与频域平方和对应，因此 PSD 比单纯振幅谱更适合解释能量分布。</li>
+                  <li><strong>SNR</strong>：既支持功率型 <span class="math-inline">\( 10\log_{10}(P_s/P_n) \)</span>，也支持 RMS 比值型定义。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-hypocenter" data-science-item data-keywords="hypocenter locator location least squares haversine taup travel time residual rms covariance inversion source station" open>
+              <summary>2. hypocenter_locator.py：球面几何、走时与加权最小二乘</summary>
+              <div class="detail-body">
+                <p><strong>对应代码：</strong><code>seisy/core/hypocenter_locator.py</code></p>
+                <ul>
+                  <li><strong>大圆距离</strong>：先用 Haversine 计算台站与震源的中心角 <span class="math-inline">\( \Delta \)</span>，再转换为震中距。</li>
+                  <li><strong>理论走时</strong>：优先调用 TauP；回退近似时采用 <span class="math-inline">\( L_{arc}=R\Delta \)</span>、<span class="math-inline">\( L=\sqrt{L_{arc}^2+h^2} \)</span>、<span class="math-inline">\( t=L/v \)</span>。</li>
+                  <li><strong>反演参数</strong>：<span class="math-inline">\( m=(lat,lon,depth,t_0) \)</span>。</li>
+                  <li><strong>残差函数</strong>：<span class="math-inline">\( r_i=w_i\,[t_{obs}-(t_0+t_{calc}+c_i)] \)</span>，其中 <code>w_i</code> 为综合权重，<code>c_i</code> 为台站改正。</li>
+                  <li><strong>不确定性近似</strong>：输出 RMS 残差，并以 <span class="math-inline">\( (J^\mathsf{T}J)^{-1} \)</span> 作为协方差近似。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-raytracer" data-science-item data-keywords="ray tracer raytracer takeoff angle emergence angle travel time path boundary snell slowness layered velocity planetary phase" open>
+              <summary>3. raytracer.py：分层速度模型、路径积分与目标震中距反求</summary>
+              <div class="detail-body">
+                <p><strong>对应代码：</strong><code>seisy/core/raytracer.py</code></p>
+                <ul>
+                  <li><strong>层内速度模型</strong>：常写成 <span class="math-inline">\( v(r)=a+bx+cx^2+dx^3,\ x=r/R \)</span> 的半径归一化多项式。</li>
+                  <li><strong>正演模式</strong>：给定起射角，逐层推进并累计走时、震中距、出射角与路径点。</li>
+                  <li><strong>反求模式</strong>：扫描并细化起射角，使理论震中距逼近目标值。</li>
+                  <li><strong>连续介质表达</strong>：物理背景可写成 <span class="math-inline">\( T=\int ds/v(r) \)</span>；射线参数常写作 <span class="math-inline">\( p\sim r\sin i / v(r) \)</span>。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-normal-1" data-science-item data-keywords="normal mode model planetary layer vp vs density q qkappa qshear frequency spheroidal toroidal radial mode calculator" open>
+              <summary>4. normal_modes.py I：模型准备、模态枚举、频率估计、Q 与阻尼</summary>
+              <div class="detail-body">
+                <p><strong>对应代码：</strong><code>seisy/core/normal_modes.py</code></p>
+                <ul>
+                  <li><strong>模型对象</strong>：<code>PlanetaryModel</code> 维护半径、密度、<code>Vp</code>、<code>Vs</code>、<code>qkappa</code>、<code>qshear</code> 等分层参数。</li>
+                  <li><strong>模态枚举</strong>：按角阶数 <code>l</code>、径向阶数 <code>n</code> 与模态类型（spheroidal / toroidal / radial）生成候选模态。</li>
+                  <li><strong>Toroidal 频率</strong>：近似满足 <span class="math-inline">\( f \propto V_s\sqrt{l(l+1)}/(2\pi R) \)</span>。</li>
+                  <li><strong>Spheroidal 频率</strong>：近似满足 <span class="math-inline">\( f \propto V_{eff}\sqrt{l(l+1)}/(2\pi R) \)</span>。</li>
+                  <li><strong>Radial 频率</strong>：近似满足 <span class="math-inline">\( f \propto V_p/R \)</span>。</li>
+                  <li><strong>Q 与阻尼时间</strong>：先由 <code>qkappa</code>、<code>qshear</code> 合成模态 Q，再用 <span class="math-inline">\( \tau = Q/(\pi f) \)</span> 转成阻尼时间。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-normal-2" data-science-item data-keywords="normal mode eigenfunction excitation synthesis station response source mechanism azimuth distance damping butterworth spectrum" open>
+              <summary>5. normal_modes.py II：特征函数、震源激发与台站响应合成</summary>
+              <div class="detail-body">
+                <ul>
+                  <li><strong>特征函数</strong>：在归一化半径 <span class="math-inline">\( x=r/R \)</span> 上构造振型；Toroidal 近似可写作 <span class="math-inline">\( x^l\sin((n+1)\pi x) \)</span>。</li>
+                  <li><strong>密度缩放</strong>：振型再乘 <span class="math-inline">\( \sqrt{\rho(r)} \)</span>，用于体现能量权重趋势。</li>
+                  <li><strong>有限震源时窗</strong>：代码采用高斯型抑制项 <span class="math-inline">\( \exp(-(2\pi fT)^2/8) \)</span>。</li>
+                  <li><strong>台站响应合成</strong>：按阻尼振荡叠加 <span class="math-inline">\( u(t)=\sum_m W_m e^{-t/\tau_m}\sin(2\pi f_m t+\phi_m) \)</span>。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-normal-3" data-science-item data-keywords="normal mode observed spectrum peak match tolerance spherical_jn brentq exact solver peak detection prominence frequency band" open>
+              <summary>6. normal_modes.py III：观测谱峰检测、理论匹配与精确球贝塞尔求根</summary>
+              <div class="detail-body">
+                <ul>
+                  <li><strong>峰值检测</strong>：基于 <code>scipy.signal.find_peaks()</code>，结合背景分位数与动态显著性阈值。</li>
+                  <li><strong>自适应容差</strong>：匹配容差由理论模态局部频率间距与观测峰频共同决定，而非固定常数。</li>
+                  <li><strong>精确求解器</strong>：<code>ExactNormalModeSolver</code> 用球贝塞尔边界条件求根，例如 Toroidal 满足 <span class="math-inline">\( j_l'(x)+j_l(x)/x=0 \)</span>。</li>
+                  <li><strong>根到频率</strong>：若根为 <span class="math-inline">\( x_n \)</span>，则频率按 <span class="math-inline">\( f=vx_n/(2\pi R) \)</span> 换算，并用 <code>brentq</code> 搜索。</li>
+                  <li><strong>求解原理分层</strong>：当前代码实际包含两套思路：<code>NormalModeCalculator</code> 做半经验频率估算；<code>ExactNormalModeSolver</code> 做均匀球边界条件求根。</li>
+                  <li><strong>近似求解并不严格</strong>：<code>_estimate_frequency()</code> 更接近 <span class="math-inline">\( f \sim \frac{v_{eff}}{2\pi R}\times \text{degree term}\times \text{radial factor}\times \text{structure factor} \)</span> 这样的经验估计，而不是完整弹性球本征值方程求解。</li>
+                  <li><strong>均匀球根求解的起点</strong>：若取均匀球近似，则径向解可写成 <span class="math-inline">\( u(r)\propto j_l(kr) \)</span>，其中 <span class="math-inline">\( k=\omega/v \)</span>，并令 <span class="math-inline">\( x=kR=\omega R/v \)</span>。</li>
+                  <li><strong>当前代码中的边界条件</strong>：Toroidal 为 <span class="math-inline">\( j_l'(x)+j_l(x)/x=0 \)</span>；Radial 为 <span class="math-inline">\( j_0'(x)=0 \)</span>；当前简化的 Spheroidal 为 <span class="math-inline">\( j_l'(x)+2j_l(x)/x=0 \)</span>。</li>
+                  <li><strong>根到频率的严格映射</strong>：由 <span class="math-inline">\( x_n=\omega_n R/v \)</span> 与 <span class="math-inline">\( \omega_n=2\pi f_n \)</span> 可得 <span class="math-inline">\( f_n=vx_n/(2\pi R) \)</span>。</li>
+                  <li><strong>数值求根逻辑</strong>：<code>_find_roots()</code> 先扫描自变量区间；若边界函数满足 <span class="math-inline">\( F(x_k)F(x_{k+1})<0 \)</span>，说明区间内存在根，再调用 <code>brentq</code> 求解 <span class="math-inline">\( F(x_n)=0 \)</span>。</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-zh-other" data-science-item data-keywords="lunar pipeline moonquake stack snr pddm deconvolution swi inversion ricker synthesizer nyquist" open>
+              <summary>7. 月震流程 / PDDM / SWI / 合成地震记录</summary>
+              <div class="detail-body">
+                <ul>
+                  <li><strong>月震流程</strong>：默认质量筛选使用 <span class="math-inline">\( \mathrm{SNR}=\mathrm{RMS}(signal)/\mathrm{RMS}(noise) \)</span>；叠加重建采用 <span class="math-inline">\( \bar{x}(t)=\frac{1}{N}\sum_i x_i(t) \)</span>。</li>
+                  <li><strong>PDDM</strong>：在频域中使用 <span class="math-inline">\( F_{re}=(F_{s2s1}-F_{s2n1})/(F_{s2}^{*}+\varepsilon) \)</span> 进行反卷积式恢复。</li>
+                  <li><strong>SWI</strong>：当前是“前向频散 + 加权失配 + 平滑约束 + L-BFGS-B 优化”的反演骨架。</li>
+                  <li><strong>合成记录</strong>：Ricker 子波采用 <span class="math-inline">\( w(t)=(1-2\pi^2f_0^2t^2)e^{-\pi^2f_0^2t^2} \)</span>，并显式检查 Nyquist 条件。</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="references" class="section">
+          <div class="section-header"><h2>文档依据</h2><p>本页内容基于你的原手册初稿、当前代码结构以及 <code>seisy_zh_CN.ts</code> 翻译文件整理而成。</p></div>
+          <div class="section-body"><div class="chips"><span class="chip">SeisY 操作手册.docx</span><span class="chip">seisy/main.py</span><span class="chip">seisy/translations/seisy_zh_CN.ts</span><span class="chip">seisy/core/hypocenter_locator_gui.py</span><span class="chip">seisy/core/planetary_station_map.py</span><span class="chip">seisy/core/raytracer_qt.py</span><span class="chip">seisy/core/normal_modes.py</span><span class="chip">seisy/core/models_design.py</span><span class="chip">seisy/apollo_moonquake_system/ui/main_window.py</span></div></div>
+        </section>
+
+        <div class="footer">SeisY 使用说明 · 中文模式下界面文字已统一为中文，可使用左下角按钮切换到英文</div>
+      </div>
+      <div class="lang-pane" data-lang-pane="en">
+        <section class="hero">
+          <div class="badge">SeisY User Guide</div>
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <div>
+                <h2>SeisY Planetary Seismology Integrated Analysis Platform</h2>
+                <p>A toolkit for data processing, analysis, and simulation in seismology, moonquake studies, and planetary seismology.</p>
+                <div class="chips"><span class="chip">Planetary Seismology</span><span class="chip">Moonquake Data</span><span class="chip">Normal Modes</span><span class="chip">Ray Tracing</span></div>
+              </div>
+              <div class="stats"><div class="stat"><strong>6</strong><span>Top-level menus</span></div><div class="stat"><strong>24</strong><span>Toolbar buttons</span></div><div class="stat"><strong>15+</strong><span>Specialized tools</span></div><div class="stat"><strong>8</strong><span>Data formats</span></div></div>
+            </div>
+            <div class="hero-shot"><img src="../seisy/images/SeisY-main.png" alt="SeisY main window" /><small>Main window: resource manager and globe on the left, three plot panels in the center, terminal and event list on the right.</small></div>
+          </div>
+        </section>
+
+        <section id="overview" class="section">
+          <div class="section-header"><h2>Overview</h2><p>SeisY is an integrated platform for seismic, moonquake, and planetary seismology data processing and simulation analysis.</p></div>
+          <div class="section-body"><div class="grid-3"><div class="card"><h4>Core data operations</h4><p>Import 8 data formats (MiniSEED, SAC, SEG-Y, SEG2, ASCII, TXT, CSV, and auto-detect), browse working directories, save and reopen projects, manage file trees, and monitor logs with an embedded terminal.</p></div><div class="card"><h4>Waveform and spectrum processing</h4><p>Over 20 processing operations including De-mean, Detrend, response removal, 10 interpolation methods, 6 window functions, bandpass/median filtering, normalization, de-pulse, spectral analysis, sliding correlation, and multi-event comparison.</p></div><div class="card"><h4>Planetary seismology workflow</h4><p>Integrates Hypocenter Locator, Planetary Station Map, RayTracer, Normal Mode Workbench, Models Design, Moonquake Workflow, PDDM denoising, Noise Extractor, ULF signal reconstructor, and Apollo System.</p></div></div></div>
+        </section>
+
+        <section id="layout" class="section">
+          <div class="section-header"><h2>Main layout</h2><p>All explanatory text is fully switched to English in this mode, while keeping menu names consistent with the software.</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>Left resource manager</h4><ul><li>Browse the working directory and file tree</li><li>Supports sorting, context menus, and multi-selection</li><li>Used for importing data and opening scripts or config files</li><li>Connected to the globe / map area below</li></ul></div><div class="card"><h4>Map / globe area</h4><ul><li>OpenGL-based planetary visualization area</li><li>Displays Earth, Moon, Mars, and other bodies</li><li>Works with stations, sources, paths, and textures</li><li>Useful for geometric interpretation in planetary seismology</li></ul></div><div class="card"><h4>Three central plot panels</h4><ul><li><code>canvas_top</code></li><li><code>canvas_mid</code></li><li><code>canvas_bottom</code></li><li>Used for waveforms, spectra, comparisons, and before/after processing display</li></ul></div><div class="card"><h4>Right terminal and event list</h4><ul><li>Top right: log output and embedded command terminal</li><li>Bottom left: event list</li><li>Bottom right: event details and auxiliary display area</li><li>Status bar shows path, selection count, event count, and version</li></ul></div></div><div class="grid-2" style="margin-top:14px;"><div class="card"><h4>Plot area</h4><img src="../seisy/images/SeisY-plot.png" alt="SeisY plot area" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Event list area</h4><img src="../seisy/images/SeisY-EventList.png" alt="SeisY event list area" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div></div></div>
+        </section>
+
+        <section id="menus" class="section">
+          <div class="section-header"><h2>Menu system</h2><p>Menu names remain aligned with the software, using the same Chinese translations defined in <code>seisy_zh_CN.ts</code> when the page is switched back to Chinese.</p></div>
+          <div class="section-body">
+            <details id="file-menu" open><summary>File</summary><div class="detail-body"><ul><li><strong>Import File</strong>: import SAC, MiniSEED, SEGY, SEG2, TXT, ASCII, CSV, and related data formats.</li><li><strong>Open File With Editor / Open Yunji Editor</strong>: inspect text, configuration, and script files.</li><li><strong>Config Files</strong>: set the working directory, load configuration files, and update settings.</li><li><strong>Save Data</strong>: export <code>.mseed .sac .ascii .txt .csv .sgy .seg2</code>.</li><li><strong>Save Project / Open Project</strong>: work with <code>.seisyproj</code> project files.</li><li><strong>Export EVENTLIST</strong>: export the current event list.</li></ul></div></details>
+            <details id="data-menu" open><summary>Data</summary><div class="detail-body"><h5>Preparation</h5><ul><li>Input Date</li><li>Download Seismic Data</li></ul><h5>Pre-processing</h5><ul><li>De-mean, Detrend, Detrend Polynomial, Detrend Spline</li><li>Remove Response, Output Run Mode, Unit Conversion</li><li>Custom Detrending</li><li>Normalization, Custom Normalization, Standardization</li><li>Smooth, Denoise, Reverse, Conjugate</li></ul><h5>Submenus</h5><ul><li><strong>Interpolation of missing values</strong>: 10 methods &mdash; Linear, Nearest, Polynomial, Spline, Barycentric, Krogh, Piecewise Polynomial, PCHIP, Akima, Cubic Spline</li><li><strong>Windowing</strong>: Hamming, Hann, Blackman, Rectangular, Bartlett, Flattop, and window visualization</li><li><strong>Filtering</strong>: bandpass/lowpass filtering, median filtering, configurable median window size</li></ul><h5>Display and analysis</h5><ul><li>De-pulse and Plot</li><li>Seismic Data Correlation</li><li>Seismic Data Sparsification</li><li>Plot Amplitude Spectrum / Plot Multiple Spectra / Plot Time and Amplitude Spectrums</li><li>Export Current Spectrum to File</li><li>Send Spectrum to Normal Mode Workbench</li></ul><h5>Waveform plotting</h5><ul><li>Plot Current Stream</li><li>Plot Stream 2.0 (Normalization)</li><li>Plot Stream 3.0 (Full sampling / Set sampling)</li></ul></div></details>
+            <details id="tools-menu" open><summary>Tools</summary><div class="detail-body"><h5>SeisRT</h5><p>Online real-time seismic data tool accessible directly in the browser.</p><h5>Hypocenter Locator</h5><p>An integrated workflow for stations, waveforms, picks, models, initial source guesses, inversion results, and map display. Supports Earth, Moon, and custom planetary velocity models.</p><h5>Planetary Station Map</h5><p>Supports station/source management, epicentral distance calculation, travel-time prediction, CSV and image export, and links to RayTracer and the normal-mode workflow.</p><h5>RayTracer</h5><p>Used for ray-path analysis, takeoff-angle search, and propagation geometry interpretation. Supports forward and inverse tracing with layered velocity models.</p><h5>Moonquake Workflow</h5><p>Multi-step moonquake inversion pipeline: download, pick, locate, and analyze in one integrated flow.</p><h5>Apollo System</h5><p>Handles Apollo moonquake data batch download, synchronization, extraction, export, and coverage inspection. Supports XA network stations S12/S14/S15/S16.</p><h5>Other tools</h5><ul><li><strong>ULF-VLSNR-SE Reconstructor</strong>: ultra-low-frequency very-low-SNR signal reconstruction</li><li><strong>Noise Extractor</strong>: automated seismic noise extraction with sliding-window stability analysis and quality assessment</li><li><strong>Segment De-pulse (Interactive)</strong>: interactive selective outlier removal</li><li><strong>Trace Merge Tool</strong>: merge multiple trace lists</li><li><strong>Data Viewer</strong>: inspect trace headers and details</li><li><strong>Spectrum Analyzer Viewer</strong>: full spectrum analysis tool</li><li><strong>Sliding Correlation Analyzer</strong>: sliding-window noise-signal correlation analysis</li></ul></div></details>
+            <details id="simulation-menu" open><summary>Simulation</summary><div class="detail-body"><ul><li><strong>Seismic Phase Simulation</strong>: entry point for seismic phase simulation.</li><li><strong>Normal Mode Workbench</strong>: model, mode, excitation, and synthesis analysis workspace.</li><li><strong>Models Design</strong>: layer-based model design, validation, export, and transfer to Normal Mode Workbench.</li></ul></div></details>
+            <details id="settings-menu" open><summary>Settings</summary><div class="detail-body"><h5>Configuration</h5><ul><li><strong>Modify Configurations</strong>: edit core software parameters</li><li><strong>Plot Sampling Setting</strong>: configure waveform plot sampling parameters</li><li><strong>Plot Spectrum Setting</strong>: configure spectrum display parameters</li></ul><h5>Map Settings</h5><ul><li><strong>Add marker(s) to map</strong>: add markers on the planetary map</li><li><strong>Modify map markers</strong>: edit existing marker properties</li><li><strong>Modify map Texture</strong>: change planetary surface textures</li><li><strong>Set Apollo Database Path</strong>: specify local Apollo data storage location</li></ul><h5>Stream Management</h5><ul><li><strong>Show Streams List</strong>: view all data streams in memory</li><li><strong>Merge Streams List</strong>: merge multiple data streams</li><li><strong>Save CSL</strong>: save the current stream list</li><li><strong>Clear CSL</strong>: clear the latest one / two / all / custom streams</li></ul><h5>System</h5><ul><li><strong>Show Memory Usage</strong>: view current memory consumption</li></ul></div></details>
+            <details id="help-menu" open><summary>Help</summary><div class="detail-body"><h5>External Resources</h5><ul><li><strong>Wilber 3</strong>: open IRIS Wilber event search page</li><li><strong>Gmap</strong>: open IRIS GMap station map</li><li><strong>SAGE Tool</strong>: open IRIS DMC tools page</li><li><strong>Seisnet List</strong>: open local station list file</li><li><strong>Geoscience Websites</strong>: curated links to CENC, USGS, IRIS, NOAA, UNAVCO, EarthquakeTrack</li></ul><h5>Documentation</h5><ul><li><strong>User Guide</strong>: open this user guide (F1)</li><li><strong>De-pulse help</strong>: detailed de-pulse documentation</li><li><strong>Interpolation help</strong>: detailed interpolation documentation</li><li><strong>About</strong>: software version and copyright information</li></ul><h5>Appearance</h5><ul><li><strong>Theme</strong>: Default, Light, Dark, Customize</li><li><strong>Language</strong>: Simplified Chinese / English</li></ul></div></details>
+          </div>
+        </section>
+
+        <section id="toolbar" class="section">
+          <div class="section-header"><h2>Toolbar</h2><p>The toolbar places high-frequency actions directly in the main window for faster operation. The main toolbar sits at the top; a secondary toolbar appears in the event list area.</p></div>
+          <div class="section-body">
+            <h4>Main Toolbar (5 groups, 22 buttons)</h4>
+            <div class="grid-2">
+              <div class="card"><h4>Group 1 &middot; File Operations</h4><ul><li><strong>Import</strong>: import waveform data files</li><li><strong>Open</strong>: open a file in the editor</li><li><strong>Open Folder</strong>: browse the working directory (Ctrl+K)</li><li><strong>Save</strong>: save current data (Ctrl+S)</li></ul></div>
+              <div class="card"><h4>Group 2 &middot; General Tools</h4><ul><li><strong>Undo / Redo</strong>: operation history (Ctrl+Z / Ctrl+Y)</li><li><strong>Find</strong>: search functionality (Ctrl+F)</li><li><strong>View</strong>: switch display modes and layouts</li><li><strong>Help</strong>: open the user guide (F1)</li><li><strong>Settings</strong>: software settings panel</li><li><strong>Export</strong>: export data (Ctrl+E)</li><li><strong>Convert</strong>: toggle spectrum type (F5)</li><li><strong>Fullscreen</strong>: toggle fullscreen mode (F11)</li><li><strong>Log</strong>: show runtime log</li></ul></div>
+              <div class="card"><h4>Group 3 &middot; Signal Processing</h4><ul><li><strong>Interpolation</strong>: linear interpolation of missing values</li><li><strong>Filtering</strong>: bandpass / lowpass filtering</li><li><strong>De-pulse</strong>: spike removal with plotting</li><li><strong>Segment De-pulse</strong>: interactive segment-based outlier removal</li><li><strong>De-mean</strong>: remove DC offset</li><li><strong>Spline</strong>: spline detrending</li><li><strong>Plot Spectrum</strong>: plot amplitude spectrum</li><li><strong>Plot T &amp; F</strong>: time-domain + frequency-domain combined display</li><li><strong>Export Spectrum</strong>: export spectrum data to file</li><li><strong>Send to Mode Workbench</strong>: send spectrum to normal-mode analysis</li><li><strong>Spectrum Analyzer Viewer</strong>: full spectrum analysis tool</li><li><strong>Data Viewer</strong>: inspect trace headers and details</li></ul></div>
+              <div class="card"><h4>Group 4 &middot; Configuration &amp; External Resources</h4><ul><li><strong>Modify Configurations</strong>: edit software parameters</li><li><strong>Input Date</strong>: set data time range</li><li><strong>Download Seismic Data</strong>: download waveforms via FDSN</li><li><strong>STA/LTA</strong>: classic STA/LTA phase picker</li><li><strong>Wilber 3</strong>: open IRIS Wilber event search</li><li><strong>Gmap</strong>: open IRIS GMap station map</li><li><strong>SAGE</strong>: open IRIS DMC tools page</li><li><strong>Seisnet List</strong>: open local station list file</li><li><strong>Geoscience Websites</strong>: curated collection of geoscience links</li></ul></div>
+              <div class="card"><h4>Group 5 &middot; Specialized Module Shortcuts</h4><ul><li><strong>SeisRT</strong>: online real-time seismic tool</li><li><strong>Apollo System</strong>: Apollo moonquake data management</li><li><strong>Hypocenter Locator</strong>: source inversion location window</li><li><strong>Planetary Station Map</strong>: station and source visualization</li><li><strong>RayTracer</strong>: ray-path and travel-time analysis</li><li><strong>Moonquake Workflow</strong>: multi-step moonquake inversion pipeline</li><li><strong>Normal Mode Workbench</strong>: free-oscillation and normal-mode analysis</li><li><strong>Models Design</strong>: layered Earth/planet model designer</li><li><strong>Noise Extractor</strong>: automated seismic noise extraction</li><li><strong>PDDM</strong>: Phase-Dependent Denoising Method</li></ul></div>
+            </div>
+            <h4 style="margin-top:18px;">Bottom Toolbar (Event List Area)</h4>
+            <div class="grid-2">
+              <div class="card"><h4>Event Correlation Analysis</h4><ul><li><strong>Cross Correlation</strong>: cross-correlation between two events</li><li><strong>Auto Correlation</strong>: autocorrelation of a single event</li></ul></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tool-matrix" class="section">
+          <div class="section-header"><h2>Tool matrix</h2><p>A condensed view of the most distinctive tools under Tools and Simulation.</p></div>
+          <div class="section-body"><div class="grid-3"><div class="card"><h4>Hypocenter Locator</h4><p>Integrated location window for stations, waveforms, picks, models, results, and maps.</p><img src="../seisy/images/SeisY-Hypocenter_locator.png" alt="Hypocenter Locator" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Planetary Station Map</h4><p>Station/source management, epicentral distance calculation, travel-time prediction, and export.</p><img src="../seisy/images/SeisY-Planetary_station_map.png" alt="Planetary Station Map" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>RayTracer</h4><p>Workbench for ray-path and takeoff-angle search.</p><img src="../seisy/images/SeisY-RayTracer.png" alt="RayTracer" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Normal Mode Workbench</h4><p>Normal-mode computation, modal analysis, observed spectrum comparison, and synthesis.</p><img src="../seisy/images/SeisY-normal_mode.png" alt="Normal Mode Workbench" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Models Design</h4><p>1D / quasi-1D model designer used upstream of normal-mode analysis.</p><img src="../seisy/images/SeisY-models_design.png" alt="Models Design" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div><div class="card"><h4>Apollo System</h4><p>Batch download, extraction, and visualization of Apollo moonquake data.</p><img src="../seisy/images/SeisY-Apollo_data_management.png" alt="Apollo System" style="border-radius:12px; border:1px solid var(--line); margin-top:10px;" /></div></div></div>
+        </section>
+
+        <section id="project-file" class="section">
+          <div class="section-header"><h2>Project structure</h2><p>The <code>.seisyproj</code> structure is summarized from both your draft manual and the current codebase.</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>manifest.json</h4><ul><li>app / version</li><li>saved_at</li><li>operation_count</li><li>dataset_events</li></ul></div><div class="card"><h4>state.pkl</h4><ul><li>global_config</li><li>seismic_config</li><li>dataset</li><li>undo / operation_history</li><li>current_event_id / selected_event_ids</li><li>UI and state snapshot</li></ul></div></div></div>
+        </section>
+
+        <section id="eventlist" class="section">
+          <div class="section-header"><h2>Event list</h2><p>The event list is one of the most important object-management workspaces in SeisY.</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>Common groups</h4><ul><li>Streams</li><li>Correlation Data</li><li>Noise Data</li><li>Array Data</li><li>Custom groups</li></ul></div><div class="card"><h4>Typical context-menu actions</h4><ul><li>Group Events</li><li>Cal / More submenu</li><li>Copy Event ID / Copy Event / Paste Event</li><li>Delete Event / Undo Event / Redo Event</li></ul></div></div></div>
+        </section>
+
+        <section id="workflow" class="section">
+          <div class="section-header"><h2>Recommended workflow</h2><p>These workflows help first-time users get started quickly.</p></div>
+          <div class="section-body"><div class="grid-2"><div class="card"><h4>General data processing</h4><ol><li>Use Import File to load waveform data.</li><li>Select the target event in the event list.</li><li>Apply De-mean, Detrend, Filtering, and Remove Response in sequence.</li><li>Use Plot Current Stream to inspect the waveform.</li><li>Use Plot Amplitude Spectrum to inspect the spectrum.</li><li>Save the result with Save Data or Save Project.</li></ol></div><div class="card"><h4>Planetary seismology simulation</h4><ol><li>Design a model in Models Design.</li><li>Send the model to Normal Mode Workbench.</li><li>Compute modes and review the results.</li><li>Configure stations and sources in Planetary Station Map.</li><li>Use RayTracer if propagation-path analysis is needed.</li></ol></div></div></div>
+        </section>
+
+
+        <section id="science" class="section">
+          <div class="section-header"><h2>Scientific Computation Index</h2><p>This section maps SeisY's main computational modules to formulas, processing logic, code entry points, and searchable notes.</p></div>
+          <div class="section-body">
+            <div class="card" style="margin-bottom:14px;">
+              <h4>Search and jump</h4>
+              <input class="search-box" type="search" data-science-search placeholder="Try: normal mode, eigenfunction, hypocenter, least squares, PSD, ray tracer" />
+              <small>Search works on module names, formulas, aliases, and code-oriented keywords.</small>
+              <div class="chips" style="margin-top:12px;">
+                <a class="chip" href="#science-en-overview">Overview</a>
+                <a class="chip" href="#science-en-preprocess">Processing / FFT / PSD</a>
+                <a class="chip" href="#science-en-hypocenter">Hypocenter</a>
+                <a class="chip" href="#science-en-raytracer">RayTracer</a>
+                <a class="chip" href="#science-en-normal-1">Normal Modes I</a>
+                <a class="chip" href="#science-en-normal-2">Normal Modes II</a>
+                <a class="chip" href="#science-en-normal-3">Normal Modes III</a>
+                <a class="chip" href="#science-en-other">Other modules</a>
+              </div>
+            </div>
+
+            <details id="science-en-overview" data-science-item data-keywords="science overview method formula locator raytracer normal mode processing" open>
+              <summary>0. Overview and code map</summary>
+              <div class="detail-body">
+                <p>The strongest methodology-oriented modules in SeisY are <strong>FFT / PSD analysis</strong>, <strong>Hypocenter Locator</strong>, <strong>RayTracer</strong>, and <strong>Normal Mode Workbench</strong>, especially the model-to-observation loop in <code>seisy/core/normal_modes.py</code>.</p>
+              </div>
+            </details>
+
+            <details id="science-en-preprocess" data-science-item data-keywords="processing normalization fft dft psd welch parseval snr one-sided two-sided" open>
+              <summary>1. Processing, FFT, spectra, and PSD</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>Per-trace min-max normalization uses <span class="math-inline">\( x'=(x-x_{\min})/(x_{\max}-x_{\min}) \)</span>.</li>
+                  <li>The spectral core is the DFT <span class="math-inline">\( X[k]=\sum_{n=0}^{N-1}x[n]e^{-i2\pi kn/N} \)</span>.</li>
+                  <li>PSD is formed as <span class="math-inline">\( |X(f)|^2/(f_sN) \)</span>, with Welch averaging used for variance reduction.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-hypocenter" data-science-item data-keywords="hypocenter least squares haversine taup residual rms covariance inversion" open>
+              <summary>2. Hypocenter location</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>Travel times come from TauP when available, with a homogeneous fallback path model.</li>
+                  <li>The inversion minimizes weighted residuals <span class="math-inline">\( r_i=w_i[t_{obs}-(t_0+t_{calc}+c_i)] \)</span>.</li>
+                  <li>Outputs include RMS residuals and an approximate covariance from <span class="math-inline">\( (J^\mathsf{T}J)^{-1} \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-raytracer" data-science-item data-keywords="raytracer travel time path takeoff angle emergence angle layered velocity boundary" open>
+              <summary>3. Ray tracing</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>Layer velocities are represented by polynomial radial models.</li>
+                  <li>SeisY supports both fixed-takeoff-angle forward tracing and target-distance inverse search.</li>
+                  <li>The continuous background can be interpreted as <span class="math-inline">\( T=\int ds/v(r) \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-normal-1" data-science-item data-keywords="normal mode planetary model frequency q damping spheroidal toroidal radial" open>
+              <summary>4. Normal Modes I: models, frequency, Q, damping</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>Characteristic frequency estimates follow mode-family-dependent radius and velocity scaling.</li>
+                  <li>Damping follows <span class="math-inline">\( \tau = Q/(\pi f) \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-normal-2" data-science-item data-keywords="normal mode eigenfunction excitation synthesis source station response butterworth" open>
+              <summary>5. Normal Modes II: eigenfunctions, excitation, synthesis</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>Eigenfunctions are built on normalized radius <span class="math-inline">\( x=r/R \)</span> and density-scaled by <span class="math-inline">\( \sqrt{\rho(r)} \)</span>.</li>
+                  <li>Finite-duration suppression uses <span class="math-inline">\( \exp(-(2\pi fT)^2/8) \)</span>.</li>
+                  <li>Station response is synthesized as <span class="math-inline">\( u(t)=\sum_m W_m e^{-t/\tau_m}\sin(2\pi f_m t+\phi_m) \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-normal-3" data-science-item data-keywords="normal mode observed spectrum peak match tolerance spherical_jn brentq" open>
+              <summary>6. Normal Modes III: observed-spectrum matching and exact root solving</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>The exact solver uses spherical-Bessel boundary conditions, for example <span class="math-inline">\( j_l'(x)+j_l(x)/x=0 \)</span>.</li>
+                  <li>Roots are converted to frequencies through <span class="math-inline">\( f=vx_n/(2\pi R) \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+
+            <details id="science-en-other" data-science-item data-keywords="lunar pipeline pddm swi ricker synthesizer nyquist" open>
+              <summary>7. Lunar pipeline, PDDM, SWI, and synthetic seismograms</summary>
+              <div class="detail-body">
+                <ul>
+                  <li>The lunar workflow uses RMS-style SNR <span class="math-inline">\( \mathrm{SNR}=\mathrm{RMS}(signal)/\mathrm{RMS}(noise) \)</span> and aligned stacking <span class="math-inline">\( \bar{x}(t)=N^{-1}\sum_i x_i(t) \)</span>.</li>
+                  <li>PDDM uses frequency-domain recovery <span class="math-inline">\( F_{re}=(F_{s2s1}-F_{s2n1})/(F_{s2}^{*}+\varepsilon) \)</span>.</li>
+                  <li>The synthesizer uses the Ricker wavelet <span class="math-inline">\( w(t)=(1-2\pi^2f_0^2t^2)e^{-\pi^2f_0^2t^2} \)</span>.</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="references" class="section">
+          <div class="section-header"><h2>References</h2><p>This page is compiled from your draft manual, the current codebase, and the translation mapping in <code>seisy_zh_CN.ts</code>.</p></div>
+          <div class="section-body"><div class="chips"><span class="chip">SeisY 操作手册.docx</span><span class="chip">seisy/main.py</span><span class="chip">seisy/translations/seisy_zh_CN.ts</span><span class="chip">seisy/core/hypocenter_locator_gui.py</span><span class="chip">seisy/core/planetary_station_map.py</span><span class="chip">seisy/core/raytracer_qt.py</span><span class="chip">seisy/core/normal_modes.py</span><span class="chip">seisy/core/models_design.py</span><span class="chip">seisy/apollo_moonquake_system/ui/main_window.py</span></div></div>
+        </section>
+
+        <div class="footer">SeisY User Guide · Language is fully switched to English in this view</div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const themeToggle = document.getElementById('themeToggle');
+      const langToggle = document.getElementById('langToggle');
+      const themeKey = 'seisy-guide-theme';
+      const langKey = 'seisy-guide-lang';
+      const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initialTheme = localStorage.getItem(themeKey) || (systemDark ? 'dark' : 'light');
+      const initialLang = localStorage.getItem(langKey) || 'zh';
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        themeToggle.title = theme === 'dark' ? '切换到浅色模式 / Switch to light mode' : '切换到深色模式 / Switch to dark mode';
+      }
+
+      function applyLang(lang) {
+        root.setAttribute('data-lang', lang);
+        root.lang = lang === 'zh' ? 'zh-CN' : 'en';
+        document.title = lang === 'zh' ? 'SeisY 使用说明' : 'SeisY User Guide';
+        langToggle.textContent = lang === 'zh' ? 'EN' : '中';
+        langToggle.title = lang === 'zh' ? 'Switch to English' : '切换到中文';
+        langToggle.setAttribute('aria-label', lang === 'zh' ? 'Switch to English' : '切换到中文');
+      }
+
+      applyTheme(initialTheme);
+      applyLang(initialLang);
+
+      themeToggle.addEventListener('click', function () {
+        const nextTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(themeKey, nextTheme);
+        applyTheme(nextTheme);
+      });
+
+      langToggle.addEventListener('click', function () {
+        const nextLang = root.getAttribute('data-lang') === 'zh' ? 'en' : 'zh';
+        localStorage.setItem(langKey, nextLang);
+        applyLang(nextLang);
+      });
+    })();
+
+    (function () {
+      const searchInputs = document.querySelectorAll('[data-science-search]');
+      const items = Array.from(document.querySelectorAll('[data-science-item]'));
+
+      function applyScienceFilter(query) {
+        const value = (query || '').trim().toLowerCase();
+        items.forEach(function (item) {
+          const haystack = ((item.textContent || '') + ' ' + (item.getAttribute('data-keywords') || '')).toLowerCase();
+          item.style.display = !value || haystack.indexOf(value) !== -1 ? '' : 'none';
+        });
+      }
+
+      searchInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+          const value = input.value;
+          searchInputs.forEach(function (other) {
+            if (other !== input) other.value = value;
+          });
+          applyScienceFilter(value);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
