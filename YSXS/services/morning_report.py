@@ -6,6 +6,7 @@ import math
 import os
 import re
 import threading
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -24,6 +25,16 @@ import requests
 from flask import Flask, current_app, has_app_context
 from sqlalchemy import func
 
+try:
+    from docx import Document as DocxDocument
+except Exception:  # pragma: no cover
+    DocxDocument = None
+
+try:
+    from pypdf import PdfReader
+except Exception:  # pragma: no cover
+    PdfReader = None
+
 from ..extensions import db
 from ..models import (
     AIUsageLog,
@@ -33,6 +44,7 @@ from ..models import (
     MorningReportRun,
     MorningReportSettings,
 )
+from ..services.storage import resolve_document_path
 from ..utils.datetimes import utc_now
 
 OPENALEX_WORKS_URL = "https://api.openalex.org/works"
@@ -480,6 +492,10 @@ SMART_SEARCH_QUERY_REFINE_TIMEOUT = _get_positive_int_env('YSXS_SMART_SEARCH_QUE
 SMART_SEARCH_PER_SOURCE_CAP = _get_positive_int_env('YSXS_SMART_SEARCH_PER_SOURCE_CAP', 18)
 SMART_SEARCH_RERANK_LIMIT = _get_positive_int_env('YSXS_SMART_SEARCH_RERANK_LIMIT', 6)
 SMART_SEARCH_ABSTRACT_SNIPPET_LIMIT = _get_positive_int_env('YSXS_SMART_SEARCH_ABSTRACT_SNIPPET_LIMIT', 600)
+SUMMARY_FULLTEXT_CHAR_LIMIT = _get_positive_int_env('YSXS_SUMMARY_FULLTEXT_CHAR_LIMIT', 32000)
+SUMMARY_FULLTEXT_PAGE_LIMIT = _get_positive_int_env('YSXS_SUMMARY_FULLTEXT_PAGE_LIMIT', 12)
+SUMMARY_REMOTE_PDF_MAX_BYTES = _get_positive_int_env('YSXS_SUMMARY_REMOTE_PDF_MAX_BYTES', 8 * 1024 * 1024)
+SUMMARY_REMOTE_FETCH_TIMEOUT = _get_positive_int_env('YSXS_SUMMARY_REMOTE_FETCH_TIMEOUT', 20)
 SMART_SEARCH_ENABLE_AI_RERANK = str(os.environ.get('YSXS_SMART_SEARCH_ENABLE_AI_RERANK', 'true')).strip().lower() not in {
     '0', 'false', 'no', 'off',
 }
@@ -525,6 +541,111 @@ def _runtime_ai_config_path() -> Path | None:
     return instance_path / AI_RUNTIME_CONFIG_FILENAME
 
 
+def list_env_ai_presets() -> list[dict[str, str]]:
+    presets: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def add_preset(
+        key: str,
+        label: str,
+        *,
+        base_url: str | None,
+        model: str | None,
+        wire_api: str | None,
+        api_key_env: str | None = None,
+        source: str = 'env',
+    ) -> None:
+        normalized = (
+            str(base_url or '').strip().rstrip('/'),
+            str(model or '').strip(),
+            str(wire_api or '').strip().lower(),
+        )
+        if not all(normalized):
+            return
+        dedupe_key = tuple(item.lower() for item in normalized)
+        if dedupe_key in seen:
+            return
+        seen.add(dedupe_key)
+        presets.append({
+            'key': str(key).strip(),
+            'label': str(label).strip() or str(key).strip(),
+            'base_url': normalized[0],
+            'model': normalized[1],
+            'wire_api': normalized[2],
+            'api_key_env': str(api_key_env or '').strip(),
+            'source': source,
+        })
+
+    add_preset(
+        'openai_default',
+        'OpenAI 默认',
+        base_url=os.environ.get('OPENAI_BASE_URL') or os.environ.get('OPENAI_API_BASE'),
+        model=os.environ.get('OPENAI_MODEL'),
+        wire_api=os.environ.get('OPENAI_WIRE_API') or 'responses',
+        api_key_env='OPENAI_API_KEY',
+    )
+    add_preset(
+        'mimo_openai',
+        'MiMo OpenAI 兼容',
+        base_url=os.environ.get('MIMO_OPENAI_BASE_URL'),
+        model=os.environ.get('MIMO_MODEL'),
+        wire_api=os.environ.get('MIMO_OPENAI_WIRE_API') or os.environ.get('MIMO_WIRE_API') or 'chat_completions',
+        api_key_env='MIMO_API_KEY',
+    )
+    add_preset(
+        'mimo_anthropic',
+        'MiMo Anthropic 兼容',
+        base_url=os.environ.get('MIMO_ANTHROPIC_BASE_URL'),
+        model=os.environ.get('MIMO_ANTHROPIC_MODEL') or os.environ.get('MIMO_MODEL'),
+        wire_api=os.environ.get('MIMO_ANTHROPIC_WIRE_API') or 'anthropic_messages',
+        api_key_env='MIMO_API_KEY',
+    )
+    add_preset(
+        'anthropic_default',
+        'Anthropic 默认',
+        base_url=os.environ.get('ANTHROPIC_BASE_URL'),
+        model=os.environ.get('ANTHROPIC_MODEL'),
+        wire_api=os.environ.get('ANTHROPIC_WIRE_API') or 'anthropic_messages',
+        api_key_env='ANTHROPIC_API_KEY',
+    )
+    add_preset(
+        'codex_provider',
+        'Codex / 中转默认',
+        base_url=os.environ.get('CODEX_BASE_URL'),
+        model=os.environ.get('CODEX_MODEL'),
+        wire_api=os.environ.get('CODEX_WIRE_API') or 'responses',
+        api_key_env='CODEX_API_KEY',
+    )
+
+    for index in range(1, 13):
+        key = str(os.environ.get(f'YSXS_AI_PRESET_{index}_KEY') or '').strip() or f'custom_{index}'
+        label = str(os.environ.get(f'YSXS_AI_PRESET_{index}_LABEL') or '').strip()
+        base_url = os.environ.get(f'YSXS_AI_PRESET_{index}_BASE_URL')
+        model = os.environ.get(f'YSXS_AI_PRESET_{index}_MODEL')
+        wire_api = os.environ.get(f'YSXS_AI_PRESET_{index}_WIRE_API')
+        add_preset(
+            key,
+            label or f'自定义预设 {index}',
+            base_url=base_url,
+            model=model,
+            wire_api=wire_api,
+            api_key_env=os.environ.get(f'YSXS_AI_PRESET_{index}_API_KEY_ENV'),
+            source='custom',
+        )
+
+    return presets
+
+
+def get_env_ai_preset(preset_key: str | None) -> dict[str, str] | None:
+    key = str(preset_key or '').strip()
+    if not key:
+        return None
+    for preset in list_env_ai_presets():
+        if preset.get('key') == key:
+            return preset
+    return None
+
+
 def load_runtime_ai_config() -> dict[str, str]:
     path = _runtime_ai_config_path()
     if not path or not path.exists():
@@ -540,6 +661,7 @@ def load_runtime_ai_config() -> dict[str, str]:
         'base_url',
         'model',
         'wire_api',
+        'preset_key',
         'api_key',
         'nasa_ads_api_token',
         'notes',
@@ -558,7 +680,7 @@ def save_runtime_ai_config(config: dict[str, str]) -> None:
     cleaned = {
         str(key): str(value).strip()
         for key, value in (config or {}).items()
-        if str(key).strip() in {'base_url', 'model', 'wire_api', 'api_key', 'nasa_ads_api_token', 'notes'}
+        if str(key).strip() in {'base_url', 'model', 'wire_api', 'preset_key', 'api_key', 'nasa_ads_api_token', 'notes'}
         and str(value).strip()
     }
     path.write_text(json.dumps(cleaned, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -1032,6 +1154,7 @@ def search_literature_with_ai(
     lookback_days: int = 365,
     enabled_sources: list[str] | None = None,
     sort_mode: str = 'balanced',
+    progress_callback=None,
 ) -> dict[str, Any]:
     cleaned_query = re.sub(r"\s+", " ", str(query_text or "").strip())
     if not cleaned_query:
@@ -1043,6 +1166,8 @@ def search_literature_with_ai(
     if not selected_sources:
         selected_sources = ['openalex', 'crossref', 'arxiv']
 
+    if callable(progress_callback):
+        progress_callback('正在智能提炼检索意图…')
     profile = build_search_query_profile(cleaned_query, user_id=user_id)
     query_phrases = profile.get('queries') or [cleaned_query]
     keyword_terms = profile.get('keywords') or query_phrases
@@ -1050,6 +1175,9 @@ def search_literature_with_ai(
     desired_count = min(max_results, TARGET_PAPER_FLOOR)
     per_source = max(8, min(max_results * 2, SMART_SEARCH_PER_SOURCE_CAP))
 
+    if callable(progress_callback):
+        source_labels = " / ".join(SUPPORTED_SOURCES.get(source, source) for source in selected_sources)
+        progress_callback(f'正在跨源抓取候选文献…（{source_labels}）')
     items, errors = fetch_generic_candidates_for_sources(
         selected_sources,
         query_phrases=query_phrases,
@@ -1060,6 +1188,8 @@ def search_literature_with_ai(
     if not items and errors:
         raise RuntimeError("检索失败：" + "；".join(errors[:3]))
 
+    if callable(progress_callback):
+        progress_callback(f'正在去重、匹配关键词并计算相关性…（候选 {len(items)} 篇）')
     deduped: dict[str, dict[str, Any]] = {}
     for item in items:
         normalized = normalize_discovered_paper(item)
@@ -1132,12 +1262,16 @@ def search_literature_with_ai(
         len(ranked),
         max(4, min(SMART_SEARCH_RERANK_LIMIT, max_results, desired_count + 2)),
     )
+    if callable(progress_callback):
+        progress_callback(f'正在智能重排高相关结果…（待重排 {rerank_limit} 篇）')
+    rerank_meta: dict[str, Any] = {}
     ai_rerank = rerank_search_candidates_with_ai(
         ranked[:rerank_limit],
         query_text=cleaned_query,
         keyword_terms=keyword_terms,
         sort_mode=sort_mode,
         user_id=user_id,
+        meta=rerank_meta,
     )
     results: list[dict[str, Any]] = []
     rejected_results: list[dict[str, Any]] = []
@@ -1182,11 +1316,14 @@ def search_literature_with_ai(
     )
     results = results[:max_results]
 
+    if callable(progress_callback):
+        progress_callback(f'智能深搜已完成，正在整理 {len(results)} 篇结果…')
     return {
         'query_text': cleaned_query,
         'profile': profile,
         'results': results,
         'errors': errors,
+        'ai_usage': _build_search_ai_usage(profile, rerank_meta),
         'stats': {
             'raw_count': len(items),
             'deduped_count': len(deduped),
@@ -2020,6 +2157,8 @@ def compute_combined_search_score(relevance_score: float, quality_score: float, 
 def build_search_query_profile(query_text: str, *, user_id: int | None = None) -> dict[str, Any]:
     fallback = build_fallback_search_query_profile(query_text)
     if not get_ai_client_config():
+        fallback['_query_profile_mode'] = 'disabled'
+        fallback['_query_profile_note'] = '未配置智能接口，已使用规则方式提炼检索词。'
         return fallback
     prompt = (
         "请把下面这段科研检索需求提炼成适合学术检索的查询配置。\n"
@@ -2055,9 +2194,13 @@ def build_search_query_profile(query_text: str, *, user_id: int | None = None) -
             'queries': queries or fallback.get('queries') or [query_text],
             'keywords': keywords or fallback.get('keywords') or fallback.get('queries') or [query_text],
             'exclude_terms': exclude_terms,
+            '_query_profile_mode': 'ai',
+            '_query_profile_note': '已成功调用智能接口提炼检索主题与关键词。',
         }
     except Exception as exc:
         _get_logger().warning("AI 检索词提炼失败，回退到规则解析：%s", exc)
+        fallback['_query_profile_mode'] = 'fallback'
+        fallback['_query_profile_note'] = f'智能检索词提炼失败，已回退到规则解析：{exc}'
         return fallback
 
 
@@ -2115,8 +2258,19 @@ def rerank_search_candidates_with_ai(
     keyword_terms: list[str],
     sort_mode: str,
     user_id: int | None = None,
+    meta: dict[str, Any] | None = None,
 ) -> dict[int, dict[str, Any]]:
-    if not candidates or not SMART_SEARCH_ENABLE_AI_RERANK or not get_ai_client_config():
+    if not candidates:
+        if meta is not None:
+            meta.update({'mode': 'skipped', 'note': '候选结果过少，本次未执行智能重排。'})
+        return {}
+    if not SMART_SEARCH_ENABLE_AI_RERANK:
+        if meta is not None:
+            meta.update({'mode': 'disabled', 'note': '当前已关闭智能重排，沿用规则排序。'})
+        return {}
+    if not get_ai_client_config():
+        if meta is not None:
+            meta.update({'mode': 'disabled', 'note': '未配置智能接口，本次仅使用规则排序。'})
         return {}
     candidate_blocks: list[str] = []
     for index, item in enumerate(candidates, start=1):
@@ -2150,8 +2304,12 @@ def rerank_search_candidates_with_ai(
         ))
     except Exception as exc:
         _get_logger().warning("AI 文献重排失败，回退到规则排序：%s", exc)
+        if meta is not None:
+            meta.update({'mode': 'fallback', 'note': f'智能重排失败，已回退到规则排序：{exc}'})
         return {}
     if not isinstance(payload, list):
+        if meta is not None:
+            meta.update({'mode': 'fallback', 'note': '智能重排返回格式异常，已回退到规则排序。'})
         return {}
     results: dict[int, dict[str, Any]] = {}
     for item in payload:
@@ -2166,7 +2324,62 @@ def rerank_search_candidates_with_ai(
             'quality_score': max(0, min(_safe_int(item.get('quality_score')) or 60, 100)),
             'reason': str(item.get('reason') or '').strip()[:240] or 'AI 已完成综合重排。',
         }
+    if meta is not None:
+        if results:
+            meta.update({'mode': 'ai', 'note': f'已成功调用智能接口重排 {len(results)} 篇候选结果。', 'used_count': len(results)})
+        else:
+            meta.update({'mode': 'fallback', 'note': '智能重排未返回可用结果，已回退到规则排序。', 'used_count': 0})
     return results
+
+
+def _build_search_ai_usage(profile: dict[str, Any], rerank_meta: dict[str, Any]) -> dict[str, Any]:
+    profile_mode = str(profile.get('_query_profile_mode') or 'disabled').strip().lower()
+    profile_note = str(profile.get('_query_profile_note') or '').strip()
+    rerank_mode = str(rerank_meta.get('mode') or 'disabled').strip().lower()
+    rerank_note = str(rerank_meta.get('note') or '').strip()
+
+    used_any = profile_mode == 'ai' or rerank_mode == 'ai'
+    fallback_any = profile_mode == 'fallback' or rerank_mode == 'fallback'
+
+    if used_any and fallback_any:
+        status = 'partial'
+        label = '本次为智能 + 规则混合结果'
+        description = '部分环节已调用智能接口，但也有环节回退到了规则流程。'
+    elif used_any:
+        status = 'used'
+        label = '本次已成功调用智能接口'
+        description = '本次检索至少有一个核心环节成功使用了智能接口。'
+    elif fallback_any:
+        status = 'fallback'
+        label = '本次未成功用上智能接口'
+        description = '本次智能调用失败，当前结果主要来自规则解析与规则排序。'
+    else:
+        status = 'disabled'
+        label = '本次未启用智能接口'
+        description = '当前未配置或未开启相关智能环节，因此结果来自规则流程。'
+
+    return {
+        'status': status,
+        'label': label,
+        'description': description,
+        'stages': [
+            {
+                'name': '检索词提炼',
+                'mode': profile_mode,
+                'label': '智能提炼成功' if profile_mode == 'ai' else ('规则回退' if profile_mode == 'fallback' else '规则解析'),
+                'note': profile_note,
+            },
+            {
+                'name': '结果重排',
+                'mode': rerank_mode,
+                'label': (
+                    '智能重排成功' if rerank_mode == 'ai'
+                    else ('规则回退' if rerank_mode == 'fallback' else ('本次跳过' if rerank_mode == 'skipped' else '规则排序'))
+                ),
+                'note': rerank_note,
+            },
+        ],
+    }
 
 
 def compute_relevance_score(
@@ -2278,17 +2491,32 @@ def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | 
     return paper.ai_summary
 
 
-def summarize_document_with_ai(doc: Document) -> str:
+def summarize_document_with_ai(doc: Document, *, remote_pdf_url: str | None = None) -> str:
     keyword_text = "、".join([item.strip() for item in re.split(r"[;,，；\n]+", doc.keywords or "") if item.strip()][:8]) or "未提供"
-    abstract = str(doc.abstract or "").strip()[:12000]
+    source_material = build_summary_source_material(
+        abstract=str(doc.abstract or '').strip()[:12000],
+        local_file_path=doc.file_path,
+        remote_pdf_url=remote_pdf_url or (doc.url if str(doc.url or '').lower().endswith('.pdf') else None),
+    )
+    abstract = source_material.get('abstract') or '暂无摘要'
+    full_text = source_material.get('full_text') or ''
     prompt = (
-        "请作为中文科研助手，对下面这篇文献做专业、清晰、易读的总结。\n"
+        "请作为中文科研文献筛读助手，对下面这篇文献生成一份“便于快速判断价值”的结构化总结。\n"
         "要求：\n"
         "1. 使用中文；\n"
-        "2. 只基于提供的信息，不要编造；\n"
+        "2. 只基于提供的信息，不要编造；如果同时给出了摘要和原文节选，优先依据原文节选，摘要仅作为补充；\n"
         "3. 输出 Markdown；\n"
-        "4. 控制在 6 个小节以内；\n"
-        "5. 不要输出 ```markdown 代码块。\n\n"
+        "4. 严格按以下 6 个小节输出，且小节标题保持一致，并使用 Markdown 三级标题格式：文献信息、研究问题、方法与数据、主要发现、为什么值得读、筛读结论；\n"
+        "5. 尽量提取摘要里明确出现的研究对象、数据来源、方法、关键数字、对比关系与结论；如果摘要没写清楚，就明确写“摘要未说明”，不要编造；\n"
+        "6. “为什么值得读”不要空泛吹捧，要从研究对象是否明确、方法是否有代表性、结果是否可直接参考等角度回答实际价值；\n"
+        "7. 字段名和小标签请尽量加粗，例如“**标题：**”“**作者：**”“**总体判断：**”；重点数值、关键结论短语也可适度加粗；\n"
+        "8. “筛读结论”必须包含 4 点，并使用圆序号分行展示：①是否建议优先阅读；②它更适合回答什么问题；③它不太适合回答什么问题；④主要局限是什么；\n"
+        "9. “筛读结论”前可先写一行“**总体判断：** ...”；\n"
+        "10. “筛读结论”的第一句就要先给出总体判断，语气要像帮助用户做筛选决策，而不是泛泛的论文导读；\n"
+        "11. 语言要具体、凝练，避免空话套话，少写宏大背景，多写对筛读有用的信息；\n"
+        "12. 如果文献给出了明确参数、数值范围、误差、差异量级，优先写出来；\n"
+        "13. 不要额外输出总标题，如“文献筛读总结”“论文总结”“智能总结”等；正文直接从“文献信息”开始；\n"
+        "14. 不要输出 ```markdown 代码块。\n\n"
         f"标题：{doc.title}\n"
         f"作者：{doc.authors or '未知'}\n"
         f"期刊/来源：{doc.journal or '未知'}\n"
@@ -2296,9 +2524,10 @@ def summarize_document_with_ai(doc: Document) -> str:
         f"DOI：{doc.doi or '未知'}\n"
         f"关键词：{keyword_text}\n"
         f"备注：{(doc.remark or '').strip()[:3000] or '无'}\n"
-        f"摘要：{abstract or '暂无摘要'}\n"
+        f"摘要：{abstract}\n"
+        + (f"可用原文节选：{full_text}\n" if full_text else "")
     )
-    system_prompt = "你是中文科研阅读助手，擅长把文献内容整理成结构清晰、方便快速阅读的总结。"
+    system_prompt = "你是中文科研筛读助手，不是泛泛的摘要改写器。你擅长把论文整理成结构稳定、信息密度高、便于快速判断是否值得读的总结，重点是帮助用户筛选，而不是写通用学术简介。"
     content = call_ai_text(
         system_prompt,
         prompt,
@@ -2338,28 +2567,56 @@ def get_morning_report_popup_payload(user_id: int) -> dict[str, Any] | None:
 
 def get_ai_client_config() -> dict[str, str] | None:
     runtime_config = load_runtime_ai_config()
+    preset_key = runtime_config.get('preset_key')
+    preset_config = get_env_ai_preset(preset_key)
+    preset_api_key = ''
+    for env_name in filter(None, [
+        (preset_config or {}).get('api_key_env'),
+        'OPENAI_APIKEY' if (preset_config or {}).get('api_key_env') == 'OPENAI_API_KEY' else '',
+    ]):
+        preset_api_key = str(os.environ.get(env_name) or '').strip()
+        if preset_api_key:
+            break
     api_key = (
         runtime_config.get("api_key")
+        or preset_api_key
+        or os.environ.get("MIMO_API_KEY")
+        or os.environ.get("ANTHROPIC_API_KEY")
         or os.environ.get("OPENAI_API_KEY")
         or os.environ.get("OPENAI_APIKEY")
+        or os.environ.get("MIMO_OPENAI_API_KEY")
         or os.environ.get("YSXS_OPENAI_API_KEY")
         or os.environ.get("CODEX_API_KEY")
     )
     base_url = (
-        runtime_config.get("base_url")
+        (preset_config or {}).get("base_url")
+        or runtime_config.get("base_url")
+        or os.environ.get("MIMO_ANTHROPIC_BASE_URL")
+        or os.environ.get("ANTHROPIC_BASE_URL")
+        or os.environ.get("MIMO_OPENAI_BASE_URL")
         or os.environ.get("OPENAI_BASE_URL")
         or os.environ.get("OPENAI_API_BASE")
+        or os.environ.get("MIMO_API_BASE")
         or os.environ.get("YSXS_OPENAI_BASE_URL")
         or os.environ.get("CODEX_BASE_URL")
     )
     model = (
-        runtime_config.get("model")
+        (preset_config or {}).get("model")
+        or runtime_config.get("model")
+        or os.environ.get("MIMO_ANTHROPIC_MODEL")
+        or os.environ.get("ANTHROPIC_MODEL")
+        or os.environ.get("MIMO_MODEL")
         or os.environ.get("YSXS_AI_MODEL")
         or os.environ.get("OPENAI_MODEL")
         or os.environ.get("CODEX_MODEL")
     )
     wire_api = (
-        runtime_config.get("wire_api")
+        (preset_config or {}).get("wire_api")
+        or runtime_config.get("wire_api")
+        or os.environ.get("MIMO_ANTHROPIC_WIRE_API")
+        or os.environ.get("ANTHROPIC_WIRE_API")
+        or os.environ.get("MIMO_OPENAI_WIRE_API")
+        or os.environ.get("MIMO_WIRE_API")
         or os.environ.get("YSXS_AI_WIRE_API")
         or os.environ.get("OPENAI_WIRE_API")
         or os.environ.get("CODEX_WIRE_API")
@@ -2382,11 +2639,165 @@ def get_ai_client_config() -> dict[str, str] | None:
         'base_url': (base_url or 'https://api.openai.com/v1').rstrip('/'),
         'model': model or 'gpt-4.1-mini',
         'wire_api': (wire_api or 'chat_completions').strip().lower(),
+        'preset_key': preset_key or '',
+        'preset_label': (preset_config or {}).get('label', ''),
+        'config_source': 'preset' if preset_config else ('manual' if any(runtime_config.get(key) for key in ('base_url', 'model', 'wire_api')) else 'env'),
     }
 
 
 def ai_summary_available() -> bool:
     return get_ai_client_config() is not None
+
+
+def _clean_summary_source_text(text: str | None) -> str:
+    cleaned = str(text or '').replace('\r\n', '\n').replace('\r', '\n')
+    cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    return cleaned.strip()
+
+
+def _extract_pdf_text_for_summary(file_path: Path) -> str:
+    if PdfReader is None:
+        return ''
+    try:
+        reader = PdfReader(str(file_path))
+    except Exception as exc:
+        _get_logger().warning("PDF 读取失败，回退到摘要总结：%s", exc)
+        return ''
+
+    pages_text: list[str] = []
+    total_chars = 0
+    for page in reader.pages[:SUMMARY_FULLTEXT_PAGE_LIMIT]:
+        try:
+            page_text = page.extract_text() or ''
+        except Exception:
+            continue
+        cleaned = _clean_summary_source_text(page_text)
+        if not cleaned:
+            continue
+        pages_text.append(cleaned)
+        total_chars += len(cleaned)
+        if total_chars >= SUMMARY_FULLTEXT_CHAR_LIMIT:
+            break
+
+    return _clean_summary_source_text("\n\n".join(pages_text))[:SUMMARY_FULLTEXT_CHAR_LIMIT]
+
+
+def _extract_docx_text_for_summary(file_path: Path) -> str:
+    if DocxDocument is None:
+        return ''
+    try:
+        doc = DocxDocument(str(file_path))
+    except Exception as exc:
+        _get_logger().warning("DOCX 读取失败，回退到摘要总结：%s", exc)
+        return ''
+
+    paragraphs: list[str] = []
+    total_chars = 0
+    for para in doc.paragraphs:
+        cleaned = _clean_summary_source_text(getattr(para, 'text', ''))
+        if not cleaned:
+            continue
+        paragraphs.append(cleaned)
+        total_chars += len(cleaned)
+        if total_chars >= SUMMARY_FULLTEXT_CHAR_LIMIT:
+            break
+    return _clean_summary_source_text("\n\n".join(paragraphs))[:SUMMARY_FULLTEXT_CHAR_LIMIT]
+
+
+def _extract_plain_text_for_summary(file_path: Path) -> str:
+    for encoding in ('utf-8', 'utf-16', 'gbk', 'latin-1'):
+        try:
+            text = file_path.read_text(encoding=encoding)
+            return _clean_summary_source_text(text)[:SUMMARY_FULLTEXT_CHAR_LIMIT]
+        except Exception:
+            continue
+    return ''
+
+
+def _extract_local_file_text_for_summary(file_path: Path | None) -> str:
+    if not file_path or not file_path.exists():
+        return ''
+    suffix = file_path.suffix.lower()
+    if suffix == '.pdf':
+        return _extract_pdf_text_for_summary(file_path)
+    if suffix == '.docx':
+        return _extract_docx_text_for_summary(file_path)
+    if suffix in {'.txt', '.md', '.markdown', '.rst'}:
+        return _extract_plain_text_for_summary(file_path)
+    return ''
+
+
+def _download_remote_pdf_for_summary(pdf_url: str | None) -> str:
+    url = str(pdf_url or '').strip()
+    if not url.lower().startswith(('http://', 'https://')):
+        return ''
+    tmp_path: Path | None = None
+    try:
+        with requests.get(url, timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SUMMARY_REMOTE_FETCH_TIMEOUT), stream=True) as response:
+            response.raise_for_status()
+            content_length = int(response.headers.get('Content-Length') or 0)
+            if content_length and content_length > SUMMARY_REMOTE_PDF_MAX_BYTES:
+                _get_logger().info("远程 PDF 过大，跳过全文总结：%s bytes", content_length)
+                return ''
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+                tmp_path = Path(tmp.name)
+                downloaded = 0
+                for chunk in response.iter_content(chunk_size=65536):
+                    if not chunk:
+                        continue
+                    downloaded += len(chunk)
+                    if downloaded > SUMMARY_REMOTE_PDF_MAX_BYTES:
+                        _get_logger().info("远程 PDF 超过大小上限，回退到摘要总结：%s", url)
+                        return ''
+                    tmp.write(chunk)
+        return _extract_local_file_text_for_summary(tmp_path)
+    except Exception as exc:
+        _get_logger().warning("远程 PDF 获取失败，回退到摘要总结：%s", exc)
+        return ''
+    finally:
+        if tmp_path and tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
+
+
+def build_summary_source_material(
+    *,
+    abstract: str | None = None,
+    local_file_path: str | Path | None = None,
+    remote_pdf_url: str | None = None,
+) -> dict[str, str]:
+    abstract_text = _clean_summary_source_text(abstract)
+    full_text = ''
+
+    if local_file_path:
+        try:
+            resolved = resolve_document_path(str(local_file_path))
+        except Exception:
+            resolved = Path(str(local_file_path))
+        full_text = _extract_local_file_text_for_summary(resolved)
+
+    if not full_text and remote_pdf_url:
+        full_text = _download_remote_pdf_for_summary(remote_pdf_url)
+
+    if full_text:
+        return {
+            'mode': 'fulltext',
+            'label': '全文优先',
+            'note': '已结合原文/全文节选生成总结。',
+            'abstract': abstract_text,
+            'full_text': full_text,
+        }
+
+    return {
+        'mode': 'abstract',
+        'label': '摘要版',
+        'note': '未获取到可用原文，本次基于摘要与题录信息生成总结。',
+        'abstract': abstract_text,
+        'full_text': '',
+    }
 
 
 def get_nasa_ads_api_token() -> str | None:
@@ -2410,7 +2821,7 @@ def call_ai_text(
 ) -> str:
     client_config = get_ai_client_config()
     if not client_config:
-        raise RuntimeError("未检测到可用的 AI 配置（可使用 OPENAI_API_KEY，或复用 ~/.codex/config.toml + CODEX_API_KEY）。")
+        raise RuntimeError("未检测到可用的智能配置（可使用 MIMO_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY，或复用 ~/.codex/config.toml + CODEX_API_KEY）。")
 
     last_error: Exception | None = None
     max_attempts = max(1, min(_get_positive_int_env('YSXS_AI_RETRY_ATTEMPTS', 3), 5))
@@ -2446,6 +2857,32 @@ def call_ai_text(
                 )
                 response.raise_for_status()
                 content, usage_payload = _extract_responses_http_result(response)
+            elif client_config['wire_api'] == 'anthropic_messages':
+                anthropic_url = client_config['base_url'].rstrip('/')
+                if not anthropic_url.endswith('/messages'):
+                    anthropic_url = f"{anthropic_url}/messages"
+                response = requests.post(
+                    anthropic_url,
+                    headers={
+                        "Authorization": f"Bearer {client_config['api_key']}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": client_config['model'],
+                        "system": system_prompt,
+                        "messages": [
+                            {"role": "user", "content": prompt},
+                        ],
+                        "temperature": 0.2,
+                        "max_tokens": max(512, _get_positive_int_env('YSXS_ANTHROPIC_MAX_TOKENS', 4096)),
+                        "stream": False,
+                    },
+                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, max(int(timeout), 1)),
+                )
+                response.raise_for_status()
+                payload = response.json()
+                content = _extract_anthropic_text(payload)
+                usage_payload = _extract_usage_payload(payload)
             else:
                 response = requests.post(
                     f"{client_config['base_url'].rstrip('/')}/chat/completions",
@@ -2496,6 +2933,26 @@ def call_ai_text(
         usage_context=usage_context,
     )
     return content
+
+
+def _extract_anthropic_text(payload: dict[str, Any] | None) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    parts = payload.get('content')
+    if not isinstance(parts, list):
+        return ""
+
+    texts: list[str] = []
+    for item in parts:
+        if isinstance(item, dict):
+            text = str(item.get('text') or '').strip()
+            if text:
+                texts.append(text)
+        elif isinstance(item, str):
+            text = item.strip()
+            if text:
+                texts.append(text)
+    return "\n".join(texts).strip()
 
 
 def _extract_usage_payload(payload: dict[str, Any] | None) -> dict[str, int]:
@@ -3455,6 +3912,7 @@ __all__ = [
     'DISPLAY_ONLY_SOURCE_REGISTRY',
     'get_display_only_sources',
     'build_display_source_links',
+    'build_summary_source_material',
     'ensure_morning_report_settings',
     'ensure_due_morning_report_for_user',
     'trigger_due_morning_report_in_background',

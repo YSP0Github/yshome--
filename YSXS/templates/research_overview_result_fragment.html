@@ -5,6 +5,29 @@
 {% set search_stats = search_payload.get('stats', {}) if search_payload else {} %}
 {% set profile = search_payload.get('profile', {}) if search_payload else {} %}
 {% set errors = search_payload.get('errors', []) if search_payload else [] %}
+{% set ai_usage = payload.get('ai_usage', {}) if payload else {} %}
+{% set ai_status = ai_usage.get('status') if ai_usage else '' %}
+{% if ai_status == 'used' %}
+    {% set ai_badge_class = 'is-used' %}
+    {% set ai_badge_icon = 'fa-bolt' %}
+    {% set ai_badge_text = '智能参与' %}
+    {% set ai_badge_hint = '智能接口已参与核心流程' %}
+{% elif ai_status == 'partial' %}
+    {% set ai_badge_class = 'is-partial' %}
+    {% set ai_badge_icon = 'fa-random' %}
+    {% set ai_badge_text = '智能 + 规则' %}
+    {% set ai_badge_hint = '部分环节智能，部分规则' %}
+{% elif ai_status == 'fallback' %}
+    {% set ai_badge_class = 'is-fallback' %}
+    {% set ai_badge_icon = 'fa-exclamation-circle' %}
+    {% set ai_badge_text = '已回退规则' %}
+    {% set ai_badge_hint = '智能调用失败，已自动回退' %}
+{% else %}
+    {% set ai_badge_class = 'is-rule' %}
+    {% set ai_badge_icon = 'fa-minus-circle' %}
+    {% set ai_badge_text = '规则结果' %}
+    {% set ai_badge_hint = '当前结果来自规则流程' %}
+{% endif %}
     {% if overview_error %}
     <div class="overview-panel rounded-3xl p-5 mb-6 border border-red-200">
         <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ overview_error }}</div>
@@ -15,25 +38,41 @@
         <div class="overview-loading-spinner mx-auto mb-5"></div>
         <h3 class="text-2xl font-black text-slate-900 mb-3">正在生成研究现状综述</h3>
         <p id="research-overview-loading-step" class="text-slate-600 leading-8 max-w-2xl mx-auto">
-            系统正在跨源检索相关文献、优先挑选近年综述与高质量论文，并调用 AI 生成研究现状总结，请稍候。
+            系统正在跨源检索相关文献、优先挑选近年综述与高质量论文，并调用智能助手生成研究现状总结，请稍候。
         </p>
+        <div id="research-overview-loading-meta" class="mt-4 text-xs text-slate-400">已耗时 0 秒</div>
     </div>
 
     {% if payload %}
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-7">
         <section class="xl:col-span-8 overview-panel rounded-3xl p-6 md:p-7">
-            <div class="flex items-start justify-between gap-4 mb-5">
+            <div class="mb-5">
                 <div>
-                    <div class="text-sm text-slate-500 mb-2">AI 研究现状综述</div>
+                    <div class="text-sm text-slate-500 mb-2">智能研究现状综述</div>
                     <h2 class="text-2xl font-extrabold text-slate-900">{{ direction_text }}</h2>
+                    <div class="overview-head-shell">
+                        {% if ai_usage %}
+                        <div class="overview-head-status">
+                            <span class="overview-ai-pill {{ ai_badge_class }}">
+                                <span class="overview-ai-pill-icon"><i class="fa {{ ai_badge_icon }}"></i></span>
+                                <span class="overview-ai-pill-copy">
+                                    <span class="overview-ai-pill-title">{{ ai_badge_text }}</span>
+                                    <span class="overview-ai-pill-hint">{{ ai_badge_hint }}</span>
+                                </span>
+                            </span>
+                        </div>
+                        {% endif %}
+                        <div class="overview-head-count">
+                            <div class="overview-head-count-value">{{ selected_papers|length }}</div>
+                            <div class="overview-head-count-label">篇支撑论文</div>
+                            <div class="overview-head-count-note">{{ focus_options.get(focus_mode, focus_mode) }}</div>
+                        </div>
+                    </div>
                     <p class="mt-3 text-slate-600 leading-7">
                         根据 {{ selected_papers|length }} 篇筛选后的支撑文献自动归纳。
                         {% if payload.get('generated_at') %}生成时间：{{ payload.get('generated_at') }}。{% endif %}
                     </p>
                 </div>
-                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
-                    <i class="fa fa-file-text-o"></i>{{ focus_options.get(focus_mode, focus_mode) }}
-                </span>
             </div>
             <div class="overview-summary-panel rounded-3xl p-5 md:p-6">
                 <div class="flex flex-wrap gap-3 mb-4">
@@ -42,9 +81,23 @@
                     <button type="button" id="overview-export-md-btn" class="overview-action-btn"><i class="fa fa-download"></i>导出 Markdown</button>
                     <button type="button" id="overview-export-txt-btn" class="overview-action-btn"><i class="fa fa-file-text-o"></i>导出文本</button>
                 </div>
-                {% if payload.get('summary_mode') == 'fallback' %}
-                <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 leading-7">
-                    <strong>本次为规则版综述。</strong> AI 综述生成超时或失败，系统已自动回退到规则摘要，页面仍可正常使用。
+                {% if ai_usage %}
+                <div class="mb-4 rounded-2xl px-4 py-3 text-sm leading-7
+                    {% if ai_usage.get('status') == 'used' %}border border-emerald-200 bg-emerald-50 text-emerald-700
+                    {% elif ai_usage.get('status') == 'partial' %}border border-blue-200 bg-blue-50 text-blue-700
+                    {% elif ai_usage.get('status') == 'fallback' %}border border-amber-200 bg-amber-50 text-amber-700
+                    {% else %}border border-slate-200 bg-slate-50 text-slate-700{% endif %}">
+                    <strong>{{ ai_usage.get('label') }}。</strong> {{ ai_usage.get('description') }}
+                    {% if ai_usage.get('stages') %}
+                    <div class="mt-2 space-y-2">
+                        {% for stage in ai_usage.get('stages', []) %}
+                        <div>
+                            <span class="font-semibold">{{ stage.get('name') }}：</span>{{ stage.get('label') }}
+                            {% if stage.get('note') %}<div class="text-xs opacity-80 mt-1">{{ stage.get('note') }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 <div class="overview-summary-collapsible" data-overview-collapsible>
@@ -64,8 +117,18 @@
             <div class="text-sm text-slate-500 mb-2">本次梳理信息</div>
             <h2 class="text-2xl font-extrabold text-slate-900 mb-5">研究画像</h2>
             <div class="space-y-3">
+                {% if ai_usage %}
                 <div class="overview-stat rounded-2xl px-4 py-4">
-                    <div class="text-xs text-slate-500">AI 提炼检索主题</div>
+                    <div class="text-xs text-slate-500">智能接口状态</div>
+                    <div class="text-sm font-semibold mt-1 leading-7
+                        {% if ai_usage.get('status') == 'used' %}text-emerald-700
+                        {% elif ai_usage.get('status') == 'partial' %}text-blue-700
+                        {% elif ai_usage.get('status') == 'fallback' %}text-amber-700
+                        {% else %}text-slate-700{% endif %}">{{ ai_usage.get('label') }}</div>
+                </div>
+                {% endif %}
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">智能提炼检索主题</div>
                     <div class="text-sm font-semibold text-slate-900 mt-1 leading-7">{{ profile.get('search_title') or direction_text }}</div>
                 </div>
                 <div class="overview-stat rounded-2xl px-4 py-4">

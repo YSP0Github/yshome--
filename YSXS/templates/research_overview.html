@@ -61,6 +61,133 @@
         border: 3px solid rgba(191,219,254,.7); border-top-color: #2563eb;
         animation: overview-spin .8s linear infinite;
     }
+    .overview-ai-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .8rem;
+        max-width: 100%;
+        padding: .68rem .9rem .68rem .72rem;
+        border-radius: 1.15rem;
+        border: 1px solid rgba(226,232,240,.9);
+        background: linear-gradient(135deg, rgba(248,250,252,.98), rgba(241,245,249,.94));
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+    .overview-ai-pill-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .88rem;
+        flex: 0 0 auto;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    .overview-ai-pill-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: .15rem;
+        line-height: 1.1;
+    }
+    .overview-ai-pill-title {
+        font-size: .92rem;
+        font-weight: 800;
+        letter-spacing: -.01em;
+    }
+    .overview-ai-pill-hint {
+        font-size: .74rem;
+        opacity: .82;
+        line-height: 1.25;
+    }
+    .overview-ai-pill.is-used {
+        border-color: rgba(167,243,208,.95);
+        background: linear-gradient(135deg, rgba(236,253,245,.98), rgba(240,253,250,.95));
+        color: #047857;
+        box-shadow: 0 12px 26px rgba(16,185,129,.12);
+    }
+    .overview-ai-pill.is-used .overview-ai-pill-icon {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: #fff;
+    }
+    .overview-ai-pill.is-partial {
+        border-color: rgba(191,219,254,.98);
+        background: linear-gradient(135deg, rgba(239,246,255,.99), rgba(238,242,255,.96));
+        color: #1d4ed8;
+        box-shadow: 0 12px 26px rgba(59,130,246,.12);
+    }
+    .overview-ai-pill.is-partial .overview-ai-pill-icon {
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        color: #fff;
+    }
+    .overview-ai-pill.is-fallback {
+        border-color: rgba(253,230,138,.96);
+        background: linear-gradient(135deg, rgba(255,251,235,.98), rgba(254,249,195,.94));
+        color: #b45309;
+        box-shadow: 0 12px 26px rgba(245,158,11,.12);
+    }
+    .overview-ai-pill.is-fallback .overview-ai-pill-icon {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        color: #fff;
+    }
+    .overview-ai-pill.is-rule {
+        border-color: rgba(203,213,225,.95);
+        background: linear-gradient(135deg, rgba(248,250,252,.98), rgba(241,245,249,.95));
+        color: #475569;
+        box-shadow: 0 10px 22px rgba(100,116,139,.10);
+    }
+    .overview-ai-pill.is-rule .overview-ai-pill-icon {
+        background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+        color: #fff;
+    }
+    .overview-head-shell {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: .9rem;
+        margin-top: 1rem;
+    }
+    .overview-head-status {
+        flex: 1 1 340px;
+        min-width: 0;
+    }
+    .overview-head-status .overview-ai-pill {
+        width: 100%;
+        min-height: 100%;
+    }
+    .overview-head-count {
+        min-width: 144px;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: .12rem;
+        padding: .8rem 1rem;
+        border-radius: 1.15rem;
+        border: 1px solid rgba(191,219,254,.9);
+        background: linear-gradient(135deg, rgba(239,246,255,.96), rgba(255,255,255,.98));
+        box-shadow: 0 12px 26px rgba(37,99,235,.10);
+        color: #1d4ed8;
+        text-align: center;
+    }
+    .overview-head-count-value {
+        font-size: 1.45rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -.03em;
+    }
+    .overview-head-count-label {
+        font-size: .76rem;
+        font-weight: 700;
+        color: #2563eb;
+        line-height: 1.25;
+    }
+    .overview-head-count-note {
+        font-size: .68rem;
+        color: #64748b;
+        line-height: 1.2;
+    }
     @keyframes overview-spin { to { transform: rotate(360deg); } }
     .overview-hero textarea,
     .overview-hero input,
@@ -120,6 +247,47 @@
     body.auto-theme.auto-dark .overview-loading-panel { background: rgba(15,23,42,.92); border-color: rgba(51,65,85,.86); box-shadow: 0 22px 44px rgba(2,6,23,.38); }
     body.dark-theme .overview-loading-spinner,
     body.auto-theme.auto-dark .overview-loading-spinner { border-color: rgba(51,65,85,.92); border-top-color: #60a5fa; }
+    body.dark-theme .overview-ai-pill,
+    body.auto-theme.auto-dark .overview-ai-pill {
+        background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.92));
+        border-color: rgba(71,85,105,.78);
+        box-shadow: 0 16px 30px rgba(2,6,23,.28);
+    }
+    body.dark-theme .overview-ai-pill.is-used,
+    body.auto-theme.auto-dark .overview-ai-pill.is-used {
+        color: #86efac;
+        border-color: rgba(52,211,153,.34);
+        background: linear-gradient(135deg, rgba(6,78,59,.34), rgba(15,23,42,.94));
+    }
+    body.dark-theme .overview-ai-pill.is-partial,
+    body.auto-theme.auto-dark .overview-ai-pill.is-partial {
+        color: #93c5fd;
+        border-color: rgba(96,165,250,.32);
+        background: linear-gradient(135deg, rgba(30,64,175,.30), rgba(15,23,42,.94));
+    }
+    body.dark-theme .overview-ai-pill.is-fallback,
+    body.auto-theme.auto-dark .overview-ai-pill.is-fallback {
+        color: #fcd34d;
+        border-color: rgba(251,191,36,.32);
+        background: linear-gradient(135deg, rgba(120,53,15,.30), rgba(15,23,42,.94));
+    }
+    body.dark-theme .overview-ai-pill.is-rule,
+    body.auto-theme.auto-dark .overview-ai-pill.is-rule {
+        color: #cbd5e1;
+        border-color: rgba(100,116,139,.34);
+        background: linear-gradient(135deg, rgba(51,65,85,.42), rgba(15,23,42,.94));
+    }
+    body.dark-theme .overview-head-count,
+    body.auto-theme.auto-dark .overview-head-count {
+        border-color: rgba(96,165,250,.28);
+        background: linear-gradient(135deg, rgba(30,41,59,.92), rgba(15,23,42,.96));
+        color: #93c5fd;
+        box-shadow: 0 16px 30px rgba(2,6,23,.28);
+    }
+    body.dark-theme .overview-head-count-label,
+    body.auto-theme.auto-dark .overview-head-count-label { color: #bfdbfe; }
+    body.dark-theme .overview-head-count-note,
+    body.auto-theme.auto-dark .overview-head-count-note { color: #94a3b8; }
     body.dark-theme .overview-hero textarea,
     body.dark-theme .overview-hero input,
     body.dark-theme .overview-hero select,
@@ -129,6 +297,10 @@
         color: #e2e8f0 !important;
         background: rgba(15,23,42,.82) !important;
         border: 1px solid rgba(96,165,250,.28) !important;
+    }
+    @media (max-width: 768px) {
+        .overview-ai-pill { width: 100%; }
+        .overview-head-count { width: 100%; min-width: 0; }
     }
 </style>
 {% endblock %}
@@ -149,7 +321,7 @@
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm font-semibold mb-4">
                     <i class="fa fa-map-o"></i>研究现状综述
                 </div>
-                <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">让 AI 先帮你摸清一个方向的研究现状</h1>
+                <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">让智能助手先帮你摸清一个方向的研究现状</h1>
                 <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
                     输入一个研究方向或问题，系统会优先检索近几年高相关期刊文献与综述/进展类文章，
                     再自动生成“当前研究现状”梳理，适合快速进入新方向或做开题前调研。
@@ -206,7 +378,7 @@
             </div>
             <div class="xl:col-span-4 grid grid-cols-2 gap-3">
                 <div class="overview-hero-stat rounded-2xl p-4">
-                    <div class="overview-hero-label text-xs">AI 状态</div>
+                    <div class="overview-hero-label text-xs">智能状态</div>
                     <div class="overview-hero-value text-3xl font-black mt-1">{{ '已启用' if ai_enabled else '未配置' }}</div>
                 </div>
                 <div class="overview-hero-stat rounded-2xl p-4">
@@ -410,6 +582,8 @@
 
     const overviewForm = document.getElementById('research-overview-form');
     const overviewContent = document.getElementById('research-overview-content');
+    let overviewJobStartedAt = 0;
+    let overviewLoadingMetaTimer = null;
 
     function getOverviewLoadingPanel() {
         return document.getElementById('research-overview-loading');
@@ -435,17 +609,34 @@
     function showOverviewLoading(stepText = '') {
         const panel = getOverviewLoadingPanel();
         const step = getOverviewLoadingStep();
+        const meta = document.getElementById('research-overview-loading-meta');
         if (panel) panel.classList.remove('hidden');
         if (stepText && step) step.textContent = stepText;
+        if (!overviewJobStartedAt) overviewJobStartedAt = Date.now();
+        const tickLoadingMeta = () => {
+            if (!meta || !overviewJobStartedAt) return;
+            const elapsedSec = Math.max(0, Math.round((Date.now() - overviewJobStartedAt) / 1000));
+            meta.textContent = elapsedSec < 120
+                ? `已耗时 ${elapsedSec} 秒`
+                : `已耗时 ${elapsedSec} 秒，若综述生成较慢系统会继续等待或自动回退规则版摘要`;
+        };
+        tickLoadingMeta();
+        if (overviewLoadingMetaTimer) window.clearInterval(overviewLoadingMetaTimer);
+        overviewLoadingMetaTimer = window.setInterval(tickLoadingMeta, 1000);
     }
 
     function hideOverviewLoading() {
         const panel = getOverviewLoadingPanel();
         if (panel) panel.classList.add('hidden');
+        if (overviewLoadingMetaTimer) {
+            window.clearInterval(overviewLoadingMetaTimer);
+            overviewLoadingMetaTimer = null;
+        }
+        overviewJobStartedAt = 0;
     }
 
     async function pollOverviewJob(jobId) {
-        for (let attempt = 0; attempt < 120; attempt += 1) {
+        for (let attempt = 0; attempt < 180; attempt += 1) {
             const response = await fetch(overviewApiUrl(`/api/research-overview/status/${jobId}`), {
                 method: 'GET',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -469,9 +660,12 @@
                 }
                 return data;
             }
-            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+            if (attempt === 119) {
+                showOverviewLoading('任务仍在后台运行：正在等待检索或综述结果，系统会继续轮询并自动更新页面…');
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, attempt < 120 ? 2500 : 4000));
         }
-        throw new Error('\u7814\u7a76\u73b0\u72b6\u751f\u6210\u8017\u65f6\u8f83\u957f\uff0c\u8bf7\u7a0d\u540e\u5237\u65b0\u9875\u9762\u67e5\u770b\u3002');
+        throw new Error('研究现状任务等待时间较长。你可以继续留在本页等待，或稍后刷新页面再次查看结果。');
     }
 
     async function startOverviewJobFromPage() {
@@ -498,6 +692,9 @@
         if (!response.ok) {
             hideOverviewLoading();
             throw new Error(data.error || '\u7814\u7a76\u73b0\u72b6\u4efb\u52a1\u521b\u5efa\u5931\u8d25');
+        }
+        if (data.reused) {
+            showOverviewLoading(data.step || '检测到同条件任务仍在运行，正在继续获取结果…');
         }
         return pollOverviewJob(data.job_id);
     }

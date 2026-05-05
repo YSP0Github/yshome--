@@ -245,6 +245,11 @@
                 margin-bottom: 0.5rem;
             }
 
+            .detail-summary-rendered strong {
+                color: #0f172a;
+                font-weight: 800;
+            }
+
             .detail-summary-rendered ul,
             .detail-summary-rendered ol {
                 padding-left: 1.15rem;
@@ -425,7 +430,7 @@
                     class="detail-action-btn detail-ai-btn px-4 py-2 rounded-lg transition-colors {% if not can_generate_summary %}opacity-70 cursor-not-allowed{% endif %}"
                     {% if not can_generate_summary %}disabled{% endif %}
                     data-doc-id="{{ doc.id }}">
-                <i class="fa fa-magic mr-2"></i><span class="detail-action-text"> AI总结</span></button>
+                <i class="fa fa-magic mr-2"></i><span class="detail-action-text"> 智能总结</span></button>
             {% if not can_view_cached_file and (doc.doi or doc.url) %}
             <a href="{{ external_view_url }}" target="_blank" rel="noopener" class="detail-action-btn bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg transition-colors" aria-label="查看原文链接">
                 <i class="fa fa-external-link mr-2"></i><span class="detail-action-text"> 查看原文</span></a>
@@ -535,13 +540,13 @@
 
             <div class="mt-8 mb-6">
                 <div class="flex items-center justify-between gap-3 mb-3 border-b pb-2">
-                    <h2 class="text-xl font-semibold text-slate-800">AI 总结</h2>
+                    <h2 class="text-xl font-semibold text-slate-800">智能总结</h2>
                     <div class="text-xs text-slate-500">
                         <span id="doc-summary-updated-at">{% if doc.ai_summary_updated_at %}{{ doc.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
                     </div>
                 </div>
                 <div id="doc-summary-empty" class="{% if doc.ai_summary %}hidden{% endif %} text-slate-500 leading-8">
-                    {% if can_generate_summary %}还没有生成 AI 总结。点击右上角“AI总结”即可得到结构化摘要，且不会覆盖原始摘要。{% else %}当前尚未生成 AI 总结。共享查看模式下仅可阅读已存在的总结内容。{% endif %}
+                    {% if can_generate_summary %}还没有生成 智能总结。点击右上角“智能总结”即可得到结构化摘要，且不会覆盖原始摘要。{% else %}当前尚未生成 智能总结。共享查看模式下仅可阅读已存在的总结内容。{% endif %}
                 </div>
                 <div id="doc-summary-box" class="{% if not doc.ai_summary %}hidden{% endif %}">
                     <div class="detail-summary-card">
@@ -826,10 +831,10 @@
                     try {
                         data = rawText ? JSON.parse(rawText) : {};
                     } catch (error) {
-                        data = { error: rawText || 'AI 总结失败' };
+                        data = { error: rawText || '智能总结失败' };
                     }
                     if (!response.ok) {
-                        throw new Error(data.error || 'AI 总结失败');
+                        throw new Error(data.error || '智能总结失败');
                     }
 
                     $docSummaryContent.html(data.summary_html || '');
@@ -839,7 +844,7 @@
                     setupDocSummaryCollapse(true);
                     Swal.fire({
                         icon: 'success',
-                        title: 'AI 总结已生成',
+                        title: '智能总结已生成',
                         text: data.message || '已完成结构化总结。',
                         timer: 1800,
                         showConfirmButton: false
@@ -847,7 +852,7 @@
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'AI 总结失败',
+                        title: '智能总结失败',
                         text: error.message || '请稍后重试。'
                     });
                 } finally {

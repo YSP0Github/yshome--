@@ -173,7 +173,7 @@
                 </div>
                 <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">今日晨报</h1>
                 <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
-                    自动抓取与你研究方向相关的最新优质文献，先进入论文池，再决定是否做 AI 总结和导入个人文献库。
+                    自动抓取与你研究方向相关的最新优质文献，先进入论文池，再决定是否做智能总结和导入个人文献库。
                 </p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <button id="run-report-btn" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-blue-700 font-semibold shadow-lg">
@@ -191,7 +191,7 @@
             </div>
             <div class="xl:col-span-4 grid grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">今日论文池</div><div class="text-3xl font-black mt-1">{{ report_papers|length }}</div></div>
-                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">已AI总结</div><div id="summarized-count" class="text-3xl font-black mt-1">{{ ns.summarized }}</div></div>
+                <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">已智能总结</div><div id="summarized-count" class="text-3xl font-black mt-1">{{ ns.summarized }}</div></div>
                 <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">已导入</div><div id="report-imported-count" class="text-3xl font-black mt-1">{{ ns.imported }}</div></div>
                 <div class="rounded-2xl bg-white/10 border border-white/10 p-4"><div class="text-xs text-blue-50/80">自动生成</div><div class="text-xl font-black mt-2">{{ '%02d:00'|format(report_settings.auto_run_hour or 8) }}</div></div>
             </div>
@@ -243,7 +243,7 @@
                 </div>
                 <div class="mt-5 flex flex-wrap gap-3">
                     {% if featured_external_url %}<a href="{{ featured_external_url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
-                    <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ featured_paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>AI总结</button>
+                    <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ featured_paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>智能总结</button>
                     <button type="button" class="import-btn brief-import-btn" data-paper-id="{{ featured_paper.id }}" data-doc-id="{{ featured_paper.imported_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if featured_paper.imported_document_id else '一键导入系统' }}</button>
                 </div>
                 {% set featured_enhancement_links = build_display_source_links(featured_paper.title, featured_paper.doi, limit=8) %}
@@ -261,7 +261,7 @@
                 <div data-summary-box-for="{{ featured_paper.id }}" class="mt-5 {% if not featured_paper.ai_summary %}hidden{% endif %}">
                     <div class="brief-summary-panel rounded-2xl border border-blue-100 p-5">
                         <div class="flex items-center justify-between gap-3 mb-3">
-                            <strong class="text-blue-700">AI 总结</strong>
+                            <strong class="text-blue-700">智能总结</strong>
                             <span data-summary-updated-for="{{ featured_paper.id }}" class="text-xs text-blue-600">{% if featured_paper.ai_summary_updated_at %}{{ featured_paper.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
                         </div>
                         <div class="brief-summary-collapsible" data-collapsible-summary>
@@ -416,7 +416,7 @@
 
                         <div class="mt-5 flex flex-wrap gap-3">
                             {% if paper_external_url %}<a href="{{ paper_external_url }}" target="_blank" rel="noopener noreferrer" class="brief-outline-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
-                            <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>AI总结</button>
+                            <button type="button" class="summary-btn brief-outline-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-paper-id="{{ paper.id }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>智能总结</button>
                             <button type="button" class="import-btn brief-import-btn" data-paper-id="{{ paper.id }}" data-doc-id="{{ paper.imported_document_id or '' }}"><i class="fa fa-download"></i>{{ '查看系统内文献' if paper.imported_document_id else '一键导入系统' }}</button>
                         </div>
                         {% set paper_enhancement_links = build_display_source_links(paper.title, paper.doi, limit=8) %}
@@ -434,7 +434,7 @@
                         <div data-summary-box-for="{{ paper.id }}" class="mt-5 {% if not paper.ai_summary %}hidden{% endif %}">
                             <div class="brief-summary-panel rounded-2xl border border-blue-100 p-5">
                                 <div class="flex items-center justify-between gap-3 mb-3">
-                                    <strong class="text-blue-700">AI 总结</strong>
+                                    <strong class="text-blue-700">智能总结</strong>
                                     <span data-summary-updated-for="{{ paper.id }}" class="text-xs text-blue-600">{% if paper.ai_summary_updated_at %}{{ paper.ai_summary_updated_at|format_cn_time }}{% endif %}</span>
                                 </div>
                                 <div class="brief-summary-collapsible" data-collapsible-summary>
@@ -641,12 +641,12 @@
             try {
                 const response = await fetch(apiUrl(`/api/morning-report/paper/${paperId}/summary`), { method: 'POST', headers: { 'X-CSRFToken': window.getCSRFToken() } });
                 const data = await readJsonResponse(response);
-                if (!response.ok) throw new Error(data.error || 'AI 总结失败');
+                if (!response.ok) throw new Error(data.error || '智能总结失败');
                 updateSummaryPanels(paperId, data.summary_html || '', data.updated_at || '');
                 bumpSummarizedCount();
-                showReportToast(data.message || 'AI 总结已生成。', 'success');
+                showReportToast(data.message || '智能总结已生成。', 'success');
             } catch (error) {
-                showReportToast(error.message || 'AI 总结失败', 'error');
+                showReportToast(error.message || '智能总结失败', 'error');
             } finally {
                 restoreButton(button);
             }

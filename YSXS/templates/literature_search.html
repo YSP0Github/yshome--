@@ -40,6 +40,7 @@
     .smart-summary-rendered h4,
     .smart-summary-rendered h5,
     .smart-summary-rendered h6 { color: #0f172a; margin-top: 1rem; margin-bottom: .5rem; }
+    .smart-summary-rendered strong { color: #0f172a; font-weight: 800; }
     .smart-summary-panel { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); border: 1px solid rgba(191,219,254,.8); }
     .smart-summary-collapsible { position: relative; }
     .smart-summary-body { overflow: hidden; transition: max-height .25s ease; }
@@ -51,6 +52,134 @@
         width: 3.2rem; height: 3.2rem; border-radius: 9999px;
         border: 3px solid rgba(191,219,254,.7); border-top-color: #2563eb;
         animation: smart-spin .8s linear infinite;
+    }
+    .smart-ai-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .8rem;
+        max-width: 100%;
+        padding: .68rem .9rem .68rem .72rem;
+        border-radius: 1.15rem;
+        border: 1px solid rgba(226,232,240,.9);
+        background: linear-gradient(135deg, rgba(248,250,252,.98), rgba(241,245,249,.94));
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+    .smart-ai-pill-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .88rem;
+        flex: 0 0 auto;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    .smart-ai-pill-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: .15rem;
+        line-height: 1.1;
+    }
+    .smart-ai-pill-title {
+        font-size: .92rem;
+        font-weight: 800;
+        letter-spacing: -.01em;
+    }
+    .smart-ai-pill-hint {
+        font-size: .74rem;
+        opacity: .82;
+        white-space: normal;
+        line-height: 1.25;
+    }
+    .smart-ai-pill.is-used {
+        border-color: rgba(167,243,208,.95);
+        background: linear-gradient(135deg, rgba(236,253,245,.98), rgba(240,253,250,.95));
+        color: #047857;
+        box-shadow: 0 12px 26px rgba(16,185,129,.12);
+    }
+    .smart-ai-pill.is-used .smart-ai-pill-icon {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: #fff;
+    }
+    .smart-ai-pill.is-partial {
+        border-color: rgba(191,219,254,.98);
+        background: linear-gradient(135deg, rgba(239,246,255,.99), rgba(238,242,255,.96));
+        color: #1d4ed8;
+        box-shadow: 0 12px 26px rgba(59,130,246,.12);
+    }
+    .smart-ai-pill.is-partial .smart-ai-pill-icon {
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        color: #fff;
+    }
+    .smart-ai-pill.is-fallback {
+        border-color: rgba(253,230,138,.96);
+        background: linear-gradient(135deg, rgba(255,251,235,.98), rgba(254,249,195,.94));
+        color: #b45309;
+        box-shadow: 0 12px 26px rgba(245,158,11,.12);
+    }
+    .smart-ai-pill.is-fallback .smart-ai-pill-icon {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        color: #fff;
+    }
+    .smart-ai-pill.is-rule {
+        border-color: rgba(203,213,225,.95);
+        background: linear-gradient(135deg, rgba(248,250,252,.98), rgba(241,245,249,.95));
+        color: #475569;
+        box-shadow: 0 10px 22px rgba(100,116,139,.10);
+    }
+    .smart-ai-pill.is-rule .smart-ai-pill-icon {
+        background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+        color: #fff;
+    }
+    .smart-head-shell {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: .9rem;
+        margin-top: 1rem;
+    }
+    .smart-head-status {
+        flex: 1 1 340px;
+        min-width: 0;
+    }
+    .smart-head-status .smart-ai-pill {
+        width: 100%;
+        min-height: 100%;
+    }
+    .smart-head-count {
+        min-width: 128px;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: .12rem;
+        padding: .8rem 1rem;
+        border-radius: 1.15rem;
+        border: 1px solid rgba(191,219,254,.9);
+        background: linear-gradient(135deg, rgba(239,246,255,.96), rgba(255,255,255,.98));
+        box-shadow: 0 12px 26px rgba(37,99,235,.10);
+        color: #1d4ed8;
+        text-align: center;
+    }
+    .smart-head-count-value {
+        font-size: 1.45rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -.03em;
+    }
+    .smart-head-count-label {
+        font-size: .76rem;
+        font-weight: 700;
+        color: #2563eb;
+        line-height: 1.25;
+    }
+    .smart-head-count-note {
+        font-size: .68rem;
+        color: #64748b;
+        line-height: 1.2;
     }
     @keyframes smart-spin { to { transform: rotate(360deg); } }
     .smart-hero textarea,
@@ -122,6 +251,47 @@
     body.auto-theme.auto-dark .smart-loading-panel { background: rgba(15,23,42,.92); border-color: rgba(51,65,85,.86); box-shadow: 0 22px 44px rgba(2,6,23,.38); }
     body.dark-theme .smart-loading-spinner,
     body.auto-theme.auto-dark .smart-loading-spinner { border-color: rgba(51,65,85,.92); border-top-color: #60a5fa; }
+    body.dark-theme .smart-ai-pill,
+    body.auto-theme.auto-dark .smart-ai-pill {
+        background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.92));
+        border-color: rgba(71,85,105,.78);
+        box-shadow: 0 16px 30px rgba(2,6,23,.28);
+    }
+    body.dark-theme .smart-ai-pill.is-used,
+    body.auto-theme.auto-dark .smart-ai-pill.is-used {
+        color: #86efac;
+        border-color: rgba(52,211,153,.34);
+        background: linear-gradient(135deg, rgba(6,78,59,.34), rgba(15,23,42,.94));
+    }
+    body.dark-theme .smart-ai-pill.is-partial,
+    body.auto-theme.auto-dark .smart-ai-pill.is-partial {
+        color: #93c5fd;
+        border-color: rgba(96,165,250,.32);
+        background: linear-gradient(135deg, rgba(30,64,175,.30), rgba(15,23,42,.94));
+    }
+    body.dark-theme .smart-ai-pill.is-fallback,
+    body.auto-theme.auto-dark .smart-ai-pill.is-fallback {
+        color: #fcd34d;
+        border-color: rgba(251,191,36,.32);
+        background: linear-gradient(135deg, rgba(120,53,15,.30), rgba(15,23,42,.94));
+    }
+    body.dark-theme .smart-ai-pill.is-rule,
+    body.auto-theme.auto-dark .smart-ai-pill.is-rule {
+        color: #cbd5e1;
+        border-color: rgba(100,116,139,.34);
+        background: linear-gradient(135deg, rgba(51,65,85,.42), rgba(15,23,42,.94));
+    }
+    body.dark-theme .smart-head-count,
+    body.auto-theme.auto-dark .smart-head-count {
+        border-color: rgba(96,165,250,.28);
+        background: linear-gradient(135deg, rgba(30,41,59,.92), rgba(15,23,42,.96));
+        color: #93c5fd;
+        box-shadow: 0 16px 30px rgba(2,6,23,.28);
+    }
+    body.dark-theme .smart-head-count-label,
+    body.auto-theme.auto-dark .smart-head-count-label { color: #bfdbfe; }
+    body.dark-theme .smart-head-count-note,
+    body.auto-theme.auto-dark .smart-head-count-note { color: #94a3b8; }
     body.dark-theme .smart-hero textarea,
     body.dark-theme .smart-hero input,
     body.dark-theme .smart-hero select,
@@ -141,6 +311,8 @@
     @media (max-width: 768px) {
         .smart-score { min-width: 0; text-align: left; }
         .smart-score-card { width: 100%; }
+        .smart-ai-pill { width: 100%; }
+        .smart-head-count { width: 100%; min-width: 0; }
     }
 </style>
 {% endblock %}
@@ -161,7 +333,7 @@
                 </div>
                 <h1 class="text-3xl md:text-5xl font-black leading-tight mb-4">按问题而不是只按关键词找文献</h1>
                 <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
-                    支持手动输入一句研究问题，由 AI 提炼检索短语，再跨 OpenAlex / Crossref / arXiv / NASA ADS 搜索并综合相关性、被引、来源质量进行排序。
+                    支持手动输入一句研究问题，由智能助手提炼检索短语，再跨 OpenAlex / Crossref / arXiv / NASA ADS 搜索并综合相关性、被引、来源质量进行排序。
                 </p>
                 <form id="literature-search-form" method="get" action="{{ url_for('literature_search_home') }}" class="smart-form-card mt-6 space-y-4 rounded-3xl p-4 md:p-5">
                     <div>
@@ -228,6 +400,9 @@
 </div>
 <script type="application/json" id="literature-search-auto-start">{{ {
     'enabled': auto_start_search,
+    'existing_job_id': existing_job_id,
+    'existing_job_status': existing_job_status,
+    'existing_job_step': existing_job_step,
     'q': query_text,
     'selected_sources': selected_sources,
     'max_results': max_results,
@@ -275,6 +450,8 @@
     const searchForm = document.getElementById('literature-search-form');
     const searchSubmitButton = document.getElementById('literature-search-submit');
     const searchContent = document.getElementById('literature-search-content');
+    let searchJobStartedAt = 0;
+    let searchLoadingMetaTimer = null;
 
     function getSearchLoadingPanel() {
         return document.getElementById('literature-search-loading');
@@ -294,8 +471,20 @@
         const searchResultsCount = document.getElementById('literature-search-results-count');
         const searchEmptyState = document.getElementById('literature-search-empty-state');
         const loadingStep = getSearchLoadingStep();
+        const loadingMeta = document.getElementById('literature-search-loading-meta');
         if (searchLoadingPanel) searchLoadingPanel.classList.remove('hidden');
         if (loadingStep && stepText) loadingStep.textContent = stepText;
+        if (!searchJobStartedAt) searchJobStartedAt = Date.now();
+        const tickLoadingMeta = () => {
+            if (!loadingMeta || !searchJobStartedAt) return;
+            const elapsedSec = Math.max(0, Math.round((Date.now() - searchJobStartedAt) / 1000));
+            loadingMeta.textContent = elapsedSec < 90
+                ? `已耗时 ${elapsedSec} 秒`
+                : `已耗时 ${elapsedSec} 秒，若学术源或模型响应较慢，系统会继续等待`;
+        };
+        tickLoadingMeta();
+        if (searchLoadingMetaTimer) window.clearInterval(searchLoadingMetaTimer);
+        searchLoadingMetaTimer = window.setInterval(tickLoadingMeta, 1000);
         if (searchEmptyState) searchEmptyState.classList.add('hidden');
         if (searchResultsCount) searchResultsCount.classList.add('hidden');
         if (searchResultsTitle) searchResultsTitle.textContent = '正在进行智能深搜';
@@ -307,6 +496,11 @@
         restoreButton(searchSubmitButton);
         const panel = getSearchLoadingPanel();
         if (panel) panel.classList.add('hidden');
+        if (searchLoadingMetaTimer) {
+            window.clearInterval(searchLoadingMetaTimer);
+            searchLoadingMetaTimer = null;
+        }
+        searchJobStartedAt = 0;
     }
 
     function setupSearchCollapsibleSummary(root) {
@@ -396,11 +590,11 @@
                     body: JSON.stringify(payload),
                 });
                 const data = await readJsonResponse(response);
-                if (!response.ok) throw new Error(data.error || 'AI 总结失败');
+                if (!response.ok) throw new Error(data.error || '智能总结失败');
                 updateSearchSummary(resultId, data.summary_html || '', data.updated_at || '');
                 persistSearchSummaryPayload(resultId, data.summary || '', data.updated_at || '');
             } catch (error) {
-                alert(error.message || 'AI 总结失败');
+                alert(error.message || '智能总结失败');
             } finally {
                 restoreButton(button);
             }
@@ -449,7 +643,7 @@
     }
 
     async function pollLiteratureSearchJob(jobId) {
-        for (let attempt = 0; attempt < 120; attempt += 1) {
+        for (let attempt = 0; attempt < 180; attempt += 1) {
             const response = await fetch(apiUrl(`/api/literature-search/status/${jobId}`), {
                 method: 'GET',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -463,9 +657,12 @@
                 bindLiteratureSearchActions();
                 return data;
             }
-            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+            if (attempt === 119) {
+                showSearchSubmitLoading('任务仍在后台运行：检索源或模型响应较慢，系统会继续等待并自动更新结果…');
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, attempt < 120 ? 2500 : 4000));
         }
-        throw new Error('智能深搜耗时较长，请稍后刷新页面查看。');
+        throw new Error('智能深搜等待时间较长。你可以继续留在本页等待，或稍后刷新页面再次查看结果。');
     }
 
     async function startLiteratureSearchJob() {
@@ -493,6 +690,9 @@
             hideSearchSubmitLoading();
             throw new Error(data.error || '智能深搜任务创建失败');
         }
+        if (data.reused) {
+            showSearchSubmitLoading(data.step || '检测到同条件任务仍在运行，正在继续获取结果…');
+        }
         return pollLiteratureSearchJob(data.job_id);
     }
 
@@ -519,10 +719,18 @@
         try { return JSON.parse(node.textContent || 'null'); } catch (error) { return null; }
     })();
     if (literatureSearchAutoStart && literatureSearchAutoStart.enabled && !literatureSearchAutoStart.has_payload && !literatureSearchAutoStart.has_error) {
-        startLiteratureSearchJob().catch((error) => {
-            hideSearchSubmitLoading();
-            alert(error.message || '智能深搜失败');
-        });
+        if (literatureSearchAutoStart.existing_job_id && ['pending', 'running'].includes(literatureSearchAutoStart.existing_job_status)) {
+            showSearchSubmitLoading(literatureSearchAutoStart.existing_job_step || '检测到同条件任务仍在运行，正在继续获取结果…');
+            pollLiteratureSearchJob(literatureSearchAutoStart.existing_job_id).catch((error) => {
+                hideSearchSubmitLoading();
+                alert(error.message || '智能深搜失败');
+            });
+        } else {
+            startLiteratureSearchJob().catch((error) => {
+                hideSearchSubmitLoading();
+                alert(error.message || '智能深搜失败');
+            });
+        }
     }
 </script>
 {% endblock %}

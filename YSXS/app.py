@@ -18,7 +18,7 @@ from typing import Optional
 from urllib.parse import quote
 
 import requests
-from flask import (Blueprint, Flask, abort, current_app, flash, g, jsonify, make_response,
+from flask import (Blueprint, Flask, abort, current_app, flash, g, has_request_context, jsonify, make_response,
                    redirect, render_template, request, send_file, send_from_directory,
                    session, url_for)
 from flask_login import (current_user, login_required, login_user,
@@ -62,17 +62,20 @@ from .services.morning_report import (
     SUPPORTED_SOURCES,
     ai_summary_available,
     build_display_source_links,
+    build_summary_source_material,
     call_ai_text,
     ensure_morning_report_settings,
     find_existing_document_for_user,
     generate_morning_report_for_user,
     get_ai_client_config,
+    get_env_ai_preset,
     get_display_only_sources,
     get_nasa_ads_api_token,
     get_morning_report_popup_payload,
     get_recent_morning_reports,
     get_today_morning_report,
     is_morning_report_generation_running,
+    list_env_ai_presets,
     load_runtime_ai_config,
     mark_morning_report_popup_seen,
     save_runtime_ai_config,
@@ -1239,7 +1242,10 @@ def inject_csrf_token():
 
 @app.context_processor
 def inject_morning_report_popup():
-    if not current_user.is_authenticated:
+    if not has_request_context():
+        return {'morning_report_popup': None}
+
+    if not getattr(current_user, 'is_authenticated', False):
         return {'morning_report_popup': None}
 
     if request.endpoint in {'morning_report_home', 'morning_report_settings_view'}:
@@ -1255,7 +1261,10 @@ def inject_morning_report_popup():
 
 @app.context_processor
 def inject_broadcast_popup():
-    if not current_user.is_authenticated:
+    if not has_request_context():
+        return {'broadcast_popup': None, 'broadcast_unread_count': 0}
+
+    if not getattr(current_user, 'is_authenticated', False):
         return {'broadcast_popup': None, 'broadcast_unread_count': 0}
 
     try:
@@ -2300,21 +2309,155 @@ def _mask_secret(value: str | None, *, keep_start: int = 4, keep_end: int = 4) -
 
 def _build_ai_config_form_data(saved: dict[str, str] | None = None) -> dict[str, str]:
     saved = saved or {}
+    selected_preset = get_env_ai_preset(saved.get('preset_key'))
     return {
-        'base_url': saved.get('base_url', ''),
-        'model': saved.get('model', ''),
-        'wire_api': saved.get('wire_api', ''),
+        'preset_key': saved.get('preset_key', '') if selected_preset else 'manual',
+        'base_url': (selected_preset or {}).get('base_url', saved.get('base_url', '')),
+        'model': (selected_preset or {}).get('model', saved.get('model', '')),
+        'wire_api': (selected_preset or {}).get('wire_api', saved.get('wire_api', '')),
         'notes': saved.get('notes', ''),
     }
 
 
+def _infer_ai_preset_base_url(model: str | None, wire_api: str | None, fallback: str | None = None) -> str:
+    model_value = str(model or '').strip().lower()
+    wire_value = str(wire_api or '').strip().lower()
+    fallback_value = str(fallback or '').strip().rstrip('/')
+
+    if model_value.startswith('mimo-'):
+        if wire_value == 'anthropic_messages':
+            return 'https://token-plan-cn.xiaomimimo.com/anthropic/v1'
+        return 'https://token-plan-cn.xiaomimimo.com/v1'
+
+    if wire_value == 'anthropic_messages':
+        return fallback_value or 'https://api.anthropic.com/v1'
+    if wire_value in {'responses', 'chat_completions'}:
+        return fallback_value or 'https://api.openai.com/v1'
+    return fallback_value
+
+
+def _build_ai_quick_presets(saved_config: dict[str, str] | None, effective_ai: dict | None, dashboard: dict | None) -> list[dict[str, str]]:
+    presets: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def add_preset(
+        *,
+        key: str,
+        label: str,
+        model: str,
+        wire_api: str,
+        base_url: str,
+        desc: str,
+        badge: str = '',
+        source: str = 'preset',
+    ) -> None:
+        normalized = (
+            str(model or '').strip().lower(),
+            str(wire_api or '').strip().lower(),
+            str(base_url or '').strip().rstrip('/').lower(),
+        )
+        if not normalized[0] and not normalized[1] and not normalized[2]:
+            return
+        if normalized in seen:
+            return
+        seen.add(normalized)
+        presets.append({
+            'key': key,
+            'label': label,
+            'model': str(model or '').strip(),
+            'wire_api': str(wire_api or '').strip(),
+            'base_url': str(base_url or '').strip().rstrip('/'),
+            'desc': desc,
+            'badge': badge,
+            'source': source,
+        })
+
+    if effective_ai:
+        add_preset(
+            key='effective',
+            label='当前生效配置',
+            model=effective_ai.get('model', ''),
+            wire_api=effective_ai.get('wire_api', ''),
+            base_url=effective_ai.get('base_url', ''),
+            desc='一键把当前实际生效的模型 / 接口填回配置表单。',
+            badge='当前',
+            source='effective',
+        )
+
+    add_preset(
+        key='mimo_pro_anthropic',
+        label='MiMo Pro · Anthropic',
+        model='mimo-v2.5-pro',
+        wire_api='anthropic_messages',
+        base_url='https://token-plan-cn.xiaomimimo.com/anthropic/v1',
+        desc='适合你当前 MiMo Token Plan 接入，稳定、结构化总结效果较好。',
+        badge='推荐',
+    )
+    add_preset(
+        key='mimo_fast_anthropic',
+        label='MiMo 标准 · Anthropic',
+        model='mimo-v2.5',
+        wire_api='anthropic_messages',
+        base_url='https://token-plan-cn.xiaomimimo.com/anthropic/v1',
+        desc='速度与成本更友好，适合日常筛选和轻量总结。',
+        badge='常用',
+    )
+    add_preset(
+        key='mimo_pro_chat',
+        label='MiMo Pro · Chat',
+        model='mimo-v2.5-pro',
+        wire_api='chat_completions',
+        base_url='https://token-plan-cn.xiaomimimo.com/v1',
+        desc='适合保留 OpenAI 风格调用链路时快速切回 MiMo。',
+        badge='兼容',
+    )
+    add_preset(
+        key='gpt54_responses',
+        label='GPT-5.4 · Responses',
+        model='gpt-5.4',
+        wire_api='responses',
+        base_url='https://api.openai.com/v1',
+        desc='适合更强的通用总结与长文本整理，走 Responses 接口。',
+        badge='强总结',
+    )
+    add_preset(
+        key='gpt54_chat',
+        label='GPT-5.4 · Chat',
+        model='gpt-5.4',
+        wire_api='chat_completions',
+        base_url='https://api.openai.com/v1',
+        desc='适合保留 Chat Completions 兼容链路时快速切换。',
+        badge='备选',
+    )
+
+    model_ranking = (dashboard or {}).get('model_ranking') or []
+    for index, item in enumerate(model_ranking[:6], start=1):
+        model = str(item.get('model') or '').strip()
+        wire_api = str(item.get('wire_api') or '').strip()
+        if not model:
+            continue
+        base_url = _infer_ai_preset_base_url(model, wire_api, (saved_config or {}).get('base_url'))
+        add_preset(
+            key=f'recent_{index}',
+            label=f'最近常用 · {model}',
+            model=model,
+            wire_api=wire_api,
+            base_url=base_url,
+            desc=f"来自最近使用统计：累计 {item.get('call_count', 0)} 次调用，适合一键回填。",
+            badge='最近',
+            source='recent',
+        )
+
+    return presets[:8]
+
+
 AI_SCENE_LABELS = {
     'general': '通用调用',
-    'document_summary': '文献详情 AI 总结',
-    'morning_report_summary': '晨报 AI 总结',
+    'document_summary': '文献详情智能总结',
+    'morning_report_summary': '晨报智能总结',
     'search_query_refine': '智能深搜检索词提炼',
     'search_rerank': '智能深搜结果重排',
-    'search_result_summary': '深搜结果 AI 总结',
+    'search_result_summary': '深搜结果智能总结',
     'research_scope_filter': '科研方向强过滤',
 }
 
@@ -2672,28 +2815,38 @@ def broadcast_history_mark_all_read():
 @super_admin_required
 def admin_ai_config():
     saved_config = load_runtime_ai_config()
+    env_presets = list_env_ai_presets()
 
     if request.method == 'POST':
         updated_config = dict(saved_config)
+        preset_key_value = str(request.form.get('preset_key', '') or '').strip()
+        preset_config = get_env_ai_preset(preset_key_value)
         base_url_value = str(request.form.get('base_url', '') or '').strip().rstrip('/')
         model_value = str(request.form.get('model', '') or '').strip()
         wire_api_value = str(request.form.get('wire_api', '') or '').strip().lower()
         notes_value = str(request.form.get('notes', '') or '').strip()
 
-        if base_url_value:
-            updated_config['base_url'] = base_url_value
-        else:
+        if preset_config:
+            updated_config['preset_key'] = preset_config.get('key', preset_key_value)
             updated_config.pop('base_url', None)
-
-        if model_value:
-            updated_config['model'] = model_value
-        else:
             updated_config.pop('model', None)
-
-        if wire_api_value in {'responses', 'chat_completions'}:
-            updated_config['wire_api'] = wire_api_value
-        else:
             updated_config.pop('wire_api', None)
+        else:
+            updated_config.pop('preset_key', None)
+            if base_url_value:
+                updated_config['base_url'] = base_url_value
+            else:
+                updated_config.pop('base_url', None)
+
+            if model_value:
+                updated_config['model'] = model_value
+            else:
+                updated_config.pop('model', None)
+
+            if wire_api_value in {'responses', 'chat_completions', 'anthropic_messages'}:
+                updated_config['wire_api'] = wire_api_value
+            else:
+                updated_config.pop('wire_api', None)
 
         if notes_value:
             updated_config['notes'] = notes_value
@@ -2714,7 +2867,7 @@ def admin_ai_config():
             updated_config.pop('nasa_ads_api_token', None)
 
         save_runtime_ai_config(updated_config)
-        flash('AI 管理系统配置已保存。', 'success')
+        flash('智能管理系统配置已保存。', 'success')
         return redirect(url_for('admin_ai_config'))
 
     saved_config = load_runtime_ai_config()
@@ -2730,6 +2883,7 @@ def admin_ai_config():
         effective_ai=effective_ai,
         effective_ads_token_masked=_mask_secret(effective_ads_token),
         dashboard=dashboard,
+        env_presets=env_presets,
     )
 
 
@@ -2901,11 +3055,50 @@ def literature_search_home():
 
     search_payload = None
     search_error = None
+    auto_start_search = bool(query_text)
+    existing_job_id = ''
+    existing_job_status = ''
+    existing_job_step = ''
+
+    if query_text:
+        fingerprint_payload = {
+            'user_id': current_user.id,
+            'q': query_text,
+            'sources': selected_sources,
+            'max_results': max_results,
+            'lookback_days': lookback_days,
+            'sort_mode': sort_mode,
+        }
+        fingerprint = json.dumps(fingerprint_payload, ensure_ascii=False, sort_keys=True)
+        with LITERATURE_SEARCH_JOB_LOCK:
+            _cleanup_literature_search_jobs()
+            matched_job = None
+            matched_ts = -1.0
+            for job in LITERATURE_SEARCH_JOBS.values():
+                if job.get('fingerprint') != fingerprint:
+                    continue
+                job_ts = float(job.get('updated_ts') or job.get('created_ts') or 0)
+                if job_ts >= matched_ts:
+                    matched_ts = job_ts
+                    matched_job = job
+            if matched_job:
+                existing_job_id = str(matched_job.get('job_id') or '')
+                existing_job_status = str(matched_job.get('status') or '')
+                existing_job_step = str(matched_job.get('step') or '')
+                if existing_job_status == 'succeeded' and matched_job.get('payload'):
+                    search_payload = matched_job.get('payload')
+                    search_error = None
+                    auto_start_search = False
+                elif existing_job_status == 'failed':
+                    search_error = str(matched_job.get('error') or '智能文献深搜失败，请稍后重试。')
+                    auto_start_search = False
+                elif existing_job_status in {'pending', 'running'}:
+                    auto_start_search = True
 
     try:
         ai_enabled = bool(get_ai_client_config())
     except Exception as exc:
-        current_app.logger.exception("读取智能文献深搜 AI 配置失败: %s", exc)
+        current_app.logger.exception("读取智能文献深搜配置失败: %s", exc)
         ai_enabled = False
 
     try:
@@ -2927,7 +3120,10 @@ def literature_search_home():
         ai_enabled=ai_enabled,
         enhancement_sources=enhancement_sources,
         build_display_source_links=build_display_source_links,
-        auto_start_search=bool(query_text),
+        auto_start_search=auto_start_search,
+        existing_job_id=existing_job_id,
+        existing_job_status=existing_job_status,
+        existing_job_step=existing_job_step,
     )
 
 
@@ -2978,11 +3174,15 @@ def _render_literature_search_fragment(
         ai_enabled=ai_enabled,
         enhancement_sources=enhancement_sources,
         build_display_source_links=build_display_source_links,
+        ysxs_url_prefix=(current_app.config.get('YSXS_URL_PREFIX') or ''),
     )
 
 
 def _run_literature_search_job(app_obj: Flask, job_id: str) -> None:
     with app_obj.app_context():
+        def update_step(step_text: str) -> None:
+            _set_literature_search_job(job_id, step=step_text)
+
         with LITERATURE_SEARCH_JOB_LOCK:
             job = LITERATURE_SEARCH_JOBS.get(job_id)
             if not job:
@@ -3008,8 +3208,10 @@ def _run_literature_search_job(app_obj: Flask, job_id: str) -> None:
                 lookback_days=lookback_days,
                 enabled_sources=selected_sources,
                 sort_mode=sort_mode,
+                progress_callback=update_step,
             )
             enhancement_sources = get_display_only_sources(query_text)
+            update_step('正在整理智能深搜结果页面…')
             html_fragment = _render_literature_search_fragment(
                 query_text=query_text,
                 selected_sources=selected_sources,
@@ -3300,7 +3502,7 @@ def _generate_research_overview_summary(
             )
         fallback_lines.extend([
             "",
-            "> 当前未配置 AI，总结部分暂以候选论文清单代替。配置 AI 后可自动生成研究现状综述。",
+            "> 当前未配置智能功能，总结部分暂以候选论文清单代替。配置后可自动生成研究现状综述。",
         ])
         summary = "\n".join(fallback_lines)
         return summary, str(render_ai_summary_markdown(summary))
@@ -3327,7 +3529,7 @@ def _generate_research_overview_summary(
         usage_context={'scene': 'research_overview', 'user_id': user_id},
     )
     if not summary:
-        raise RuntimeError('AI 未返回研究现状总结。')
+        raise RuntimeError('智能总结未返回研究现状内容。')
     summary = summary.strip()
     return summary, str(render_ai_summary_markdown(summary))
 
@@ -3360,10 +3562,68 @@ def _build_research_overview_fallback_summary(
         )
     fallback_lines.extend([
         "",
-        f"> {error_message}" if error_message else "> 当前未配置 AI，总结部分暂以候选论文清单代替。配置 AI 后可自动生成研究现状综述。",
+        f"> {error_message}" if error_message else "> 当前未配置智能功能，总结部分暂以候选论文清单代替。配置后可自动生成研究现状综述。",
     ])
     summary = "\n".join(fallback_lines).strip()
     return summary, str(render_ai_summary_markdown(summary))
+
+
+def _build_research_overview_ai_usage(search_ai_usage: dict | None, summary_mode: str) -> dict:
+    search_usage = search_ai_usage or {}
+    search_status = str(search_usage.get('status') or 'disabled').strip().lower()
+    summary_mode = str(summary_mode or 'disabled').strip().lower()
+
+    search_used = search_status in {'used', 'partial'}
+    summary_used = summary_mode == 'ai'
+    any_used = search_used or summary_used
+    fallback_any = search_status in {'partial', 'fallback'} or summary_mode == 'fallback'
+
+    if any_used and fallback_any:
+        status = 'partial'
+        label = '本次为智能 + 规则混合结果'
+        description = '检索或综述中的部分环节使用了智能接口，但也有环节回退到了规则流程。'
+    elif any_used:
+        status = 'used'
+        label = '本次已成功调用智能接口'
+        description = '本次检索与综述流程中，至少有一个核心环节成功使用了智能接口。'
+    elif fallback_any:
+        status = 'fallback'
+        label = '本次未成功用上智能接口'
+        description = '本次智能调用失败，当前结果主要来自规则检索与规则摘要。'
+    else:
+        status = 'disabled'
+        label = '本次未启用智能接口'
+        description = '当前未配置智能接口，因此结果来自规则流程。'
+
+    if summary_mode == 'ai':
+        summary_label = '智能综述成功'
+        summary_note = '研究现状总结已由智能接口生成。'
+    elif summary_mode == 'fallback':
+        summary_label = '规则回退'
+        summary_note = '智能综述失败或超时，已回退到规则摘要。'
+    else:
+        summary_label = '规则摘要'
+        summary_note = '当前未配置智能接口，综述部分使用规则摘要。'
+
+    return {
+        'status': status,
+        'label': label,
+        'description': description,
+        'stages': [
+            {
+                'name': '文献检索排序',
+                'mode': search_status,
+                'label': str(search_usage.get('label') or '规则检索'),
+                'note': str(search_usage.get('description') or '').strip(),
+            },
+            {
+                'name': '研究现状综述',
+                'mode': summary_mode,
+                'label': summary_label,
+                'note': summary_note,
+            },
+        ],
+    }
 
 
 def _normalize_research_overview_sources(values) -> list[str]:
@@ -3424,6 +3684,9 @@ def _render_research_overview_fragment(
 
 def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
     with app_obj.app_context():
+        def update_step(step_text: str) -> None:
+            _set_research_overview_job(job_id, step=step_text)
+
         with RESEARCH_OVERVIEW_JOB_LOCK:
             job = RESEARCH_OVERVIEW_JOBS.get(job_id)
             if not job:
@@ -3450,14 +3713,38 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                 lookback_days=max(365, overview_years * 365),
                 enabled_sources=selected_sources,
                 sort_mode='quality' if focus_mode == 'review_first' else 'balanced',
+                progress_callback=lambda text: update_step(f'研究现状梳理：{text}'),
             )
+            update_step('正在筛选支撑研究现状的核心论文…')
             selected_papers, selected_stats = _select_research_overview_results(
                 search_payload.get('results') or [],
                 focus_mode=focus_mode,
                 limit=max_results,
             )
-            _set_research_overview_job(job_id, step='正在调用 AI 生成综述…')
-            try:
+            if get_ai_client_config():
+                _set_research_overview_job(job_id, step='正在调用智能助手生成综述…')
+                try:
+                    summary_markdown, summary_html = _generate_research_overview_summary(
+                        direction_text=direction_text,
+                        selected_papers=selected_papers,
+                        overview_years=overview_years,
+                        focus_mode=focus_mode,
+                        user_id=user_id,
+                    )
+                    summary_mode = 'ai'
+                except Exception as summary_exc:
+                    current_app.logger.warning("研究现状智能综述失败，回退到规则综述：%s", summary_exc)
+                    update_step('智能综述响应较慢，正在回退到规则版摘要…')
+                    summary_markdown, summary_html = _build_research_overview_fallback_summary(
+                        direction_text=direction_text,
+                        selected_papers=selected_papers,
+                        overview_years=overview_years,
+                        focus_mode=focus_mode,
+                        error_message=f"智能综述生成失败，已回退为规则版摘要：{summary_exc}",
+                    )
+                    summary_mode = 'fallback'
+            else:
+                update_step('当前未配置智能接口，正在生成规则版摘要…')
                 summary_markdown, summary_html = _generate_research_overview_summary(
                     direction_text=direction_text,
                     selected_papers=selected_papers,
@@ -3465,17 +3752,7 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                     focus_mode=focus_mode,
                     user_id=user_id,
                 )
-                summary_mode = 'ai'
-            except Exception as summary_exc:
-                current_app.logger.warning("研究现状 AI 综述失败，回退到规则综述：%s", summary_exc)
-                summary_markdown, summary_html = _build_research_overview_fallback_summary(
-                    direction_text=direction_text,
-                    selected_papers=selected_papers,
-                    overview_years=overview_years,
-                    focus_mode=focus_mode,
-                    error_message=f"AI 综述生成失败，已回退为规则版摘要：{summary_exc}",
-                )
-                summary_mode = 'fallback'
+                summary_mode = 'disabled'
 
             overview_payload = {
                 'search_payload': search_payload,
@@ -3484,9 +3761,11 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                 'summary_markdown': summary_markdown,
                 'summary_html': summary_html,
                 'summary_mode': summary_mode,
+                'ai_usage': _build_research_overview_ai_usage(search_payload.get('ai_usage'), summary_mode),
                 'generated_at': format_cn_time(utc_now()),
             }
             enhancement_sources = get_display_only_sources(direction_text)
+            update_step('正在整理研究现状页面…')
             html_fragment = _render_research_overview_fragment(
                 direction_text=direction_text,
                 focus_mode=focus_mode,
@@ -3548,7 +3827,7 @@ def research_overview_home():
     try:
         ai_enabled = bool(get_ai_client_config())
     except Exception as exc:
-        current_app.logger.exception("读取研究现状梳理 AI 配置失败: %s", exc)
+        current_app.logger.exception("读取研究现状梳理配置失败: %s", exc)
         ai_enabled = False
 
     try:
@@ -3774,7 +4053,7 @@ def _save_research_overview_to_system(user_id: int, payload: dict) -> tuple[Docu
     if document is None:
         document = Document(
             title=title,
-            authors='云凇学术 AI',
+            authors='云凇学术 智能',
             journal='研究现状综述',
             year=current_year,
             abstract=abstract,
@@ -3782,7 +4061,7 @@ def _save_research_overview_to_system(user_id: int, payload: dict) -> tuple[Docu
             ai_summary=summary_markdown,
             ai_summary_updated_at=now_utc,
             keywords=direction_text,
-            tags='研究现状综述;AI生成',
+            tags='研究现状综述;智能生成',
             owner_id=user_id,
             created_at=now_utc,
             upload_time=now_utc,
@@ -3797,7 +4076,7 @@ def _save_research_overview_to_system(user_id: int, payload: dict) -> tuple[Docu
         db.session.flush()
         created = True
     else:
-        document.authors = '云凇学术 AI'
+        document.authors = '云凇学术 智能'
         document.journal = '研究现状综述'
         document.year = current_year
         document.abstract = abstract
@@ -3805,7 +4084,7 @@ def _save_research_overview_to_system(user_id: int, payload: dict) -> tuple[Docu
         document.ai_summary = summary_markdown
         document.ai_summary_updated_at = now_utc
         document.keywords = direction_text
-        document.tags = '研究现状综述;AI生成'
+        document.tags = '研究现状综述;智能生成'
         document.modified_at = now_utc
         document.doc_type = 'review'
         document.doc_type_id = review_type.id if review_type else None
@@ -3898,24 +4177,40 @@ def _summarize_search_result_payload(payload: dict) -> tuple[str, str]:
         year=paper.get('year'),
     )
     if existing_doc:
-        if existing_doc.ai_summary:
-            updated_at = format_cn_time(existing_doc.ai_summary_updated_at) if existing_doc.ai_summary_updated_at else ''
-            return existing_doc.ai_summary, updated_at
-        summary = summarize_document_with_ai(existing_doc)
+        existing_remote_pdf_url = existing_doc.url if str(existing_doc.url or '').lower().endswith('.pdf') else None
+        if not existing_remote_pdf_url and existing_doc.doi:
+            existing_remote_pdf_url = get_pdf_url_from_unpaywall(existing_doc.doi)
+        summary = summarize_document_with_ai(existing_doc, remote_pdf_url=existing_remote_pdf_url)
         updated_at = format_cn_time(existing_doc.ai_summary_updated_at) if existing_doc.ai_summary_updated_at else ''
         return summary, updated_at
 
     keyword_text = '、'.join(paper.get('matched_keywords') or paper.get('topics') or []) or '未提供'
     authors = '；'.join(paper.get('authors') or []) or '未知'
+    remote_pdf_url = paper.get('pdf_url') or (get_pdf_url_from_unpaywall(paper.get('doi')) if paper.get('doi') else None)
+    source_material = build_summary_source_material(
+        abstract=paper.get('abstract'),
+        remote_pdf_url=remote_pdf_url,
+    )
+    abstract_text = source_material.get('abstract') or '暂无摘要'
+    full_text = source_material.get('full_text') or ''
     prompt = (
-        "请作为中文科研助手，对下面这篇检索到的文献做专业、清晰、适合快速筛读的总结。\n"
+        "请作为中文科研文献筛读助手，对下面这篇检索到的文献生成一份“便于快速判断价值”的结构化总结。\n"
         "要求：\n"
         "1. 使用中文；\n"
-        "2. 只基于提供的信息，不要编造；\n"
+        "2. 只基于提供的信息，不要编造；如果同时给出了摘要和原文节选，优先依据原文节选，摘要仅作为补充；\n"
         "3. 输出 Markdown；\n"
-        "4. 控制在 6 个小节以内；\n"
-        "5. 重点写出：研究问题、方法/数据、主要发现、为什么值得读；\n"
-        "6. 不要输出 ```markdown 代码块。\n\n"
+        "4. 严格按以下 6 个小节输出，且小节标题保持一致，并使用 Markdown 三级标题格式：文献信息、研究问题、方法与数据、主要发现、为什么值得读、筛读结论；\n"
+        "5. 必须结合“当前检索需求”判断这篇文献与当前任务是否高度匹配，并在“为什么值得读”和“筛读结论”里明确体现；\n"
+        "6. 尽量提取摘要里明确出现的研究对象、数据来源、方法、关键数字、对比关系与结论；如果摘要没写清楚，就明确写“摘要未说明”，不要编造；\n"
+        "7. “为什么值得读”不要空泛吹捧，要优先围绕“为什么这篇对当前任务有用”来写，其次再写方法代表性、结果是否可直接参考；\n"
+        "8. 字段名和小标签请尽量加粗，例如“**标题：**”“**作者：**”“**总体判断：**”；重点数值、关键结论短语也可适度加粗；\n"
+        "9. “筛读结论”必须包含 5 点，并使用圆序号分行展示：①是否建议优先阅读；②与当前检索需求是高度匹配、中等匹配还是部分相关；③它更适合回答什么问题；④它不太适合回答什么问题；⑤主要局限是什么；\n"
+        "10. “筛读结论”前可先写一行“**总体判断：** ...”；\n"
+        "11. “筛读结论”的第一句就要先写匹配度判断与是否建议优先阅读，例如“与当前检索需求高度匹配，建议优先阅读”；\n"
+        "12. 语言要具体、凝练，避免空话套话，少写宏大背景，多写对筛读有用的信息；\n"
+        "13. 如果文献给出了明确参数、数值范围、误差、差异量级，优先写出来；\n"
+        "14. 不要额外输出总标题，如“文献筛读总结”“论文总结”“智能总结”等；正文直接从“文献信息”开始；\n"
+        "15. 不要输出 ```markdown 代码块。\n\n"
         f"当前检索需求：{paper.get('query_text') or '未提供'}\n"
         f"标题：{paper.get('title')}\n"
         f"作者：{authors}\n"
@@ -3923,16 +4218,17 @@ def _summarize_search_result_payload(payload: dict) -> tuple[str, str]:
         f"日期：{paper.get('published_at') or paper.get('year') or '未知'}\n"
         f"DOI：{paper.get('doi') or '未知'}\n"
         f"相关关键词：{keyword_text}\n"
-        f"摘要：{paper.get('abstract') or '暂无摘要'}\n"
+        f"摘要：{abstract_text}\n"
+        + (f"可用原文节选：{full_text}\n" if full_text else "")
     )
     summary = call_ai_text(
-        "你是中文科研文献筛读助手，擅长快速总结论文价值。",
+        "你是中文科研筛读助手，不是泛泛的摘要改写器。你擅长根据题录、摘要和当前检索目标，生成信息密度高、结构稳定、便于快速判断是否值得读的总结，重点是帮助用户筛选与决策。",
         prompt,
         timeout=90,
         usage_context={'scene': 'search_result_summary', 'user_id': current_user.id},
     )
     if not summary:
-        raise RuntimeError('AI 返回为空，未能生成总结。')
+        raise RuntimeError('智能总结返回为空，未能生成内容。')
     return summary.strip(), format_cn_time(utc_now())
 
 
@@ -4002,10 +4298,10 @@ def literature_search_summarize():
     try:
         summary, updated_at = _summarize_search_result_payload(payload)
     except Exception as exc:
-        current_app.logger.exception("智能深搜 AI 总结失败: %s", exc)
-        return jsonify({'error': str(exc) or 'AI 总结失败'}), 500
+        current_app.logger.exception("智能深搜智能总结失败: %s", exc)
+        return jsonify({'error': str(exc) or '智能总结失败'}), 500
     return jsonify({
-        'message': 'AI 总结已生成。',
+        'message': '智能总结已生成。',
         'summary': summary,
         'summary_html': str(render_ai_summary_markdown(summary)),
         'updated_at': updated_at,
@@ -4181,10 +4477,10 @@ def morning_report_summarize(paper_id: int):
     try:
         summary = summarize_paper_with_ai(paper, keywords=report_settings.keyword_list())
     except Exception as exc:
-        current_app.logger.exception("晨报 AI 总结失败: %s", exc)
-        return jsonify({'error': str(exc) or 'AI 总结失败'}), 500
+        current_app.logger.exception("晨报智能总结失败: %s", exc)
+        return jsonify({'error': str(exc) or '智能总结失败'}), 500
     return jsonify({
-        'message': 'AI 总结已生成。',
+        'message': '智能总结已生成。',
         'summary': summary,
         'summary_html': str(render_ai_summary_markdown(summary)),
         'updated_at': format_cn_time(paper.ai_summary_updated_at),
@@ -4197,13 +4493,16 @@ def document_summarize(doc_id: int):
     doc = Document.query.get_or_404(doc_id)
     ensure_document_access(doc, require_owner=True)
     try:
-        summary = summarize_document_with_ai(doc)
+        remote_pdf_url = doc.url if str(doc.url or '').lower().endswith('.pdf') else None
+        if not remote_pdf_url and doc.doi:
+            remote_pdf_url = get_pdf_url_from_unpaywall(doc.doi)
+        summary = summarize_document_with_ai(doc, remote_pdf_url=remote_pdf_url)
     except Exception as exc:
-        current_app.logger.exception("文献详情页 AI 总结失败: %s", exc)
-        return jsonify({'error': str(exc) or 'AI 总结失败'}), 500
+        current_app.logger.exception("文献详情页智能总结失败: %s", exc)
+        return jsonify({'error': str(exc) or '智能总结失败'}), 500
 
     return jsonify({
-        'message': 'AI 总结已生成。',
+        'message': '智能总结已生成。',
         'summary': summary,
         'summary_html': str(render_ai_summary_markdown(summary)),
         'updated_at': format_cn_time(doc.ai_summary_updated_at),

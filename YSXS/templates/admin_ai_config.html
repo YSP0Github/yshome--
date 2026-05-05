@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}AI 管理系统 - 云凇学术{% endblock %}
+{% block title %}智能管理系统 - 云凇学术{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -192,6 +192,90 @@
         background: rgba(59,130,246,.18);
         color: #bfdbfe;
     }
+    .ai-preset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+    }
+    .ai-preset-option {
+        position: relative;
+        display: block;
+        border-radius: 1.2rem;
+        border: 1px solid rgba(191, 219, 254, .75);
+        background: linear-gradient(180deg, rgba(248,250,252,.98), rgba(239,246,255,.9));
+        padding: 1rem;
+        transition: all .18s ease;
+        cursor: pointer;
+    }
+    .ai-preset-option:hover {
+        transform: translateY(-2px);
+        border-color: rgba(59,130,246,.42);
+        box-shadow: 0 14px 28px rgba(37,99,235,.12);
+    }
+    .ai-preset-option.is-active {
+        border-color: rgba(37,99,235,.9);
+        box-shadow: 0 18px 34px rgba(37,99,235,.16);
+        background: linear-gradient(180deg, rgba(239,246,255,.98), rgba(219,234,254,.94));
+    }
+    .dark .ai-preset-option {
+        background: linear-gradient(180deg, rgba(15,23,42,.94), rgba(30,41,59,.92));
+        border-color: rgba(71,85,105,.7);
+    }
+    .dark .ai-preset-option.is-active {
+        border-color: rgba(96,165,250,.9);
+        box-shadow: 0 18px 34px rgba(2,6,23,.34);
+        background: linear-gradient(180deg, rgba(30,41,59,.98), rgba(37,99,235,.20));
+    }
+    .ai-preset-radio {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: #2563eb;
+    }
+    .ai-preset-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+        background: rgba(37,99,235,.12);
+        color: #1d4ed8;
+    }
+    .dark .ai-preset-chip {
+        background: rgba(59,130,246,.2);
+        color: #bfdbfe;
+    }
+    .ai-preset-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .8rem;
+        border-radius: .9rem;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #2563eb;
+        background: rgba(239,246,255,.95);
+        border: 1px solid rgba(191,219,254,.8);
+    }
+    .dark .ai-preset-meta {
+        background: rgba(30,41,59,.95);
+        color: #bfdbfe;
+        border-color: rgba(71,85,105,.8);
+    }
+    .ai-config-locked {
+        opacity: .72;
+    }
+    .ai-config-readonly-hint {
+        margin-top: .65rem;
+        font-size: .78rem;
+        color: #64748b;
+        line-height: 1.6;
+    }
+    .dark .ai-config-readonly-hint { color: #94a3b8; }
     .ai-table-wrap { overflow-x: auto; }
     .ai-table-scroll-y {
         max-height: 34rem;
@@ -274,9 +358,9 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
         <div>
             <div class="text-sm text-slate-500 dark:text-slate-400 mb-2">超级管理员 / 系统控制台</div>
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">AI 管理系统</h1>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">智能管理系统</h1>
             <p class="text-slate-600 dark:text-slate-300 mt-2">
-                统一查看 AI 配置、累计 Token、用户使用排行、调用趋势与最近调用记录。
+                统一查看智能配置、累计 Token、用户使用排行、调用趋势与最近调用记录。
             </p>
         </div>
         <div class="flex flex-wrap gap-3">
@@ -302,7 +386,7 @@
         <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
             <div class="text-sm text-slate-500 dark:text-slate-400">累计调用</div>
             <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_calls }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">系统内所有 AI 请求</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">系统内所有智能请求</div>
         </div>
         <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
             <div class="text-sm text-slate-500 dark:text-slate-400">今日调用</div>
@@ -312,7 +396,7 @@
         <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
             <div class="text-sm text-slate-500 dark:text-slate-400">累计活跃用户</div>
             <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_active_users }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">发生过 AI 调用的用户数</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">发生过智能调用的用户数</div>
         </div>
         <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
             <div class="text-sm text-slate-500 dark:text-slate-400">平均单次消耗</div>
@@ -357,7 +441,7 @@
                 </div>
                 <div class="space-y-0 text-sm">
                     <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">AI 状态</div>
+                        <div class="text-slate-500 dark:text-slate-400">智能状态</div>
                         <div class="font-semibold text-slate-800 dark:text-slate-100">{{ '可用' if effective_ai else '不可用' }}</div>
                     </div>
                     <div class="ai-metric-row">
@@ -371,6 +455,20 @@
                     <div class="ai-metric-row">
                         <div class="text-slate-500 dark:text-slate-400">Wire API</div>
                         <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.wire_api if effective_ai else '未解析到' }}</div>
+                    </div>
+                    <div class="ai-metric-row">
+                        <div class="text-slate-500 dark:text-slate-400">配置来源</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-100">
+                            {% if not effective_ai %}
+                                未解析到
+                            {% elif effective_ai.config_source == 'preset' %}
+                                .env 预设{% if effective_ai.preset_label %} · {{ effective_ai.preset_label }}{% endif %}
+                            {% elif effective_ai.config_source == 'manual' %}
+                                手动填写
+                            {% else %}
+                                环境变量自动回退
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="ai-metric-row">
                         <div class="text-slate-500 dark:text-slate-400">ADS Token</div>
@@ -394,7 +492,7 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="text-sm text-slate-500 dark:text-slate-400">暂无 Token 统计记录，后续 AI 调用将自动累积。</div>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">暂无 Token 统计记录，后续智能调用将自动累积。</div>
                     {% endfor %}
                 </div>
                 <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-6">
@@ -543,8 +641,8 @@
     <section class="ai-admin-card rounded-3xl p-6 md:p-8">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
             <div>
-                <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">AI 配置中心</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">保留原配置能力，便于随时切换模型、中转地址与 NASA ADS Token。</p>
+                <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">智能配置中心</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">优先从 .env 里的预设中单选切换；如需临时测试，也可以改为手动填写。</p>
             </div>
             <span class="ai-badge-soft"><i class="fa fa-shield"></i>仅超级管理员可修改</span>
         </div>
@@ -554,15 +652,59 @@
 
             <div class="xl:col-span-2 space-y-6">
                 <section>
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">OpenAI / 中转站配置</h3>
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">预设选择</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">这里的预设直接读取 .env。不同模型可以各自使用不同的 Base URL，保存后会按所选预设生效。</p>
+                        </div>
+                        <span class="ai-badge-soft"><i class="fa fa-sliders"></i>.env 为准</span>
+                    </div>
+                    <div class="ai-preset-grid">
+                        <label class="ai-preset-option text-left {% if form_data.preset_key == 'manual' %}is-active{% endif %}" data-ai-preset-option>
+                            <input type="radio" name="preset_key" value="manual" class="ai-preset-radio" {% if form_data.preset_key == 'manual' %}checked{% endif %}>
+                            <div class="flex items-start justify-between gap-3 mb-3 pr-8">
+                                <div class="min-w-0">
+                                    <div class="text-base font-semibold text-slate-900 dark:text-slate-100">手动填写 / 自定义</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">适合临时测试新接口或中转站</div>
+                                </div>
+                                <span class="ai-preset-chip">备用</span>
+                            </div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 break-all leading-6 mb-3">Base URL、模型名、Wire API 由下方输入框决定</div>
+                            <span class="ai-preset-meta"><i class="fa fa-keyboard-o"></i>使用手动配置</span>
+                        </label>
+                        {% for preset in env_presets %}
+                        <label
+                            class="ai-preset-option text-left {% if form_data.preset_key == preset.key %}is-active{% endif %}"
+                            data-ai-preset-option
+                            data-base-url="{{ preset.base_url }}"
+                            data-model="{{ preset.model }}"
+                            data-wire-api="{{ preset.wire_api }}"
+                        >
+                            <input type="radio" name="preset_key" value="{{ preset.key }}" class="ai-preset-radio" {% if form_data.preset_key == preset.key %}checked{% endif %}>
+                            <div class="flex items-start justify-between gap-3 mb-3 pr-8">
+                                <div class="min-w-0">
+                                    <div class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ preset.label }}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ preset.model }} · {{ preset.wire_api }}</div>
+                                </div>
+                                <span class="ai-preset-chip">{{ '自定义' if preset.source == 'custom' else '.env' }}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 break-all leading-6 mb-3">{{ preset.base_url }}</div>
+                            <span class="ai-preset-meta"><i class="fa fa-check-circle"></i>按该预设生效</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section id="ai-manual-config-section">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">OpenAI / Anthropic 兼容 / 中转站配置</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Base URL</label>
-                            <input type="text" name="base_url" value="{{ form_data.base_url }}" class="ai-config-input" placeholder="如 https://api.openai.com/v1 或你的中转站地址">
+                            <input type="text" name="base_url" value="{{ form_data.base_url }}" class="ai-config-input" placeholder="如 https://api.openai.com/v1、https://token-plan-cn.xiaomimimo.com/anthropic/v1 或你的中转站地址">
                         </div>
                         <div>
                             <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">模型名</label>
-                            <input type="text" name="model" value="{{ form_data.model }}" class="ai-config-input" placeholder="如 gpt-5.4">
+                            <input type="text" name="model" value="{{ form_data.model }}" class="ai-config-input" placeholder="如 gpt-5.4、mimo-v2.5-pro">
                         </div>
                         <div>
                             <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Wire API</label>
@@ -570,7 +712,11 @@
                                 <option value="" {% if not form_data.wire_api %}selected{% endif %}>留空（自动回退）</option>
                                 <option value="responses" {% if form_data.wire_api == 'responses' %}selected{% endif %}>responses</option>
                                 <option value="chat_completions" {% if form_data.wire_api == 'chat_completions' %}selected{% endif %}>chat_completions</option>
+                                <option value="anthropic_messages" {% if form_data.wire_api == 'anthropic_messages' %}selected{% endif %}>anthropic_messages</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2 ai-config-readonly-hint" id="ai-preset-hint">
+                            选中 .env 预设时，这里的 Base URL / 模型 / Wire API 仅作展示，并以 .env 中对应值为准；切换到“手动填写 / 自定义”后才会按输入框保存。
                         </div>
                         <div class="md:col-span-2">
                             <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">API Key</label>
@@ -610,7 +756,9 @@
                 <section class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-4 text-sm text-slate-600 dark:text-slate-300 leading-7">
                     <div class="font-semibold text-slate-800 dark:text-slate-100 mb-2">说明</div>
                     <ul class="space-y-1 list-disc pl-5">
-                        <li>本页保存的是站内 AI 覆盖配置，优先级高于环境变量。</li>
+                        <li>推荐优先在 <code>.env</code> 中维护模型预设，本页只负责在这些预设之间切换。</li>
+                        <li>如果选中了某个 .env 预设，实际生效的 Base URL / 模型 / Wire API 会以该预设为准。</li>
+                        <li>只有切换到“手动填写 / 自定义”时，下方输入框才会真正作为覆盖配置保存。</li>
                         <li>API Key / ADS Token 留空不会覆盖旧值，勾选清除才会删除。</li>
                         <li>若中转站不返回 usage，Token 会按字符数估算，仅用于趋势参考。</li>
                         <li>配置文件保存在 instance 目录，仅本地部署环境可见。</li>
@@ -623,7 +771,7 @@
                 </section>
                 {% endif %}
                 <button type="submit" class="w-full px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
-                    <i class="fa fa-save mr-2"></i>保存 AI 管理系统配置
+                    <i class="fa fa-save mr-2"></i>保存智能管理系统配置
                 </button>
             </aside>
         </form>
@@ -634,6 +782,105 @@
 {% block extra_js %}
 <script>
 (function () {
+    const baseUrlInput = document.querySelector('input[name="base_url"]');
+    const modelInput = document.querySelector('input[name="model"]');
+    const wireApiSelect = document.querySelector('select[name="wire_api"]');
+    const manualSection = document.getElementById('ai-manual-config-section');
+    const presetOptions = Array.from(document.querySelectorAll('[data-ai-preset-option]'));
+    const presetRadios = Array.from(document.querySelectorAll('input[name="preset_key"]'));
+
+    const initialManualValues = {
+        baseUrl: baseUrlInput ? baseUrlInput.value : '',
+        model: modelInput ? modelInput.value : '',
+        wireApi: wireApiSelect ? wireApiSelect.value : '',
+    };
+
+    let lastManualValues = { ...initialManualValues };
+
+    function selectedPresetRadio() {
+        return presetRadios.find((node) => node.checked) || null;
+    }
+
+    function selectedPresetOption() {
+        const radio = selectedPresetRadio();
+        return radio ? radio.closest('[data-ai-preset-option]') : null;
+    }
+
+    function syncPresetActiveState() {
+        const activeOption = selectedPresetOption();
+        presetOptions.forEach((node) => node.classList.toggle('is-active', node === activeOption));
+    }
+
+    function setManualInputsDisabled(disabled) {
+        [baseUrlInput, modelInput, wireApiSelect].forEach((node) => {
+            if (!node) return;
+            node.readOnly = disabled && node !== wireApiSelect;
+            node.disabled = disabled && node === wireApiSelect;
+        });
+        if (manualSection) {
+            manualSection.classList.toggle('ai-config-locked', disabled);
+        }
+    }
+
+    function applyPresetState() {
+        const radio = selectedPresetRadio();
+        const option = selectedPresetOption();
+        const isManual = !radio || radio.value === 'manual';
+
+        syncPresetActiveState();
+
+        if (isManual) {
+            if (baseUrlInput) baseUrlInput.value = lastManualValues.baseUrl || '';
+            if (modelInput) modelInput.value = lastManualValues.model || '';
+            if (wireApiSelect) wireApiSelect.value = lastManualValues.wireApi || '';
+            setManualInputsDisabled(false);
+            return;
+        }
+
+        if (baseUrlInput) {
+            lastManualValues.baseUrl = baseUrlInput.value;
+            baseUrlInput.value = option?.dataset.baseUrl || '';
+        }
+        if (modelInput) {
+            lastManualValues.model = modelInput.value;
+            modelInput.value = option?.dataset.model || '';
+        }
+        if (wireApiSelect) {
+            lastManualValues.wireApi = wireApiSelect.value;
+            wireApiSelect.value = option?.dataset.wireApi || '';
+        }
+        setManualInputsDisabled(true);
+    }
+
+    [baseUrlInput, modelInput, wireApiSelect].forEach((node) => {
+        if (!node) return;
+        node.addEventListener('input', () => {
+            const radio = selectedPresetRadio();
+            if (!radio || radio.value === 'manual') {
+                lastManualValues = {
+                    baseUrl: baseUrlInput ? baseUrlInput.value : '',
+                    model: modelInput ? modelInput.value : '',
+                    wireApi: wireApiSelect ? wireApiSelect.value : '',
+                };
+            }
+        });
+    });
+
+    presetOptions.forEach((option) => {
+        option.addEventListener('click', function (event) {
+            const radio = this.querySelector('input[name="preset_key"]');
+            if (!radio) return;
+            if (event.target !== radio) {
+                radio.checked = true;
+            }
+            applyPresetState();
+        });
+    });
+
+    presetRadios.forEach((radio) => {
+        radio.addEventListener('change', applyPresetState);
+    });
+
     function formatChartValue(value) {
         const num = Number(value || 0);
         const absNum = Math.abs(num);
@@ -855,6 +1102,7 @@
     });
 
     renderTrendChart('total');
+    applyPresetState();
 })();
 </script>
 {% endblock %}
