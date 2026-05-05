@@ -73,6 +73,7 @@
                 </a>
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#overview" class="text-dark/80 hover:text-primary transition-custom">软件概述</a>
+                    <a href="#download" class="text-dark/80 hover:text-primary transition-custom">软件下载</a>
                     <a href="#features" class="text-dark/80 hover:text-primary transition-custom">核心功能</a>
                     <a href="#tools" class="text-dark/80 hover:text-primary transition-custom">专业工具</a>
                     <a href="../documents/seisy_user_guide.html" target="_blank" class="text-dark/80 hover:text-primary transition-custom">使用指南</a>
@@ -88,6 +89,7 @@
         <div id="mobile-menu" class="hidden md:hidden bg-white border-t shadow-md">
             <div class="container mx-auto px-4 py-3 space-y-3">
                 <a href="#overview" class="block py-2 text-dark/80 hover:text-primary transition-custom">软件概述</a>
+                <a href="#download" class="block py-2 text-dark/80 hover:text-primary transition-custom">软件下载</a>
                 <a href="#features" class="block py-2 text-dark/80 hover:text-primary transition-custom">核心功能</a>
                 <a href="#tools" class="block py-2 text-dark/80 hover:text-primary transition-custom">专业工具</a>
                 <a href="../documents/seisy_user_guide.html" target="_blank" class="block py-2 text-dark/80 hover:text-primary transition-custom">使用指南</a>
@@ -114,6 +116,9 @@
                     面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、震源定位、射线追踪与简正模分析等专业工具。
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4 fade-in delay-300">
+                    <a href="#download" class="px-8 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-custom shadow-lg shadow-accent/20">
+                        <i class="fa fa-download mr-2"></i> 下载 Windows 版
+                    </a>
                     <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="px-8 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-custom shadow-lg shadow-primary/20">
                         <i class="fa-brands fa-github mr-2"></i> 查看源码
                     </a>
@@ -192,6 +197,88 @@
                         <img src="../static/images/SeisY/SeisY-plot.png" alt="SeisY 绘图区" class="w-full h-auto">
                     </div>
                     <p class="text-center text-dark/60 text-sm">三块独立绘图区，支持波形、频谱与处理前后对比展示</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载与版本 -->
+    <section id="download" class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">软件下载</h2>
+                <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
+                <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版与便携版下载入口，后续版本可继续沿用同一页面更新。</p>
+            </div>
+
+            <div class="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
+                <div class="bg-white rounded-2xl shadow-md p-8">
+                    <div class="flex items-center justify-between gap-4 mb-6">
+                        <div>
+                            <div class="text-sm uppercase tracking-[0.18em] text-primary/70 mb-2">Latest Release</div>
+                            <h3 class="text-2xl font-semibold">SeisY <span id="download-version">读取中</span></h3>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">Windows</div>
+                    </div>
+                    <p id="download-summary" class="text-dark/75 leading-7 mb-6">正在读取版本说明…</p>
+                    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+                        <div class="rounded-xl bg-gray-50 border border-gray-100 p-4">
+                            <div class="text-xs uppercase tracking-[0.14em] text-dark/45 mb-2">发布日期</div>
+                            <div id="download-date" class="font-semibold text-dark">--</div>
+                        </div>
+                        <div class="rounded-xl bg-gray-50 border border-gray-100 p-4">
+                            <div class="text-xs uppercase tracking-[0.14em] text-dark/45 mb-2">下载来源</div>
+                            <div class="font-semibold text-dark">GitHub Releases</div>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <a id="download-release-page-link" href="https://github.com/YSP0Github/SeisY-Releases/releases" target="_blank" rel="noopener" class="inline-flex items-center text-primary hover:text-primary/80 font-medium transition-custom">
+                            <i class="fa-brands fa-github mr-2"></i>查看 SeisY-Releases 全部版本
+                            <i class="fa fa-external-link-alt ml-2 text-xs"></i>
+                        </a>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-4">版本说明</h4>
+                        <ul id="download-notes" class="space-y-3 text-dark/75">
+                            <li class="text-dark/50">正在加载版本说明…</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div id="download-cards" class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+                            <div class="text-dark/50 text-sm">正在加载下载项…</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-dark text-white rounded-2xl p-8 shadow-xl">
+                        <h4 class="text-xl font-semibold mb-4">下载说明</h4>
+                        <p class="text-white/75 leading-7 mb-5">
+                            安装版适合首次安装和长期使用；便携版解压后即可运行，适合实验室电脑、移动硬盘或无需安装的临时使用场景。
+                            如需查看历史版本与发布说明，可前往 GitHub Releases 页面。
+                        </p>
+                        <div class="grid sm:grid-cols-2 gap-4 text-sm">
+                            <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+                                <div class="font-medium mb-2">安装版建议</div>
+                                <p class="text-white/70">适合首次安装和普通用户，保留标准安装流程。</p>
+                            </div>
+                            <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+                                <div class="font-medium mb-2">便携版建议</div>
+                                <p class="text-white/70">适合实验室电脑、U 盘分发或无需安装的临时使用场景。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-md p-8">
+                        <div class="flex items-center justify-between gap-4 mb-4">
+                            <h4 class="text-xl font-semibold">版本历史</h4>
+                            <span class="text-sm text-dark/50">后续可继续追加</span>
+                        </div>
+                        <div id="download-history" class="space-y-3">
+                            <div class="text-dark/50">正在读取历史版本…</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -527,6 +614,7 @@
                     <h4 class="font-semibold text-lg mb-6">快速链接</h4>
                     <ul class="space-y-3">
                         <li><a href="#overview" class="text-white/70 hover:text-white transition-custom">软件概述</a></li>
+                        <li><a href="#download" class="text-white/70 hover:text-white transition-custom">软件下载</a></li>
                         <li><a href="#features" class="text-white/70 hover:text-white transition-custom">核心功能</a></li>
                         <li><a href="#tools" class="text-white/70 hover:text-white transition-custom">专业工具</a></li>
                         <li><a href="#layout" class="text-white/70 hover:text-white transition-custom">界面布局</a></li>
@@ -619,6 +707,137 @@
 
         // 年份
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        async function loadSeisyReleaseInfo() {
+            const versionEl = document.getElementById('download-version');
+            const dateEl = document.getElementById('download-date');
+            const summaryEl = document.getElementById('download-summary');
+            const notesEl = document.getElementById('download-notes');
+            const cardsEl = document.getElementById('download-cards');
+            const historyEl = document.getElementById('download-history');
+            const releasePageEl = document.getElementById('download-release-page-link');
+
+            const buildArtifactMeta = (latest, artifact) => {
+                const version = latest?.version || '';
+                const tag = latest?.tag || (version ? `v${version}` : '');
+                const kind = artifact?.kind || '';
+
+                let filename = artifact?.filename || '';
+                if (!filename && version) {
+                    if (kind === 'setup') filename = `SeisY-${version}-Setup.exe`;
+                    else if (kind === 'portable') filename = `SeisY-${version}-Portable.zip`;
+                }
+
+                let url = artifact?.url || '';
+                if (!url && tag && filename) {
+                    url = `https://github.com/YSP0Github/SeisY-Releases/releases/download/${tag}/${filename}`;
+                }
+
+                return { filename, url };
+            };
+
+            const setFallback = (message) => {
+                if (summaryEl) summaryEl.textContent = message;
+                if (notesEl) notesEl.innerHTML = '<li class="text-orange-500">当前未能读取下载清单，请稍后刷新页面或联系作者。</li>';
+                if (cardsEl) {
+                    cardsEl.innerHTML = `
+                        <div class="md:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-orange-200">
+                            <div class="font-semibold text-orange-500 mb-2">下载清单未加载</div>
+                            <p class="text-dark/70 text-sm leading-6">请检查 <code>downloads/seisy/releases.json</code> 是否存在，或确认安装包文件是否已同步到服务器。</p>
+                        </div>`;
+                }
+                if (historyEl) historyEl.innerHTML = '<div class="text-dark/50">暂无可读取的历史版本信息。</div>';
+            };
+
+            try {
+                const response = await fetch('../downloads/seisy/releases.json', { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const manifest = await response.json();
+                const latest = manifest.latest || {};
+                const artifacts = Array.isArray(latest.artifacts) ? latest.artifacts : [];
+                const notes = Array.isArray(latest.notes) ? latest.notes : [];
+                const history = Array.isArray(manifest.history) ? manifest.history : [];
+                const releasePage = manifest.release_page || 'https://github.com/YSP0Github/SeisY-Releases/releases';
+
+                if (versionEl) versionEl.textContent = latest.version || '--';
+                if (dateEl) dateEl.textContent = latest.published_at || '--';
+                if (summaryEl) summaryEl.textContent = latest.summary || '当前版本信息暂未填写。';
+                if (releasePageEl) releasePageEl.href = releasePage;
+
+                if (notesEl) {
+                    notesEl.innerHTML = '';
+                    if (notes.length) {
+                        notes.forEach((note) => {
+                            const li = document.createElement('li');
+                            li.className = 'flex items-start';
+                            li.innerHTML = `<i class="fa fa-check text-accent mr-3 mt-1"></i><span>${note}</span>`;
+                            notesEl.appendChild(li);
+                        });
+                    } else {
+                        notesEl.innerHTML = '<li class="text-dark/50">当前版本暂未填写额外说明。</li>';
+                    }
+                }
+
+                if (cardsEl) {
+                    cardsEl.innerHTML = '';
+                    if (!artifacts.length) {
+                        cardsEl.innerHTML = '<div class="md:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-gray-100 text-dark/50">当前没有可展示的下载文件。</div>';
+                    } else {
+                        artifacts.forEach((artifact) => {
+                            const meta = buildArtifactMeta(latest, artifact);
+                            const recommendBadge = artifact.recommend
+                                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold">推荐</span>'
+                                : '';
+                            const card = document.createElement('article');
+                            card.className = 'bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col';
+                            card.innerHTML = `
+                                <div class="flex items-start justify-between gap-4 mb-4">
+                                    <div>
+                                        <h5 class="text-xl font-semibold">${artifact.label || '下载文件'}</h5>
+                                        <div class="text-sm text-dark/50 mt-2">${meta.filename || ''}</div>
+                                    </div>
+                                    ${recommendBadge}
+                                </div>
+                                <p class="text-dark/70 leading-7 mb-5 flex-1">${artifact.description || '下载说明待补充。'}</p>
+                                <div class="flex items-center justify-between text-sm text-dark/50 mb-5">
+                                    <span>版本 ${latest.version || '--'}</span>
+                                    <span>${artifact.size || '--'}</span>
+                                </div>
+                                <a href="${meta.url || '#'}" download class="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-custom">
+                                    <i class="fa fa-download mr-2"></i>下载
+                                </a>
+                            `;
+                            cardsEl.appendChild(card);
+                        });
+                    }
+                }
+
+                if (historyEl) {
+                    historyEl.innerHTML = '';
+                    if (!history.length) {
+                        historyEl.innerHTML = '<div class="text-dark/50">暂未记录历史版本。</div>';
+                    } else {
+                        history.forEach((item) => {
+                            const row = document.createElement('div');
+                            row.className = 'rounded-xl border border-gray-100 bg-gray-50 p-4';
+                            row.innerHTML = `
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                    <div class="font-semibold text-dark">SeisY ${item.version || '--'}</div>
+                                    <div class="text-sm text-dark/50">${item.published_at || '--'}</div>
+                                </div>
+                                <div class="text-dark/70 text-sm leading-6">${item.notes || '暂无说明。'}</div>
+                            `;
+                            historyEl.appendChild(row);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to load SeisY releases:', error);
+                setFallback('当前未能读取 SeisY 下载信息，请稍后重试。');
+            }
+        }
+
+        loadSeisyReleaseInfo();
 
         // 滚动动画
         const observer = new IntersectionObserver((entries) => {

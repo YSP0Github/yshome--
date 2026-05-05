@@ -22,3 +22,5 @@ backups/
 *.pem
 *.key
 *.pub
+downloads/seisy/releases/*
+!downloads/seisy/releases/.gitkeep

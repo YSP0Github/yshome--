@@ -1,0 +1,37 @@
+{
+  "product": "SeisY",
+  "release_page": "https://github.com/YSP0Github/SeisY-Releases/releases",
+  "latest": {
+    "version": "0.1.6",
+    "tag": "v0.1.6",
+    "published_at": "2026-05-05",
+    "summary": "当前提供 Windows 安装版与便携版下载，后续版本可继续在本页更新。",
+    "notes": [
+      "首次安装建议下载安装版，会自动创建程序入口。",
+      "便携版压缩包解压后可直接运行 SeisY.exe，适合拷贝到移动硬盘或实验室电脑。",
+      "如需查看历史版本与发布说明，可前往 SeisY-Releases 页面。"
+    ],
+    "artifacts": [
+      {
+        "label": "Windows 安装版",
+        "kind": "setup",
+        "size": "295 MB",
+        "description": "适合首次安装，包含桌面软件依赖与安装流程。",
+        "recommend": true
+      },
+      {
+        "label": "Windows 便携版",
+        "kind": "portable",
+        "size": "320 MB",
+        "description": "压缩包内含 SeisY.exe 与运行所需 _internal 目录，解压后即可使用。"
+      }
+    ]
+  },
+  "history": [
+    {
+      "version": "0.1.6",
+      "published_at": "2026-05-05",
+      "notes": "首个加入官网页面的 Windows 下载版本。"
+    }
+  ]
+}
