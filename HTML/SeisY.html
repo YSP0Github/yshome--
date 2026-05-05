@@ -6,7 +6,7 @@
     <title>SeisY - 地震数据处理与分析平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="../static/images/SeisY.ico">
+    <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
     <script>
         tailwind.config = {
             theme: {
@@ -67,7 +67,7 @@
             <div class="flex justify-between items-center h-16">
                 <a href="#hero" class="flex items-center space-x-2">
                     <div class="w-10 h-10 rounded-lg flex items-center justify-center">
-                        <img src="../static/images/SeisY.ico" alt="SeisY" class="w-8 h-8">
+                        <img src="../static/images/SeisY/SeisY-3D-rad.ico" alt="SeisY" class="w-8 h-8">
                     </div>
                     <span class="font-bold text-xl">SeisY</span>
                 </a>
@@ -113,7 +113,7 @@
                     <span class="text-primary">地震数据处理与分析平台</span>
                 </h1>
                 <p class="text-lg md:text-xl text-dark/70 mb-10 max-w-2xl mx-auto fade-in delay-200">
-                    面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、震源定位、射线追踪与简正模分析等专业工具。
+                    面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、震源定位、射线追踪与简正模分析等专业工具，当前提供 Windows 版本。
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4 fade-in delay-300">
                     <a href="#download" class="px-8 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-custom shadow-lg shadow-accent/20">
@@ -154,7 +154,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">软件概述</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt6 构建，适用于地球物理研究与教学。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt6 构建，当前提供 Windows 桌面版，适用于地球物理研究与教学。</p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-12 items-center">
@@ -454,7 +454,7 @@
                             </div>
                             <div>
                                 <h4 class="font-semibold mb-1">PyQt6 桌面框架</h4>
-                                <p class="text-dark/70">跨平台 GUI，支持 Windows、Linux 和 macOS。</p>
+                                <p class="text-dark/70">基于 PyQt6 的桌面 GUI，当前提供 Windows 版本。</p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -489,8 +489,8 @@
                                 <i class="fa fa-calculator"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">TauP 走时计算</h4>
-                                <p class="text-dark/70">集成 TauP 射线理论走时工具，用于震源定位与相位预测。</p>
+                                <h4 class="font-semibold mb-1">走时计算工具</h4>
+                                <p class="text-dark/70">自主开发的射线理论走时计算工具，并与 TauP 对比验证，可用于震源定位与相位预测。</p>
                             </div>
                         </div>
                     </div>
@@ -521,12 +521,13 @@
         </div>
     </section>
 
-    <!-- 事件列表与界面布局 -->
+    <!-- 主界面布局与事件列表 -->
     <section id="layout" class="section-padding bg-white">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">界面布局</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
+                <p class="text-dark/70 max-w-2xl mx-auto">先从主界面整体布局了解 SeisY，再查看事件列表与详情面板的交互方式。</p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-8">
@@ -537,9 +538,9 @@
                             <span class="project-shot-dot" style="background:#febc2e;"></span>
                             <span class="project-shot-dot" style="background:#28c840;"></span>
                         </div>
-                        <img src="../static/images/SeisY/SeisY-EventList.png" alt="SeisY 事件列表" class="w-full h-auto">
+                        <img src="../static/images/SeisY/SeisY-main-distribution.png" alt="SeisY 主界面布局分区示意" class="w-full h-auto">
                     </div>
-                    <p class="text-center text-dark/60 text-sm mt-3">事件列表区域：数据流管理、分组与右键操作</p>
+                    <p class="text-center text-dark/60 text-sm mt-3">主界面总览：资源管理、球体/地图、绘图区与终端/事件区协同工作</p>
                 </div>
                 <div class="flex flex-col justify-center">
                     <h3 class="text-2xl font-semibold mb-6 text-primary">主界面结构</h3>
@@ -583,6 +584,52 @@
                     </div>
                 </div>
             </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center mt-12">
+                <div class="order-2 md:order-1 flex flex-col justify-center">
+                    <h3 class="text-2xl font-semibold mb-6 text-primary">事件列表与详情面板</h3>
+                    <div class="space-y-4 text-dark/70">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary mr-3 mt-0.5 flex-shrink-0">
+                                <i class="fa fa-list text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-dark">事件流分组管理</h4>
+                                <p class="text-sm">支持事件分组浏览、批量勾选、右键操作与多事件数据组织。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary mr-3 mt-0.5 flex-shrink-0">
+                                <i class="fa fa-circle-info text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-dark">详情与统计信息联动</h4>
+                                <p class="text-sm">可查看事件文件路径、Trace 信息、采样参数、统计量与预览波形。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary mr-3 mt-0.5 flex-shrink-0">
+                                <i class="fa fa-computer-mouse text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-dark">面向分析流程的快速操作</h4>
+                                <p class="text-sm">便于从事件筛选、信息核查到后续处理与分析的连续工作流切换。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="order-1 md:order-2">
+                    <div class="project-shot">
+                        <div class="project-shot-bar">
+                            <span class="project-shot-dot" style="background:#ff5f57;"></span>
+                            <span class="project-shot-dot" style="background:#febc2e;"></span>
+                            <span class="project-shot-dot" style="background:#28c840;"></span>
+                        </div>
+                        <img src="../static/images/SeisY/SeisY-EventList.png" alt="SeisY 事件列表与详情面板" class="w-full h-auto">
+                    </div>
+                    <p class="text-center text-dark/60 text-sm mt-3">事件列表与详情面板：支持分组管理、信息查看与波形预览</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -593,12 +640,12 @@
                 <div>
                     <div class="flex items-center space-x-2 mb-6">
                         <div class="w-10 h-10 rounded-lg flex items-center justify-center">
-                            <img src="../static/images/SeisY.ico" alt="SeisY" class="w-8 h-8">
+                            <img src="../static/images/SeisY/SeisY-3D-rad.ico" alt="SeisY" class="w-8 h-8">
                         </div>
                         <span class="font-bold text-xl">SeisY</span>
                     </div>
                     <p class="text-white/70 mb-6">
-                        面向地震、月震与行星地震研究的数据处理、分析与可视化桌面软件。
+                        面向地震、月震与行星地震研究的数据处理、分析与可视化桌面软件，当前提供 Windows 版本。
                     </p>
                     <div class="flex space-x-4">
                         <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-primary hover:text-white transition-custom">

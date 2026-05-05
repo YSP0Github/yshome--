@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">趣味屋图标</title>
+  <desc id="desc">带有小屋屋顶和游戏手柄元素的趣味屋项目图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="56" x2="448" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="0.55" stop-color="#6D5EF7"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="120" y1="118" x2="392" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#132238" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#0B1629" stop-opacity="0.92"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#09101D" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="120" fill="url(#bg)"/>
+  <circle cx="112" cy="118" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <circle cx="406" cy="120" r="12" fill="#ffffff" fill-opacity="0.12"/>
+  <circle cx="390" cy="386" r="14" fill="#ffffff" fill-opacity="0.14"/>
+  <circle cx="120" cy="392" r="10" fill="#ffffff" fill-opacity="0.12"/>
+
+  <g filter="url(#shadow)">
+    <rect x="108" y="120" width="296" height="272" rx="72" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.16" stroke-width="4"/>
+    <path d="M156 220L256 138L356 220" fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M168 250C168 234.536 180.536 222 196 222H316C331.464 222 344 234.536 344 250V272C344 287.464 331.464 300 316 300H196C180.536 300 168 287.464 168 272V250Z" fill="#F8FAFC"/>
+    <rect x="196" y="244" width="18" height="54" rx="9" fill="#132238"/>
+    <rect x="178" y="262" width="54" height="18" rx="9" fill="#132238"/>
+    <circle cx="292" cy="250" r="12" fill="#8B5CF6"/>
+    <circle cx="324" cy="250" r="12" fill="#2DD4BF"/>
+    <circle cx="292" cy="282" r="12" fill="#F59E0B"/>
+    <circle cx="324" cy="282" r="12" fill="#F97316"/>
+    <path d="M198 318C218 336 241 346 256 346C271 346 294 336 314 318" fill="none" stroke="#ffffff" stroke-opacity="0.95" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>
