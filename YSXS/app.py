@@ -6,6 +6,7 @@ import os
 import re
 import secrets
 import shutil
+import sqlite3
 import tempfile
 import time
 from collections import defaultdict, deque
@@ -13,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from io import BytesIO, StringIO
 from pathlib import Path
-from threading import Lock, Thread
+from threading import Thread
 from typing import Optional
 from urllib.parse import quote
 
@@ -51,6 +52,13 @@ from .services.runtime_metrics import (
     maybe_persist_runtime_metrics,
     runtime_metrics_after_request,
     runtime_metrics_before_request,
+)
+from .services.async_job_store import (
+    cleanup_async_jobs,
+    create_async_job,
+    find_latest_async_job_by_fingerprint,
+    get_async_job,
+    update_async_job,
 )
 from .services.seisrt_public import (
     refresh_catalog,
@@ -117,11 +125,9 @@ RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT = max(4, min(int(os.environ.get('YSXS_RESE
 RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT = max(300, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT', 700)), 1600))
 RESEARCH_OVERVIEW_AI_TIMEOUT = max(10, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_AI_TIMEOUT', 20)), 60))
 RESEARCH_OVERVIEW_JOB_TTL_SECONDS = max(300, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_JOB_TTL_SECONDS', 3600)), 86400))
-RESEARCH_OVERVIEW_JOBS: dict[str, dict] = {}
-RESEARCH_OVERVIEW_JOB_LOCK = Lock()
 LITERATURE_SEARCH_JOB_TTL_SECONDS = max(300, min(int(os.environ.get('YSXS_LITERATURE_SEARCH_JOB_TTL_SECONDS', 3600)), 86400))
-LITERATURE_SEARCH_JOBS: dict[str, dict] = {}
-LITERATURE_SEARCH_JOB_LOCK = Lock()
+ASYNC_JOB_TYPE_RESEARCH_OVERVIEW = 'research_overview'
+ASYNC_JOB_TYPE_LITERATURE_SEARCH = 'literature_search'
 
 
 def send_email(subject: str, recipients, html_body: str, text_body: Optional[str] = None) -> bool:
@@ -3070,30 +3076,24 @@ def literature_search_home():
             'sort_mode': sort_mode,
         }
         fingerprint = json.dumps(fingerprint_payload, ensure_ascii=False, sort_keys=True)
-        with LITERATURE_SEARCH_JOB_LOCK:
-            _cleanup_literature_search_jobs()
-            matched_job = None
-            matched_ts = -1.0
-            for job in LITERATURE_SEARCH_JOBS.values():
-                if job.get('fingerprint') != fingerprint:
-                    continue
-                job_ts = float(job.get('updated_ts') or job.get('created_ts') or 0)
-                if job_ts >= matched_ts:
-                    matched_ts = job_ts
-                    matched_job = job
-            if matched_job:
-                existing_job_id = str(matched_job.get('job_id') or '')
-                existing_job_status = str(matched_job.get('status') or '')
-                existing_job_step = str(matched_job.get('step') or '')
-                if existing_job_status == 'succeeded' and matched_job.get('payload'):
-                    search_payload = matched_job.get('payload')
-                    search_error = None
-                    auto_start_search = False
-                elif existing_job_status == 'failed':
-                    search_error = str(matched_job.get('error') or '智能文献深搜失败，请稍后重试。')
-                    auto_start_search = False
-                elif existing_job_status in {'pending', 'running'}:
-                    auto_start_search = True
+        _cleanup_literature_search_jobs()
+        matched_job = find_latest_async_job_by_fingerprint(
+            ASYNC_JOB_TYPE_LITERATURE_SEARCH,
+            fingerprint,
+        )
+        if matched_job:
+            existing_job_id = str(matched_job.get('job_id') or '')
+            existing_job_status = str(matched_job.get('status') or '')
+            existing_job_step = str(matched_job.get('step') or '')
+            if existing_job_status == 'succeeded' and matched_job.get('payload'):
+                search_payload = matched_job.get('payload')
+                search_error = None
+                auto_start_search = False
+            elif existing_job_status == 'failed':
+                search_error = str(matched_job.get('error') or '智能文献深搜失败，请稍后重试。')
+                auto_start_search = False
+            elif existing_job_status in {'pending', 'running'}:
+                auto_start_search = True
 
     try:
         ai_enabled = bool(get_ai_client_config())
@@ -3128,25 +3128,19 @@ def literature_search_home():
 
 
 def _cleanup_literature_search_jobs() -> None:
-    now_ts = time.time()
-    expired_keys: list[str] = []
-    for job_id, job in LITERATURE_SEARCH_JOBS.items():
-        updated_ts = float(job.get('updated_ts') or job.get('created_ts') or now_ts)
-        if now_ts - updated_ts > LITERATURE_SEARCH_JOB_TTL_SECONDS:
-            expired_keys.append(job_id)
-    for job_id in expired_keys:
-        LITERATURE_SEARCH_JOBS.pop(job_id, None)
+    try:
+        cleanup_async_jobs(ASYNC_JOB_TYPE_LITERATURE_SEARCH, LITERATURE_SEARCH_JOB_TTL_SECONDS)
+    except sqlite3.Error:
+        current_app.logger.exception("清理智能文献深搜异步任务失败")
 
 
 def _set_literature_search_job(job_id: str, **updates) -> dict | None:
-    with LITERATURE_SEARCH_JOB_LOCK:
-        _cleanup_literature_search_jobs()
-        job = LITERATURE_SEARCH_JOBS.get(job_id)
-        if not job:
-            return None
-        job.update(updates)
-        job['updated_ts'] = time.time()
-        return dict(job)
+    _cleanup_literature_search_jobs()
+    try:
+        return update_async_job(ASYNC_JOB_TYPE_LITERATURE_SEARCH, job_id, **updates)
+    except sqlite3.Error:
+        current_app.logger.exception("更新智能文献深搜异步任务失败: %s", job_id)
+        return None
 
 
 def _render_literature_search_fragment(
@@ -3183,14 +3177,14 @@ def _run_literature_search_job(app_obj: Flask, job_id: str) -> None:
         def update_step(step_text: str) -> None:
             _set_literature_search_job(job_id, step=step_text)
 
-        with LITERATURE_SEARCH_JOB_LOCK:
-            job = LITERATURE_SEARCH_JOBS.get(job_id)
-            if not job:
-                return
-            params = dict(job.get('params') or {})
-            job['status'] = 'running'
-            job['step'] = '正在提炼检索意图并跨源抓取候选文献…'
-            job['updated_ts'] = time.time()
+        job = _set_literature_search_job(
+            job_id,
+            status='running',
+            step='正在提炼检索意图并跨源抓取候选文献…',
+        )
+        if not job:
+            return
+        params = dict(job.get('params') or {})
 
         query_text = str(params.get('q') or '').strip()
         selected_sources = [source for source in (params.get('sources') or []) if source in SUPPORTED_SOURCES] or ['openalex', 'crossref', 'arxiv', 'ads']
@@ -3281,38 +3275,40 @@ def literature_search_start():
         'sort_mode': sort_mode,
     }, ensure_ascii=False, sort_keys=True)
 
-    with LITERATURE_SEARCH_JOB_LOCK:
-        _cleanup_literature_search_jobs()
-        for existing_job in LITERATURE_SEARCH_JOBS.values():
-            if existing_job.get('fingerprint') == fingerprint and existing_job.get('status') in {'pending', 'running', 'succeeded'}:
-                return jsonify({
-                    'job_id': existing_job['job_id'],
-                    'status': existing_job.get('status'),
-                    'step': existing_job.get('step') or '',
-                    'reused': True,
-                }), 202
+    _cleanup_literature_search_jobs()
+    existing_job = find_latest_async_job_by_fingerprint(
+        ASYNC_JOB_TYPE_LITERATURE_SEARCH,
+        fingerprint,
+        statuses={'pending', 'running', 'succeeded'},
+    )
+    if existing_job:
+        return jsonify({
+            'job_id': existing_job['job_id'],
+            'status': existing_job.get('status'),
+            'step': existing_job.get('step') or '',
+            'reused': True,
+        }), 202
 
-        job_id = secrets.token_urlsafe(12)
-        LITERATURE_SEARCH_JOBS[job_id] = {
-            'job_id': job_id,
+    job_id = secrets.token_urlsafe(12)
+    create_async_job(
+        job_type=ASYNC_JOB_TYPE_LITERATURE_SEARCH,
+        job_id=job_id,
+        user_id=current_user.id,
+        fingerprint=fingerprint,
+        status='pending',
+        step='任务已创建，准备开始…',
+        error=None,
+        payload=None,
+        html='',
+        params={
             'user_id': current_user.id,
-            'fingerprint': fingerprint,
-            'status': 'pending',
-            'step': '任务已创建，准备开始…',
-            'error': None,
-            'payload': None,
-            'html': '',
-            'params': {
-                'user_id': current_user.id,
-                'q': query_text,
-                'sources': selected_sources,
-                'max_results': max_results,
-                'lookback_days': lookback_days,
-                'sort_mode': sort_mode,
-            },
-            'created_ts': time.time(),
-            'updated_ts': time.time(),
-        }
+            'q': query_text,
+            'sources': selected_sources,
+            'max_results': max_results,
+            'lookback_days': lookback_days,
+            'sort_mode': sort_mode,
+        },
+    )
 
     Thread(target=_run_literature_search_job, args=(current_app._get_current_object(), job_id), daemon=True).start()
     return jsonify({'job_id': job_id, 'status': 'pending', 'step': '任务已创建，准备开始…'}), 202
@@ -3321,20 +3317,19 @@ def literature_search_start():
 @app.route('/api/literature-search/status/<job_id>')
 @login_required
 def literature_search_status(job_id: str):
-    with LITERATURE_SEARCH_JOB_LOCK:
-        _cleanup_literature_search_jobs()
-        job = LITERATURE_SEARCH_JOBS.get(job_id)
-        if not job or int(job.get('user_id') or 0) != int(current_user.id):
-            return jsonify({'error': '任务不存在或已过期。'}), 404
-        response = {
-            'job_id': job['job_id'],
-            'status': job.get('status'),
-            'step': job.get('step') or '',
-            'error': job.get('error'),
-        }
-        if job.get('status') in {'succeeded', 'failed'}:
-            response['html'] = job.get('html') or ''
-        return jsonify(response)
+    _cleanup_literature_search_jobs()
+    job = get_async_job(ASYNC_JOB_TYPE_LITERATURE_SEARCH, job_id)
+    if not job or int(job.get('user_id') or 0) != int(current_user.id):
+        return jsonify({'error': '任务不存在或已过期。'}), 404
+    response = {
+        'job_id': job['job_id'],
+        'status': job.get('status'),
+        'step': job.get('step') or '',
+        'error': job.get('error'),
+    }
+    if job.get('status') in {'succeeded', 'failed'}:
+        response['html'] = job.get('html') or ''
+    return jsonify(response)
 
 
 RESEARCH_OVERVIEW_FOCUS_OPTIONS = {
@@ -3632,25 +3627,19 @@ def _normalize_research_overview_sources(values) -> list[str]:
 
 
 def _cleanup_research_overview_jobs() -> None:
-    now_ts = time.time()
-    expired_keys: list[str] = []
-    for job_id, job in RESEARCH_OVERVIEW_JOBS.items():
-        updated_ts = float(job.get('updated_ts') or job.get('created_ts') or now_ts)
-        if now_ts - updated_ts > RESEARCH_OVERVIEW_JOB_TTL_SECONDS:
-            expired_keys.append(job_id)
-    for job_id in expired_keys:
-        RESEARCH_OVERVIEW_JOBS.pop(job_id, None)
+    try:
+        cleanup_async_jobs(ASYNC_JOB_TYPE_RESEARCH_OVERVIEW, RESEARCH_OVERVIEW_JOB_TTL_SECONDS)
+    except sqlite3.Error:
+        current_app.logger.exception("清理研究现状异步任务失败")
 
 
 def _set_research_overview_job(job_id: str, **updates) -> dict | None:
-    with RESEARCH_OVERVIEW_JOB_LOCK:
-        _cleanup_research_overview_jobs()
-        job = RESEARCH_OVERVIEW_JOBS.get(job_id)
-        if not job:
-            return None
-        job.update(updates)
-        job['updated_ts'] = time.time()
-        return dict(job)
+    _cleanup_research_overview_jobs()
+    try:
+        return update_async_job(ASYNC_JOB_TYPE_RESEARCH_OVERVIEW, job_id, **updates)
+    except sqlite3.Error:
+        current_app.logger.exception("更新研究现状异步任务失败: %s", job_id)
+        return None
 
 
 def _render_research_overview_fragment(
@@ -3687,14 +3676,14 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
         def update_step(step_text: str) -> None:
             _set_research_overview_job(job_id, step=step_text)
 
-        with RESEARCH_OVERVIEW_JOB_LOCK:
-            job = RESEARCH_OVERVIEW_JOBS.get(job_id)
-            if not job:
-                return
-            params = dict(job.get('params') or {})
-            job['status'] = 'running'
-            job['step'] = '正在跨源检索相关文献…'
-            job['updated_ts'] = time.time()
+        job = _set_research_overview_job(
+            job_id,
+            status='running',
+            step='正在跨源检索相关文献…',
+        )
+        if not job:
+            return
+        params = dict(job.get('params') or {})
 
         direction_text = str(params.get('q') or '').strip()
         focus_mode = str(params.get('focus_mode') or 'review_first').strip().lower()
@@ -3823,6 +3812,7 @@ def research_overview_home():
 
     overview_payload = None
     overview_error = None
+    auto_start_overview = bool(direction_text)
 
     try:
         ai_enabled = bool(get_ai_client_config())
@@ -3835,6 +3825,33 @@ def research_overview_home():
     except Exception as exc:
         current_app.logger.exception("构建研究现状梳理增强来源失败: %s", exc)
         enhancement_sources = []
+
+    if direction_text:
+        fingerprint_payload = {
+            'user_id': current_user.id,
+            'q': direction_text,
+            'focus_mode': focus_mode,
+            'sources': selected_sources,
+            'overview_years': overview_years,
+            'max_results': max_results,
+        }
+        fingerprint = json.dumps(fingerprint_payload, ensure_ascii=False, sort_keys=True)
+        _cleanup_research_overview_jobs()
+        matched_job = find_latest_async_job_by_fingerprint(
+            ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
+            fingerprint,
+        )
+        if matched_job:
+            matched_status = str(matched_job.get('status') or '')
+            if matched_status == 'succeeded' and matched_job.get('payload'):
+                overview_payload = matched_job.get('payload')
+                overview_error = None
+                auto_start_overview = False
+            elif matched_status == 'failed':
+                overview_error = str(matched_job.get('error') or '研究现状梳理失败，请稍后重试。')
+                auto_start_overview = False
+            elif matched_status in {'pending', 'running'}:
+                auto_start_overview = True
 
     return render_template(
         'research_overview.html',
@@ -3850,7 +3867,7 @@ def research_overview_home():
         ai_enabled=ai_enabled,
         enhancement_sources=enhancement_sources,
         build_display_source_links=build_display_source_links,
-        auto_start_overview=bool(direction_text),
+        auto_start_overview=auto_start_overview,
     )
 
 
@@ -3883,40 +3900,40 @@ def research_overview_start():
     }
     fingerprint = json.dumps(fingerprint_payload, ensure_ascii=False, sort_keys=True)
 
-    with RESEARCH_OVERVIEW_JOB_LOCK:
-        _cleanup_research_overview_jobs()
-        for existing_job in RESEARCH_OVERVIEW_JOBS.values():
-            if existing_job.get('fingerprint') != fingerprint:
-                continue
-            if existing_job.get('status') in {'pending', 'running', 'succeeded'}:
-                return jsonify({
-                    'job_id': existing_job['job_id'],
-                    'status': existing_job.get('status'),
-                    'step': existing_job.get('step') or '',
-                    'reused': True,
-                }), 202
+    _cleanup_research_overview_jobs()
+    existing_job = find_latest_async_job_by_fingerprint(
+        ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
+        fingerprint,
+        statuses={'pending', 'running', 'succeeded'},
+    )
+    if existing_job:
+        return jsonify({
+            'job_id': existing_job['job_id'],
+            'status': existing_job.get('status'),
+            'step': existing_job.get('step') or '',
+            'reused': True,
+        }), 202
 
-        job_id = secrets.token_urlsafe(12)
-        RESEARCH_OVERVIEW_JOBS[job_id] = {
-            'job_id': job_id,
+    job_id = secrets.token_urlsafe(12)
+    create_async_job(
+        job_type=ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
+        job_id=job_id,
+        user_id=current_user.id,
+        fingerprint=fingerprint,
+        status='pending',
+        step='任务已创建，准备开始…',
+        error=None,
+        payload=None,
+        html='',
+        params={
             'user_id': current_user.id,
-            'fingerprint': fingerprint,
-            'status': 'pending',
-            'step': '任务已创建，准备开始…',
-            'error': None,
-            'payload': None,
-            'html': '',
-            'params': {
-                'user_id': current_user.id,
-                'q': direction_text,
-                'focus_mode': focus_mode,
-                'sources': selected_sources,
-                'overview_years': overview_years,
-                'max_results': max_results,
-            },
-            'created_ts': time.time(),
-            'updated_ts': time.time(),
-        }
+            'q': direction_text,
+            'focus_mode': focus_mode,
+            'sources': selected_sources,
+            'overview_years': overview_years,
+            'max_results': max_results,
+        },
+    )
 
     Thread(
         target=_run_research_overview_job,
@@ -3929,20 +3946,19 @@ def research_overview_start():
 @app.route('/api/research-overview/status/<job_id>')
 @login_required
 def research_overview_status(job_id: str):
-    with RESEARCH_OVERVIEW_JOB_LOCK:
-        _cleanup_research_overview_jobs()
-        job = RESEARCH_OVERVIEW_JOBS.get(job_id)
-        if not job or int(job.get('user_id') or 0) != int(current_user.id):
-            return jsonify({'error': '任务不存在或已过期。'}), 404
-        response = {
-            'job_id': job['job_id'],
-            'status': job.get('status'),
-            'step': job.get('step') or '',
-            'error': job.get('error'),
-        }
-        if job.get('status') in {'succeeded', 'failed'}:
-            response['html'] = job.get('html') or ''
-        return jsonify(response)
+    _cleanup_research_overview_jobs()
+    job = get_async_job(ASYNC_JOB_TYPE_RESEARCH_OVERVIEW, job_id)
+    if not job or int(job.get('user_id') or 0) != int(current_user.id):
+        return jsonify({'error': '任务不存在或已过期。'}), 404
+    response = {
+        'job_id': job['job_id'],
+        'status': job.get('status'),
+        'step': job.get('step') or '',
+        'error': job.get('error'),
+    }
+    if job.get('status') in {'succeeded', 'failed'}:
+        response['html'] = job.get('html') or ''
+    return jsonify(response)
 
 
 def _markdown_to_plain_text(value: str | None) -> str:

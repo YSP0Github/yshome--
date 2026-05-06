@@ -85,6 +85,7 @@
                     <li><code>YSXS_URL_PREFIX=/YSXS</code>（部署在子路径时必填）</li>
                     <li><code>YSXS_DATABASE_URI=sqlite:////home/YSP/var/ysxs/ysxs.db</code> 或其他数据库 URI</li>
                     <li><code>YSXS_UPLOAD_DIR=/home/YSP/var/ysxs/uploads</code>（上传目录需可写）</li>
+                    <li><code>YSXS_ASYNC_JOB_STORE_PATH=/home/YSP/var/ysxs/async_jobs.sqlite3</code>（跨 worker 共享异步任务状态）</li>
                 </ul>
             </div>
             <div>
@@ -94,6 +95,7 @@ User=YSP
 WorkingDirectory=/home/YSP/yshome
 Environment="YSXS_DATABASE_URI=sqlite:////home/YSP/var/ysxs/ysxs.db"
 Environment="YSXS_UPLOAD_DIR=/home/YSP/var/ysxs/uploads"
+Environment="YSXS_ASYNC_JOB_STORE_PATH=/home/YSP/var/ysxs/async_jobs.sqlite3"
 ExecStart=/home/YSP/miniconda3/envs/YSZJ/bin/gunicorn -w 2 -b 127.0.0.1:5050 YSXS.app:app
 Restart=always</code></pre>
                 <p>修改后执行 <code>sudo systemctl daemon-reload && sudo systemctl restart ysxs-gunicorn</code>。</p>
