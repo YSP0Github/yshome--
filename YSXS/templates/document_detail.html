@@ -3,6 +3,7 @@
 {% block content %}
 {% set can_edit = current_user.is_authenticated and current_user.id == doc.owner_id %}
 {% set can_generate_summary = can_edit and ai_enabled %}
+{% set can_translate_title = can_edit and ai_enabled and title_translation_needed %}
 {% set can_view_cached_file = current_user.is_authenticated %}
 {% if doc.doi and doc.doi.strip() %}
     {% set external_view_url = doc.doi.strip() %}
@@ -27,6 +28,76 @@
             .doi-fill-btn:disabled {
                 opacity: 0.7;
                 cursor: not-allowed;
+            }
+
+            .detail-title-row {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1rem;
+                margin-bottom: 0.35rem;
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 0.75rem;
+            }
+
+            .detail-title-main {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            .detail-title-actions {
+                flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .detail-title-translate-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                white-space: nowrap;
+                border: 1px solid rgba(37, 99, 235, 0.18);
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                color: #1d4ed8;
+                font-weight: 600;
+                padding: 0.55rem 0.85rem;
+                border-radius: 0.8rem;
+            }
+
+            .detail-title-translate-btn:hover {
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            }
+
+            .detail-title-translate-btn:disabled {
+                opacity: 0.72;
+                cursor: not-allowed;
+            }
+
+            .detail-title-translation-box {
+                margin-bottom: 1.35rem;
+                padding: 0.95rem 1rem;
+                border-radius: 0.95rem;
+                background: linear-gradient(180deg, rgba(239,246,255,.92) 0%, rgba(248,250,252,.96) 100%);
+                border: 1px solid rgba(191,219,254,.92);
+            }
+
+            .detail-title-translation-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: #1d4ed8;
+                margin-bottom: 0.5rem;
+            }
+
+            .detail-title-translation-text {
+                color: #0f172a;
+                line-height: 1.75;
+                font-size: 1.02rem;
+                font-weight: 500;
+                word-break: break-word;
             }
 
             .doi-preview-popup {
@@ -325,6 +396,34 @@
                 color: #64748b;
             }
 
+            body.dark-theme .detail-title-translate-btn,
+            body.auto-theme.auto-dark .detail-title-translate-btn {
+                background: linear-gradient(135deg, rgba(30,41,59,.95) 0%, rgba(15,23,42,.98) 100%);
+                border-color: rgba(96,165,250,.35);
+                color: #93c5fd;
+            }
+
+            body.dark-theme .detail-title-translate-btn:hover,
+            body.auto-theme.auto-dark .detail-title-translate-btn:hover {
+                background: linear-gradient(135deg, rgba(37,99,235,.22) 0%, rgba(30,64,175,.3) 100%);
+            }
+
+            body.dark-theme .detail-title-translation-box,
+            body.auto-theme.auto-dark .detail-title-translation-box {
+                background: linear-gradient(180deg, rgba(30,41,59,.92) 0%, rgba(15,23,42,.98) 100%);
+                border-color: #334155;
+            }
+
+            body.dark-theme .detail-title-translation-label,
+            body.auto-theme.auto-dark .detail-title-translation-label {
+                color: #93c5fd;
+            }
+
+            body.dark-theme .detail-title-translation-text,
+            body.auto-theme.auto-dark .detail-title-translation-text {
+                color: #e2e8f0;
+            }
+
             body.dark-theme .detail-summary-card,
             body.auto-theme.auto-dark .detail-summary-card {
                 background: linear-gradient(180deg, rgba(30,41,59,.92) 0%, rgba(15,23,42,.98) 100%);
@@ -398,6 +497,16 @@
                     margin-right: 0 !important;
                     font-size: 1.125rem;
                 }
+
+                .detail-title-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .detail-title-actions {
+                    width: 100%;
+                    justify-content: flex-start;
+                }
             }
         </style>
         <!-- 操作按钮区 -->
@@ -439,7 +548,30 @@
 
         <!-- 文献详情卡片 -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h1 class="text-2xl font-bold text-slate-800 mb-5 border-b pb-2">{{ doc.title }}</h1>
+            <div class="detail-title-row">
+                <div class="detail-title-main">
+                    <h1 class="text-2xl font-bold text-slate-800">{{ doc.title }}</h1>
+                </div>
+                {% if can_translate_title %}
+                <div class="detail-title-actions">
+                    <button
+                        type="button"
+                        id="translate-doc-title-btn"
+                        class="detail-title-translate-btn transition-colors"
+                        data-doc-id="{{ doc.id }}">
+                        <i class="fa fa-language"></i><span>翻译标题</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% if can_translate_title %}
+            <div id="doc-title-translation-box" class="detail-title-translation-box hidden">
+                <div class="detail-title-translation-label">
+                    <i class="fa fa-language"></i><span>中文译题</span>
+                </div>
+                <div id="doc-title-translation-text" class="detail-title-translation-text"></div>
+            </div>
+            {% endif %}
             
             <!-- 基础信息 -->
             <div class="detail-meta-list mb-6">
@@ -452,8 +584,8 @@
                     <div class="detail-meta-value">{{ doc.journal or '未填写' }}</div>
                 </div>
                 <div class="detail-meta-row">
-                    <div class="detail-meta-label"><i class="fa fa-calendar"></i><span>发表年份</span></div>
-                    <div class="detail-meta-value">{{ doc.year or '未填写' }}</div>
+                    <div class="detail-meta-label"><i class="fa fa-calendar"></i><span>发表日期</span></div>
+                    <div class="detail-meta-value">{{ doc.published_at or doc.year or '未填写' }}</div>
                 </div>
                 <div class="detail-meta-row">
                     <div class="detail-meta-label"><i class="fa fa-files-o"></i><span>卷 / 期 / 页码</span></div>
@@ -657,6 +789,9 @@
             const $input = $('#remark-input');
             const $fillMetadataBtn = $('#fill-metadata-btn');
             const $docSummaryBtn = $('#generate-doc-summary-btn');
+            const $translateTitleBtn = $('#translate-doc-title-btn');
+            const $translatedTitleBox = $('#doc-title-translation-box');
+            const $translatedTitleText = $('#doc-title-translation-text');
             const $docSummaryBox = $('#doc-summary-box');
             const $docSummaryEmpty = $('#doc-summary-empty');
             const $docSummaryContent = $('#doc-summary-content');
@@ -667,6 +802,7 @@
             const docId = $toggleBtn.data('doc-id');
             const url = $toggleBtn.data('url');
             const summaryDocId = $docSummaryBtn.data('doc-id');
+            const translateTitleDocId = $translateTitleBtn.data('doc-id');
             // 保存原始内容（用于取消/对比修改）
             let originalContent = $display.text().replace('暂无备注', '').trim();
 
@@ -749,6 +885,7 @@
                             journal: '期刊/会议',
                             publisher: '出版社',
                             year: '年份',
+                            published_at: '发表日期',
                             volume: '卷',
                             issue: '期',
                             pages: '页码',
@@ -810,6 +947,59 @@
                             .removeClass('opacity-70 cursor-not-allowed');
                     }
                 });
+            });
+
+            $translateTitleBtn.on('click', async function() {
+                if (!translateTitleDocId) return;
+                const cachedTranslation = ($translatedTitleText.text() || '').trim();
+                if (cachedTranslation) {
+                    $translatedTitleBox.removeClass('hidden');
+                    return;
+                }
+
+                const originalHtml = $translateTitleBtn.html();
+                $translateTitleBtn.prop('disabled', true)
+                    .html('<i class="fa fa-spinner fa-spin"></i><span> 翻译中</span>');
+
+                try {
+                    const response = await fetch(
+                        window.withBasePath ? window.withBasePath(`/api/document/${translateTitleDocId}/translate-title`) : `/api/document/${translateTitleDocId}/translate-title`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                            }
+                        }
+                    );
+                    const rawText = await response.text();
+                    let data = {};
+                    try {
+                        data = rawText ? JSON.parse(rawText) : {};
+                    } catch (error) {
+                        data = { error: rawText || '标题翻译失败' };
+                    }
+                    if (!response.ok) {
+                        throw new Error(data.error || '标题翻译失败');
+                    }
+
+                    $translatedTitleText.text(data.translated_title || '');
+                    $translatedTitleBox.removeClass('hidden');
+                    Swal.fire({
+                        icon: 'success',
+                        title: '标题翻译已生成',
+                        text: data.message || '已为你生成中文译题。',
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '标题翻译失败',
+                        text: error.message || '请稍后重试。'
+                    });
+                } finally {
+                    $translateTitleBtn.prop('disabled', false).html(originalHtml);
+                }
             });
 
             $docSummaryBtn.on('click', async function() {

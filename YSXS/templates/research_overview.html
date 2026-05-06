@@ -49,7 +49,7 @@
     .overview-summary-panel { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); border: 1px solid rgba(191,219,254,.8); }
     .overview-mini-summary { background: linear-gradient(180deg, rgba(239,246,255,.96) 0%, rgba(248,250,252,.98) 100%); border: 1px solid rgba(191,219,254,.8); }
     .overview-summary-collapsible { position: relative; }
-    .overview-summary-body { overflow: hidden; transition: max-height .25s ease; }
+    .overview-summary-body { overflow: visible; transition: max-height .25s ease; }
     .overview-summary-fade { position: absolute; left: 0; right: 0; bottom: 2.4rem; height: 4rem; background: linear-gradient(180deg, rgba(248,250,252,0) 0%, rgba(248,250,252,.96) 100%); pointer-events: none; }
     .overview-summary-toggle { margin-top: .85rem; display: inline-flex; align-items: center; gap: .45rem; color: #2563eb; font-size: .92rem; font-weight: 600; }
     .overview-summary-toggle:hover { color: #1d4ed8; }
@@ -548,16 +548,18 @@
         let expanded = false;
 
         const renderState = () => {
-            const fullHeight = content.scrollHeight;
+            const fullHeight = Math.ceil(content.scrollHeight + 24);
             const needCollapse = fullHeight > collapsedHeight + 24;
             if (!needCollapse) {
                 body.style.maxHeight = 'none';
+                body.style.overflow = 'visible';
                 fade.classList.add('hidden');
                 toggle.classList.add('hidden');
                 return;
             }
             toggle.classList.remove('hidden');
             body.style.maxHeight = expanded ? `${fullHeight}px` : `${collapsedHeight}px`;
+            body.style.overflow = expanded ? 'visible' : 'hidden';
             fade.classList.toggle('hidden', expanded);
             const icon = toggle.querySelector('i');
             const label = toggle.querySelector('span');

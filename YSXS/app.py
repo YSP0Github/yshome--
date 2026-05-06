@@ -1510,10 +1510,47 @@ def ensure_database_initialized() -> None:
             db.create_all()
 
         migrate_legacy_local_datetime_storage()
+        ensure_user_schema()
         ensure_broadcast_receipt_schema()
         ensure_document_ai_summary_schema()
+        ensure_document_published_at_schema()
         init_category_data()
         sync_research_overview_doc_types()
+
+
+def ensure_user_schema() -> None:
+    inspector = inspect(db.engine)
+    try:
+        columns = {column['name'] for column in inspector.get_columns('user')}
+    except Exception:
+        app.logger.exception('Failed to inspect user schema')
+        return
+
+    statements: list[str] = []
+    if 'last_login' not in columns:
+        statements.append("ALTER TABLE user ADD COLUMN last_login DATETIME")
+    if 'last_login_ip' not in columns:
+        statements.append("ALTER TABLE user ADD COLUMN last_login_ip VARCHAR(64)")
+
+    if not statements:
+        return
+
+    with db.engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _client_ip_from_request() -> str:
+    forwarded_for = request.headers.get('X-Forwarded-For', '')
+    if forwarded_for:
+        first_ip = forwarded_for.split(',')[0].strip()
+        if first_ip:
+            return first_ip[:64]
+    real_ip = (request.headers.get('X-Real-IP') or '').strip()
+    if real_ip:
+        return real_ip[:64]
+    remote_addr = (request.remote_addr or '').strip()
+    return remote_addr[:64]
 
 
 def ensure_broadcast_receipt_schema() -> None:
@@ -1623,6 +1660,16 @@ def ensure_document_ai_summary_schema() -> None:
         with db.engine.begin() as connection:
             for statement in alter_statements:
                 connection.execute(text(statement))
+
+
+def ensure_document_published_at_schema() -> None:
+    inspector = inspect(db.engine)
+    if 'document' not in inspector.get_table_names():
+        return
+    columns = {column['name'] for column in inspector.get_columns('document')}
+    if 'published_at' not in columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE document ADD COLUMN published_at VARCHAR(20)"))
 
 
 def ensure_morning_report_schema() -> None:
@@ -1792,10 +1839,18 @@ def manage_users():
                 User.username.ilike(f'%{search_query}%'),  # ilike实现不区分大小写的模糊查询
                 User.email.ilike(f'%{search_query}%'),
                 User.created_at.ilike(f'%{search_query}%'),
-                User.custom_id.ilike(f'%{search_query}%')
+                User.custom_id.ilike(f'%{search_query}%'),
+                User.last_login_ip.ilike(f'%{search_query}%')
 
             )
         )
+
+    query = query.order_by(
+        User.last_login.is_(None),
+        User.last_login.desc(),
+        User.created_at.desc(),
+        User.id.desc(),
+    )
     
     # 执行查询，获取符合条件的用户
     users = query.all()
@@ -2070,8 +2125,16 @@ def login():
         
         # 登录成功
         login_user(user, remember=True)
+        login_ip = _client_ip_from_request()
+        try:
+            user.last_login = utc_now()
+            user.last_login_ip = login_ip
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('更新最近登录时间失败')
         # 【安全日志】记录登陆事件
-        current_app.logger.info(f'✓ 用户登陆成功: {user.username} (ID:{user.id}) - IP: {request.remote_addr}')
+        current_app.logger.info(f'✓ 用户登陆成功: {user.username} (ID:{user.id}) - IP: {login_ip}')
         # 登录成功后清除之前可能由 Flask-Login 自动闪现的未授权提示，
         # 否则用户在登录后仍会看到“请先登录以访问该页面”。
         try:
@@ -2460,6 +2523,7 @@ def _build_ai_quick_presets(saved_config: dict[str, str] | None, effective_ai: d
 AI_SCENE_LABELS = {
     'general': '通用调用',
     'document_summary': '文献详情智能总结',
+    'document_title_translation': '文献标题翻译',
     'morning_report_summary': '晨报智能总结',
     'search_query_refine': '智能深搜检索词提炼',
     'search_rerank': '智能深搜结果重排',
@@ -3563,10 +3627,15 @@ def _build_research_overview_fallback_summary(
     return summary, str(render_ai_summary_markdown(summary))
 
 
-def _build_research_overview_ai_usage(search_ai_usage: dict | None, summary_mode: str) -> dict:
+def _build_research_overview_ai_usage(
+    search_ai_usage: dict | None,
+    summary_mode: str,
+    elapsed_seconds: float | None = None,
+) -> dict:
     search_usage = search_ai_usage or {}
     search_status = str(search_usage.get('status') or 'disabled').strip().lower()
     summary_mode = str(summary_mode or 'disabled').strip().lower()
+    elapsed_text = _format_elapsed_seconds_cn(elapsed_seconds) if elapsed_seconds is not None else ''
 
     search_used = search_status in {'used', 'partial'}
     summary_used = summary_mode == 'ai'
@@ -3604,6 +3673,8 @@ def _build_research_overview_ai_usage(search_ai_usage: dict | None, summary_mode
         'status': status,
         'label': label,
         'description': description,
+        'elapsed_seconds': max(0, int(round(float(elapsed_seconds or 0)))) if elapsed_seconds is not None else None,
+        'elapsed_text': elapsed_text,
         'stages': [
             {
                 'name': '文献检索排序',
@@ -3673,6 +3744,8 @@ def _render_research_overview_fragment(
 
 def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
     with app_obj.app_context():
+        job_started_ts = time.time()
+
         def update_step(step_text: str) -> None:
             _set_research_overview_job(job_id, step=step_text)
 
@@ -3750,7 +3823,11 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                 'summary_markdown': summary_markdown,
                 'summary_html': summary_html,
                 'summary_mode': summary_mode,
-                'ai_usage': _build_research_overview_ai_usage(search_payload.get('ai_usage'), summary_mode),
+                'ai_usage': _build_research_overview_ai_usage(
+                    search_payload.get('ai_usage'),
+                    summary_mode,
+                    elapsed_seconds=time.time() - job_started_ts,
+                ),
                 'generated_at': format_cn_time(utc_now()),
             }
             enhancement_sources = get_display_only_sources(direction_text)
@@ -3976,6 +4053,72 @@ def _markdown_to_plain_text(value: str | None) -> str:
     text_value = html.unescape(text_value)
     text_value = re.sub(r'\n{3,}', '\n\n', text_value)
     return text_value.strip()
+
+
+def _format_elapsed_seconds_cn(value) -> str:
+    try:
+        total_seconds = max(0, int(round(float(value or 0))))
+    except (TypeError, ValueError):
+        total_seconds = 0
+    minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours > 0:
+        return f'{hours} 小时 {minutes} 分 {seconds} 秒'
+    if minutes > 0:
+        return f'{minutes} 分 {seconds} 秒'
+    return f'{seconds} 秒'
+
+
+def _contains_cjk_text(value: str | None) -> bool:
+    return bool(re.search(r'[\u4e00-\u9fff]', str(value or '')))
+
+
+def _needs_document_title_translation(title: str | None) -> bool:
+    title_text = str(title or '').strip()
+    if not title_text:
+        return False
+    if _contains_cjk_text(title_text):
+        return False
+    return bool(re.search(r'[A-Za-zÀ-ÖØ-öø-ÿ]{3,}', title_text))
+
+
+def _normalize_translated_title(value: str | None) -> str:
+    text_value = str(value or '').strip()
+    if not text_value:
+        return ''
+    lines = [line.strip(" \t\r\n\"'“”‘’") for line in text_value.splitlines() if line.strip()]
+    if not lines:
+        return ''
+    normalized = " ".join(lines)
+    normalized = re.sub(r'\s{2,}', ' ', normalized)
+    return normalized.strip()
+
+
+def _translate_document_title(title: str | None, *, user_id: int | None = None) -> str:
+    title_text = str(title or '').strip()
+    if not title_text:
+        raise ValueError('当前文献标题为空，无法翻译。')
+    if not _needs_document_title_translation(title_text):
+        return title_text
+
+    translated = call_ai_text(
+        "你是一名严谨的学术标题翻译助手，擅长把英文等外文论文标题准确翻译为简体中文。",
+        (
+            "请将下面这条学术文献标题准确翻译成简体中文。\n"
+            "要求：\n"
+            "1. 只输出最终中文译题，不要解释，不要分点，不要加引号，不要附原文。\n"
+            "2. 术语、地名、机构名、任务名、仪器名、矿物名等尽量采用学术界常见译法；必要时可保留关键英文缩写。\n"
+            "3. 保持原题信息完整、语气准确，不要擅自扩写或删减。\n"
+            "4. 如果原标题已经包含中文，就直接输出原标题。\n\n"
+            f"原标题：{title_text}"
+        ),
+        timeout=max(20, min(RESEARCH_OVERVIEW_AI_TIMEOUT, 60)),
+        usage_context={'scene': 'document_title_translation', 'user_id': user_id},
+    )
+    normalized = _normalize_translated_title(translated)
+    if not normalized:
+        raise RuntimeError('标题翻译失败，请稍后重试。')
+    return normalized
 
 
 def _build_research_overview_note_content(
@@ -4283,6 +4426,7 @@ def _import_search_result_to_document(payload: dict) -> tuple[Document, bool]:
         authors=", ".join(paper.get('authors') or []) or "未知作者",
         journal=paper.get('journal'),
         year=paper.get('year'),
+        published_at=paper.get('published_at'),
         doi=normalized_doi,
         abstract=paper.get('abstract'),
         keywords=keywords_value or None,
@@ -4525,6 +4669,27 @@ def document_summarize(doc_id: int):
     })
 
 
+@app.route('/api/document/<int:doc_id>/translate-title', methods=['POST'])
+@login_required
+def document_translate_title(doc_id: int):
+    doc = Document.query.get_or_404(doc_id)
+    ensure_document_access(doc, require_owner=True)
+    try:
+        translated_title = _translate_document_title(
+            doc.title,
+            user_id=current_user.id if current_user.is_authenticated else doc.owner_id,
+        )
+    except Exception as exc:
+        current_app.logger.exception("文献标题翻译失败: %s", exc)
+        return jsonify({'error': str(exc) or '标题翻译失败'}), 500
+
+    return jsonify({
+        'message': '标题翻译已生成。',
+        'title': str(doc.title or '').strip(),
+        'translated_title': translated_title,
+    })
+
+
 def _import_morning_report_paper_to_document(paper: MorningReportPaper) -> tuple[Document, bool]:
     existing_doc = None
     normalized_doi = normalize_doi(paper.doi or '')
@@ -4572,6 +4737,7 @@ def _import_morning_report_paper_to_document(paper: MorningReportPaper) -> tuple
         authors=", ".join(paper.author_list()) or "未知作者",
         journal=paper.journal,
         year=paper.year,
+        published_at=paper.published_at,
         doi=normalized_doi,
         abstract=paper.abstract,
         keywords=keywords_value,
@@ -6637,7 +6803,12 @@ def document_detail(doc_id):
     # 增加浏览量
     doc.view_count += 1
     db.session.commit()
-    return render_template('document_detail.html', doc=doc, ai_enabled=ai_summary_available())
+    return render_template(
+        'document_detail.html',
+        doc=doc,
+        ai_enabled=ai_summary_available(),
+        title_translation_needed=_needs_document_title_translation(doc.title),
+    )
 
 
 @app.route('/share/document/<int:doc_id>')
@@ -6696,6 +6867,7 @@ def update_document(doc_id):
     doc.authors = request.form['authors']
     doc.journal = request.form['journal'] or None
     doc.year = request.form['year'] if request.form['year'] else None
+    doc.published_at = (request.form.get('published_at') or '').strip() or None
     doc.doi = request.form['DOI'] or None
     doc.volume = request.form['volume'] or None
     doc.issue = request.form['issue'] or None
@@ -6754,6 +6926,20 @@ def open_document_in_browser(doc_id):
     return send_file(file_path, as_attachment=False)
     
 
+def _format_date_parts(date_parts: list) -> str:
+    parts = date_parts[0] if date_parts and date_parts[0] else []
+    if not parts or not parts[0]:
+        return ""
+    year = int(parts[0])
+    month = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+    day = int(parts[2]) if len(parts) > 2 and parts[2] else 0
+    if month and day:
+        return f"{year}-{month:02d}-{day:02d}"
+    if month:
+        return f"{year}-{month:02d}"
+    return ""
+
+
 def _fetch_crossref_metadata(doi: str) -> Optional[dict]:
     url = f"https://api.crossref.org/works/{quote(doi)}"
     try:
@@ -6765,6 +6951,10 @@ def _fetch_crossref_metadata(doi: str) -> Optional[dict]:
         return None
     data = response.json()
     message = data.get("message", {})
+    dp_print = message.get("published-print", {}).get("date-parts", [[None]])
+    dp_online = message.get("published-online", {}).get("date-parts", [[None]])
+    year_val = dp_print[0][0] or dp_online[0][0]
+    published_at = _format_date_parts(dp_print) or _format_date_parts(dp_online)
     return {
         "title": message.get("title", [""])[0],
         "authors": ", ".join(
@@ -6772,8 +6962,8 @@ def _fetch_crossref_metadata(doi: str) -> Optional[dict]:
              for a in message.get("author", [])]
         ),
         "journal": message.get("container-title", [""])[0],
-        "year": message.get("published-print", {}).get("date-parts", [[None]])[0][0]
-                or message.get("published-online", {}).get("date-parts", [[None]])[0][0],
+        "year": year_val,
+        "published_at": published_at,
         "doi": message.get("DOI", doi),
         "volume": message.get("volume", ""),
         "issue": message.get("issue", ""),
@@ -6852,6 +7042,7 @@ def _collect_doi_metadata_changes(doc: Document, metadata: dict) -> dict[str, di
         'journal': 'journal',
         'publisher': 'publisher',
         'year': 'year',
+        'published_at': 'published_at',
         'volume': 'volume',
         'issue': 'issue',
         'pages': 'pages',
@@ -6972,6 +7163,7 @@ def import_by_doi():
         authors=metadata["authors"],
         journal=metadata["journal"],
         year=metadata["year"],
+        published_at=metadata.get("published_at"),
         doi=metadata["doi"],
         volume=metadata["volume"],
         issue=metadata["issue"],
@@ -7180,6 +7372,7 @@ if __name__ == '__main__':
         try:
             with app.app_context():
                 db.create_all()  # 创建数据库表
+                ensure_user_schema()
                 ensure_document_ai_summary_schema()
                 init_category_data()  # 初始化分类数据（你的自定义函数）
                 create_test_data()  # 创建测试数据（你的自定义函数）

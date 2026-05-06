@@ -56,6 +56,12 @@
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
+                        <span class="text-slate-500 w-24">登录 IP：</span>
+                        <span class="text-slate-800 break-all">
+                            {{ user.last_login_ip or '未记录' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
                         <span class="text-slate-500 w-24">文献数量：</span>
                         <span class="text-slate-800">{{ documents|length }} 篇</span>
                     </div>

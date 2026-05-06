@@ -45,6 +45,7 @@ class Document(db.Model):
     authors = db.Column(db.String(255), nullable=False)
     journal = db.Column(db.String(255))
     year = db.Column(db.Integer)
+    published_at = db.Column(db.String(20), nullable=True)
     volume = db.Column(db.String(50))
     issue = db.Column(db.String(50))
     pages = db.Column(db.String(50))

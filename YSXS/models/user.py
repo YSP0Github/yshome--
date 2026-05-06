@@ -82,6 +82,8 @@ class User(UserMixin, db.Model):
     status = db.Column(db.String(20), default='正常')
     email_confirmed_at = db.Column(db.DateTime, nullable=True)
     last_password_change = db.Column(db.DateTime, nullable=True)
+    last_login = db.Column(db.DateTime, nullable=True)
+    last_login_ip = db.Column(db.String(64), nullable=True)
 
     favorites = db.relationship(
         'Document',

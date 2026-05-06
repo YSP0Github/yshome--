@@ -7,6 +7,7 @@
 {% set errors = search_payload.get('errors', []) if search_payload else [] %}
 {% set ai_usage = payload.get('ai_usage', {}) if payload else {} %}
 {% set ai_status = ai_usage.get('status') if ai_usage else '' %}
+{% set ai_elapsed_text = ai_usage.get('elapsed_text') if ai_usage else '' %}
 {% if ai_status == 'used' %}
     {% set ai_badge_class = 'is-used' %}
     {% set ai_badge_icon = 'fa-bolt' %}
@@ -39,7 +40,7 @@
         <h3 class="text-2xl font-black text-slate-900 mb-3">正在生成研究现状综述</h3>
         <p id="research-overview-loading-step" class="text-slate-600 leading-8 max-w-2xl mx-auto">
             系统正在跨源检索相关文献、优先挑选近年综述与高质量论文，并调用智能助手生成研究现状总结，请稍候。
-        </p>
+        </p> 
         <div id="research-overview-loading-meta" class="mt-4 text-xs text-slate-400">已耗时 0 秒</div>
     </div>
 
@@ -57,7 +58,9 @@
                                 <span class="overview-ai-pill-icon"><i class="fa {{ ai_badge_icon }}"></i></span>
                                 <span class="overview-ai-pill-copy">
                                     <span class="overview-ai-pill-title">{{ ai_badge_text }}</span>
-                                    <span class="overview-ai-pill-hint">{{ ai_badge_hint }}</span>
+                                    <span class="overview-ai-pill-hint">
+                                        {{ ai_badge_hint }}{% if ai_elapsed_text %} · 总耗时 {{ ai_elapsed_text }}{% endif %}
+                                    </span>
                                 </span>
                             </span>
                         </div>
@@ -287,3 +290,15 @@
         </div>
         {% endif %}
     </section>
+
+    {% if payload %}
+    <script type="application/json" id="overview-summary-markdown">{{ payload.get('summary_markdown') | tojson }}</script>
+    <script type="application/json" id="overview-save-payload">{{ {
+        'direction_text': direction_text,
+        'focus_mode': focus_mode,
+        'overview_years': overview_years,
+        'selected_sources': selected_sources,
+        'summary_markdown': payload.get('summary_markdown'),
+        'selected_papers': selected_papers,
+    } | tojson }}</script>
+    {% endif %}
