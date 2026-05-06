@@ -9,6 +9,7 @@ import threading
 import tempfile
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from html import escape, unescape
 from pathlib import Path
@@ -20,6 +21,11 @@ try:
     import tomllib
 except ModuleNotFoundError:  # Python < 3.11
     import tomli as tomllib
+
+try:
+    from dotenv import dotenv_values
+except Exception:  # pragma: no cover
+    dotenv_values = None
 
 import requests
 from flask import Flask, current_app, has_app_context
@@ -441,7 +447,6 @@ STRICT_DOMAIN_PATTERNS = (
     r"地震",
     r"震源",
 )
-AI_SCREENING_ALLOWED_LABELS = {"moonquake", "lunar_interior", "apollo_reprocessing"}
 AI_RUNTIME_CONFIG_FILENAME = "ai_runtime_config.json"
 SEARCH_QUERY_STOPWORDS_EN = {
     "about", "recent", "latest", "papers", "paper", "research", "study", "studies",
@@ -526,6 +531,37 @@ def _get_logger() -> logging.Logger:
     if has_app_context():
         return current_app.logger
     return logging.getLogger(__name__)
+
+
+def _local_env_values() -> dict[str, str]:
+    env_path = Path(__file__).resolve().parents[1] / '.env'
+    if not env_path.exists():
+        return {}
+    if dotenv_values:
+        return {
+            str(key): str(value)
+            for key, value in dotenv_values(env_path).items()
+            if value is not None
+        }
+
+    values: dict[str, str] = {}
+    try:
+        for line in env_path.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or '=' not in stripped:
+                continue
+            key, value = stripped.split('=', 1)
+            values[key.strip()] = value.strip().strip('"').strip("'")
+    except OSError:
+        return {}
+    return values
+
+
+def _env_value(name: str, default: str | None = None, *, prefer_file: bool = False) -> str | None:
+    file_values = _local_env_values()
+    if prefer_file and name in file_values:
+        return file_values.get(name)
+    return os.environ.get(name) or file_values.get(name) or default
 
 
 def _smart_search_timeout(read_timeout: int | None = None) -> tuple[int, int]:
@@ -618,18 +654,18 @@ def list_env_ai_presets() -> list[dict[str, str]]:
     )
 
     for index in range(1, 13):
-        key = str(os.environ.get(f'YSXS_AI_PRESET_{index}_KEY') or '').strip() or f'custom_{index}'
-        label = str(os.environ.get(f'YSXS_AI_PRESET_{index}_LABEL') or '').strip()
-        base_url = os.environ.get(f'YSXS_AI_PRESET_{index}_BASE_URL')
-        model = os.environ.get(f'YSXS_AI_PRESET_{index}_MODEL')
-        wire_api = os.environ.get(f'YSXS_AI_PRESET_{index}_WIRE_API')
+        key = str(_env_value(f'YSXS_AI_PRESET_{index}_KEY', prefer_file=True) or '').strip() or f'custom_{index}'
+        label = str(_env_value(f'YSXS_AI_PRESET_{index}_LABEL', prefer_file=True) or '').strip()
+        base_url = _env_value(f'YSXS_AI_PRESET_{index}_BASE_URL', prefer_file=True)
+        model = _env_value(f'YSXS_AI_PRESET_{index}_MODEL', prefer_file=True)
+        wire_api = _env_value(f'YSXS_AI_PRESET_{index}_WIRE_API', prefer_file=True)
         add_preset(
             key,
             label or f'自定义预设 {index}',
             base_url=base_url,
             model=model,
             wire_api=wire_api,
-            api_key_env=os.environ.get(f'YSXS_AI_PRESET_{index}_API_KEY_ENV'),
+            api_key_env=_env_value(f'YSXS_AI_PRESET_{index}_API_KEY_ENV', prefer_file=True),
             source='custom',
         )
 
@@ -891,14 +927,17 @@ def generate_morning_report_for_user(
     run.generated_at = utc_now()
     db.session.commit()
 
+    MorningReportPaper.query.filter_by(run_id=run.id).delete(synchronize_session=False)
+    run.paper_count = 0
+    run.headline = "晨报重新生成中…"
+    db.session.commit()
+
     try:
         discovered = discover_papers(settings)
         document_lookup = build_user_document_lookup(user_id)
         run = MorningReportRun.query.filter_by(id=run.id).first()
         if run is None:
             raise RuntimeError("晨报记录在生成过程中丢失")
-
-        MorningReportPaper.query.filter_by(run_id=run.id).delete(synchronize_session=False)
         headline_parts = [item['title'] for item in discovered[:3]]
         run.headline = "；".join(headline_parts)[:255] if headline_parts else "今日晨报已更新"
         run.paper_count = len(discovered)
@@ -1077,6 +1116,7 @@ def fetch_candidates_for_sources(
         'arxiv': fetch_arxiv,
         'ads': fetch_nasa_ads,
     }
+    active_jobs: list[tuple[str, str, Any]] = []
     for source_key in enabled_sources:
         fetcher = source_fetchers.get(source_key)
         if fetcher is None:
@@ -1086,11 +1126,24 @@ def fetch_candidates_for_sources(
             errors.append(f"{source_label}: 未配置 API Token")
             _get_logger().warning("晨报检索跳过 %s：未配置 API Token。", source_label)
             continue
-        try:
-            items.extend(fetcher(keywords, since_date, per_source))
-        except Exception as exc:
-            errors.append(f"{source_label}: {exc}")
-            _get_logger().exception("晨报检索来源 %s 失败: %s", source_label, exc)
+        active_jobs.append((source_key, source_label, fetcher))
+
+    if not active_jobs:
+        return items, errors
+
+    max_workers = max(1, min(len(active_jobs), 3))
+    with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='ysxs-mr-src') as executor:
+        future_map = {
+            executor.submit(fetcher, keywords, since_date, per_source): (source_key, source_label)
+            for source_key, source_label, fetcher in active_jobs
+        }
+        for future in as_completed(future_map):
+            source_key, source_label = future_map[future]
+            try:
+                items.extend(future.result())
+            except Exception as exc:
+                errors.append(f"{source_label}: {exc}")
+                _get_logger().exception("晨报检索来源 %s 失败: %s", source_label, exc)
     return items, errors
 
 
@@ -1154,6 +1207,9 @@ def search_literature_with_ai(
     lookback_days: int = 365,
     enabled_sources: list[str] | None = None,
     sort_mode: str = 'balanced',
+    use_ai_query_refine: bool = True,
+    use_ai_rerank: bool = True,
+    query_profile_override: dict[str, Any] | None = None,
     progress_callback=None,
 ) -> dict[str, Any]:
     cleaned_query = re.sub(r"\s+", " ", str(query_text or "").strip())
@@ -1166,9 +1222,27 @@ def search_literature_with_ai(
     if not selected_sources:
         selected_sources = ['openalex', 'crossref', 'arxiv']
 
-    if callable(progress_callback):
-        progress_callback('正在智能提炼检索意图…')
-    profile = build_search_query_profile(cleaned_query, user_id=user_id)
+    if query_profile_override:
+        profile = {
+            'search_title': str(query_profile_override.get('search_title') or cleaned_query).strip() or cleaned_query,
+            'intent_summary': str(query_profile_override.get('intent_summary') or '').strip(),
+            'queries': dedupe_search_terms(_as_list(query_profile_override.get('queries')) or [cleaned_query], limit=6),
+            'keywords': dedupe_search_terms(_as_list(query_profile_override.get('keywords')) or [cleaned_query], limit=8),
+            'exclude_terms': dedupe_search_terms(_as_list(query_profile_override.get('exclude_terms')), limit=6),
+            '_query_profile_mode': 'disabled',
+            '_query_profile_note': str(query_profile_override.get('_query_profile_note') or '研究现状梳理已使用定向检索词配置，以优先保证方向相关性。').strip(),
+        }
+        if callable(progress_callback):
+            progress_callback('正在按研究方向定向整理检索意图…')
+    else:
+        if callable(progress_callback):
+            progress_callback('正在智能提炼检索意图…' if use_ai_query_refine else '正在按规则整理检索意图…')
+        if use_ai_query_refine:
+            profile = build_search_query_profile(cleaned_query, user_id=user_id)
+        else:
+            profile = build_fallback_search_query_profile(cleaned_query)
+            profile['_query_profile_mode'] = 'disabled'
+            profile['_query_profile_note'] = '当前环节已跳过智能检索词提炼，以减少整体等待时间。'
     query_phrases = profile.get('queries') or [cleaned_query]
     keyword_terms = profile.get('keywords') or query_phrases
     since_date = (cn_now().date() - timedelta(days=lookback_days)).isoformat()
@@ -1262,17 +1336,23 @@ def search_literature_with_ai(
         len(ranked),
         max(4, min(SMART_SEARCH_RERANK_LIMIT, max_results, desired_count + 2)),
     )
-    if callable(progress_callback):
-        progress_callback(f'正在智能重排高相关结果…（待重排 {rerank_limit} 篇）')
     rerank_meta: dict[str, Any] = {}
-    ai_rerank = rerank_search_candidates_with_ai(
-        ranked[:rerank_limit],
-        query_text=cleaned_query,
-        keyword_terms=keyword_terms,
-        sort_mode=sort_mode,
-        user_id=user_id,
-        meta=rerank_meta,
-    )
+    if use_ai_rerank:
+        if callable(progress_callback):
+            progress_callback(f'正在智能重排高相关结果…（待重排 {rerank_limit} 篇）')
+        ai_rerank = rerank_search_candidates_with_ai(
+            ranked[:rerank_limit],
+            query_text=cleaned_query,
+            keyword_terms=keyword_terms,
+            sort_mode=sort_mode,
+            user_id=user_id,
+            meta=rerank_meta,
+        )
+    else:
+        if callable(progress_callback):
+            progress_callback(f'正在按规则整理高相关结果…（候选 {rerank_limit} 篇）')
+        rerank_meta.update({'mode': 'disabled', 'note': '当前环节已跳过智能重排，以减少整体等待时间。'})
+        ai_rerank = {}
     results: list[dict[str, Any]] = []
     rejected_results: list[dict[str, Any]] = []
     for index, item in enumerate(ranked, start=1):
@@ -1412,15 +1492,9 @@ def backfill_screened_candidates(
         key = build_paper_dedupe_key(normalized)
         if key in seen:
             continue
-        fallback = classify_candidate_track(normalized, keywords=keywords)
-        if fallback.get('label') not in AI_SCREENING_ALLOWED_LABELS:
-            continue
-        normalized['research_track'] = fallback['label']
-        normalized['research_track_label'] = RESEARCH_TRACK_LABELS.get(fallback['label'], fallback['label'])
-        normalized['screening_reason'] = f"补足候选池：{fallback.get('reason') or '规则筛选保留'}"
-        normalized['screening_confidence'] = fallback.get('confidence')
+        normalized['screening_reason'] = "补足候选池：与当前关键词存在直接匹配，按规则相关性保留。"
+        normalized['screening_confidence'] = max(55, min(90, 50 + len(normalized.get('matched_keywords') or []) * 8))
         raw_json = _as_dict(normalized.get('raw_json'))
-        raw_json['research_track'] = normalized['research_track']
         raw_json['screening_reason'] = normalized['screening_reason']
         raw_json['screening_confidence'] = normalized['screening_confidence']
         normalized['raw_json'] = raw_json
@@ -1447,6 +1521,7 @@ def fetch_generic_candidates_for_sources(
         'arxiv': search_arxiv_by_queries,
         'ads': search_nasa_ads_by_queries,
     }
+    active_jobs: list[tuple[str, str, Any]] = []
     for source_key in enabled_sources:
         fetcher = source_fetchers.get(source_key)
         if fetcher is None:
@@ -1455,11 +1530,31 @@ def fetch_generic_candidates_for_sources(
         if source_key == 'ads' and not get_nasa_ads_api_token():
             errors.append(f"{source_label}: 未配置 API Token")
             continue
-        try:
-            items.extend(fetcher(query_phrases, keyword_terms, since_date, per_source))
-        except Exception as exc:
-            errors.append(f"{source_label}: {exc}")
-            _get_logger().exception("智能文献深搜来源 %s 失败: %s", source_label, exc)
+        active_jobs.append((source_key, source_label, fetcher))
+
+    if not active_jobs:
+        return items, errors
+
+    max_workers = max(1, min(len(active_jobs), 3))
+    with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='ysxs-search-src') as executor:
+        future_map = {
+            executor.submit(fetcher, query_phrases, keyword_terms, since_date, per_source): (source_key, source_label)
+            for source_key, source_label, fetcher in active_jobs
+        }
+        for future in as_completed(future_map):
+            source_key, source_label = future_map[future]
+            try:
+                fetched_items = future.result()
+                items.extend(fetched_items)
+                _get_logger().info(
+                    "智能文献深搜来源完成 source=%s queries=%s results=%s",
+                    source_label,
+                    len(query_phrases or []),
+                    len(fetched_items or []),
+                )
+            except Exception as exc:
+                errors.append(f"{source_label}: {exc}")
+                _get_logger().exception("智能文献深搜来源 %s 失败: %s", source_label, exc)
     return items, errors
 
 
@@ -1477,11 +1572,13 @@ def screen_candidate_papers_with_ai(
         normalized = normalize_discovered_paper(item)
         if not normalized:
             continue
-        fallback = classify_candidate_track(normalized, keywords=keywords)
-        normalized['research_track'] = fallback['label']
-        normalized['research_track_label'] = RESEARCH_TRACK_LABELS.get(fallback['label'], fallback['label'])
-        normalized['screening_reason'] = fallback['reason']
-        normalized['screening_confidence'] = fallback['confidence']
+        match_count = len(normalized.get('matched_keywords') or [])
+        normalized['screening_reason'] = (
+            f"规则初筛保留：命中 {match_count} 个当前关键词。"
+            if match_count > 0 else
+            "规则初筛保留：摘要/标题与当前关键词语义接近。"
+        )
+        normalized['screening_confidence'] = max(52, min(92, 48 + match_count * 10))
         prepared.append(normalized)
 
     if not prepared:
@@ -1489,30 +1586,26 @@ def screen_candidate_papers_with_ai(
 
     client_config = get_ai_client_config()
     if not client_config:
-        return [item for item in prepared if item.get('research_track') in AI_SCREENING_ALLOWED_LABELS]
+        return prepared
 
     try:
         ai_results = classify_candidate_papers_with_ai(prepared, keywords=keywords or [], user_id=user_id)
     except Exception as exc:
         _get_logger().warning("AI 候选筛选失败，回退到规则过滤：%s", exc)
-        return [item for item in prepared if item.get('research_track') in AI_SCREENING_ALLOWED_LABELS]
+        return prepared
 
     screened: list[dict[str, Any]] = []
     for index, item in enumerate(prepared, start=1):
         ai_result = ai_results.get(index)
         if ai_result:
-            label = ai_result.get('label') or item.get('research_track') or 'off_topic'
-            if label not in RESEARCH_TRACK_LABELS:
-                label = item.get('research_track') or 'off_topic'
-            item['research_track'] = label
-            item['research_track_label'] = RESEARCH_TRACK_LABELS.get(label, label)
+            item['ai_keep'] = bool(ai_result.get('keep', True))
             item['screening_reason'] = ai_result.get('reason') or item.get('screening_reason')
             item['screening_confidence'] = ai_result.get('confidence') or item.get('screening_confidence')
-        if item.get('research_track') in AI_SCREENING_ALLOWED_LABELS:
+        if item.get('ai_keep', True):
             raw_json = _as_dict(item.get('raw_json'))
-            raw_json['research_track'] = item.get('research_track')
             raw_json['screening_reason'] = item.get('screening_reason')
             raw_json['screening_confidence'] = item.get('screening_confidence')
+            raw_json['ai_keep'] = bool(item.get('ai_keep', True))
             item['raw_json'] = raw_json
             screened.append(item)
     return screened
@@ -1841,7 +1934,7 @@ def search_openalex_by_queries(
     papers: list[dict[str, Any]] = []
     raw_items: list[dict[str, Any]] = []
     last_error: Exception | None = None
-    queries = dedupe_search_terms(query_phrases, limit=5)
+    queries = dedupe_search_terms(query_phrases, limit=3)
     per_query = max(5, min(limit, 14))
     for query in queries:
         try:
@@ -1917,7 +2010,7 @@ def search_crossref_by_queries(
     limit: int,
 ) -> list[dict[str, Any]]:
     papers: list[dict[str, Any]] = []
-    queries = dedupe_search_terms(query_phrases, limit=5)
+    queries = dedupe_search_terms(query_phrases, limit=3)
     per_query = max(4, min(max(limit // max(len(queries), 1), 4), 10))
     for query in queries:
         response = requests.get(
@@ -1980,7 +2073,7 @@ def search_arxiv_by_queries(
     since_date: str,
     limit: int,
 ) -> list[dict[str, Any]]:
-    queries = dedupe_search_terms(query_phrases, limit=4)
+    queries = dedupe_search_terms(query_phrases, limit=3)
     per_query = max(3, min(limit, 10))
     papers: list[dict[str, Any]] = []
     ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
@@ -2433,26 +2526,6 @@ def find_matched_keywords(title: str, abstract: str | None, keywords: list[str])
 
 
 def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | None = None) -> str:
-    scope_result = classify_candidate_with_optional_ai(
-        {
-            'title': paper.title,
-            'authors': paper.author_list(),
-            'journal': paper.journal,
-            'published_at': paper.published_at,
-            'year': paper.year,
-            'doi': paper.doi,
-            'abstract': paper.abstract,
-            'topics': paper.topic_list(),
-            'relevance_score': paper.relevance_score,
-        },
-        keywords=keywords or [],
-        use_ai=True,
-        user_id=paper.user_id,
-    )
-    if scope_result.get('label') not in AI_SCREENING_ALLOWED_LABELS:
-        reason = scope_result.get('reason') or '该论文与晨报聚焦的三类方向不够相关。'
-        raise RuntimeError(f"AI 判断该论文暂不属于“月震 / 月球内部结构 / 阿波罗数据再处理”三类：{reason}")
-
     keyword_text = "、".join(keywords or []) or "当前关键词库"
     authors = "；".join(paper.author_list()) or "未知"
     topics = "、".join(paper.topic_list()) or "未标注"
@@ -2463,10 +2536,9 @@ def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | 
         "1. 使用中文；\n"
         "2. 只基于提供的信息，不要编造；\n"
         "3. 输出 Markdown；\n"
-        "4. 控制在 6 个小节以内，重点突出“为何值得读”；\n"
+        "4. 控制在 6 个小节以内，重点突出“为何值得读”以及“与当前关键词的相关性”；\n"
         "5. 不要输出 ```markdown 代码块。\n\n"
         f"关键词库：{keyword_text}\n"
-        f"研究归类：{RESEARCH_TRACK_LABELS.get(scope_result.get('label') or '', '未判定')}\n"
         f"标题：{paper.title}\n"
         f"作者：{authors}\n"
         f"期刊/来源：{paper.journal or '未知'}\n"
@@ -2475,7 +2547,7 @@ def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | 
         f"主题：{topics}\n"
         f"摘要：{abstract or '暂无摘要'}\n"
     )
-    system_prompt = "你是月球与地球物理方向的科研晨报助手，擅长快速判断论文价值并用中文总结。"
+    system_prompt = "你是通用科研晨报助手，擅长围绕用户当前关键词快速判断论文价值并用中文总结。"
     content = call_ai_text(
         system_prompt,
         prompt,
@@ -2565,8 +2637,18 @@ def get_morning_report_popup_payload(user_id: int) -> dict[str, Any] | None:
     }
 
 
-def get_ai_client_config() -> dict[str, str] | None:
-    runtime_config = load_runtime_ai_config()
+def resolve_ai_client_config(runtime_config_override: dict[str, Any] | None = None) -> dict[str, str] | None:
+    runtime_config = dict(load_runtime_ai_config())
+    for key, value in (runtime_config_override or {}).items():
+        normalized_key = str(key or '').strip()
+        if normalized_key not in {'base_url', 'model', 'wire_api', 'preset_key', 'api_key'}:
+            continue
+        normalized_value = str(value or '').strip()
+        if normalized_value:
+            runtime_config[normalized_key] = normalized_value
+        else:
+            runtime_config.pop(normalized_key, None)
+
     preset_key = runtime_config.get('preset_key')
     preset_config = get_env_ai_preset(preset_key)
     preset_api_key = ''
@@ -2574,7 +2656,7 @@ def get_ai_client_config() -> dict[str, str] | None:
         (preset_config or {}).get('api_key_env'),
         'OPENAI_APIKEY' if (preset_config or {}).get('api_key_env') == 'OPENAI_API_KEY' else '',
     ]):
-        preset_api_key = str(os.environ.get(env_name) or '').strip()
+        preset_api_key = str(_env_value(env_name) or '').strip()
         if preset_api_key:
             break
     api_key = (
@@ -2643,6 +2725,10 @@ def get_ai_client_config() -> dict[str, str] | None:
         'preset_label': (preset_config or {}).get('label', ''),
         'config_source': 'preset' if preset_config else ('manual' if any(runtime_config.get(key) for key in ('base_url', 'model', 'wire_api')) else 'env'),
     }
+
+
+def get_ai_client_config() -> dict[str, str] | None:
+    return resolve_ai_client_config()
 
 
 def ai_summary_available() -> bool:
@@ -2812,25 +2898,71 @@ def get_nasa_ads_api_token() -> str | None:
     return token or None
 
 
+def _scene_ai_output_limit(scene: str | None, wire_api: str) -> int:
+    scene_key = str(scene or '').strip().lower()
+    if scene_key in {'search_query_refine'}:
+        return 400
+    if scene_key in {'search_rerank'}:
+        return 900
+    if scene_key in {'research_overview_fast'}:
+        return 1500
+    if scene_key in {'research_overview_quality', 'research_overview'}:
+        return 2000
+    if scene_key in {'research_overview_compact'}:
+        return 1300
+    if scene_key in {'admin_ai_chat', 'admin_ai_test', 'admin_ai_console', 'user_sidebar_chat'}:
+        return 1400
+    if scene_key in {'paper_summary', 'document_summary'}:
+        return 2600
+    if wire_api == 'anthropic_messages':
+        return max(512, _get_positive_int_env('YSXS_ANTHROPIC_MAX_TOKENS', 4096))
+    return 1800
+
+
+def _scene_ai_retry_attempts(scene: str | None) -> int:
+    scene_key = str(scene or '').strip().lower()
+    default_attempts = max(1, min(_get_positive_int_env('YSXS_AI_RETRY_ATTEMPTS', 3), 5))
+    if scene_key in {'research_overview_fast', 'research_overview_quality', 'research_overview_compact'}:
+        return max(1, min(_get_positive_int_env('YSXS_RESEARCH_OVERVIEW_AI_RETRY_ATTEMPTS', 2), 3))
+    if scene_key in {'admin_ai_chat', 'admin_ai_test', 'admin_ai_console', 'user_sidebar_chat'}:
+        return max(1, min(_get_positive_int_env('YSXS_INTERACTIVE_AI_RETRY_ATTEMPTS', 2), 3))
+    return default_attempts
+
+
 def call_ai_text(
     system_prompt: str,
     prompt: str,
     *,
     timeout: int = 90,
+    wall_clock_timeout: int | None = None,
     usage_context: dict[str, Any] | None = None,
+    client_config_override: dict[str, Any] | None = None,
 ) -> str:
-    client_config = get_ai_client_config()
+    client_config = resolve_ai_client_config(client_config_override)
     if not client_config:
         raise RuntimeError("未检测到可用的智能配置（可使用 MIMO_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY，或复用 ~/.codex/config.toml + CODEX_API_KEY）。")
 
     last_error: Exception | None = None
-    max_attempts = max(1, min(_get_positive_int_env('YSXS_AI_RETRY_ATTEMPTS', 3), 5))
+    max_attempts = _scene_ai_retry_attempts((usage_context or {}).get('scene'))
     response = None
     content = ''
     usage_payload: dict[str, int] = {}
+    scene = str((usage_context or {}).get('scene') or '').strip().lower()
+    output_limit = _scene_ai_output_limit(scene, client_config['wire_api'])
+    total_started_at = time.time()
 
     for attempt in range(1, max_attempts + 1):
+        if wall_clock_timeout:
+            elapsed_total = time.time() - total_started_at
+            remaining_budget = max(float(wall_clock_timeout) - elapsed_total, 0.0)
+            if remaining_budget <= 0.2:
+                last_error = TimeoutError(f"AI 调用超过总时限 {wall_clock_timeout}s")
+                break
+            request_timeout = max(1, min(int(timeout), int(remaining_budget)))
+        else:
+            request_timeout = max(int(timeout), 1)
         try:
+            started_at = time.time()
             if client_config['wire_api'] == 'responses':
                 response = requests.post(
                     f"{client_config['base_url'].rstrip('/')}/responses",
@@ -2851,9 +2983,10 @@ def call_ai_text(
                                 "content": [{"type": "input_text", "text": prompt}],
                             },
                         ],
+                        "max_output_tokens": output_limit,
                         "stream": False,
                     },
-                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, max(int(timeout), 1)),
+                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, request_timeout),
                 )
                 response.raise_for_status()
                 content, usage_payload = _extract_responses_http_result(response)
@@ -2874,10 +3007,10 @@ def call_ai_text(
                             {"role": "user", "content": prompt},
                         ],
                         "temperature": 0.2,
-                        "max_tokens": max(512, _get_positive_int_env('YSXS_ANTHROPIC_MAX_TOKENS', 4096)),
+                        "max_tokens": output_limit,
                         "stream": False,
                     },
-                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, max(int(timeout), 1)),
+                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, request_timeout),
                 )
                 response.raise_for_status()
                 payload = response.json()
@@ -2893,17 +3026,30 @@ def call_ai_text(
                     json={
                         "model": client_config['model'],
                         "temperature": 0.2,
+                        "max_tokens": output_limit,
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": prompt},
                         ],
                     },
-                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, max(int(timeout), 1)),
+                    timeout=(SMART_SEARCH_CONNECT_TIMEOUT, request_timeout),
                 )
                 response.raise_for_status()
                 payload = response.json()
                 content = _extract_chat_completion_text(payload)
                 usage_payload = _extract_usage_payload(payload)
+            elapsed = time.time() - started_at
+            _get_logger().info(
+                "AI 调用完成 scene=%s wire=%s model=%s attempt=%s elapsed=%.2fs output_limit=%s request_timeout=%ss wall_clock_timeout=%ss",
+                scene or 'unknown',
+                client_config['wire_api'],
+                client_config['model'],
+                attempt,
+                elapsed,
+                output_limit,
+                request_timeout,
+                wall_clock_timeout or 0,
+            )
             break
         except requests.RequestException as exc:
             last_error = exc
@@ -2912,6 +3058,11 @@ def call_ai_text(
             if attempt >= max_attempts or not retryable:
                 break
             wait_seconds = min(8, attempt * 2)
+            if wall_clock_timeout:
+                elapsed_total = time.time() - total_started_at
+                remaining_budget = max(float(wall_clock_timeout) - elapsed_total, 0.0)
+                if remaining_budget <= wait_seconds + 0.2:
+                    break
             _get_logger().warning(
                 "AI 调用失败，第 %s/%s 次重试，status=%s, error=%s",
                 attempt,
@@ -3370,10 +3521,7 @@ def should_keep_paper(
     directional_terms = derive_directional_terms(keywords)
     directional_hits = sum(1 for term in directional_terms if term and term in haystack)
     title_directional_hits = sum(1 for term in directional_terms if term and haystack_matches_term(title_haystack, term))
-    context_hits = sum(1 for term in STRICT_CONTEXT_TERMS if haystack_matches_term(haystack, term))
-    title_context_hits = sum(1 for term in STRICT_CONTEXT_TERMS if haystack_matches_term(title_haystack, term))
     suspect_hits = sum(1 for term in DEFAULT_STRICT_SUSPECT_TERMS if haystack_matches_term(title_haystack, term))
-    title_domain_hits = count_domain_pattern_hits(title_haystack)
     priority_bonus = compute_priority_source_bonus(item)
     score = float(item.get('relevance_score') or 0.0) + priority_bonus
 
@@ -3382,15 +3530,13 @@ def should_keep_paper(
             return False
         if phrase_match_count <= 0 and directional_hits <= 0 and anchor_hits <= 0:
             return False
-        if context_hits <= 0 and title_context_hits <= 0 and priority_bonus <= 0:
+        if phrase_match_count <= 0 and anchor_hits <= 0 and score < 1.1:
             return False
-        if title_domain_hits <= 0 and title_directional_hits <= 0 and phrase_match_count <= 0 and priority_bonus <= 0:
+        if directional_hits <= 0 and title_directional_hits <= 0 and phrase_match_count < 1 and score < 1.25:
             return False
-        if phrase_match_count <= 0 and anchor_hits <= 0 and score < 1.2:
+        if phrase_match_count <= 0 and directional_hits <= 0 and title_directional_hits <= 0 and score < 1.45:
             return False
-        if directional_hits <= 0 and title_directional_hits <= 0 and phrase_match_count < 2 and score < 1.45:
-            return False
-        if score < 1.0:
+        if score < 0.85:
             return False
     else:
         if phrase_match_count <= 0 and score < 0.8:
@@ -3489,83 +3635,48 @@ def derive_directional_terms(keywords: list[str]) -> list[str]:
 
 
 def build_openalex_queries(keywords: list[str]) -> list[str]:
-    return build_focus_queries(
-        keywords,
-        preferred_patterns=(r'moonquake', r'lunar seismic', r'lunar seismology', r'lunar interior', r'apollo'),
-        fallback_queries=['deep moonquake', 'shallow moonquake', 'lunar seismic', 'lunar seismology', 'lunar interior structure', 'apollo passive seismic', 'apollo seismic data', 'lunar mantle core'],
-        limit=8,
-    )
+    return build_focus_queries(keywords, limit=8)
 
 
 def build_arxiv_queries(keywords: list[str]) -> list[str]:
-    return build_focus_queries(
-        keywords,
-        preferred_patterns=(r'moonquake', r'lunar seismic', r'lunar seismology', r'lunar interior', r'apollo'),
-        fallback_queries=['deep moonquake', 'shallow moonquake', 'lunar seismic', 'lunar seismology', 'lunar interior structure', 'apollo passive seismic', 'apollo seismic data', 'lunar mantle core'],
-        limit=8,
-    )
+    return build_focus_queries(keywords, limit=8)
 
 
 def build_crossref_queries(keywords: list[str]) -> list[str]:
-    return build_focus_queries(
-        keywords,
-        preferred_patterns=(r'moonquake', r'lunar seismic', r'lunar interior', r'apollo'),
-        fallback_queries=['deep moonquake', 'shallow moonquake', 'lunar seismic', 'lunar seismology', 'lunar interior structure', 'apollo passive seismic', 'apollo seismic data', 'lunar mantle core'],
-        limit=8,
-    )
+    return build_focus_queries(keywords, limit=8)
 
 
 def build_focus_queries(
     keywords: list[str],
     *,
-    preferred_patterns: tuple[str, ...],
-    fallback_queries: list[str],
     limit: int,
 ) -> list[str]:
-    cleaned: list[str] = []
-    seen: set[str] = set()
-    for keyword in keywords:
-        value = str(keyword or '').strip()
-        if not value or re.search(r'[\u4e00-\u9fff]', value):
-            continue
-        normalized = value.lower()
-        if normalized in seen:
-            continue
-        seen.add(normalized)
-        cleaned.append(value)
-
+    raw_keywords = [re.sub(r'\s+', ' ', str(keyword or '').strip()) for keyword in keywords or []]
+    raw_keywords = [value for value in raw_keywords if value]
     queries: list[str] = []
-    for pattern in preferred_patterns:
-        for keyword in cleaned:
-            if re.search(pattern, keyword, flags=re.IGNORECASE):
-                queries.append(keyword)
-
-    queries.extend(fallback_queries)
+    for keyword in raw_keywords:
+        queries.append(keyword)
+        if re.search(r'[\u4e00-\u9fff]', keyword):
+            pieces = [part.strip() for part in re.split(r'[\s,，;；/、]+', keyword) if part.strip()]
+            for piece in pieces:
+                if len(piece) > 1:
+                    queries.append(piece)
+        else:
+            pieces = re.findall(r"[A-Za-z0-9][A-Za-z0-9\\-+/]{1,}", keyword)
+            for piece in pieces:
+                if len(piece) > 2:
+                    queries.append(piece)
     if not queries:
-        queries = ['deep moonquake', 'shallow moonquake', 'lunar seismic', 'lunar interior structure', 'apollo passive seismic']
-
-    unique_queries: list[str] = []
-    query_seen: set[str] = set()
-    for query in queries:
-        value = re.sub(r'\s+', ' ', str(query or '').strip())
-        if not value:
-            continue
-        normalized = value.lower()
-        if normalized in query_seen:
-            continue
-        query_seen.add(normalized)
-        unique_queries.append(value)
-        if len(unique_queries) >= max(1, limit):
-            break
-    return unique_queries or ['deep moonquake']
+        queries = list(DEFAULT_MORNING_REPORT_KEYWORDS)
+    return dedupe_search_terms(queries, limit=max(1, limit))
 
 
 def build_nasa_ads_query(keywords: list[str]) -> str:
     queries = build_arxiv_queries(keywords)
     joined = " OR ".join(f'"{query}"' for query in queries if query)
     if not joined:
-        joined = '"moonquake" OR "lunar interior"'
-    return f"({joined}) AND (abstract:lunar OR abstract:moon OR title:lunar OR title:moon OR abstract:apollo OR title:apollo)"
+        joined = " OR ".join(f'"{query}"' for query in DEFAULT_MORNING_REPORT_KEYWORDS[:3])
+    return joined
 
 
 def _fetch_openalex_results_for_query(query: str, since_date: str, limit: int) -> list[dict[str, Any]]:
@@ -3710,18 +3821,16 @@ def classify_candidate_papers_with_ai(
         )
 
     prompt = (
-        "你是科研晨报的严格选题筛选器。只允许保留以下三类论文：\n"
-        "1. moonquake：月震、月球地震记录、月震定位、月震波形、月震机制。\n"
-        "2. lunar_interior：月球内部结构、深部结构、壳幔核、由地震/地球物理约束的月球内部研究。\n"
-        "3. apollo_reprocessing：阿波罗地震/相关历史数据的再处理、重分析、重建、重新定位。\n"
-        "其余一律标注 off_topic，包括但不限于：一般月表地质、遥感、月球工程、着陆器、行星泛论、火星/地球研究、纯方法论文。\n\n"
+        "你是科研晨报的严格候选筛选器。请围绕用户当前关键词，判断每篇论文是否值得保留在晨报候选池中。\n"
+        "保留标准：与当前关键词直接相关，且看起来是严肃学术文献；\n"
+        "剔除标准：与当前关键词关系弱、只沾边、明显离题，或虽包含个别词但主题并不真正匹配。\n\n"
         f"当前关键词库：{'、'.join(keywords) or '未提供'}\n\n"
         "请输出 JSON 数组，每个元素格式如下：\n"
-        "{\"index\": 1, \"label\": \"moonquake|lunar_interior|apollo_reprocessing|off_topic\", \"confidence\": 0-100, \"reason\": \"一句中文理由\"}\n"
+        "{\"index\": 1, \"keep\": true, \"confidence\": 0-100, \"reason\": \"一句中文理由\"}\n"
         "不要输出数组之外的解释文字。\n\n"
         + "\n".join(candidate_blocks)
     )
-    system_prompt = "你是严格的月球地球物理文献筛选助手，只做分类，不做发挥。"
+    system_prompt = "你是严格的通用科研晨报筛选助手，只根据用户关键词判断候选文献是否应保留。"
     content = call_ai_text(
         system_prompt,
         prompt,
@@ -3739,12 +3848,9 @@ def classify_candidate_papers_with_ai(
         index = _safe_int(item.get('index'))
         if index is None or index < 1 or index > len(candidates):
             continue
-        label = str(item.get('label') or '').strip()
-        if label not in RESEARCH_TRACK_LABELS:
-            continue
         confidence = _safe_int(item.get('confidence'))
         results[index] = {
-            'label': label,
+            'keep': bool(item.get('keep', True)),
             'confidence': max(0, min(confidence if confidence is not None else 60, 100)),
             'reason': str(item.get('reason') or '').strip()[:200] or 'AI 已完成方向筛选。',
         }
@@ -3926,6 +4032,7 @@ __all__ = [
     'get_recent_morning_reports',
     'generate_morning_report_for_user',
     'load_runtime_ai_config',
+    'resolve_ai_client_config',
     'save_runtime_ai_config',
     'search_literature_with_ai',
     'summarize_document_with_ai',

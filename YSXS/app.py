@@ -9,12 +9,12 @@ import shutil
 import sqlite3
 import tempfile
 import time
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from io import BytesIO, StringIO
 from pathlib import Path
-from threading import Thread
+from threading import Event, Thread
 from typing import Optional
 from urllib.parse import quote
 
@@ -27,7 +27,7 @@ from flask_login import (current_user, login_required, login_user,
 from flask_mail import Message
 from flask_wtf.csrf import generate_csrf
 from markupsafe import Markup
-from sqlalchemy import and_, false, func, inspect, or_, text
+from sqlalchemy import and_, case, false, func, inspect, or_, text
 from werkzeug.security import check_password_hash
 
 from .app_factory import create_app, normalize_url_prefix
@@ -71,7 +71,12 @@ from .services.morning_report import (
     ai_summary_available,
     build_display_source_links,
     build_summary_source_material,
+    build_filter_haystack,
+    build_title_haystack,
     call_ai_text,
+    classify_candidate_track,
+    derive_anchor_terms,
+    derive_directional_terms,
     ensure_morning_report_settings,
     find_existing_document_for_user,
     generate_morning_report_for_user,
@@ -86,14 +91,17 @@ from .services.morning_report import (
     list_env_ai_presets,
     load_runtime_ai_config,
     mark_morning_report_popup_seen,
+    resolve_ai_client_config,
     save_runtime_ai_config,
     search_literature_with_ai,
+    should_keep_paper,
     start_morning_report_scheduler,
     summarize_document_with_ai,
     summarize_paper_with_ai,
     today_cn_date,
     trigger_due_morning_report_in_background,
     trigger_morning_report_generation_in_background,
+    haystack_matches_term,
 )
 from .services.security import admin_required, super_admin_required
 from .blueprints.admin import admin_bp
@@ -123,9 +131,12 @@ DOCUMENTS_PER_PAGE = int(os.environ.get('YSXS_DOCS_PER_PAGE', 10))
 RESEARCH_OVERVIEW_SEARCH_CAP = max(8, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_SEARCH_CAP', 14)), 20))
 RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT = max(4, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT', 6)), 10))
 RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT = max(300, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT', 700)), 1600))
-RESEARCH_OVERVIEW_AI_TIMEOUT = max(10, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_AI_TIMEOUT', 20)), 60))
+RESEARCH_OVERVIEW_AI_TIMEOUT = max(12, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_AI_TIMEOUT', 25)), 45))
 RESEARCH_OVERVIEW_JOB_TTL_SECONDS = max(300, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_JOB_TTL_SECONDS', 3600)), 86400))
+RESEARCH_OVERVIEW_ENABLE_SECOND_PASS = str(os.environ.get('YSXS_RESEARCH_OVERVIEW_ENABLE_SECOND_PASS', '') or '').strip().lower() in {'1', 'true', 'yes', 'on'}
 LITERATURE_SEARCH_JOB_TTL_SECONDS = max(300, min(int(os.environ.get('YSXS_LITERATURE_SEARCH_JOB_TTL_SECONDS', 3600)), 86400))
+LITERATURE_SEARCH_STALE_SECONDS = max(45, min(int(os.environ.get('YSXS_LITERATURE_SEARCH_STALE_SECONDS', 180)), 900))
+RESEARCH_OVERVIEW_STALE_SECONDS = max(60, min(int(os.environ.get('YSXS_RESEARCH_OVERVIEW_STALE_SECONDS', 240)), 1200))
 ASYNC_JOB_TYPE_RESEARCH_OVERVIEW = 'research_overview'
 ASYNC_JOB_TYPE_LITERATURE_SEARCH = 'literature_search'
 
@@ -1302,6 +1313,42 @@ def inject_broadcast_popup():
     }
 
 
+@app.context_processor
+def inject_global_ai_sidebar():
+    if not has_request_context():
+        return {'global_ai_sidebar': None}
+
+    if not getattr(current_user, 'is_authenticated', False):
+        return {'global_ai_sidebar': None}
+
+    if request.endpoint in {'admin_ai_config'}:
+        return {'global_ai_sidebar': None}
+
+    try:
+        saved_config = load_runtime_ai_config()
+        effective_ai = get_ai_client_config() or {}
+        return {
+            'global_ai_sidebar': {
+                'enabled': bool(effective_ai),
+                'context_limit': _sanitize_admin_chat_context_limit(saved_config.get('admin_chat_context_limit')),
+                'model': str(effective_ai.get('model') or ''),
+                'wire_api': str(effective_ai.get('wire_api') or ''),
+                'endpoint': request.endpoint or '',
+            }
+        }
+    except Exception as exc:
+        current_app.logger.warning("读取全局 AI 侧边栏配置失败: %s", exc)
+        return {
+            'global_ai_sidebar': {
+                'enabled': False,
+                'context_limit': 10,
+                'model': '',
+                'wire_api': '',
+                'endpoint': request.endpoint or '',
+            }
+        }
+
+
 @app.before_request
 def _runtime_metrics_before_request():
     runtime_metrics_before_request()
@@ -1827,6 +1874,20 @@ def view_auth_keys():
 def manage_users():
     # 获取前端提交的搜索参数（默认空字符串）
     search_query = request.args.get('search', '').strip()
+    sort_by = str(request.args.get('sort_by') or 'last_login').strip().lower()
+    sort_dir = str(request.args.get('sort_dir') or 'desc').strip().lower()
+    if sort_dir not in {'asc', 'desc'}:
+        sort_dir = 'desc'
+    allowed_sort_fields = {
+        'custom_id': User.custom_id,
+        'username': func.lower(User.username),
+        'email': func.lower(User.email),
+        'created_at': User.created_at,
+        'last_login': User.last_login,
+        'status': func.lower(User.status),
+    }
+    if sort_by not in allowed_sort_fields:
+        sort_by = 'last_login'
     
     # 基础查询：获取所有用户
     query = User.query
@@ -1845,17 +1906,34 @@ def manage_users():
             )
         )
 
-    query = query.order_by(
-        User.last_login.is_(None),
-        User.last_login.desc(),
-        User.created_at.desc(),
-        User.id.desc(),
+    role_rank = case(
+        (User.role == 'super admin', 0),
+        (User.role == 'admin', 1),
+        else_=2,
     )
+    sort_column = allowed_sort_fields[sort_by]
+    sort_orders = [role_rank.asc()]
+
+    if sort_by == 'last_login':
+        sort_orders.append(User.last_login.is_(None).asc())
+        sort_orders.append(sort_column.asc() if sort_dir == 'asc' else sort_column.desc())
+    else:
+        sort_orders.append(sort_column.asc() if sort_dir == 'asc' else sort_column.desc())
+        sort_orders.append(User.last_login.is_(None).asc())
+        sort_orders.append(User.last_login.desc())
+
+    sort_orders.extend([User.created_at.desc(), User.id.desc()])
+    query = query.order_by(*sort_orders)
     
     # 执行查询，获取符合条件的用户
     users = query.all()
     
-    return render_template('manage_users.html', users=users)
+    return render_template(
+        'manage_users.html',
+        users=users,
+        current_sort_by=sort_by,
+        current_sort_dir=sort_dir,
+    )
 
 # 管理员查看用户详情
 @app.route('/admin/users/<int:user_id>')
@@ -2385,7 +2463,32 @@ def _build_ai_config_form_data(saved: dict[str, str] | None = None) -> dict[str,
         'model': (selected_preset or {}).get('model', saved.get('model', '')),
         'wire_api': (selected_preset or {}).get('wire_api', saved.get('wire_api', '')),
         'notes': saved.get('notes', ''),
+        'admin_chat_context_limit': str(_sanitize_admin_chat_context_limit(saved.get('admin_chat_context_limit'))),
     }
+
+
+def _ai_preset_fields_unchanged(
+    preset_config: dict | None,
+    *,
+    base_url: str,
+    model: str,
+    wire_api: str,
+) -> bool:
+    if not preset_config:
+        return False
+    return (
+        str(base_url or '').strip().rstrip('/') == str(preset_config.get('base_url') or '').strip().rstrip('/')
+        and str(model or '').strip() == str(preset_config.get('model') or '').strip()
+        and str(wire_api or '').strip().lower() == str(preset_config.get('wire_api') or '').strip().lower()
+    )
+
+
+def _sanitize_admin_chat_context_limit(value, default: int = 10) -> int:
+    try:
+        normalized = int(str(value or default).strip())
+    except (TypeError, ValueError):
+        normalized = default
+    return max(2, min(normalized, 30))
 
 
 def _infer_ai_preset_base_url(model: str | None, wire_api: str | None, fallback: str | None = None) -> str:
@@ -2529,6 +2632,7 @@ AI_SCENE_LABELS = {
     'search_rerank': '智能深搜结果重排',
     'search_result_summary': '深搜结果智能总结',
     'research_scope_filter': '科研方向强过滤',
+    'user_sidebar_chat': '侧边 AI 对话',
 }
 
 
@@ -2895,8 +2999,16 @@ def admin_ai_config():
         model_value = str(request.form.get('model', '') or '').strip()
         wire_api_value = str(request.form.get('wire_api', '') or '').strip().lower()
         notes_value = str(request.form.get('notes', '') or '').strip()
+        context_limit_value = _sanitize_admin_chat_context_limit(request.form.get('admin_chat_context_limit'))
 
-        if preset_config:
+        use_preset_config = _ai_preset_fields_unchanged(
+            preset_config,
+            base_url=base_url_value,
+            model=model_value,
+            wire_api=wire_api_value,
+        )
+
+        if use_preset_config:
             updated_config['preset_key'] = preset_config.get('key', preset_key_value)
             updated_config.pop('base_url', None)
             updated_config.pop('model', None)
@@ -2923,6 +3035,8 @@ def admin_ai_config():
         else:
             updated_config.pop('notes', None)
 
+        updated_config['admin_chat_context_limit'] = str(context_limit_value)
+
         api_key_input = str(request.form.get('api_key', '') or '').strip()
         ads_token_input = str(request.form.get('nasa_ads_api_token', '') or '').strip()
 
@@ -2937,7 +3051,10 @@ def admin_ai_config():
             updated_config.pop('nasa_ads_api_token', None)
 
         save_runtime_ai_config(updated_config)
-        flash('智能管理系统配置已保存。', 'success')
+        if context_limit_value > 20:
+            flash(f'已保存。提示：当前对话上下文条数设置为 {context_limit_value}，可能增加延迟与 Token 消耗。', 'warning')
+        else:
+            flash('智能管理系统配置已保存。', 'success')
         return redirect(url_for('admin_ai_config'))
 
     saved_config = load_runtime_ai_config()
@@ -2955,6 +3072,360 @@ def admin_ai_config():
         dashboard=dashboard,
         env_presets=env_presets,
     )
+
+
+def _build_admin_ai_test_override(payload: dict | None) -> dict[str, str]:
+    source = payload or {}
+    saved_config = load_runtime_ai_config()
+    updated_config = dict(saved_config)
+
+    preset_key_value = str(source.get('preset_key', '') or '').strip()
+    preset_config = get_env_ai_preset(preset_key_value)
+    base_url_value = str(source.get('base_url', '') or '').strip().rstrip('/')
+    model_value = str(source.get('model', '') or '').strip()
+    wire_api_value = str(source.get('wire_api', '') or '').strip().lower()
+    api_key_input = str(source.get('api_key', '') or '').strip()
+    clear_api_key = str(source.get('clear_api_key') or '').strip().lower() in {'1', 'true', 'yes', 'on'}
+
+    use_preset_config = _ai_preset_fields_unchanged(
+        preset_config,
+        base_url=base_url_value,
+        model=model_value,
+        wire_api=wire_api_value,
+    )
+
+    if use_preset_config:
+        updated_config['preset_key'] = preset_config.get('key', preset_key_value)
+        updated_config.pop('base_url', None)
+        updated_config.pop('model', None)
+        updated_config.pop('wire_api', None)
+    else:
+        updated_config.pop('preset_key', None)
+        if base_url_value:
+            updated_config['base_url'] = base_url_value
+        else:
+            updated_config.pop('base_url', None)
+
+        if model_value:
+            updated_config['model'] = model_value
+        else:
+            updated_config.pop('model', None)
+
+        if wire_api_value in {'responses', 'chat_completions', 'anthropic_messages'}:
+            updated_config['wire_api'] = wire_api_value
+        else:
+            updated_config.pop('wire_api', None)
+
+    if api_key_input:
+        updated_config['api_key'] = api_key_input
+    elif clear_api_key:
+        updated_config.pop('api_key', None)
+
+    cleaned: dict[str, str] = {}
+    for key in ('preset_key', 'base_url', 'model', 'wire_api', 'api_key'):
+        value = str(updated_config.get(key) or '').strip()
+        if value:
+            cleaned[key] = value
+    return cleaned
+
+
+def _build_chat_history_lines(history_items, context_limit: int, *, item_max_chars: int = 1200) -> list[str]:
+    history_lines: list[str] = []
+    if not isinstance(history_items, list):
+        return history_lines
+
+    for item in history_items[-context_limit:]:
+        if not isinstance(item, dict):
+            continue
+        role = str(item.get('role') or '').strip().lower()
+        content = re.sub(r'\s+', ' ', str(item.get('content') or '').strip())
+        if role not in {'user', 'assistant'} or not content:
+            continue
+        role_label = '用户' if role == 'user' else '助手'
+        history_lines.append(f"{role_label}：{content[:item_max_chars]}")
+    return history_lines
+
+
+@app.route('/admin/ai-config/test-chat', methods=['POST'])
+@login_required
+@super_admin_required
+def admin_ai_config_test_chat():
+    payload = request.get_json(silent=True) or {}
+    message = re.sub(r'\s+', ' ', str(payload.get('message') or '').strip())
+    if not message:
+        return jsonify({'error': '请输入要测试的问题。'}), 400
+
+    context_limit = _sanitize_admin_chat_context_limit(payload.get('context_limit'))
+    context_warning = ''
+    if context_limit > 20:
+        context_warning = f'当前上下文条数设为 {context_limit}，可能带来更高延迟与 Token 消耗。'
+
+    history_lines = _build_chat_history_lines(payload.get('history') or [], context_limit)
+
+    runtime_override = _build_admin_ai_test_override(payload)
+    effective_config = resolve_ai_client_config(runtime_override)
+    if not effective_config:
+        return jsonify({'error': '当前页面所选配置不可用：缺少 API Key 或必要的模型配置。'}), 400
+
+    prompt_parts = [
+        "这是超级管理员控制台中的当前所选 AI 对话面板。",
+        "请基于已有上下文自然继续对话，回答保持专业、直接、清晰，可以正常解释问题、给建议或完成轻量问答。",
+    ]
+    if history_lines:
+        prompt_parts.append("最近对话：\n" + "\n".join(history_lines))
+    prompt_parts.append(f"用户本轮消息：{message}")
+    prompt_parts.append("请直接继续对话，并尽量给出有信息量的回答。不要声称自己看到了并不存在的本地文件或运行状态。")
+    prompt_text = "\n\n".join(prompt_parts)
+
+    started_at = time.time()
+    try:
+        reply = call_ai_text(
+            "你是超级管理员控制台中的当前模型对话助手。你需要像一个正常可用的 AI 一样继续对话，回答要真实、清晰、简洁，不要伪造本地系统状态。",
+            prompt_text,
+            timeout=max(20, min(int(payload.get('timeout') or 45), 90)),
+            usage_context={
+                'scene': 'admin_ai_chat',
+                'user_id': current_user.id,
+            },
+            client_config_override=runtime_override,
+        )
+    except Exception as exc:
+        current_app.logger.warning("管理员 AI 控制台测试失败: %s", exc)
+        return jsonify({
+            'error': f'当前模型调用失败：{exc}',
+            'effective_model': effective_config.get('model') or '',
+            'effective_wire_api': effective_config.get('wire_api') or '',
+            'effective_base_url': effective_config.get('base_url') or '',
+        }), 502
+
+    elapsed_ms = int((time.time() - started_at) * 1000)
+    return jsonify({
+        'reply': reply,
+        'elapsed_ms': elapsed_ms,
+        'context_limit': context_limit,
+        'context_warning': context_warning,
+        'effective_model': effective_config.get('model') or '',
+        'effective_wire_api': effective_config.get('wire_api') or '',
+        'effective_base_url': effective_config.get('base_url') or '',
+        'config_source': effective_config.get('config_source') or '',
+        'preset_label': effective_config.get('preset_label') or '',
+    })
+
+
+@app.route('/api/ai-chat/sidebar', methods=['POST'])
+@login_required
+def user_sidebar_ai_chat():
+    payload = request.get_json(silent=True) or {}
+    message = str(payload.get('message') or '').strip()
+    if not message:
+        return jsonify({'error': '请输入要发送的问题。'}), 400
+
+    saved_config = load_runtime_ai_config()
+    context_limit = _sanitize_admin_chat_context_limit(
+        payload.get('context_limit') or saved_config.get('admin_chat_context_limit')
+    )
+    context_warning = ''
+    if context_limit > 20:
+        context_warning = f'当前上下文条数为 {context_limit}，可能增加响应延迟与 Token 消耗。'
+
+    effective_config = get_ai_client_config()
+    if not effective_config:
+        return jsonify({'error': '当前系统尚未配置可用的 AI 模型，请联系管理员检查智能管理系统配置。'}), 503
+
+    history_lines = _build_chat_history_lines(payload.get('history') or [], context_limit, item_max_chars=1600)
+    page_title = str(payload.get('page_title') or '').strip()
+    page_hint = str(payload.get('page_hint') or '').strip()
+    assistant_scene = str(payload.get('assistant_scene') or '').strip()
+    page_context = str(payload.get('page_context') or '').strip()
+    if len(page_context) > 2200:
+        page_context = page_context[:2200] + '…'
+
+    prompt_parts = [
+        "这是云凇学术系统中的全局侧边智能助手面板。",
+        "请像一个真正可用、懂页面上下文的科研助理那样继续对话：可以回答科研、文献检索、论文写作、系统使用、页面内操作建议等问题，也可以进行一般性问答。",
+    ]
+    if assistant_scene:
+        prompt_parts.append(f"当前助手模式：{assistant_scene}")
+    if page_title:
+        prompt_parts.append(f"用户当前页面标题：{page_title}")
+    if page_hint:
+        prompt_parts.append(f"用户当前页面：{page_hint}")
+    if page_context:
+        prompt_parts.append("用户当前页面补充上下文：\n" + page_context)
+    if history_lines:
+        prompt_parts.append("最近对话：\n" + "\n".join(history_lines))
+    prompt_parts.append(f"用户本轮消息：{message}")
+    prompt_parts.append("请直接回答，允许使用 Markdown。不要伪造你访问了本地文件、数据库、页面完整正文、实时后端状态或服务器运行状态；如果信息不足，请明确说明需要用户补充。")
+    prompt_text = "\n\n".join(prompt_parts)
+
+    started_at = time.time()
+    try:
+        reply = call_ai_text(
+            "你是云凇学术系统的智能助手。回答应专业、清晰、自然，优先保证真实、相关和可执行，不要虚构系统状态。",
+            prompt_text,
+            timeout=max(18, min(int(payload.get('timeout') or 40), 60)),
+            usage_context={
+                'scene': 'user_sidebar_chat',
+                'user_id': current_user.id,
+            },
+        )
+    except Exception as exc:
+        current_app.logger.warning("全局 AI 侧边对话失败: %s", exc)
+        return jsonify({
+            'error': f'当前 AI 对话失败：{exc}',
+            'effective_model': effective_config.get('model') or '',
+            'context_limit': context_limit,
+        }), 502
+
+    elapsed_ms = int((time.time() - started_at) * 1000)
+    return jsonify({
+        'reply': reply,
+        'elapsed_ms': elapsed_ms,
+        'context_limit': context_limit,
+        'context_warning': context_warning,
+        'effective_model': effective_config.get('model') or '',
+    })
+
+
+ASSISTANT_COMMAND_ACTIONS = {
+    'answer',
+    'navigate',
+    'search_documents',
+    'filter_documents',
+    'sort_documents',
+    'run_literature_search',
+    'run_research_overview',
+}
+
+
+def _extract_json_object(text_value: str) -> dict:
+    raw = str(text_value or '').strip()
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        pass
+
+    fenced = re.search(r"```(?:json)?\s*({[\s\S]*?})\s*```", raw, re.IGNORECASE)
+    if fenced:
+        try:
+            parsed = json.loads(fenced.group(1))
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            pass
+
+    start = raw.find('{')
+    end = raw.rfind('}')
+    if start >= 0 and end > start:
+        try:
+            parsed = json.loads(raw[start:end + 1])
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+    return {}
+
+
+def _normalize_assistant_command_payload(parsed: dict) -> dict:
+    action = str(parsed.get('action') or 'answer').strip().lower()
+    if action not in ASSISTANT_COMMAND_ACTIONS:
+        action = 'answer'
+
+    params = parsed.get('params') if isinstance(parsed.get('params'), dict) else {}
+    plan = parsed.get('plan') if isinstance(parsed.get('plan'), list) else []
+    normalized_plan = [str(item).strip() for item in plan if str(item).strip()][:5]
+    reply = str(parsed.get('reply') or '').strip()
+
+    return {
+        'is_command': action != 'answer',
+        'action': action,
+        'params': params,
+        'plan': normalized_plan,
+        'reply': reply,
+    }
+
+
+@app.route('/api/assistant/command/parse', methods=['POST'])
+@login_required
+def parse_assistant_command():
+    payload = request.get_json(silent=True) or {}
+    message = str(payload.get('message') or '').strip()
+    if not message:
+        return jsonify({'error': '请输入要执行或询问的内容。'}), 400
+
+    effective_config = get_ai_client_config()
+    if not effective_config:
+        return jsonify({'error': '当前系统尚未配置可用的 AI 模型，请联系管理员检查智能管理系统配置。'}), 503
+
+    page_title = str(payload.get('page_title') or '').strip()
+    page_hint = str(payload.get('page_hint') or '').strip()
+    assistant_scene = str(payload.get('assistant_scene') or '').strip()
+    page_context = str(payload.get('page_context') or '').strip()
+    command_context = payload.get('command_context') if isinstance(payload.get('command_context'), dict) else {}
+    if len(page_context) > 1800:
+        page_context = page_context[:1800] + '…'
+
+    schema_text = """
+只返回一个 JSON 对象，不要包含 Markdown。
+{
+  "action": "answer | navigate | search_documents | filter_documents | sort_documents | run_literature_search | run_research_overview",
+  "params": {},
+  "plan": ["将要执行的简短步骤"],
+  "reply": "如果 action 为 answer，给出简短回答；否则给出简短执行说明"
+}
+
+动作说明：
+- answer：用户只是提问、解释、总结、建议，不要求操作系统页面。
+- navigate：跳转页面。params.page 只能是 home、favorites、shared、morning_report、literature_search、research_overview。
+- search_documents：在文献库按关键词搜索。params.query 为搜索词；可附带 sort、categories、year_ranges、doc_types。
+- filter_documents：在文献库筛选。params 可包含 query、categories、year_ranges、doc_types、sort。分类、年份、文献类型尽量使用 command_context 中已有 value。
+- sort_documents：调整文献库排序。params.sort 只能是 latest、earliest、title-asc、title-desc、citations。
+- run_literature_search：进入智能文献深搜并发起检索。params.query 为检索需求；可包含 sort_mode、max_results、lookback_days。
+- run_research_overview：进入研究现状梳理并带入方向。params.query 为研究方向。
+""".strip()
+
+    prompt_parts = [
+        "你是云凇学术系统的自然语言指令解析器。你的任务是判断用户是否想控制当前系统页面，并输出严格 JSON。",
+        schema_text,
+        f"用户消息：{message}",
+    ]
+    if assistant_scene:
+        prompt_parts.append(f"当前助手模式：{assistant_scene}")
+    if page_title:
+        prompt_parts.append(f"页面标题：{page_title}")
+    if page_hint:
+        prompt_parts.append(f"页面标识：{page_hint}")
+    if page_context:
+        prompt_parts.append("页面上下文：\n" + page_context)
+    if command_context:
+        prompt_parts.append("可用页面动作上下文 JSON：\n" + json.dumps(command_context, ensure_ascii=False)[:5000])
+
+    try:
+        raw_reply = call_ai_text(
+            "你只做意图解析，必须输出可被 json.loads 解析的单个 JSON 对象。",
+            "\n\n".join(prompt_parts),
+            timeout=max(12, min(int(payload.get('timeout') or 24), 40)),
+            usage_context={
+                'scene': 'assistant_command_parse',
+                'user_id': current_user.id,
+            },
+        )
+    except Exception as exc:
+        current_app.logger.warning("智能助手指令解析失败: %s", exc)
+        return jsonify({'error': f'指令解析失败：{exc}'}), 502
+
+    parsed = _extract_json_object(raw_reply)
+    if not parsed:
+        return jsonify({
+            'is_command': False,
+            'action': 'answer',
+            'params': {},
+            'plan': [],
+            'reply': '我没能把这句话稳定解析成可执行操作，会按普通问题回答。',
+        })
+
+    return jsonify(_normalize_assistant_command_payload(parsed))
 
 
 @app.route('/admin/broadcasts', methods=['GET', 'POST'])
@@ -3145,6 +3616,7 @@ def literature_search_home():
             ASYNC_JOB_TYPE_LITERATURE_SEARCH,
             fingerprint,
         )
+        matched_job = _expire_stale_literature_search_job(matched_job)
         if matched_job:
             existing_job_id = str(matched_job.get('job_id') or '')
             existing_job_status = str(matched_job.get('status') or '')
@@ -3207,6 +3679,47 @@ def _set_literature_search_job(job_id: str, **updates) -> dict | None:
         return None
 
 
+def _is_job_stale(job: dict | None, *, stale_seconds: int) -> bool:
+    if not job:
+        return False
+    if str(job.get('status') or '').strip().lower() not in {'pending', 'running'}:
+        return False
+    updated_ts = float(job.get('updated_ts') or 0.0)
+    if updated_ts <= 0:
+        return False
+    return (time.time() - updated_ts) >= max(int(stale_seconds or 0), 1)
+
+
+def _expire_stale_literature_search_job(job: dict | None) -> dict | None:
+    if not _is_job_stale(job, stale_seconds=LITERATURE_SEARCH_STALE_SECONDS):
+        return job
+    current_step = str((job or {}).get('step') or '').strip() or '处理中'
+    error_text = f'智能文献深搜任务长时间停留在“{current_step}”，已按超时处理。请重新深搜。'
+    _set_literature_search_job(
+        str(job.get('job_id') or ''),
+        status='failed',
+        step='智能文献深搜任务已超时。',
+        error=error_text,
+    )
+    current_app.logger.warning("检测到智能文献深搜僵尸任务，已标记失败: job_id=%s step=%s", job.get('job_id'), current_step)
+    return get_async_job(ASYNC_JOB_TYPE_LITERATURE_SEARCH, str(job.get('job_id') or ''))
+
+
+def _expire_stale_research_overview_job(job: dict | None) -> dict | None:
+    if not _is_job_stale(job, stale_seconds=RESEARCH_OVERVIEW_STALE_SECONDS):
+        return job
+    current_step = str((job or {}).get('step') or '').strip() or '处理中'
+    error_text = f'研究现状综述任务长时间停留在“{current_step}”，已按超时处理。请重新梳理。'
+    _set_research_overview_job(
+        str(job.get('job_id') or ''),
+        status='failed',
+        step='研究现状综述任务已超时。',
+        error=error_text,
+    )
+    current_app.logger.warning("检测到研究现状综述僵尸任务，已标记失败: job_id=%s step=%s", job.get('job_id'), current_step)
+    return get_async_job(ASYNC_JOB_TYPE_RESEARCH_OVERVIEW, str(job.get('job_id') or ''))
+
+
 def _render_literature_search_fragment(
     *,
     query_text: str,
@@ -3234,6 +3747,24 @@ def _render_literature_search_fragment(
         build_display_source_links=build_display_source_links,
         ysxs_url_prefix=(current_app.config.get('YSXS_URL_PREFIX') or ''),
     )
+
+
+def _safe_internal_url_for(endpoint: str, **values) -> str:
+    if has_request_context():
+        return url_for(endpoint, **values)
+
+    app_obj = current_app._get_current_object()
+    script_name = normalize_url_prefix(
+        app_obj.config.get('APPLICATION_ROOT')
+        or app_obj.config.get('YSXS_URL_PREFIX')
+        or ''
+    )
+    environ_overrides = {}
+    if script_name:
+        environ_overrides['SCRIPT_NAME'] = script_name
+
+    with app_obj.test_request_context('/', environ_overrides=environ_overrides):
+        return url_for(endpoint, **values)
 
 
 def _run_literature_search_job(app_obj: Flask, job_id: str) -> None:
@@ -3319,6 +3850,7 @@ def literature_search_start():
     query_text = str(payload.get('q') or '').strip()
     if not query_text:
         return jsonify({'error': '请输入研究问题或检索需求。'}), 400
+    force_refresh = _coerce_force_refresh(payload.get('force_refresh'))
 
     sources = payload.get('sources') or []
     if isinstance(sources, str):
@@ -3340,18 +3872,20 @@ def literature_search_start():
     }, ensure_ascii=False, sort_keys=True)
 
     _cleanup_literature_search_jobs()
-    existing_job = find_latest_async_job_by_fingerprint(
-        ASYNC_JOB_TYPE_LITERATURE_SEARCH,
-        fingerprint,
-        statuses={'pending', 'running', 'succeeded'},
-    )
-    if existing_job:
-        return jsonify({
-            'job_id': existing_job['job_id'],
-            'status': existing_job.get('status'),
-            'step': existing_job.get('step') or '',
-            'reused': True,
-        }), 202
+    if not force_refresh:
+        existing_job = find_latest_async_job_by_fingerprint(
+            ASYNC_JOB_TYPE_LITERATURE_SEARCH,
+            fingerprint,
+            statuses={'pending', 'running', 'succeeded'},
+        )
+        existing_job = _expire_stale_literature_search_job(existing_job)
+        if existing_job:
+            return jsonify({
+                'job_id': existing_job['job_id'],
+                'status': existing_job.get('status'),
+                'step': existing_job.get('step') or '',
+                'reused': True,
+            }), 202
 
     job_id = secrets.token_urlsafe(12)
     create_async_job(
@@ -3383,6 +3917,7 @@ def literature_search_start():
 def literature_search_status(job_id: str):
     _cleanup_literature_search_jobs()
     job = get_async_job(ASYNC_JOB_TYPE_LITERATURE_SEARCH, job_id)
+    job = _expire_stale_literature_search_job(job)
     if not job or int(job.get('user_id') or 0) != int(current_user.id):
         return jsonify({'error': '任务不存在或已过期。'}), 404
     response = {
@@ -3402,6 +3937,11 @@ RESEARCH_OVERVIEW_FOCUS_OPTIONS = {
     'frontier': '前沿进展',
 }
 
+RESEARCH_OVERVIEW_GENERATION_OPTIONS = {
+    'fast': '快速模式',
+    'quality': '高质量模式',
+}
+
 
 def _research_overview_year(value, fallback=5):
     try:
@@ -3415,6 +3955,451 @@ def _research_overview_result_limit(value, fallback=12):
         return max(6, min(int(value or fallback), 20))
     except (TypeError, ValueError):
         return fallback
+
+
+def _normalize_research_overview_generation_mode(value, fallback='fast') -> str:
+    mode = str(value or fallback).strip().lower()
+    if mode not in RESEARCH_OVERVIEW_GENERATION_OPTIONS:
+        mode = fallback
+    return mode
+
+
+def _coerce_force_refresh(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on', 'force', 'refresh'}
+
+
+def _dedupe_string_list(values, *, limit: int) -> list[str]:
+    items: list[str] = []
+    seen: set[str] = set()
+    for raw in values or []:
+        text = re.sub(r'\s+', ' ', str(raw or '').strip())
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(text)
+        if len(items) >= max(limit, 1):
+            break
+    return items
+
+
+def _build_research_overview_query_profile(direction_text: str) -> dict[str, object]:
+    original = re.sub(r'\s+', ' ', str(direction_text or '').strip())
+    cleaned = re.sub(
+        r'(?i)\b(review|state of the art|research overview|overview|progress|survey)\b',
+        ' ',
+        original,
+    )
+    cleaned = re.sub(r'(研究现状|现状综述|综述|进展|述评|评述)', ' ', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip() or original
+
+    queries = [cleaned]
+    keywords = [cleaned]
+    lowered = cleaned.lower()
+
+    lunar_terms = ('月球', 'lunar', 'moon')
+    structure_terms = ('深部结构', '内部结构', '月幔', '月核', '壳幔', 'interior', 'internal structure', 'deep structure', 'mantle', 'core', 'crust')
+    moonquake_terms = ('月震', 'moonquake', 'lunar seismic', 'apollo seismic', '阿波罗')
+
+    has_lunar = any(term in lowered or term in cleaned for term in lunar_terms)
+    has_structure = any(term in lowered or term in cleaned for term in structure_terms)
+    has_moonquake = any(term in lowered or term in cleaned for term in moonquake_terms)
+
+    if has_lunar and has_structure:
+        queries.extend([
+            'lunar interior structure',
+            'lunar deep structure',
+            'moon interior structure',
+            'lunar mantle core crust',
+            '月球内部结构',
+            '月球深部结构',
+        ])
+        keywords.extend(['月球内部结构', '月球深部结构', 'lunar interior', 'deep structure', 'mantle', 'core', 'crust'])
+    if has_moonquake:
+        queries.extend([
+            'lunar seismic interior structure',
+            'deep moonquake lunar interior',
+            'Apollo passive seismic lunar interior',
+            '月震 月球内部结构',
+        ])
+        keywords.extend(['月震', 'deep moonquake', 'lunar seismic', 'Apollo passive seismic'])
+    if not has_lunar and not has_structure and not has_moonquake:
+        pieces = [part.strip() for part in re.split(r'[\s,，;；/、]+', cleaned) if part.strip()]
+        keywords.extend(pieces[:6])
+
+    return {
+        'search_title': cleaned[:64] or original[:64] or '研究现状综述',
+        'intent_summary': f'围绕“{cleaned or original}”定向检索高相关研究现状支撑文献。',
+        'queries': _dedupe_string_list(queries, limit=6),
+        'keywords': _dedupe_string_list(keywords, limit=8),
+        'exclude_terms': ['研究现状', '综述', '进展'] if has_lunar or has_structure or has_moonquake else [],
+        '_query_profile_note': '研究现状梳理已改为定向检索词配置，避免把“研究现状/综述”等泛词当作主检索词。',
+    }
+
+
+def _is_lunar_research_overview_topic(direction_text: str) -> bool:
+    text = str(direction_text or '').strip().lower()
+    if not text:
+        return False
+    return any(term in text for term in (
+        '月球', '月震', '阿波罗', 'lunar', 'moon', 'moonquake', 'apollo',
+    ))
+
+
+def _build_research_overview_focus_groups(
+    direction_text: str,
+    profile: dict[str, object] | None = None,
+) -> list[dict[str, object]]:
+    profile = profile or _build_research_overview_query_profile(direction_text)
+    raw_terms = _dedupe_string_list([
+        direction_text,
+        *[str(value) for value in (profile.get('queries') or [])],
+        *[str(value) for value in (profile.get('keywords') or [])],
+    ], limit=12)
+    combined_text = " ".join(raw_terms).lower()
+    groups: list[dict[str, object]] = []
+    seen_group_keys: set[str] = set()
+
+    def add_group(label: str, terms: list[str] | tuple[str, ...]) -> None:
+        cleaned_terms = _dedupe_string_list(terms, limit=6)
+        if not cleaned_terms:
+            return
+        key = "|".join(sorted(term.lower() for term in cleaned_terms))
+        if key in seen_group_keys:
+            return
+        seen_group_keys.add(key)
+        groups.append({
+            'label': label,
+            'terms': cleaned_terms,
+        })
+
+    lunar_terms = ('月球', 'lunar', 'moon')
+    structure_terms = ('深部结构', '内部结构', '月幔', '月核', '月壳', '壳幔', 'interior', 'internal structure', 'deep structure', 'mantle', 'core', 'crust')
+    moonquake_terms = ('月震', 'moonquake', 'lunar seismic', 'apollo seismic', '地震', '震相', 'seismic')
+    apollo_terms = ('阿波罗', 'apollo', 'legacy data', 'reprocess', 'reprocessing', 'reanalysis', '再处理', '重处理', '再分析')
+
+    if any(term in combined_text for term in ('月球', 'lunar', 'moon')):
+        add_group('lunar_context', lunar_terms)
+    if any(term in combined_text for term in ('深部结构', '内部结构', '月幔', '月核', '月壳', '壳幔', 'interior', 'internal structure', 'mantle', 'core', 'crust')):
+        add_group('structure_focus', structure_terms)
+    if any(term in combined_text for term in ('月震', 'moonquake', 'lunar seismic', 'apollo seismic', '地震', '震相', 'seismic')):
+        add_group('seismic_focus', moonquake_terms)
+    if any(term in combined_text for term in ('阿波罗', 'apollo', 'reprocess', 'reprocessing', 'reanalysis', '再处理', '重处理', '再分析')):
+        add_group('apollo_focus', apollo_terms)
+
+    for raw in raw_terms[:8]:
+        normalized = re.sub(r'\s+', ' ', str(raw or '').strip())
+        if len(normalized) < 2:
+            continue
+        if re.search(r'[\u4e00-\u9fff]', normalized):
+            parts = [normalized]
+            parts.extend(
+                part for part in re.split(r'[\s,，;；/、]+', normalized)
+                if len(part.strip()) > 1 and part.strip() not in {'研究', '现状', '综述', '进展'}
+            )
+        else:
+            tokens = [
+                token for token in re.findall(r"[a-z0-9-]+", normalized.lower())
+                if token not in {'review', 'overview', 'progress', 'survey'}
+                and token not in {'research', 'study', 'studies', 'latest', 'recent', 'deep'}
+                and len(token) >= 3
+            ]
+            if not tokens:
+                continue
+            parts = [normalized] if len(tokens) >= 2 else []
+            parts.extend(tokens[:3])
+        add_group(f'phrase:{normalized[:32]}', parts[:4])
+
+    return groups
+
+
+def _analyze_research_overview_topic_match(direction_text: str, item: dict) -> dict[str, object]:
+    profile = _build_research_overview_query_profile(direction_text)
+    keywords = [str(value) for value in (profile.get('keywords') or []) if str(value or '').strip()]
+    queries = [str(value) for value in (profile.get('queries') or []) if str(value or '').strip()]
+    search_terms = _dedupe_string_list([*queries, *keywords], limit=10)
+    haystack = build_filter_haystack(item)
+    title_haystack = build_title_haystack(item)
+    if not haystack:
+        return {
+            'is_on_topic': False,
+            'topic_score': 0.0,
+            'phrase_hits': 0,
+            'title_phrase_hits': 0,
+            'anchor_hits': 0,
+            'directional_hits': 0,
+            'focus_group_hits': 0,
+            'title_focus_group_hits': 0,
+            'focus_group_labels': [],
+            'focus_group_ratio': 0.0,
+        }
+
+    primary_phrase = re.sub(r'\s+', ' ', str((queries or [direction_text])[0] or '').strip())
+    exact_title_phrase_hit = bool(primary_phrase and len(primary_phrase) >= 2 and haystack_matches_term(title_haystack, primary_phrase))
+    exact_body_phrase_hit = bool(primary_phrase and len(primary_phrase) >= 2 and haystack_matches_term(haystack, primary_phrase))
+    phrase_hits = sum(1 for term in search_terms if term and haystack_matches_term(haystack, term))
+    title_phrase_hits = sum(1 for term in search_terms if term and haystack_matches_term(title_haystack, term))
+    matched_keywords = [str(value) for value in (item.get('matched_keywords') or []) if str(value or '').strip()]
+    anchor_terms = derive_anchor_terms(keywords)
+    directional_terms = derive_directional_terms(keywords)
+    anchor_hits = sum(1 for term in anchor_terms if term and haystack_matches_term(haystack, term))
+    directional_hits = sum(1 for term in directional_terms if term and haystack_matches_term(haystack, term))
+    title_anchor_hits = sum(1 for term in anchor_terms if term and haystack_matches_term(title_haystack, term))
+    title_directional_hits = sum(1 for term in directional_terms if term and haystack_matches_term(title_haystack, term))
+    focus_groups = _build_research_overview_focus_groups(direction_text, profile=profile)
+    hit_group_labels: list[str] = []
+    title_group_hits = 0
+    for group in focus_groups:
+        terms = [str(term) for term in (group.get('terms') or []) if str(term or '').strip()]
+        if not terms:
+            continue
+        body_hit = any(haystack_matches_term(haystack, term) for term in terms)
+        title_hit = any(haystack_matches_term(title_haystack, term) for term in terms)
+        if body_hit:
+            hit_group_labels.append(str(group.get('label') or 'focus'))
+        if title_hit:
+            title_group_hits += 1
+    focus_group_hits = len(hit_group_labels)
+    focus_group_ratio = round(focus_group_hits / max(len(focus_groups), 1), 3) if focus_groups else 0.0
+
+    lunar_hits = sum(1 for term in ('月球', 'lunar', 'moon', '月震', 'moonquake', 'apollo', '阿波罗') if haystack_matches_term(haystack, term))
+    structure_hits = sum(1 for term in ('内部结构', '深部结构', '月幔', '月核', '月壳', '壳幔', 'interior', 'internal structure', 'mantle', 'core', 'crust') if haystack_matches_term(haystack, term))
+    query_is_lunar = _is_lunar_research_overview_topic(direction_text)
+
+    topic_score = (
+        (5.0 if exact_title_phrase_hit else 0.0)
+        + (2.2 if exact_body_phrase_hit else 0.0)
+        + title_phrase_hits * 1.25
+        + phrase_hits * 0.85
+        + title_anchor_hits * 1.2
+        + anchor_hits * 0.65
+        + title_directional_hits * 0.8
+        + directional_hits * 0.4
+        + title_group_hits * 1.4
+        + focus_group_hits * 1.05
+        + (0.9 if len(matched_keywords) >= 2 else 0.0)
+        + (0.6 if str(item.get('source') or '').strip().lower() == 'library' else 0.0)
+    )
+    if query_is_lunar and (lunar_hits <= 0 or structure_hits <= 0):
+        topic_score -= 3.5
+    topic_score = round(max(topic_score, 0.0), 3)
+
+    if query_is_lunar:
+        is_on_topic = (
+            lunar_hits > 0
+            and structure_hits > 0
+            and focus_group_hits >= 2
+            and (
+                exact_title_phrase_hit
+                or title_group_hits >= 1
+                or title_phrase_hits >= 1
+                or len(matched_keywords) >= 2
+                or (anchor_hits >= 2 and directional_hits >= 1)
+            )
+        )
+    else:
+        is_on_topic = (
+            exact_title_phrase_hit
+            or (title_phrase_hits >= 1 and focus_group_hits >= 1)
+            or (phrase_hits >= 2 and focus_group_hits >= 1)
+            or (len(matched_keywords) >= 2 and (anchor_hits >= 2 or focus_group_hits >= 1))
+            or (anchor_hits >= 2 and directional_hits >= 2 and title_anchor_hits >= 1)
+        )
+
+    return {
+        'is_on_topic': bool(is_on_topic),
+        'topic_score': topic_score,
+        'phrase_hits': phrase_hits,
+        'title_phrase_hits': title_phrase_hits,
+        'anchor_hits': anchor_hits,
+        'directional_hits': directional_hits,
+        'title_anchor_hits': title_anchor_hits,
+        'title_directional_hits': title_directional_hits,
+        'focus_group_hits': focus_group_hits,
+        'title_focus_group_hits': title_group_hits,
+        'focus_group_ratio': focus_group_ratio,
+        'focus_group_labels': hit_group_labels[:6],
+        'query_is_lunar': query_is_lunar,
+        'lunar_hits': lunar_hits,
+        'structure_hits': structure_hits,
+        'exact_title_phrase_hit': exact_title_phrase_hit,
+        'exact_body_phrase_hit': exact_body_phrase_hit,
+    }
+
+
+def _is_research_overview_candidate_on_topic(direction_text: str, item: dict) -> bool:
+    profile = _build_research_overview_query_profile(direction_text)
+    keywords = [str(value) for value in (profile.get('keywords') or []) if str(value or '').strip()]
+    exclude_terms = [str(value) for value in (profile.get('exclude_terms') or []) if str(value or '').strip()]
+    if not keywords:
+        return True
+
+    if not should_keep_paper(
+        item,
+        keywords=keywords,
+        strict_filter_enabled=True,
+        exclude_keywords=exclude_terms,
+    ):
+        return False
+
+    haystack = build_filter_haystack(item)
+    title_haystack = build_title_haystack(item)
+    if not haystack:
+        return False
+
+    if _is_lunar_research_overview_topic(direction_text):
+        track_result = classify_candidate_track(item, keywords=keywords)
+        if str(track_result.get('label') or '') == 'off_topic':
+            return False
+
+    analysis = _analyze_research_overview_topic_match(direction_text, item)
+    item['topic_score'] = float(analysis.get('topic_score') or 0.0)
+    item['topic_focus_groups'] = analysis.get('focus_group_labels') or []
+    item['topic_focus_group_ratio'] = float(analysis.get('focus_group_ratio') or 0.0)
+    item['topic_phrase_hits'] = int(analysis.get('phrase_hits') or 0)
+    item['topic_anchor_hits'] = int(analysis.get('anchor_hits') or 0)
+    return bool(analysis.get('is_on_topic'))
+
+
+def _build_research_overview_library_candidates(
+    *,
+    user_id: int,
+    direction_text: str,
+    limit: int,
+) -> list[dict]:
+    profile = _build_research_overview_query_profile(direction_text)
+    keywords = [str(item) for item in (profile.get('keywords') or [])]
+    queries = [str(item) for item in (profile.get('queries') or [])]
+    search_terms = _dedupe_string_list([*queries, *keywords], limit=10)
+    if not search_terms:
+        return []
+
+    like_clauses = []
+    for term in search_terms[:6]:
+        if len(term) < 2:
+            continue
+        pattern = f'%{term}%'
+        like_clauses.extend([
+            Document.title.ilike(pattern),
+            Document.abstract.ilike(pattern),
+            Document.keywords.ilike(pattern),
+            Document.tags.ilike(pattern),
+            Document.journal.ilike(pattern),
+        ])
+    if not like_clauses:
+        return []
+
+    docs = (
+        Document.query
+        .filter(Document.owner_id == user_id)
+        .filter(or_(*like_clauses))
+        .order_by(Document.year.desc(), Document.created_at.desc(), Document.id.desc())
+        .limit(max(limit * 8, 40))
+        .all()
+    )
+
+    results: list[dict] = []
+    for doc in docs:
+        haystack = " ".join([
+            str(doc.title or ''),
+            str(doc.abstract or ''),
+            str(doc.keywords or ''),
+            str(doc.tags or ''),
+            str(doc.journal or ''),
+        ]).lower()
+        matched_keywords = []
+        title_hits = 0
+        for term in search_terms:
+            term_text = str(term or '').strip()
+            if not term_text:
+                continue
+            if re.search(r'[\u4e00-\u9fff]', term_text):
+                matched = term_text.lower() in haystack
+                title_match = term_text.lower() in str(doc.title or '').lower()
+            else:
+                pattern = rf'(?<![a-z0-9]){re.escape(term_text.lower())}(?![a-z0-9])'
+                matched = re.search(pattern, haystack) is not None
+                title_match = re.search(pattern, str(doc.title or '').lower()) is not None
+            if matched:
+                matched_keywords.append(term_text)
+            if title_match:
+                title_hits += 1
+        if len(matched_keywords) < 2 and title_hits <= 0:
+            continue
+
+        recency_bonus = 0.0
+        if doc.year:
+            recency_bonus = max(0.0, 1.2 - max(to_cst(utc_now()).year - int(doc.year), 0) * 0.12)
+        relevance_score = round(min(8.5, len(matched_keywords) * 0.95 + title_hits * 0.8 + recency_bonus), 3)
+        quality_score = round(
+            1.8
+            + (0.9 if doc.abstract else 0.0)
+            + (0.6 if doc.journal else 0.0)
+            + (0.4 if doc.doi else 0.0),
+            3,
+        )
+        combined_score = round(relevance_score + quality_score + 1.6, 3)
+        topics = _dedupe_string_list(re.split(r'[\n,，;；/、]+', str(doc.keywords or doc.tags or '')), limit=8)
+        authors = [part.strip() for part in re.split(r'[;,；，]+', str(doc.authors or '')) if part.strip()]
+        results.append({
+            'source': 'library',
+            'source_key': f'library:{doc.id}',
+            'title': doc.title,
+            'authors': authors[:12],
+            'journal': doc.journal,
+            'year': doc.year,
+            'published_at': doc.published_at or (f'{doc.year}-01-01' if doc.year else None),
+            'doi': str(doc.doi or '').strip() or None,
+            'url': _safe_internal_url_for('document_detail', doc_id=doc.id),
+            'pdf_url': None,
+            'abstract': doc.abstract,
+            'topics': topics,
+            'matched_keywords': matched_keywords[:8],
+            'citation_count': 0,
+            'relevance_score': relevance_score,
+            'quality_score': quality_score,
+            'combined_score': combined_score,
+            'final_score': combined_score,
+            'existing_document_id': doc.id,
+            'raw_json': {
+                'library_document_id': doc.id,
+                'doc_type': doc.doc_type,
+                'category': doc.category,
+            },
+        })
+        topic_analysis = _analyze_research_overview_topic_match(direction_text, results[-1])
+        if not topic_analysis.get('is_on_topic'):
+            results.pop()
+            continue
+        results[-1]['topic_score'] = float(topic_analysis.get('topic_score') or 0.0)
+        results[-1]['topic_focus_groups'] = topic_analysis.get('focus_group_labels') or []
+        results[-1]['topic_focus_group_ratio'] = float(topic_analysis.get('focus_group_ratio') or 0.0)
+        results[-1]['topic_phrase_hits'] = int(topic_analysis.get('phrase_hits') or 0)
+        results[-1]['topic_anchor_hits'] = int(topic_analysis.get('anchor_hits') or 0)
+
+    results.sort(
+        key=lambda item: (
+            float(item.get('topic_score') or 0.0),
+            float(item.get('combined_score') or 0.0),
+            len(item.get('matched_keywords') or []),
+            int(item.get('year') or 0),
+        ),
+        reverse=True,
+    )
+    return results[:max(limit, 1)]
+
+
+def _research_overview_item_key(item: dict) -> str:
+    doi = str(item.get('doi') or '').strip().lower()
+    if doi:
+        return f'doi::{doi}'
+    title = re.sub(r'\s+', ' ', str(item.get('title') or '').strip()).lower()
+    year = str(item.get('year') or item.get('published_at') or '').strip()
+    return f'{title}::{year}'
 
 
 def _is_review_like_search_result(item: dict) -> bool:
@@ -3457,6 +4442,8 @@ def _score_research_overview_result(item: dict, *, focus_mode: str, current_year
     base_score = float(item.get('final_score') or item.get('combined_score') or 0.0)
     quality_score = float(item.get('quality_score') or 0.0)
     relevance_score = float(item.get('relevance_score') or 0.0)
+    topic_score = float(item.get('topic_score') or 0.0)
+    topic_group_ratio = float(item.get('topic_focus_group_ratio') or 0.0)
     citation_count = max(_safe_int_value(item.get('citation_count')) or 0, 0)
     result_year = _extract_search_result_year(item)
     review_bonus = 0.0
@@ -3474,7 +4461,17 @@ def _score_research_overview_result(item: dict, *, focus_mode: str, current_year
             recent_bonus = max(0.0, 2.6 - age * 0.5)
 
     citation_bonus = min(citation_count / 80.0, 1.6)
-    return round(base_score + quality_score * 0.22 + relevance_score * 0.18 + review_bonus + recent_bonus + citation_bonus, 3)
+    return round(
+        base_score
+        + topic_score * 0.95
+        + topic_group_ratio * 2.6
+        + quality_score * 0.22
+        + relevance_score * 0.18
+        + review_bonus
+        + recent_bonus
+        + citation_bonus,
+        3,
+    )
 
 
 def _select_research_overview_results(results: list[dict], *, focus_mode: str, limit: int) -> tuple[list[dict], dict[str, int]]:
@@ -3491,13 +4488,52 @@ def _select_research_overview_results(results: list[dict], *, focus_mode: str, l
 
     enriched.sort(
         key=lambda item: (
+            float(item.get('topic_score') or 0.0),
             float(item.get('overview_score') or 0.0),
             float(item.get('final_score') or item.get('combined_score') or 0.0),
             int(item.get('citation_count') or 0),
         ),
         reverse=True,
     )
-    selected = enriched[:limit]
+    review_like = [item for item in enriched if item.get('is_review_like')]
+    recent_non_review = [item for item in enriched if item.get('is_recent') and not item.get('is_review_like')]
+    selected: list[dict] = []
+    seen_keys: set[str] = set()
+
+    def pick_from(items: list[dict], target_count: int) -> None:
+        if target_count <= 0:
+            return
+        for paper in items:
+            key = _research_overview_item_key(paper)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            selected.append(paper)
+            if len(selected) >= limit or target_count <= 1:
+                break
+            target_count -= 1
+
+    if focus_mode == 'review_first':
+        pick_from(review_like, min(len(review_like), max(2, min(4, limit // 3 or 1))))
+        pick_from(recent_non_review, min(len(recent_non_review), max(2, min(4, limit // 3 or 1))))
+    elif focus_mode == 'frontier':
+        pick_from(recent_non_review, min(len(recent_non_review), max(3, min(5, max(limit // 2, 1)))))
+        pick_from(review_like, min(len(review_like), max(1, min(3, limit // 4 or 1))))
+    else:
+        pick_from(review_like, min(len(review_like), max(1, min(3, limit // 4 or 1))))
+        pick_from(recent_non_review, min(len(recent_non_review), max(2, min(4, limit // 3 or 1))))
+
+    pick_from(enriched, limit - len(selected))
+    selected = selected[:limit]
+    selected.sort(
+        key=lambda item: (
+            float(item.get('topic_score') or 0.0),
+            float(item.get('overview_score') or 0.0),
+            float(item.get('final_score') or item.get('combined_score') or 0.0),
+            int(item.get('citation_count') or 0),
+        ),
+        reverse=True,
+    )
     stats = {
         'review_count': sum(1 for item in selected if item.get('is_review_like')),
         'recent_count': sum(1 for item in selected if item.get('is_recent')),
@@ -3506,20 +4542,105 @@ def _select_research_overview_results(results: list[dict], *, focus_mode: str, l
     return selected, stats
 
 
+def _collect_research_overview_terms(selected_papers: list[dict], *, limit: int = 8) -> list[str]:
+    counter: Counter[str] = Counter()
+    ignored_terms = {
+        '研究', '方法', 'analysis', 'study', 'studies', 'review', 'overview',
+        'progress', 'state of the art', 'paper', 'papers',
+    }
+    for paper in selected_papers or []:
+        matched_keywords = paper.get('matched_keywords') or []
+        topics = paper.get('topics') or []
+        for raw in list(matched_keywords) + list(topics):
+            term = re.sub(r'\s+', ' ', str(raw or '').strip())
+            if not term:
+                continue
+            normalized = term.lower()
+            if normalized in ignored_terms:
+                continue
+            if len(term) <= 1:
+                continue
+            counter[term] += 2 if raw in matched_keywords else 1
+    return [term for term, _ in counter.most_common(max(limit, 1))]
+
+
+def _build_research_overview_evidence_profile(selected_papers: list[dict]) -> dict[str, list[str] | int]:
+    journal_counter: Counter[str] = Counter()
+    source_counter: Counter[str] = Counter()
+    for paper in selected_papers or []:
+        journal = re.sub(r'\s+', ' ', str(paper.get('journal') or '').strip())
+        source = str(paper.get('source') or '').strip().upper()
+        if journal:
+            journal_counter[journal] += 1
+        if source:
+            source_counter[source] += 1
+    return {
+        'review_count': sum(1 for paper in selected_papers if paper.get('is_review_like')),
+        'recent_count': sum(1 for paper in selected_papers if paper.get('is_recent')),
+        'top_journals': [name for name, _ in journal_counter.most_common(5)],
+        'top_sources': [name for name, _ in source_counter.most_common(4)],
+    }
+
+
+def _research_overview_summary_needs_retry(summary: str | None) -> bool:
+    text = str(summary or '').strip()
+    if not text:
+        return True
+    plain_text = _markdown_to_plain_text(text)
+    if len(plain_text) < 700:
+        return True
+    required_section_groups = (
+        ('研究范围与问题界定', 'Research scope and problem framing'),
+        ('文献格局与总体趋势', 'Overall landscape and recent trends'),
+        ('近年主要研究主线', 'Major research streams in recent years'),
+        ('常用数据、观测与方法', 'Data, observations, and commonly used methods'),
+        ('当前较一致的认识', 'Findings that appear relatively consistent'),
+        ('仍存在的不足与争议', 'Remaining gaps, limitations, and debates'),
+        ('对后续研究的启示', 'Implications for future work'),
+        ('建议优先阅读', 'Suggested reading pathway'),
+    )
+    hit_count = sum(1 for variants in required_section_groups if any(section in text for section in variants))
+    return hit_count < 5
+
+
 def _generate_research_overview_summary(
     *,
     direction_text: str,
     selected_papers: list[dict],
     overview_years: int,
     focus_mode: str,
+    generation_mode: str,
     user_id: int,
+    progress_callback=None,
 ) -> tuple[str, str]:
     if not selected_papers:
-        raise RuntimeError('没有可用于归纳研究现状的候选文献。')
+        return _build_research_overview_fallback_summary(
+            direction_text=direction_text,
+            selected_papers=[],
+            overview_years=overview_years,
+            focus_mode=focus_mode,
+            error_message='本次未筛到足够支撑综述的核心论文，已先返回结构化提示，建议缩小问题范围或放宽时间/数量条件后重试。',
+        )
 
     focus_label = RESEARCH_OVERVIEW_FOCUS_OPTIONS.get(focus_mode, '综合研判')
+    generation_label = RESEARCH_OVERVIEW_GENERATION_OPTIONS.get(generation_mode, '快速模式')
+    overview_terms = _collect_research_overview_terms(selected_papers)
+    evidence_profile = _build_research_overview_evidence_profile(selected_papers)
+    if generation_mode == 'quality':
+        prompt_scene = 'research_overview_quality'
+        summary_paper_limit = min(RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT, 6)
+        abstract_snippet_limit = min(RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT, 360)
+        request_timeout = RESEARCH_OVERVIEW_AI_TIMEOUT
+        wall_clock_timeout = min(max(RESEARCH_OVERVIEW_AI_TIMEOUT + 8, 34), 52)
+    else:
+        prompt_scene = 'research_overview_fast'
+        summary_paper_limit = max(4, min(RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT - 1, 5))
+        abstract_snippet_limit = min(RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT, 220)
+        request_timeout = max(14, min(RESEARCH_OVERVIEW_AI_TIMEOUT - 6, 22))
+        wall_clock_timeout = min(max(request_timeout + 8, 22), 30)
+
     paper_blocks: list[str] = []
-    summary_papers = selected_papers[:RESEARCH_OVERVIEW_SUMMARY_PAPER_LIMIT]
+    summary_papers = selected_papers[:summary_paper_limit]
     for index, paper in enumerate(summary_papers, start=1):
         authors = "；".join(paper.get('authors') or []) or '未知作者'
         keyword_text = "、".join((paper.get('matched_keywords') or [])[:6] or (paper.get('topics') or [])[:6]) or '未提取'
@@ -3537,59 +4658,202 @@ def _generate_research_overview_summary(
             f"被引：{int(paper.get('citation_count') or 0)}\n"
             f"标签：{'；'.join(tags) if tags else '普通研究论文'}\n"
             f"相关词：{keyword_text}\n"
-            f"摘要：{str(paper.get('abstract') or '暂无摘要').strip()[:RESEARCH_OVERVIEW_ABSTRACT_SNIPPET_LIMIT]}\n"
+            f"现状支撑度：{paper.get('overview_score') or paper.get('final_score') or paper.get('combined_score') or 0}\n"
+            f"摘要：{str(paper.get('abstract') or '暂无摘要').strip()[:abstract_snippet_limit]}\n"
         )
 
     if not get_ai_client_config():
-        fallback_lines = [
-            f"## 研究方向：{direction_text}",
-            "",
-            f"系统已为你筛出 {len(selected_papers)} 篇近 {overview_years} 年的高相关文献。",
-            f"当前策略：{focus_label}。",
-            "",
-            "### 可先重点阅读",
-        ]
-        for idx, paper in enumerate(selected_papers[:8], start=1):
-            flags = []
-            if paper.get('is_review_like'):
-                flags.append('综述优先')
-            if paper.get('is_recent'):
-                flags.append('近五年')
-            fallback_lines.append(
-                f"{idx}. {paper.get('title')}（{paper.get('journal') or '未知来源'}，{paper.get('published_at') or paper.get('year') or '年份未知'}）"
-                + (f" —— {' / '.join(flags)}" if flags else "")
-            )
-        fallback_lines.extend([
-            "",
-            "> 当前未配置智能功能，总结部分暂以候选论文清单代替。配置后可自动生成研究现状综述。",
-        ])
-        summary = "\n".join(fallback_lines)
-        return summary, str(render_ai_summary_markdown(summary))
+        return _build_research_overview_fallback_summary(
+            direction_text=direction_text,
+            selected_papers=selected_papers,
+            overview_years=overview_years,
+            focus_mode=focus_mode,
+            error_message=f'当前未配置智能接口，本次先返回规则整理版综述提纲（{generation_label}）。',
+        )
 
-    prompt = (
-        "你是一名中文科研助理，请根据下面提供的候选论文，梳理某个研究方向当前的研究现状。\n"
-        "要求：\n"
-        "1. 只基于提供的论文信息归纳，不要编造具体实验数据；\n"
-        "2. 优先强调近几年的主流进展，并特别指出综述类论文能提供的整体脉络；\n"
-        "3. 输出 Markdown，不要输出代码块；\n"
-        "4. 结构尽量包括：研究主题界定、近年研究主线、常用数据/方法、代表性认识、当前不足/争议、建议优先阅读；\n"
-        "5. 语言要适合科研人员快速了解方向现状，尽量清晰、凝练；\n"
-        "6. 如果提供的文献证据不足，也要明确说明证据边界。\n\n"
-        f"研究方向：{direction_text}\n"
-        f"时间侧重：近 {overview_years} 年\n"
-        f"分析策略：{focus_label}\n\n"
-        "候选论文如下：\n"
-        + "\n".join(paper_blocks)
-    )
-    summary = call_ai_text(
-        "你是擅长做研究现状梳理的中文科研综述助手。",
-        prompt,
-        timeout=RESEARCH_OVERVIEW_AI_TIMEOUT,
-        usage_context={'scene': 'research_overview', 'user_id': user_id},
-    )
+    if generation_mode == 'quality':
+        prompt = (
+            "你是一名擅长撰写 SCI review / state-of-the-art review 的中文科研助理。"
+            "请仅依据候选论文信息，写一版正式、详细、具有比较分析感的研究现状综述初稿。\n"
+            "要求：\n"
+            "1. 不能编造原文未提供的实验细节、数值或结论；\n"
+            "2. 输出 Markdown，不要输出代码块，不要写成逐条摘要；\n"
+            "3. 必须形成“研究范围—总体格局—研究主线—方法与证据—共识与争议—未来工作”的综述结构；\n"
+            "4. 请严格使用以下二级标题：\n"
+            "   ## Research scope and problem framing\n"
+            "   ## Overall landscape and recent trends\n"
+            "   ## Major research streams in recent years\n"
+            "   ## Data, observations, and commonly used methods\n"
+            "   ## Findings that appear relatively consistent\n"
+            "   ## Remaining gaps, limitations, and debates\n"
+            "   ## Implications for future work\n"
+            "   ## Suggested reading pathway\n"
+            "5. 各节正文用中文撰写，但标题保持上述英文风格；\n"
+            "6. “Major research streams in recent years”下至少拆成 3 个三级标题，每个小节要写出关注问题、常见方法、代表性认识与差异；\n"
+            "7. 语言保持正式、克制、学术化，多用“现有研究大体可归纳为”“一类工作主要关注”“另一类研究更强调”“相比之下”“值得注意的是”等综述表达；\n"
+            "8. 可以引用候选论文序号 [1][2]... 作为依据，但不要伪造额外参考文献；\n"
+            "9. 若证据不足，请明确指出“基于当前候选文献，证据仍不足以支持更强结论”；\n"
+            "10. “Implications for future work”尽量写成可直接服务于选题收敛与研究设计的建议。\n\n"
+            f"研究方向：{direction_text}\n"
+            f"时间侧重：近 {overview_years} 年\n"
+            f"分析策略：{focus_label}\n"
+            f"生成模式：{generation_label}\n"
+            f"候选论文高频主题：{'、'.join(overview_terms) if overview_terms else '未稳定提取到高频主题'}\n"
+            f"候选论文数量：{len(selected_papers)} 篇，其中综述/述评倾向 {int(evidence_profile.get('review_count') or 0)} 篇，近五年 {int(evidence_profile.get('recent_count') or 0)} 篇。\n"
+            f"高频期刊/来源：{'、'.join(evidence_profile.get('top_journals') or evidence_profile.get('top_sources') or ['未稳定提取'])}\n"
+            f"主要抓取源：{'、'.join(evidence_profile.get('top_sources') or ['未记录'])}\n\n"
+            "候选论文如下：\n"
+            + "\n".join(paper_blocks)
+        )
+        system_prompt = "你是擅长做 SCI review 风格 research overview 的中文科研综述助手，写作目标是形成结构稳定、比较充分、像 state-of-the-art review 而不是摘要清单的内容。"
+    else:
+        prompt = (
+            "你是一名中文科研助理，请根据下面提供的候选论文，快速生成一版结构清晰的研究现状综述。"
+            "目标是尽快给出可用结果，同时保持综述感，而不是摘要拼接。\n"
+            "要求：\n"
+            "1. 只能依据提供的论文信息归纳，不要编造；\n"
+            "2. 输出 Markdown，不要输出代码块；\n"
+            "3. 请使用以下二级标题：\n"
+            "   ## 研究范围与问题界定\n"
+            "   ## 文献格局与总体趋势\n"
+            "   ## 近年主要研究主线\n"
+            "   ## 常用数据、观测与方法\n"
+            "   ## 当前较一致的认识\n"
+            "   ## 仍存在的不足与争议\n"
+            "   ## 对后续研究的启示\n"
+            "   ## 建议优先阅读\n"
+            "4. 尽量概括研究脉络、代表性进展和主要不足，不要只按论文顺序罗列；\n"
+            "5. 可以引用候选论文序号 [1][2]... 作为依据；\n"
+            "6. 语言正式、简洁、信息密度高。\n\n"
+            f"研究方向：{direction_text}\n"
+            f"时间侧重：近 {overview_years} 年\n"
+            f"分析策略：{focus_label}\n"
+            f"生成模式：{generation_label}\n"
+            f"候选论文高频主题：{'、'.join(overview_terms) if overview_terms else '未稳定提取到高频主题'}\n"
+            f"候选论文数量：{len(selected_papers)} 篇，其中综述/述评倾向 {int(evidence_profile.get('review_count') or 0)} 篇，近五年 {int(evidence_profile.get('recent_count') or 0)} 篇。\n\n"
+            "候选论文如下：\n"
+            + "\n".join(paper_blocks)
+        )
+        system_prompt = "你是擅长快速生成研究现状综述的中文科研助手，目标是在较短时间内生成结构稳定、简洁但有综述感的内容。"
+
+    try:
+        logger = current_app.logger
+    except RuntimeError:
+        logger = None
+    if logger:
+        logger.info(
+            "研究现状综述准备调用 AI mode=%s scene=%s papers=%s abstract_limit=%s candidate_pool=%s",
+            generation_mode,
+            prompt_scene,
+            len(summary_papers),
+            abstract_snippet_limit,
+            len(selected_papers),
+        )
+
+    try:
+        if callable(progress_callback):
+            progress_callback('正在调用智能助手生成综述…')
+        summary = call_ai_text(
+            system_prompt,
+            prompt,
+            timeout=request_timeout,
+            wall_clock_timeout=wall_clock_timeout,
+            usage_context={'scene': prompt_scene, 'user_id': user_id},
+        )
+    except Exception as primary_exc:
+        if callable(progress_callback):
+            progress_callback('首轮综述响应较慢，正在切换紧凑上下文重试…')
+        compact_paper_blocks = "\n".join(paper_blocks[:max(3, min(len(paper_blocks), 4))])
+        compact_system_prompt = (
+            "你是中文科研综述助手。请在较短响应时间内，输出高度相关、结构稳定、像综述而非摘要拼接的研究现状内容。"
+        )
+        compact_prompt = (
+            "请基于以下核心论文，生成一版更紧凑但仍具综述感的研究现状总结。\n"
+            "要求：只依据给定材料；输出 Markdown；优先保证主题相关性、结构完整性与比较分析感；不要编造。\n"
+            + (
+                "请使用这些二级标题：\n"
+                "## Research scope and problem framing\n"
+                "## Overall landscape and recent trends\n"
+                "## Major research streams in recent years\n"
+                "## Data, observations, and commonly used methods\n"
+                "## Remaining gaps, limitations, and debates\n"
+                "## Implications for future work\n"
+                "## Suggested reading pathway\n\n"
+                if generation_mode == 'quality'
+                else
+                "请使用这些二级标题：\n"
+                "## 研究范围与问题界定\n"
+                "## 文献格局与总体趋势\n"
+                "## 近年主要研究主线\n"
+                "## 常用数据、观测与方法\n"
+                "## 仍存在的不足与争议\n"
+                "## 对后续研究的启示\n"
+                "## 建议优先阅读\n\n"
+            )
+            + f"研究方向：{direction_text}\n"
+            + f"时间侧重：近 {overview_years} 年\n"
+            + f"分析策略：{focus_label}\n"
+            + "核心论文如下：\n"
+            + compact_paper_blocks
+        )
+        if logger:
+            logger.warning("研究现状主综述调用失败，尝试紧凑重试：mode=%s error=%s", generation_mode, primary_exc)
+        try:
+            summary = call_ai_text(
+                compact_system_prompt,
+                compact_prompt,
+                timeout=min(max(request_timeout - 6, 12), 24),
+                wall_clock_timeout=min(max(request_timeout + 2, 18), 30),
+                usage_context={'scene': 'research_overview_compact', 'user_id': user_id},
+            )
+            if logger:
+                logger.info("研究现状紧凑重试成功：mode=%s", generation_mode)
+        except Exception as compact_exc:
+            if logger:
+                logger.warning("研究现状紧凑重试仍失败：mode=%s error=%s", generation_mode, compact_exc)
+            raise RuntimeError(str(primary_exc)) from primary_exc
+
     if not summary:
         raise RuntimeError('智能总结未返回研究现状内容。')
     summary = summary.strip()
+
+    if logger:
+        logger.info(
+            "研究现状综述 AI 已返回 mode=%s scene=%s chars=%s",
+            generation_mode,
+            prompt_scene,
+            len(_markdown_to_plain_text(summary)),
+        )
+
+    if generation_mode == 'quality' and RESEARCH_OVERVIEW_ENABLE_SECOND_PASS and _research_overview_summary_needs_retry(summary):
+        if callable(progress_callback):
+            progress_callback('正在补强高质量版综述的结构与细节…')
+        retry_prompt = (
+            "请在保留既有核心判断的前提下，对下面这版综述做针对性补强。"
+            "重点补齐缺失章节，强化“总体格局—研究主线—争议—未来工作”的比较分析感，不要重新发散到无关主题。\n\n"
+            f"研究方向：{direction_text}\n"
+            f"候选高频主题：{'、'.join(overview_terms) if overview_terms else '未稳定提取'}\n"
+            "当前草稿如下：\n"
+            f"{summary[:2200]}\n\n"
+            "可用于补证的核心论文：\n"
+            + "\n".join(paper_blocks[:4])
+        )
+        try:
+            retried_summary = call_ai_text(
+                system_prompt,
+                retry_prompt,
+                timeout=min(max(request_timeout - 4, 16), 26),
+                wall_clock_timeout=min(max(request_timeout + 4, 24), 32),
+                usage_context={'scene': 'research_overview_compact', 'user_id': user_id},
+            )
+            retried_summary = str(retried_summary or '').strip()
+            if retried_summary:
+                summary = retried_summary
+                if logger:
+                    logger.info("研究现状综述执行补强重试并成功替换高质量版。")
+        except Exception as retry_exc:
+            if logger:
+                logger.warning("研究现状综述补强重试失败，保留首版结果：%s", retry_exc)
     return summary, str(render_ai_summary_markdown(summary))
 
 
@@ -3601,27 +4865,85 @@ def _build_research_overview_fallback_summary(
     focus_mode: str,
     error_message: str | None = None,
 ) -> tuple[str, str]:
+    focus_label = RESEARCH_OVERVIEW_FOCUS_OPTIONS.get(focus_mode, focus_mode)
+    overview_terms = _collect_research_overview_terms(selected_papers)
+    review_like = [paper for paper in selected_papers if paper.get('is_review_like')]
+    recent_like = [paper for paper in selected_papers if paper.get('is_recent')]
     fallback_lines = [
-        f"## 研究方向：{direction_text}",
+        "## 研究范围与问题界定",
+        f"当前主题为“{direction_text}”。系统已尝试围绕近 {overview_years} 年文献进行梳理，当前分析策略为“{focus_label}”。",
         "",
-        f"系统已为你筛出 {len(selected_papers)} 篇近 {overview_years} 年的高相关文献。",
-        f"当前策略：{RESEARCH_OVERVIEW_FOCUS_OPTIONS.get(focus_mode, focus_mode)}。",
-        "",
-        "### 可先重点阅读",
+        "## 文献格局与总体趋势",
     ]
-    for idx, paper in enumerate(selected_papers[:8], start=1):
-        flags: list[str] = []
-        if paper.get('is_review_like'):
-            flags.append('综述优先')
-        if paper.get('is_recent'):
-            flags.append('近五年')
+    if selected_papers:
         fallback_lines.append(
-            f"{idx}. {paper.get('title')}（{paper.get('journal') or '未知来源'}，{paper.get('published_at') or paper.get('year') or '年份未知'}）"
-            + (f" —— {' / '.join(flags)}" if flags else "")
+            f"本次共筛出 {len(selected_papers)} 篇可支撑梳理的论文，其中综述/进展倾向 {len(review_like)} 篇，近五年文献 {len(recent_like)} 篇。"
         )
+        if overview_terms:
+            fallback_lines.append(f"从候选论文的关键词与主题分布看，当前讨论较集中于：{'、'.join(overview_terms[:8])}。")
+    else:
+        fallback_lines.append("本次尚未筛到足够用于归纳研究现状的核心论文，因此只能先给出结构化提示与下一轮检索建议。")
+
     fallback_lines.extend([
         "",
-        f"> {error_message}" if error_message else "> 当前未配置智能功能，总结部分暂以候选论文清单代替。配置后可自动生成研究现状综述。",
+        "## 近年主要研究主线",
+    ])
+    if selected_papers:
+        for idx, paper in enumerate(selected_papers[:4], start=1):
+            flags: list[str] = []
+            if paper.get('is_review_like'):
+                flags.append('综述/进展')
+            if paper.get('is_recent'):
+                flags.append('近五年')
+            fallback_lines.extend([
+                f"### 主线 {idx}",
+                f"从《{paper.get('title') or 'Untitled'}》看，这一路径重点围绕 {('、'.join((paper.get('matched_keywords') or [])[:4]) or '相关核心问题')} 展开，"
+                f"主要依托 {paper.get('journal') or paper.get('source') or '公开来源'} 中的研究积累。"
+                + (f" 该文可作为“{' / '.join(flags)}”代表性入口。" if flags else ""),
+            ])
+    else:
+        fallback_lines.append("当前证据不足，建议下一轮优先把主题缩小到更具体的问题、对象、方法或数据集。")
+
+    fallback_lines.extend([
+        "",
+        "## 常用数据、观测与方法",
+        "从当前候选文献信息可见，方法与数据细节仍需结合原文进一步核实。建议优先查看综述/进展文章中的方法分层，再回到代表性研究论文确认具体数据、模型与实验设置。",
+        "",
+        "## 当前较一致的认识",
+    ])
+    if selected_papers:
+        fallback_lines.append("从当前候选文献看，已有工作已形成若干较稳定的研究脉络，但不同论文对关键结论的支持强度仍不完全一致，需要结合原文细读。")
+    else:
+        fallback_lines.append("由于当前缺少足够支撑论文，尚不能给出可靠的一致性判断。")
+
+    fallback_lines.extend([
+        "",
+        "## 仍存在的不足与争议",
+        "当前主要不足在于：候选池有限、题录与摘要层面的信息不如通读原文充分、不同来源元数据质量不完全一致，因此本版结果更适合作为“入门梳理”，不宜直接替代正式综述写作。",
+        "",
+        "## 对后续研究的启示",
+        "建议先用当前结果确认主线与代表性综述，再围绕其中反复出现的关键术语、方法名、数据集与争议点做第二轮更窄、更深的检索。",
+        "",
+        "## 建议优先阅读",
+    ])
+    if review_like:
+        fallback_lines.append("### 先读综述/进展")
+        for idx, paper in enumerate(review_like[:4], start=1):
+            fallback_lines.append(
+                f"{idx}. {paper.get('title')}（{paper.get('journal') or '未知来源'}，{paper.get('published_at') or paper.get('year') or '年份未知'}）"
+            )
+    if selected_papers:
+        representative_papers = [paper for paper in selected_papers if paper not in review_like[:4]]
+        if representative_papers:
+            fallback_lines.append("")
+            fallback_lines.append("### 再读代表性研究")
+            for idx, paper in enumerate(representative_papers[:5], start=1):
+                fallback_lines.append(
+                    f"{idx}. {paper.get('title')}（{paper.get('journal') or '未知来源'}，{paper.get('published_at') or paper.get('year') or '年份未知'}）"
+                )
+    fallback_lines.extend([
+        "",
+        f"> {error_message}" if error_message else "> 当前未配置智能功能，本页综述内容由规则流程自动整理而成，适合作为进一步深挖前的提纲。",
     ])
     summary = "\n".join(fallback_lines).strip()
     return summary, str(render_ai_summary_markdown(summary))
@@ -3692,6 +5014,62 @@ def _build_research_overview_ai_usage(
     }
 
 
+def _build_research_overview_payload(
+    *,
+    search_payload: dict,
+    selected_papers: list[dict],
+    selected_stats: dict,
+    summary_markdown: str,
+    summary_html: str,
+    summary_mode: str,
+    elapsed_seconds: float | None,
+    summary_stage: str,
+    upgrade_pending: bool,
+    summary_version: int,
+    quality_upgraded: bool = False,
+    generated_at: str | None = None,
+    upgraded_at: str | None = None,
+) -> dict:
+    payload = {
+        'search_payload': search_payload,
+        'selected_papers': selected_papers,
+        'selected_stats': selected_stats,
+        'summary_markdown': summary_markdown,
+        'summary_html': summary_html,
+        'summary_mode': summary_mode,
+        'summary_stage': str(summary_stage or 'fast').strip().lower(),
+        'upgrade_pending': bool(upgrade_pending),
+        'summary_version': max(1, int(summary_version or 1)),
+        'quality_upgraded': bool(quality_upgraded),
+        'ai_usage': _build_research_overview_ai_usage(
+            search_payload.get('ai_usage'),
+            summary_mode,
+            elapsed_seconds=elapsed_seconds,
+        ),
+        'generated_at': generated_at or format_cn_time(utc_now()),
+    }
+    if upgraded_at:
+        payload['upgraded_at'] = upgraded_at
+    return payload
+
+
+def _extract_research_overview_payload_meta(payload: dict | None) -> dict:
+    payload = payload or {}
+    summary_version = payload.get('summary_version') or 1
+    try:
+        summary_version = max(1, int(summary_version))
+    except (TypeError, ValueError):
+        summary_version = 1
+    return {
+        'summary_stage': str(payload.get('summary_stage') or '').strip().lower(),
+        'upgrade_pending': bool(payload.get('upgrade_pending')),
+        'summary_version': summary_version,
+        'quality_upgraded': bool(payload.get('quality_upgraded')),
+        'generated_at': str(payload.get('generated_at') or '').strip(),
+        'upgraded_at': str(payload.get('upgraded_at') or '').strip(),
+    }
+
+
 def _normalize_research_overview_sources(values) -> list[str]:
     selected_sources = [source for source in (values or []) if source in SUPPORTED_SOURCES]
     return selected_sources or ['openalex', 'crossref', 'ads']
@@ -3717,6 +5095,7 @@ def _render_research_overview_fragment(
     *,
     direction_text: str,
     focus_mode: str,
+    generation_mode: str,
     selected_sources: list[str],
     overview_years: int,
     max_results: int,
@@ -3730,6 +5109,8 @@ def _render_research_overview_fragment(
         direction_text=direction_text,
         focus_mode=focus_mode,
         focus_options=RESEARCH_OVERVIEW_FOCUS_OPTIONS,
+        generation_mode=generation_mode,
+        generation_options=RESEARCH_OVERVIEW_GENERATION_OPTIONS,
         selected_sources=selected_sources,
         overview_years=overview_years,
         max_results=max_results,
@@ -3745,55 +5126,152 @@ def _render_research_overview_fragment(
 def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
     with app_obj.app_context():
         job_started_ts = time.time()
+        heartbeat_stop: Event | None = None
+        step_state = {'text': '任务已创建，准备开始…'}
+
+        def start_heartbeat() -> None:
+            nonlocal heartbeat_stop
+            if heartbeat_stop is not None:
+                return
+            heartbeat_stop = Event()
+
+            def heartbeat_worker() -> None:
+                while heartbeat_stop and not heartbeat_stop.wait(18):
+                    try:
+                        _set_research_overview_job(job_id, step=step_state['text'])
+                    except Exception as exc:
+                        app_obj.logger.warning("研究现状任务心跳刷新失败: %s", exc)
+
+            Thread(
+                target=heartbeat_worker,
+                name=f"ysxs-ro-heartbeat-{job_id[:8]}",
+                daemon=True,
+            ).start()
 
         def update_step(step_text: str) -> None:
+            step_state['text'] = step_text
             _set_research_overview_job(job_id, step=step_text)
 
-        job = _set_research_overview_job(
-            job_id,
-            status='running',
-            step='正在跨源检索相关文献…',
-        )
-        if not job:
-            return
-        params = dict(job.get('params') or {})
-
-        direction_text = str(params.get('q') or '').strip()
-        focus_mode = str(params.get('focus_mode') or 'review_first').strip().lower()
-        if focus_mode not in RESEARCH_OVERVIEW_FOCUS_OPTIONS:
-            focus_mode = 'review_first'
-        selected_sources = _normalize_research_overview_sources(params.get('sources') or [])
-        overview_years = _research_overview_year(params.get('overview_years'), 5)
-        max_results = _research_overview_result_limit(params.get('max_results'), 12)
-        user_id = int(params.get('user_id'))
-
         try:
+            step_state['text'] = '正在跨源检索相关文献…'
+            job = _set_research_overview_job(
+                job_id,
+                status='running',
+                step='正在跨源检索相关文献…',
+            )
+            if not job:
+                return
+            start_heartbeat()
+            params = dict(job.get('params') or {})
+
+            direction_text = str(params.get('q') or '').strip()
+            focus_mode = str(params.get('focus_mode') or 'review_first').strip().lower()
+            if focus_mode not in RESEARCH_OVERVIEW_FOCUS_OPTIONS:
+                focus_mode = 'review_first'
+            generation_mode = _normalize_research_overview_generation_mode(params.get('generation_mode'), 'fast')
+            selected_sources = _normalize_research_overview_sources(params.get('sources') or [])
+            overview_years = _research_overview_year(params.get('overview_years'), 5)
+            max_results = _research_overview_result_limit(params.get('max_results'), 12)
+            user_id = int(params.get('user_id'))
+            try:
+                enhancement_sources = get_display_only_sources(direction_text)
+            except Exception as source_exc:
+                current_app.logger.warning("构建研究现状梳理增强来源失败：%s", source_exc)
+                enhancement_sources = []
             search_payload = search_literature_with_ai(
                 user_id,
-                query_text=f"请围绕“{direction_text}”检索近 {overview_years} 年高相关期刊文献，优先综述、review、progress、state of the art 与高质量代表性研究论文，用于梳理研究现状。",
+                query_text=direction_text,
                 max_results=min(max(max_results + 4, 10), RESEARCH_OVERVIEW_SEARCH_CAP),
                 lookback_days=max(365, overview_years * 365),
                 enabled_sources=selected_sources,
                 sort_mode='quality' if focus_mode == 'review_first' else 'balanced',
+                use_ai_query_refine=False,
+                use_ai_rerank=False,
+                query_profile_override=_build_research_overview_query_profile(direction_text),
                 progress_callback=lambda text: update_step(f'研究现状梳理：{text}'),
             )
+            update_step('正在补充系统文献库中的高相关论文…')
+            library_candidates = _build_research_overview_library_candidates(
+                user_id=user_id,
+                direction_text=direction_text,
+                limit=max_results + 6,
+            )
+            merged_results: dict[str, dict] = {}
+            for item in list(search_payload.get('results') or []) + library_candidates:
+                topic_analysis = _analyze_research_overview_topic_match(direction_text, item)
+                item['topic_score'] = float(topic_analysis.get('topic_score') or item.get('topic_score') or 0.0)
+                item['topic_focus_groups'] = topic_analysis.get('focus_group_labels') or item.get('topic_focus_groups') or []
+                item['topic_focus_group_ratio'] = float(topic_analysis.get('focus_group_ratio') or item.get('topic_focus_group_ratio') or 0.0)
+                item['topic_phrase_hits'] = int(topic_analysis.get('phrase_hits') or item.get('topic_phrase_hits') or 0)
+                item['topic_anchor_hits'] = int(topic_analysis.get('anchor_hits') or item.get('topic_anchor_hits') or 0)
+                item_key = _research_overview_item_key(item)
+                current = merged_results.get(item_key)
+                current_score = (
+                    float(current.get('topic_score') or 0.0) * 10.0
+                    + float(current.get('final_score') or current.get('combined_score') or 0.0)
+                ) if current else float('-inf')
+                candidate_score = (
+                    float(item.get('topic_score') or 0.0) * 10.0
+                    + float(item.get('final_score') or item.get('combined_score') or 0.0)
+                )
+                if current is None or candidate_score > current_score:
+                    merged_results[item_key] = item
+            if merged_results:
+                merged_list = sorted(
+                    merged_results.values(),
+                    key=lambda item: (
+                        float(item.get('topic_score') or 0.0),
+                        float(item.get('topic_focus_group_ratio') or 0.0),
+                        float(item.get('final_score') or item.get('combined_score') or 0.0),
+                        float(item.get('relevance_score') or 0.0),
+                        int(item.get('citation_count') or 0),
+                    ),
+                    reverse=True,
+                )
+                on_topic_results = [
+                    item for item in merged_list
+                    if _is_research_overview_candidate_on_topic(direction_text, item)
+                ]
+                filtered_results = on_topic_results if on_topic_results else []
+                search_payload['results'] = filtered_results
+                stats = dict(search_payload.get('stats') or {})
+                stats['library_count'] = len(library_candidates)
+                stats['merged_result_count'] = len(merged_list)
+                stats['on_topic_count'] = len(filtered_results)
+                stats['off_topic_filtered_count'] = max(len(merged_list) - len(filtered_results), 0)
+                stats['high_topic_score_count'] = sum(1 for item in filtered_results if float(item.get('topic_score') or 0.0) >= 6.0)
+                search_payload['stats'] = stats
             update_step('正在筛选支撑研究现状的核心论文…')
             selected_papers, selected_stats = _select_research_overview_results(
                 search_payload.get('results') or [],
                 focus_mode=focus_mode,
                 limit=max_results,
             )
-            if get_ai_client_config():
-                _set_research_overview_job(job_id, step='正在调用智能助手生成综述…')
+            should_upgrade_to_quality = False
+            if not selected_papers:
+                update_step('本次可用支撑论文较少，正在整理结构化建议…')
+                summary_markdown, summary_html = _build_research_overview_fallback_summary(
+                    direction_text=direction_text,
+                    selected_papers=[],
+                    overview_years=overview_years,
+                    focus_mode=focus_mode,
+                    error_message='当前候选文献不足以支撑稳定综述，已先返回结构化建议。建议缩小问题范围，或增大保留论文数/时间范围后重试。',
+                )
+                summary_mode = 'fallback'
+            elif get_ai_client_config():
+                update_step('正在调用智能助手生成综述…')
                 try:
                     summary_markdown, summary_html = _generate_research_overview_summary(
                         direction_text=direction_text,
                         selected_papers=selected_papers,
                         overview_years=overview_years,
                         focus_mode=focus_mode,
+                        generation_mode=generation_mode,
                         user_id=user_id,
+                        progress_callback=update_step,
                     )
                     summary_mode = 'ai'
+                    should_upgrade_to_quality = generation_mode == 'fast'
                 except Exception as summary_exc:
                     current_app.logger.warning("研究现状智能综述失败，回退到规则综述：%s", summary_exc)
                     update_step('智能综述响应较慢，正在回退到规则版摘要…')
@@ -3812,29 +5290,29 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                     selected_papers=selected_papers,
                     overview_years=overview_years,
                     focus_mode=focus_mode,
+                    generation_mode=generation_mode,
                     user_id=user_id,
                 )
                 summary_mode = 'disabled'
 
-            overview_payload = {
-                'search_payload': search_payload,
-                'selected_papers': selected_papers,
-                'selected_stats': selected_stats,
-                'summary_markdown': summary_markdown,
-                'summary_html': summary_html,
-                'summary_mode': summary_mode,
-                'ai_usage': _build_research_overview_ai_usage(
-                    search_payload.get('ai_usage'),
-                    summary_mode,
-                    elapsed_seconds=time.time() - job_started_ts,
-                ),
-                'generated_at': format_cn_time(utc_now()),
-            }
-            enhancement_sources = get_display_only_sources(direction_text)
+            overview_payload = _build_research_overview_payload(
+                search_payload=search_payload,
+                selected_papers=selected_papers,
+                selected_stats=selected_stats,
+                summary_markdown=summary_markdown,
+                summary_html=summary_html,
+                summary_mode=summary_mode,
+                elapsed_seconds=time.time() - job_started_ts,
+                summary_stage='fast' if should_upgrade_to_quality else ('quality' if summary_mode == 'ai' else 'fallback'),
+                upgrade_pending=should_upgrade_to_quality,
+                summary_version=1,
+                quality_upgraded=False,
+            )
             update_step('正在整理研究现状页面…')
             html_fragment = _render_research_overview_fragment(
                 direction_text=direction_text,
                 focus_mode=focus_mode,
+                generation_mode=generation_mode,
                 selected_sources=selected_sources,
                 overview_years=overview_years,
                 max_results=max_results,
@@ -3851,12 +5329,84 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                 html=html_fragment,
                 error=None,
             )
+            if should_upgrade_to_quality:
+                update_step('快速版已生成，后台正在升级高质量版…')
+                try:
+                    quality_markdown, quality_html = _generate_research_overview_summary(
+                        direction_text=direction_text,
+                        selected_papers=selected_papers,
+                        overview_years=overview_years,
+                        focus_mode=focus_mode,
+                        generation_mode='quality',
+                        user_id=user_id,
+                        progress_callback=update_step,
+                    )
+                    quality_payload = _build_research_overview_payload(
+                        search_payload=search_payload,
+                        selected_papers=selected_papers,
+                        selected_stats=selected_stats,
+                        summary_markdown=quality_markdown,
+                        summary_html=quality_html,
+                        summary_mode='ai',
+                        elapsed_seconds=time.time() - job_started_ts,
+                        summary_stage='quality',
+                        upgrade_pending=False,
+                        summary_version=2,
+                        quality_upgraded=True,
+                        generated_at=overview_payload.get('generated_at'),
+                        upgraded_at=format_cn_time(utc_now()),
+                    )
+                    quality_fragment = _render_research_overview_fragment(
+                        direction_text=direction_text,
+                        focus_mode=focus_mode,
+                        generation_mode=generation_mode,
+                        selected_sources=selected_sources,
+                        overview_years=overview_years,
+                        max_results=max_results,
+                        overview_payload=quality_payload,
+                        overview_error=None,
+                        ai_enabled=bool(get_ai_client_config()),
+                        enhancement_sources=enhancement_sources,
+                    )
+                    _set_research_overview_job(
+                        job_id,
+                        status='succeeded',
+                        step='高质量版综述已完成。',
+                        payload=quality_payload,
+                        html=quality_fragment,
+                        error=None,
+                    )
+                except Exception as quality_exc:
+                    current_app.logger.warning("研究现状高质量综述升级失败：%s", quality_exc)
+                    fast_payload = dict(overview_payload)
+                    fast_payload['upgrade_pending'] = False
+                    fast_payload['upgrade_error'] = str(quality_exc)
+                    fast_fragment = _render_research_overview_fragment(
+                        direction_text=direction_text,
+                        focus_mode=focus_mode,
+                        generation_mode=generation_mode,
+                        selected_sources=selected_sources,
+                        overview_years=overview_years,
+                        max_results=max_results,
+                        overview_payload=fast_payload,
+                        overview_error=None,
+                        ai_enabled=bool(get_ai_client_config()),
+                        enhancement_sources=enhancement_sources,
+                    )
+                    _set_research_overview_job(
+                        job_id,
+                        status='succeeded',
+                        step='快速版已生成；高质量版升级未完成。',
+                        payload=fast_payload,
+                        html=fast_fragment,
+                        error=None,
+                    )
         except Exception as exc:
             current_app.logger.exception("研究现状梳理失败: %s", exc)
-            enhancement_sources = get_display_only_sources(direction_text)
             html_fragment = _render_research_overview_fragment(
                 direction_text=direction_text,
                 focus_mode=focus_mode,
+                generation_mode=generation_mode,
                 selected_sources=selected_sources,
                 overview_years=overview_years,
                 max_results=max_results,
@@ -3872,6 +5422,9 @@ def _run_research_overview_job(app_obj: Flask, job_id: str) -> None:
                 error=str(exc) or '研究现状梳理失败，请稍后重试。',
                 html=html_fragment,
             )
+        finally:
+            if heartbeat_stop is not None:
+                heartbeat_stop.set()
 
 
 @app.route('/research-overview')
@@ -3881,6 +5434,7 @@ def research_overview_home():
     focus_mode = (request.args.get('focus_mode') or 'review_first').strip().lower()
     if focus_mode not in RESEARCH_OVERVIEW_FOCUS_OPTIONS:
         focus_mode = 'review_first'
+    generation_mode = _normalize_research_overview_generation_mode(request.args.get('generation_mode'), 'fast')
 
     selected_sources = _normalize_research_overview_sources(request.args.getlist('sources'))
 
@@ -3890,6 +5444,9 @@ def research_overview_home():
     overview_payload = None
     overview_error = None
     auto_start_overview = bool(direction_text)
+    existing_overview_job_id = ''
+    existing_overview_job_status = ''
+    existing_overview_job_step = ''
 
     try:
         ai_enabled = bool(get_ai_client_config())
@@ -3908,6 +5465,7 @@ def research_overview_home():
             'user_id': current_user.id,
             'q': direction_text,
             'focus_mode': focus_mode,
+            'generation_mode': generation_mode,
             'sources': selected_sources,
             'overview_years': overview_years,
             'max_results': max_results,
@@ -3918,8 +5476,12 @@ def research_overview_home():
             ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
             fingerprint,
         )
+        matched_job = _expire_stale_research_overview_job(matched_job)
         if matched_job:
             matched_status = str(matched_job.get('status') or '')
+            existing_overview_job_id = str(matched_job.get('job_id') or '')
+            existing_overview_job_status = matched_status
+            existing_overview_job_step = str(matched_job.get('step') or '')
             if matched_status == 'succeeded' and matched_job.get('payload'):
                 overview_payload = matched_job.get('payload')
                 overview_error = None
@@ -3935,6 +5497,8 @@ def research_overview_home():
         direction_text=direction_text,
         focus_mode=focus_mode,
         focus_options=RESEARCH_OVERVIEW_FOCUS_OPTIONS,
+        generation_mode=generation_mode,
+        generation_options=RESEARCH_OVERVIEW_GENERATION_OPTIONS,
         selected_sources=selected_sources,
         overview_years=overview_years,
         max_results=max_results,
@@ -3945,6 +5509,9 @@ def research_overview_home():
         enhancement_sources=enhancement_sources,
         build_display_source_links=build_display_source_links,
         auto_start_overview=auto_start_overview,
+        existing_overview_job_id=existing_overview_job_id,
+        existing_overview_job_status=existing_overview_job_status,
+        existing_overview_job_step=existing_overview_job_step,
     )
 
 
@@ -3955,10 +5522,12 @@ def research_overview_start():
     direction_text = str(payload.get('q') or '').strip()
     if not direction_text:
         return jsonify({'error': '请输入研究方向或调研主题。'}), 400
+    force_refresh = _coerce_force_refresh(payload.get('force_refresh'))
 
     focus_mode = str(payload.get('focus_mode') or 'review_first').strip().lower()
     if focus_mode not in RESEARCH_OVERVIEW_FOCUS_OPTIONS:
         focus_mode = 'review_first'
+    generation_mode = _normalize_research_overview_generation_mode(payload.get('generation_mode'), 'fast')
 
     sources = payload.get('sources') or []
     if isinstance(sources, str):
@@ -3971,6 +5540,7 @@ def research_overview_start():
         'user_id': current_user.id,
         'q': direction_text,
         'focus_mode': focus_mode,
+        'generation_mode': generation_mode,
         'sources': selected_sources,
         'overview_years': overview_years,
         'max_results': max_results,
@@ -3978,18 +5548,20 @@ def research_overview_start():
     fingerprint = json.dumps(fingerprint_payload, ensure_ascii=False, sort_keys=True)
 
     _cleanup_research_overview_jobs()
-    existing_job = find_latest_async_job_by_fingerprint(
-        ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
-        fingerprint,
-        statuses={'pending', 'running', 'succeeded'},
-    )
-    if existing_job:
-        return jsonify({
-            'job_id': existing_job['job_id'],
-            'status': existing_job.get('status'),
-            'step': existing_job.get('step') or '',
-            'reused': True,
-        }), 202
+    if not force_refresh:
+        existing_job = find_latest_async_job_by_fingerprint(
+            ASYNC_JOB_TYPE_RESEARCH_OVERVIEW,
+            fingerprint,
+            statuses={'pending', 'running', 'succeeded'},
+        )
+        existing_job = _expire_stale_research_overview_job(existing_job)
+        if existing_job:
+            return jsonify({
+                'job_id': existing_job['job_id'],
+                'status': existing_job.get('status'),
+                'step': existing_job.get('step') or '',
+                'reused': True,
+            }), 202
 
     job_id = secrets.token_urlsafe(12)
     create_async_job(
@@ -4006,6 +5578,7 @@ def research_overview_start():
             'user_id': current_user.id,
             'q': direction_text,
             'focus_mode': focus_mode,
+            'generation_mode': generation_mode,
             'sources': selected_sources,
             'overview_years': overview_years,
             'max_results': max_results,
@@ -4025,6 +5598,7 @@ def research_overview_start():
 def research_overview_status(job_id: str):
     _cleanup_research_overview_jobs()
     job = get_async_job(ASYNC_JOB_TYPE_RESEARCH_OVERVIEW, job_id)
+    job = _expire_stale_research_overview_job(job)
     if not job or int(job.get('user_id') or 0) != int(current_user.id):
         return jsonify({'error': '任务不存在或已过期。'}), 404
     response = {
@@ -4035,6 +5609,8 @@ def research_overview_status(job_id: str):
     }
     if job.get('status') in {'succeeded', 'failed'}:
         response['html'] = job.get('html') or ''
+    if job.get('payload'):
+        response['payload_meta'] = _extract_research_overview_payload_meta(job.get('payload'))
     return jsonify(response)
 
 

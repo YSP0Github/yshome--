@@ -28,7 +28,14 @@
 {% endif %}
     {% if search_error %}
     <div class="smart-panel rounded-3xl p-5 mb-6 border border-red-200">
-        <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ search_error }}</div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ search_error }}</div>
+            {% if query_text %}
+            <button type="button" class="smart-link-btn smart-regenerate-btn js-force-literature-search">
+                <i class="fa fa-refresh"></i>重新深搜
+            </button>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 
@@ -134,7 +141,14 @@
                 <div class="text-sm text-slate-500 mb-1">智能排序结果</div>
                 <h2 id="literature-search-results-title" class="text-2xl font-extrabold text-slate-900">{% if query_text %}最值得优先处理的相关文献{% else %}输入问题后即可开始检索{% endif %}</h2>
             </div>
-            {% if results %}<span id="literature-search-results-count" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{{ results|length }} 篇</span>{% endif %}
+            <div class="flex items-center gap-3">
+                {% if results %}<span id="literature-search-results-count" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{{ results|length }} 篇</span>{% endif %}
+                {% if query_text and payload %}
+                <button type="button" class="smart-link-btn smart-regenerate-btn js-force-literature-search">
+                    <i class="fa fa-refresh"></i>重新深搜
+                </button>
+                {% endif %}
+            </div>
         </div>
         <div id="literature-search-loading" class="smart-loading-panel rounded-3xl py-12 px-6 text-center hidden mb-5">
             <div class="smart-loading-spinner mx-auto mb-5"></div>
@@ -143,6 +157,7 @@
                 正在调用智能助手提炼检索意图，并跨多个学术源抓取、去重、排序。通常需要几秒到十几秒，请稍候。
             </p>
             <div id="literature-search-loading-meta" class="mt-4 text-xs text-slate-400">已耗时 0 秒</div>
+            <div id="literature-search-progress-log" class="mt-5 max-w-2xl mx-auto text-left text-sm text-slate-500 space-y-2"></div>
         </div>
         {% if results %}
         <div class="space-y-5">
@@ -269,6 +284,9 @@
             <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-search"></i></div>
             <h3 class="text-2xl font-black text-slate-900 mb-3">这次没有找到足够匹配的高质量文献</h3>
             <p class="text-slate-600 leading-8 max-w-2xl mx-auto">可以尝试放宽回溯天数、减少限定词，或者把问题改成更核心的研究句子后重搜。</p>
+            <div class="mt-5">
+                <button type="button" class="smart-link-btn smart-regenerate-btn js-force-literature-search"><i class="fa fa-refresh"></i>重新深搜</button>
+            </div>
         </div>
         {% else %}
         <div id="literature-search-empty-state" class="smart-panel rounded-3xl text-center py-14 px-6">

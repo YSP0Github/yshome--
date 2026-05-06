@@ -4,6 +4,33 @@
 
 {% block extra_css %}
 <style>
+.sortable-th {
+  white-space: nowrap;
+}
+.sortable-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+.sortable-link:hover {
+  color: #2563eb;
+}
+.sortable-link.is-active {
+  color: #0f172a;
+  font-weight: 700;
+}
+.sortable-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  color: #94a3b8;
+}
+.sortable-link.is-active .sortable-icon {
+  color: #2563eb;
+}
 @media (max-width: 640px) {
   /* 隐藏表头 */
   thead {
@@ -41,6 +68,27 @@
 {% endblock %}
 
 {% block content %}
+{% set search_value = request.args.get('search', '') %}
+{% macro sort_header(label, field, align='left') -%}
+    {% set is_active = current_sort_by == field %}
+    {% set default_dir = 'desc' if field in ['created_at', 'last_login'] else 'asc' %}
+    {% set next_dir = default_dir if not is_active else ('asc' if current_sort_dir == 'desc' else 'desc') %}
+    <th scope="col" class="sortable-th px-6 py-3 text-{{ align }} text-xs font-medium text-slate-500 uppercase tracking-wider">
+        <a
+            href="{{ url_for('manage_users', search=search_value, sort_by=field, sort_dir=next_dir) }}"
+            class="sortable-link {% if is_active %}is-active{% endif %}"
+        >
+            <span>{{ label }}</span>
+            <span class="sortable-icon">
+                {% if is_active %}
+                    {% if current_sort_dir == 'asc' %}<i class="fa fa-sort-up"></i>{% else %}<i class="fa fa-sort-down"></i>{% endif %}
+                {% else %}
+                    <i class="fa fa-sort"></i>
+                {% endif %}
+            </span>
+        </a>
+    </th>
+{%- endmacro %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- 页面标题和操作区 -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -62,7 +110,7 @@
                 <label for="search" class="block text-sm font-medium text-slate-700 mb-1">搜索用户</label>
                 <div class="relative">
                     <input type="text" id="search" name="search" placeholder="用户名、邮箱" 
-                           value="{{ request.args.get('search', '') }}"
+                           value="{{ search_value }}"
                            class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
                         <i class="fa fa-search"></i>
@@ -84,24 +132,12 @@
         <table class="min-w-full divide-y divide-slate-200">
         <thead class="bg-slate-50">
             <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                ID
-            </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                用户名
-            </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                邮箱
-            </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                注册时间
-            </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                最近登录
-            </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                状态
-            </th>
+            {{ sort_header('ID', 'custom_id') }}
+            {{ sort_header('用户名', 'username') }}
+            {{ sort_header('邮箱', 'email') }}
+            {{ sort_header('注册时间', 'created_at') }}
+            {{ sort_header('最近登录', 'last_login') }}
+            {{ sort_header('状态', 'status') }}
             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                 操作
             </th>

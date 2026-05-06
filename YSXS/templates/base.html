@@ -477,6 +477,480 @@
         body.auto-theme.auto-dark .shadow-2xl {
             box-shadow: 0 18px 38px var(--shadow-color);
         }
+
+        .global-ai-fab {
+            position: fixed;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            z-index: 88;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.82rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: color-mix(in srgb, var(--surface-strong, #fff) 92%, transparent);
+            color: var(--heading-text, var(--text-color));
+            box-shadow: 0 16px 40px var(--shadow-color);
+            backdrop-filter: blur(16px);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .global-ai-fab:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 46px var(--shadow-color);
+            border-color: rgba(59, 130, 246, 0.38);
+        }
+
+        .global-ai-fab-badge {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.32));
+            color: #2563eb;
+            font-size: 0.95rem;
+        }
+
+        .global-ai-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 92;
+            background: rgba(15, 23, 42, 0.16);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+
+        .global-ai-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .global-ai-sidebar {
+            position: fixed;
+            top: 4rem;
+            right: 0;
+            bottom: 0;
+            z-index: 93;
+            width: min(28rem, 94vw);
+            transform: translateX(100%);
+            transition: transform 0.22s ease;
+            background: color-mix(in srgb, var(--surface-strong, #fff) 96%, transparent);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -18px 0 42px rgba(15, 23, 42, 0.12);
+            backdrop-filter: blur(18px);
+        }
+
+        .global-ai-sidebar.is-open {
+            transform: translateX(0);
+        }
+
+        body.global-ai-sidebar-open #batch-cite-fab-wrapper {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            transform: translateX(-1rem) scale(0.92);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        body.global-ai-sidebar-open #batch-cite-fab-wrapper,
+        body.global-ai-sidebar-open #batch-cite-fab-wrapper * {
+            pointer-events: none !important;
+        }
+
+        .global-ai-shell {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .global-ai-header {
+            padding: 1rem 1rem 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+            background: color-mix(in srgb, var(--card-bg-muted, #f8fafc) 70%, transparent);
+        }
+
+        .global-ai-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-subtitle {
+            font-size: 0.75rem;
+            color: var(--muted-text);
+            margin-top: 0.3rem;
+        }
+
+        .global-ai-close {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.8rem;
+            border: 1px solid var(--border-color);
+            color: var(--muted-text);
+            background: transparent;
+        }
+
+        .global-ai-close:hover {
+            background: var(--hover-bg);
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-scene {
+            padding: 0.9rem 1rem 0.95rem;
+            border-bottom: 1px solid var(--border-color);
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--card-bg-muted, #f8fafc) 78%, transparent) 0%, transparent 100%);
+        }
+
+        .global-ai-scene-kicker {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #2563eb;
+        }
+
+        .global-ai-scene-title {
+            margin-top: 0.35rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-scene-desc {
+            margin-top: 0.38rem;
+            font-size: 0.78rem;
+            line-height: 1.68;
+            color: var(--muted-text);
+        }
+
+        .global-ai-context-tags,
+        .global-ai-quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.72rem;
+        }
+
+        .global-ai-context-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.32rem 0.62rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: color-mix(in srgb, var(--surface-strong, #fff) 88%, transparent);
+            color: var(--muted-text);
+            font-size: 0.72rem;
+            line-height: 1.2;
+        }
+
+        .global-ai-quick-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 0.76rem;
+            border-radius: 999px;
+            border: 1px solid rgba(59, 130, 246, 0.18);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.12));
+            color: #1d4ed8;
+            font-size: 0.74rem;
+            font-weight: 600;
+            line-height: 1.2;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .global-ai-quick-action:hover {
+            transform: translateY(-1px);
+            border-color: rgba(59, 130, 246, 0.28);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.18));
+        }
+
+        .global-ai-log {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--card-bg-muted, #f8fafc) 68%, transparent) 0%, transparent 22rem),
+                transparent;
+        }
+
+        .global-ai-empty {
+            margin: auto 0;
+            padding: 1.2rem;
+            border-radius: 1rem;
+            border: 1px dashed var(--border-color);
+            background: color-mix(in srgb, var(--card-bg-muted, #f8fafc) 86%, transparent);
+            color: var(--muted-text);
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+
+        .global-ai-row {
+            display: flex;
+        }
+
+        .global-ai-row.user {
+            justify-content: flex-end;
+        }
+
+        .global-ai-row.assistant,
+        .global-ai-row.pending {
+            justify-content: flex-start;
+        }
+
+        .global-ai-message {
+            max-width: 72%;
+            min-width: 6rem;
+        }
+
+        .global-ai-meta {
+            margin-bottom: 0.35rem;
+            font-size: 0.72rem;
+            color: var(--muted-text);
+        }
+
+        .global-ai-bubble {
+            position: relative;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            padding: 0.78rem 0.9rem;
+            font-size: 0.92rem;
+            line-height: 1.72;
+            color: var(--heading-text, var(--text-color));
+            overflow-wrap: anywhere;
+            background: color-mix(in srgb, var(--surface-strong, #fff) 96%, transparent);
+        }
+
+        .global-ai-copy-msg {
+            position: absolute;
+            right: 0.42rem;
+            bottom: 0.36rem;
+            width: 1.35rem;
+            height: 1.35rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.45rem;
+            color: var(--muted-text);
+            background: color-mix(in srgb, var(--surface-strong, #fff) 82%, transparent);
+            border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+            font-size: 0.72rem;
+            line-height: 1;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.14s ease, color 0.14s ease, background 0.14s ease;
+        }
+
+        .global-ai-bubble:hover .global-ai-copy-msg,
+        .global-ai-copy-msg:focus-visible {
+            opacity: 0.88;
+            pointer-events: auto;
+        }
+
+        .global-ai-copy-msg:hover {
+            color: #2563eb;
+            background: color-mix(in srgb, var(--surface-strong, #fff) 96%, transparent);
+        }
+
+        .global-ai-row.user .global-ai-bubble {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.18));
+            border-color: rgba(59, 130, 246, 0.26);
+        }
+
+        .global-ai-row.pending .global-ai-bubble {
+            color: var(--muted-text);
+        }
+
+        .global-ai-bubble h1,
+        .global-ai-bubble h2,
+        .global-ai-bubble h3,
+        .global-ai-bubble h4 {
+            margin: 0.2rem 0 0.55rem;
+            font-weight: 700;
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-bubble h1 { font-size: 1rem; }
+        .global-ai-bubble h2 { font-size: 0.98rem; }
+        .global-ai-bubble h3 { font-size: 0.94rem; }
+        .global-ai-bubble h4 { font-size: 0.92rem; }
+
+        .global-ai-bubble p,
+        .global-ai-bubble ul,
+        .global-ai-bubble ol,
+        .global-ai-bubble blockquote,
+        .global-ai-bubble pre {
+            margin: 0.45rem 0;
+        }
+
+        .global-ai-bubble ul,
+        .global-ai-bubble ol {
+            padding-left: 1.25rem;
+        }
+
+        .global-ai-bubble code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.84em;
+            background: color-mix(in srgb, var(--card-bg-emphasis, #e2e8f0) 72%, transparent);
+            border-radius: 0.35rem;
+            padding: 0.08rem 0.35rem;
+        }
+
+        .global-ai-bubble pre {
+            padding: 0.8rem 0.9rem;
+            border-radius: 0.85rem;
+            overflow-x: auto;
+            background: color-mix(in srgb, var(--card-bg-emphasis, #e2e8f0) 72%, transparent);
+        }
+
+        .global-ai-bubble pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .global-ai-bubble blockquote {
+            padding-left: 0.85rem;
+            border-left: 3px solid rgba(59, 130, 246, 0.38);
+            color: var(--muted-text);
+        }
+
+        .global-ai-bubble a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .global-ai-status {
+            min-height: 1.2rem;
+            padding: 0 1rem 0.45rem;
+            font-size: 0.74rem;
+            color: var(--muted-text);
+        }
+
+        .global-ai-status.is-error {
+            color: #dc2626;
+        }
+
+        .global-ai-status.is-success {
+            color: #16a34a;
+        }
+
+        .global-ai-composer {
+            flex: 0 0 auto;
+            padding: 0.9rem 1rem 1rem;
+            border-top: 1px solid var(--border-color);
+            background: color-mix(in srgb, var(--surface-strong, #fff) 96%, transparent);
+        }
+
+        .global-ai-textarea {
+            width: 100%;
+            min-height: 3.4rem;
+            max-height: 11rem;
+            resize: none;
+            overflow-y: hidden;
+            box-sizing: border-box;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg, #fff);
+            color: var(--input-text, var(--text-color));
+            padding: 0.85rem 0.95rem;
+            line-height: 1.65;
+            outline: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .global-ai-textarea:focus {
+            border-color: rgba(59, 130, 246, 0.55);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .global-ai-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .global-ai-toolbar-left,
+        .global-ai-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-width: 0;
+        }
+
+        .global-ai-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 0.85rem;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--muted-text);
+            padding: 0.56rem 0.78rem;
+            font-size: 0.78rem;
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .global-ai-btn:hover:not(:disabled) {
+            background: var(--hover-bg);
+            color: var(--heading-text, var(--text-color));
+            border-color: rgba(59, 130, 246, 0.28);
+        }
+
+        .global-ai-btn:disabled {
+            opacity: 0.46;
+            cursor: not-allowed;
+        }
+
+        .global-ai-send {
+            border-color: rgba(37, 99, 235, 0.28);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(59, 130, 246, 0.24));
+            color: #1d4ed8;
+        }
+
+        .global-ai-model-pill {
+            max-width: 10rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            padding: 0.38rem 0.72rem;
+            font-size: 0.72rem;
+            color: var(--muted-text);
+            background: color-mix(in srgb, var(--card-bg-muted, #f8fafc) 82%, transparent);
+        }
+
+        @media (max-width: 768px) {
+            .global-ai-fab {
+                right: 1rem;
+                bottom: 1rem;
+                padding: 0.76rem 0.92rem;
+            }
+
+            .global-ai-sidebar {
+                top: 0;
+                width: 100vw;
+            }
+
+            .global-ai-header {
+                padding-top: 4.8rem;
+            }
+
+            .global-ai-message {
+                max-width: 82%;
+            }
+        }
     </style>
     <script>
         (function () {
@@ -1197,6 +1671,85 @@
     </main>
 
     {% block extra_modals %}{% endblock %}
+
+    {% if global_ai_sidebar and global_ai_sidebar.enabled %}
+    <button
+        id="global-ai-fab"
+        type="button"
+        class="global-ai-fab"
+        title="打开智能助手">
+        <span class="global-ai-fab-badge"><i class="fa fa-comments-o"></i></span>
+        <span class="text-sm font-semibold">智能助手</span>
+    </button>
+
+    <div id="global-ai-overlay" class="global-ai-overlay" aria-hidden="true"></div>
+
+    <aside
+        id="global-ai-sidebar"
+        class="global-ai-sidebar"
+        data-context-limit="{{ global_ai_sidebar.context_limit }}"
+        data-model="{{ global_ai_sidebar.model }}"
+        data-endpoint="{{ global_ai_sidebar.endpoint }}"
+        aria-hidden="true">
+        <div class="global-ai-shell">
+            <div class="global-ai-header">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="global-ai-title">YSXS 智能助手</div>
+                        <div id="global-ai-header-model" class="global-ai-subtitle truncate">{{ global_ai_sidebar.model or '当前模型' }}</div>
+                    </div>
+                    <button id="global-ai-close" type="button" class="global-ai-close" aria-label="关闭智能助手侧边栏">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="global-ai-scene">
+                <div class="global-ai-scene-kicker">当前页面助手模式</div>
+                <div id="global-ai-scene-title" class="global-ai-scene-title">智能助手</div>
+                <div id="global-ai-scene-desc" class="global-ai-scene-desc">我会结合你当前所在页面，帮你整理问题、理解功能、总结内容与推进下一步操作。</div>
+                <div id="global-ai-context-tags" class="global-ai-context-tags"></div>
+                <div id="global-ai-quick-actions" class="global-ai-quick-actions"></div>
+            </div>
+
+            <div id="global-ai-log" class="global-ai-log">
+                <div id="global-ai-empty" class="global-ai-empty">
+                    我不只是陪你聊天。<br>
+                    我会结合当前页面内容，帮你理解功能、优化检索、整理文献、生成摘要和写作草稿。
+                </div>
+            </div>
+
+            <div id="global-ai-status" class="global-ai-status"></div>
+
+            <div class="global-ai-composer">
+                <textarea
+                    id="global-ai-input"
+                    class="global-ai-textarea"
+                    rows="1"
+                    placeholder="请输入你的问题，或先点上方快捷操作…"></textarea>
+                <div class="global-ai-toolbar">
+                    <div class="global-ai-toolbar-left">
+                        <button id="global-ai-new-chat" type="button" class="global-ai-btn">
+                            <i class="fa fa-refresh"></i>
+                            <span>新建对话</span>
+                        </button>
+                        <button id="global-ai-copy-reply" type="button" class="global-ai-btn" disabled>
+                            <i class="fa fa-copy"></i>
+                            <span>复制回复</span>
+                        </button>
+                    </div>
+                    <div class="global-ai-toolbar-right">
+                        <span id="global-ai-model-pill" class="global-ai-model-pill">{{ global_ai_sidebar.model or '当前模型' }}</span>
+                        <button id="global-ai-send" type="button" class="global-ai-btn global-ai-send" title="Enter 发送，Shift+Enter 换行">
+                            <i class="fa fa-paper-plane-o"></i>
+                            <span>发送</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
 
     <!-- 页脚 -->
     <footer class="bg-white border-t border-slate-200 py-8 mt-12">
@@ -2229,6 +2782,1177 @@
                 clearPollTimer();
                 releasePollingLease();
             });
+        })();
+    </script>
+    {% endif %}
+
+    {% if global_ai_sidebar and global_ai_sidebar.enabled %}
+    <script>
+        (function () {
+            const root = document.getElementById('global-ai-sidebar');
+            const trigger = document.getElementById('global-ai-fab');
+            const overlay = document.getElementById('global-ai-overlay');
+            const closeBtn = document.getElementById('global-ai-close');
+            const logNode = document.getElementById('global-ai-log');
+            const emptyNode = document.getElementById('global-ai-empty');
+            const statusNode = document.getElementById('global-ai-status');
+            const inputNode = document.getElementById('global-ai-input');
+            const sendBtn = document.getElementById('global-ai-send');
+            const newChatBtn = document.getElementById('global-ai-new-chat');
+            const copyBtn = document.getElementById('global-ai-copy-reply');
+            const modelPill = document.getElementById('global-ai-model-pill');
+            const headerModel = document.getElementById('global-ai-header-model');
+            const batchCiteWrapper = document.getElementById('batch-cite-fab-wrapper');
+            const sceneTitleNode = document.getElementById('global-ai-scene-title');
+            const sceneDescNode = document.getElementById('global-ai-scene-desc');
+            const contextTagsNode = document.getElementById('global-ai-context-tags');
+            const quickActionsNode = document.getElementById('global-ai-quick-actions');
+            if (!root || !trigger || !overlay || !logNode || !inputNode || !sendBtn) {
+                return;
+            }
+
+            const STORAGE_KEY = 'ysxs-global-assistant-state';
+            const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+            const state = {
+                open: false,
+                sending: false,
+                history: [],
+                lastAssistantReply: '',
+                contextLimit: Math.max(2, Number(root.dataset.contextLimit || 10) || 10),
+                model: String(root.dataset.model || '').trim() || '当前模型',
+                serverModel: String(root.dataset.model || '').trim() || '当前模型',
+                pageHint: String(root.dataset.endpoint || '').trim(),
+                sceneTitle: '智能助手',
+                sceneDescription: '',
+                pageContextText: '',
+            };
+
+            function loadStoredAssistantState() {
+                try {
+                    const raw = window.sessionStorage ? window.sessionStorage.getItem(STORAGE_KEY) : '';
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return null;
+                    if (Date.now() - Number(parsed.updatedAt || 0) > STORAGE_TTL_MS) {
+                        window.sessionStorage.removeItem(STORAGE_KEY);
+                        return null;
+                    }
+                    return parsed;
+                } catch (error) {
+                    console.warn('读取智能助手会话状态失败', error);
+                    return null;
+                }
+            }
+
+            function persistAssistantState(extra = {}) {
+                try {
+                    if (!window.sessionStorage) return;
+                    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        open: state.open,
+                        history: state.history.slice(-30),
+                        lastAssistantReply: state.lastAssistantReply || '',
+                        model: state.model || '',
+                        serverModel: state.serverModel || '',
+                        pendingCommand: extra.pendingCommand || null,
+                        updatedAt: Date.now(),
+                    }));
+                } catch (error) {
+                    console.warn('保存智能助手会话状态失败', error);
+                }
+            }
+
+            function clearStoredAssistantState() {
+                try {
+                    window.sessionStorage?.removeItem(STORAGE_KEY);
+                } catch (error) {
+                    console.warn('清理智能助手会话状态失败', error);
+                }
+            }
+
+            function apiUrl(path) {
+                return window.withBasePath ? window.withBasePath(path) : path;
+            }
+
+            function getCSRFTokenLocal() {
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                if (metaTag && metaTag.content) {
+                    return metaTag.content;
+                }
+                const match = document.cookie.match(/csrf_token=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function normalizeText(value) {
+                return String(value || '').replace(/\s+/g, ' ').trim();
+            }
+
+            function clampText(value, maxLength = 160) {
+                const normalized = normalizeText(value);
+                if (!normalized) return '';
+                return normalized.length > maxLength ? `${normalized.slice(0, Math.max(1, maxLength - 1))}…` : normalized;
+            }
+
+            function pageTitleWithoutSuffix() {
+                return normalizeText((document.title || '').replace(/\s*-\s*云凇学术\s*$/, ''));
+            }
+
+            function textOf(selector) {
+                const node = document.querySelector(selector);
+                return node ? normalizeText(node.textContent) : '';
+            }
+
+            function valueOf(selector) {
+                const node = document.querySelector(selector);
+                if (!node) return '';
+                return normalizeText(node.value);
+            }
+
+            function selectedTextOf(selector) {
+                const node = document.querySelector(selector);
+                if (!node || !node.options || node.selectedIndex < 0) return '';
+                return normalizeText(node.options[node.selectedIndex]?.textContent || '');
+            }
+
+            function checkedLabelTexts(selector, limit = 6) {
+                return Array.from(document.querySelectorAll(selector))
+                    .filter((node) => node.checked)
+                    .slice(0, limit)
+                    .map((node) => {
+                        const labelNode = node.closest('label');
+                        if (labelNode) {
+                            return normalizeText(labelNode.textContent);
+                        }
+                        return normalizeText(node.value);
+                    })
+                    .filter(Boolean);
+            }
+
+            const assistantScenarios = {
+                default: {
+                    title: '通用页面协助',
+                    description: '可以结合当前页面，帮你解释功能、整理思路、润色表达，并建议下一步操作。',
+                    actions: [
+                        {
+                            label: '解释当前页面',
+                            prompt: '请先结合我当前所在页面，解释这个页面最适合做什么、我现在最值得关注什么。'
+                        },
+                        {
+                            label: '给我下一步建议',
+                            prompt: '请结合我当前页面状态，给我一个务实的下一步操作建议清单，按优先级排序。'
+                        },
+                        {
+                            label: '帮我整理思路',
+                            prompt: '请根据我当前页面内容，帮我把任务拆成几个清晰的小步骤，并提醒我容易忽略的点。'
+                        },
+                    ],
+                },
+                index: {
+                    title: '文献库整理助手',
+                    description: '可结合当前文献列表、筛选条件和批量引用状态，帮你安排整理、阅读与引用流程。',
+                    actions: [
+                        {
+                            label: '解读当前筛选',
+                            prompt: '请结合我当前的文献列表与筛选条件，概括我现在看到的是一批什么样的文献，并提醒我还缺什么筛选。'
+                        },
+                        {
+                            label: '规划阅读优先级',
+                            prompt: '请结合当前文献列表状态，帮我给出一个简洁的阅读优先级建议：哪些该先精读，哪些先略读。'
+                        },
+                        {
+                            label: '批量引用建议',
+                            prompt: '请结合当前页面和已选批量引用状态，告诉我下一步怎样整理这批文献更高效，并给出引用清单组织建议。'
+                        },
+                    ],
+                },
+                category: {
+                    title: '分类整理助手',
+                    description: '可围绕当前分类视图，帮你判断分类是否合理、下一步应如何收拢主题。',
+                    actions: [
+                        {
+                            label: '评估当前分类',
+                            prompt: '请结合我当前分类页面的文献与筛选状态，评估这个分类是否够清晰，并给出优化建议。'
+                        },
+                        {
+                            label: '推荐细分主题',
+                            prompt: '请根据我当前分类页面，推测还适合再细分出哪些子主题或标签。'
+                        },
+                        {
+                            label: '规划整理步骤',
+                            prompt: '请结合当前分类页内容，给我一个最省事的整理步骤，从先筛掉什么到最后补什么信息。'
+                        },
+                    ],
+                },
+                my_collected: {
+                    title: '收藏文献助手',
+                    description: '可帮助你梳理当前收藏清单，判断哪些文献值得保留、精读或导入批量引用。',
+                    actions: [
+                        {
+                            label: '整理收藏优先级',
+                            prompt: '请结合我当前收藏页的状态，帮我判断哪些文献值得优先保留、精读或进一步整理。'
+                        },
+                        {
+                            label: '建议批量引用',
+                            prompt: '请结合我当前收藏页与已选引用情况，告诉我怎样组织一组更合理的批量引用清单。'
+                        },
+                        {
+                            label: '给我清理建议',
+                            prompt: '请结合我当前收藏页内容，给我一个清理收藏夹的标准：哪些该保留，哪些该移出。'
+                        },
+                    ],
+                },
+                shared_documents: {
+                    title: '共享文献助手',
+                    description: '可结合当前共享文献页面，帮助你快速筛出值得转入个人库的内容。',
+                    actions: [
+                        {
+                            label: '筛共享文献',
+                            prompt: '请结合当前共享文献页面，告诉我应该优先关注哪类文献，并给出一个快速筛选标准。'
+                        },
+                        {
+                            label: '判断是否值得收藏',
+                            prompt: '请结合当前共享文献页内容，给我一套判断“是否值得转入个人库”的简单标准。'
+                        },
+                        {
+                            label: '规划后续整理',
+                            prompt: '请根据当前共享文献页面，帮我安排导入、分类和阅读的顺序。'
+                        },
+                    ],
+                },
+                literature_search_home: {
+                    title: '智能文献深搜助手',
+                    description: '可结合当前检索需求、来源与结果排序，帮你优化检索词、判断结果质量与安排下一轮深搜。',
+                    actions: [
+                        {
+                            label: '优化检索词',
+                            prompt: '请结合我当前的检索需求与页面参数，给我下一轮更精准的检索策略，并分别给出宽松、平衡、严格三种检索表达。'
+                        },
+                        {
+                            label: '解读结果排序',
+                            prompt: '请结合当前检索结果与排序方式，解释为什么这些结果值得优先看，并指出可能的偏差。'
+                        },
+                        {
+                            label: '推荐优先精读',
+                            prompt: '请结合当前深搜结果，告诉我最值得优先精读的论文应具备哪些特征，并给我一个筛选框架。'
+                        },
+                    ],
+                },
+                research_overview_home: {
+                    title: '研究现状梳理助手',
+                    description: '可结合当前研究方向与生成参数，帮你收束选题、组织综述结构和提炼关键科学问题。',
+                    actions: [
+                        {
+                            label: '收束研究方向',
+                            prompt: '请结合我当前的研究方向输入与页面参数，帮我把题目收束成更适合做现状梳理的表达。'
+                        },
+                        {
+                            label: '规划综述结构',
+                            prompt: '请结合当前研究现状梳理页面，给我一个适合写综述/概览的结构框架。'
+                        },
+                        {
+                            label: '提炼关键问题',
+                            prompt: '请根据我当前方向，提炼最值得关注的 3-5 个关键科学问题，并说明为什么。'
+                        },
+                    ],
+                },
+                morning_report_home: {
+                    title: '晨报阅读助手',
+                    description: '可结合今日晨报内容，帮你压缩摘要、挑选最值得导入的论文，并改写成汇报口吻。',
+                    actions: [
+                        {
+                            label: '总结今日晨报',
+                            prompt: '请结合我当前晨报页面内容，给我一份简洁的“今日最值得关注内容”摘要。'
+                        },
+                        {
+                            label: '推荐优先导入',
+                            prompt: '请结合当前晨报页面，告诉我哪些论文最值得优先导入系统，并给出判断理由。'
+                        },
+                        {
+                            label: '改写成汇报口吻',
+                            prompt: '请把当前晨报内容改写成更适合向老师/同事口头汇报的表达，简洁清楚一些。'
+                        },
+                    ],
+                },
+                morning_report_settings_view: {
+                    title: '晨报配置助手',
+                    description: '可结合当前晨报参数，帮你优化关键词、过滤策略与抓取范围，减少噪声。',
+                    actions: [
+                        {
+                            label: '优化关键词',
+                            prompt: '请结合我当前晨报设置页面的关键词与参数，帮我优化关键词组织方式，减少漏检与噪声。'
+                        },
+                        {
+                            label: '评估当前参数',
+                            prompt: '请结合当前晨报设置，判断哪些参数可能过宽或过窄，并给出更稳妥的建议。'
+                        },
+                        {
+                            label: '降低无关结果',
+                            prompt: '请结合我当前晨报配置，告诉我怎样减少无关结果，同时尽量不漏掉高价值论文。'
+                        },
+                    ],
+                },
+                document_detail: {
+                    title: '单篇文献阅读助手',
+                    description: '可结合当前文献详情页，帮你提炼核心观点、生成阅读笔记与解释这篇文献的价值。',
+                    actions: [
+                        {
+                            label: '提炼本文核心',
+                            prompt: '请结合当前文献详情页，提炼这篇文献的研究问题、方法、结论与可能贡献。'
+                        },
+                        {
+                            label: '生成阅读笔记',
+                            prompt: '请结合当前文献详情页，帮我生成一份简洁但有用的阅读笔记模板，并尽量填入可推断的内容。'
+                        },
+                        {
+                            label: '解释为什么重要',
+                            prompt: '请结合当前文献详情页，解释这篇文献为什么值得关注，以及它更适合放在什么研究脉络里理解。'
+                        },
+                    ],
+                },
+                edit_document: {
+                    title: '文献信息编辑助手',
+                    description: '可结合当前编辑表单，帮你润色摘要、整理关键词与补充更规范的备注表达。',
+                    actions: [
+                        {
+                            label: '润色摘要',
+                            prompt: '请结合我当前编辑页里的摘要内容，帮我在不改变原意的前提下润色得更清晰、更像学术表达。'
+                        },
+                        {
+                            label: '生成关键词',
+                            prompt: '请结合当前编辑页的标题和摘要，帮我给出一组更规范、更适合检索的关键词。'
+                        },
+                        {
+                            label: '帮我写备注',
+                            prompt: '请结合当前编辑页已有信息，帮我写一段适合放在个人备注里的简洁说明。'
+                        },
+                    ],
+                },
+            };
+
+            function collectPageSnapshot() {
+                const endpoint = state.pageHint || 'default';
+                const snapshot = {
+                    endpoint,
+                    pageTitle: pageTitleWithoutSuffix(),
+                    facts: [],
+                    lines: [],
+                };
+
+                const pushFact = (value) => {
+                    const normalized = clampText(value, 60);
+                    if (normalized) snapshot.facts.push(normalized);
+                };
+                const pushLine = (label, value, maxLength = 220) => {
+                    const normalized = clampText(value, maxLength);
+                    if (normalized) snapshot.lines.push(`${label}：${normalized}`);
+                };
+
+                if (['index', 'category', 'my_collected', 'shared_documents'].includes(endpoint)) {
+                    pushLine('当前视图', textOf('.ysxs-toolbar h2'));
+                    pushFact(textOf('#search-result-count'));
+                    const sortText = selectedTextOf('#sort-select');
+                    if (sortText) pushFact(`排序：${sortText}`);
+                    const categoryText = checkedLabelTexts('.filter-category').join('、');
+                    if (categoryText) pushLine('已选分类', categoryText);
+                    const yearText = checkedLabelTexts('.filter-year').join('、');
+                    if (yearText) pushLine('年份筛选', yearText);
+                    const typeText = checkedLabelTexts('.filter-type').join('、');
+                    if (typeText) pushLine('文献类型筛选', typeText);
+                    const batchCount = parseInt(textOf('#batch-cite-count'), 10);
+                    if (Number.isFinite(batchCount) && batchCount > 0) {
+                        pushFact(`已选 ${batchCount} 篇引用`);
+                    }
+                } else if (endpoint === 'literature_search_home') {
+                    pushLine('检索需求', valueOf('#literature-search-form textarea[name="q"]'), 260);
+                    pushFact(textOf('#literature-search-results-count'));
+                    const sortMode = selectedTextOf('#literature-search-form select[name="sort_mode"]');
+                    if (sortMode) pushFact(`排序：${sortMode}`);
+                    const maxResults = valueOf('#literature-search-form input[name="max_results"]');
+                    if (maxResults) pushFact(`结果上限 ${maxResults}`);
+                    const lookbackDays = valueOf('#literature-search-form input[name="lookback_days"]');
+                    if (lookbackDays) pushFact(`回溯 ${lookbackDays} 天`);
+                    const sources = checkedLabelTexts('#literature-search-form input[name="sources"]');
+                    if (sources.length) pushLine('已选来源', sources.join('、'));
+                    pushLine('结果区标题', textOf('#literature-search-results-title'));
+                } else if (endpoint === 'research_overview_home') {
+                    pushLine('研究方向', valueOf('#research-overview-form textarea[name="q"]'), 260);
+                    const focusMode = selectedTextOf('#research-overview-form select[name="focus_mode"]');
+                    if (focusMode) pushFact(`关注重点：${focusMode}`);
+                    const generationMode = selectedTextOf('#research-overview-form select[name="generation_mode"]');
+                    if (generationMode) pushFact(`生成模式：${generationMode}`);
+                    const sources = checkedLabelTexts('#research-overview-form input[name="sources"]');
+                    if (sources.length) pushLine('已选来源', sources.join('、'));
+                } else if (endpoint === 'morning_report_home') {
+                    pushFact(textOf('#report-imported-count') ? `已导入 ${textOf('#report-imported-count')} 篇` : '');
+                    pushLine('页面主标题', textOf('#morning-report-main-content h3'));
+                    const summaryCount = document.querySelectorAll('.summary-btn').length;
+                    if (summaryCount > 0) pushFact(`${summaryCount} 篇可总结候选`);
+                    const keywordTags = Array.from(document.querySelectorAll('#morning-report-main-content span'))
+                        .map((node) => normalizeText(node.textContent))
+                        .filter((text) => text && text.length <= 20 && !/^\d+$/.test(text))
+                        .slice(0, 6);
+                    if (keywordTags.length) pushLine('可见关键词/标签', keywordTags.join('、'));
+                } else if (endpoint === 'morning_report_settings_view') {
+                    pushLine('关键词', valueOf('textarea[name="keywords_text"]'), 260);
+                    pushLine('排除词', valueOf('textarea[name="exclude_keywords_text"]'), 180);
+                    const paperPool = valueOf('input[name="paper_pool_size"]');
+                    if (paperPool) pushFact(`论文池 ${paperPool}`);
+                    const lookbackDays = valueOf('input[name="lookback_days"]');
+                    if (lookbackDays) pushFact(`回溯 ${lookbackDays} 天`);
+                    const autoRunHour = valueOf('input[name="auto_run_hour"]');
+                    if (autoRunHour) pushFact(`自动运行 ${autoRunHour}:00`);
+                } else if (endpoint === 'document_detail') {
+                    pushLine('文献标题', textOf('.detail-title-main h1'), 220);
+                    pushLine('摘要', textOf('#abstract-content'), 280);
+                    pushLine('关键词', Array.from(document.querySelectorAll('.bg-slate-100')).slice(0, 8).map((node) => normalizeText(node.textContent)).filter(Boolean).join('、'), 180);
+                    const summaryUpdatedAt = textOf('#doc-summary-updated-at');
+                    if (summaryUpdatedAt) pushFact(`总结更新于 ${summaryUpdatedAt}`);
+                } else if (endpoint === 'edit_document') {
+                    pushLine('编辑标题', valueOf('input[name="title"]'), 220);
+                    pushLine('摘要草稿', valueOf('textarea[name="abstract"]'), 260);
+                    pushLine('关键词草稿', valueOf('input[name="keywords"]'), 180);
+                }
+
+                return snapshot;
+            }
+
+            function resolveAssistantScenario() {
+                return assistantScenarios[state.pageHint] || assistantScenarios.default;
+            }
+
+            function buildPageContextText(snapshot, scenario) {
+                const lines = [];
+                if (scenario?.title) {
+                    lines.push(`助手模式：${scenario.title}`);
+                }
+                if (snapshot.pageTitle) {
+                    lines.push(`页面标题：${snapshot.pageTitle}`);
+                }
+                if (snapshot.endpoint) {
+                    lines.push(`页面标识：${snapshot.endpoint}`);
+                }
+                snapshot.lines.forEach((line) => lines.push(line));
+                if (snapshot.facts.length) {
+                    lines.push(`页面要点：${snapshot.facts.join('；')}`);
+                }
+                return lines.filter(Boolean).join('\n');
+            }
+
+            function renderSceneContext() {
+                const scenario = resolveAssistantScenario();
+                const snapshot = collectPageSnapshot();
+                state.sceneTitle = scenario.title || '智能助手';
+                state.sceneDescription = scenario.description || '';
+                state.pageContextText = buildPageContextText(snapshot, scenario);
+
+                if (sceneTitleNode) {
+                    sceneTitleNode.textContent = state.sceneTitle;
+                }
+                if (sceneDescNode) {
+                    sceneDescNode.textContent = state.sceneDescription || '我会结合你当前所在页面，帮你更快推进手头任务。';
+                }
+                if (contextTagsNode) {
+                    contextTagsNode.innerHTML = '';
+                    snapshot.facts.slice(0, 4).forEach((fact) => {
+                        const tag = document.createElement('span');
+                        tag.className = 'global-ai-context-tag';
+                        tag.textContent = fact;
+                        contextTagsNode.appendChild(tag);
+                    });
+                }
+                if (quickActionsNode) {
+                    quickActionsNode.innerHTML = '';
+                    (scenario.actions || []).slice(0, 3).forEach((action) => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'global-ai-quick-action';
+                        btn.textContent = action.label || '快捷操作';
+                        btn.addEventListener('click', () => {
+                            renderSceneContext();
+                            const prompt = String(action.prompt || '').trim();
+                            if (!prompt) return;
+                            const existing = inputNode.value.trim();
+                            inputNode.value = existing ? `${existing}\n\n${prompt}` : prompt;
+                            autosizeInput();
+                            inputNode.focus();
+                            setStatus('已写入快捷操作提示，你可以直接发送或继续补充。', 'success');
+                        });
+                        quickActionsNode.appendChild(btn);
+                    });
+                }
+                if (emptyNode && !state.history.length) {
+                    const sceneTitle = escapeHtml(state.sceneTitle || '智能助手');
+                    const sceneDesc = escapeHtml(state.sceneDescription || '我会结合当前页面内容帮助你。');
+                    const contextPreview = state.pageContextText
+                        ? `<div style="margin-top:.65rem;font-size:.78rem;color:inherit;opacity:.88;white-space:pre-line;">${escapeHtml(clampText(state.pageContextText, 220))}</div>`
+                        : '';
+                    emptyNode.innerHTML = `<strong>${sceneTitle}</strong><br>${sceneDesc}${contextPreview}`;
+                }
+            }
+
+            function getFilterMetadata() {
+                const metadataNode = document.getElementById('filter-metadata');
+                if (!metadataNode) return {};
+                try {
+                    return JSON.parse(metadataNode.textContent || '{}') || {};
+                } catch (error) {
+                    console.warn('读取筛选元数据失败', error);
+                    return {};
+                }
+            }
+
+            function toArray(value) {
+                if (Array.isArray(value)) return value;
+                if (value === undefined || value === null || value === '') return [];
+                return [value];
+            }
+
+            function normalizeForMatch(value) {
+                return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+            }
+
+            function resolveOptionValues(rawValues, options) {
+                const optionList = Array.isArray(options) ? options : [];
+                const lookup = new Map();
+                optionList.forEach((option) => {
+                    const value = String(option?.value || '').trim();
+                    const label = String(option?.label || '').trim();
+                    if (value) lookup.set(normalizeForMatch(value), value);
+                    if (label) lookup.set(normalizeForMatch(label), value || label);
+                });
+                return toArray(rawValues).map((item) => {
+                    const normalized = normalizeForMatch(item);
+                    return lookup.get(normalized) || String(item || '').trim();
+                }).filter(Boolean);
+            }
+
+            function collectCommandContext() {
+                const metadata = getFilterMetadata();
+                return {
+                    endpoint: state.pageHint || '',
+                    page_title: document.title || '',
+                    document_filters: {
+                        categories: metadata.category_options || [],
+                        year_ranges: metadata.year_filter_options || [],
+                        doc_types: metadata.doc_type_options || [],
+                        sorts: [
+                            { value: 'latest', label: '最新上传' },
+                            { value: 'earliest', label: '最早上传' },
+                            { value: 'title-asc', label: '按标题排序（A-Z）' },
+                            { value: 'title-desc', label: '按标题排序（Z-A）' },
+                            { value: 'citations', label: '按引用量排序' },
+                        ],
+                        active: {
+                            categories: metadata.active_categories || [],
+                            year_ranges: metadata.active_year_ranges || [],
+                            doc_types: metadata.active_doc_types || [],
+                            sort: metadata.active_sort || 'latest',
+                            query: new URLSearchParams(window.location.search).get('query') || '',
+                        },
+                    },
+                };
+            }
+
+            async function parseAssistantCommand(message) {
+                const response = await fetch(apiUrl('/api/assistant/command/parse'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFTokenLocal(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        message,
+                        page_title: document.title || '',
+                        page_hint: state.pageHint || '',
+                        assistant_scene: state.sceneTitle || '',
+                        page_context: state.pageContextText || '',
+                        command_context: collectCommandContext(),
+                    }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.error || '指令解析失败，请稍后重试。');
+                }
+                return payload;
+            }
+
+            function makeAppUrl(path) {
+                return new URL(apiUrl(path), window.location.origin);
+            }
+
+            function setMultiParam(url, name, values) {
+                url.searchParams.delete(name);
+                values.forEach((value) => {
+                    if (value) url.searchParams.append(name, value);
+                });
+            }
+
+            function normalizeSortValue(value) {
+                const normalized = normalizeForMatch(value);
+                const aliases = {
+                    latest: 'latest',
+                    newest: 'latest',
+                    '最新': 'latest',
+                    '最新上传': 'latest',
+                    earliest: 'earliest',
+                    oldest: 'earliest',
+                    '最早': 'earliest',
+                    '最早上传': 'earliest',
+                    citations: 'citations',
+                    citation: 'citations',
+                    '引用': 'citations',
+                    '引用量': 'citations',
+                    '按引用量排序': 'citations',
+                    titleasc: 'title-asc',
+                    '标题az': 'title-asc',
+                    '按标题排序（a-z）': 'title-asc',
+                    titledesc: 'title-desc',
+                    '标题za': 'title-desc',
+                    '按标题排序（z-a）': 'title-desc',
+                };
+                return aliases[normalized] || String(value || '').trim();
+            }
+
+            function applyDocumentParams(url, params, { includeQuery = false } = {}) {
+                const metadata = getFilterMetadata();
+                const query = String(params.query || params.keyword || '').trim();
+                if (includeQuery && query) {
+                    url.searchParams.set('query', query);
+                } else if (includeQuery && params.query === '') {
+                    url.searchParams.delete('query');
+                }
+
+                const categories = resolveOptionValues(params.categories || params.category, metadata.category_options || []);
+                const years = resolveOptionValues(params.year_ranges || params.years || params.year_range, metadata.year_filter_options || []);
+                const types = resolveOptionValues(params.doc_types || params.types || params.doc_type, metadata.doc_type_options || []);
+
+                if (categories.length || params.categories || params.category) setMultiParam(url, 'category', categories);
+                if (years.length || params.year_ranges || params.years || params.year_range) setMultiParam(url, 'year_range', years);
+                if (types.length || params.doc_types || params.types || params.doc_type) setMultiParam(url, 'doc_type', types);
+
+                const sort = normalizeSortValue(params.sort || '');
+                if (sort && ['latest', 'earliest', 'title-asc', 'title-desc', 'citations'].includes(sort)) {
+                    if (sort === 'latest') {
+                        url.searchParams.delete('sort');
+                    } else {
+                        url.searchParams.set('sort', sort);
+                    }
+                }
+                url.searchParams.delete('page');
+            }
+
+            function currentDocumentListUrl() {
+                const listEndpoints = new Set(['index', 'category', 'my_collected', 'shared_documents']);
+                if (listEndpoints.has(state.pageHint) || window.location.pathname.endsWith('/search')) {
+                    return new URL(window.location.href);
+                }
+                return makeAppUrl('/search');
+            }
+
+            function executeAssistantCommand(commandPayload) {
+                const action = String(commandPayload?.action || '').trim();
+                const params = commandPayload?.params && typeof commandPayload.params === 'object' ? commandPayload.params : {};
+                const pageMap = {
+                    home: '/',
+                    index: '/',
+                    documents: '/',
+                    favorites: '/my_collected',
+                    collected: '/my_collected',
+                    my_collected: '/my_collected',
+                    shared: '/shared_documents',
+                    shared_documents: '/shared_documents',
+                    morning_report: '/morning-report',
+                    literature_search: '/literature-search',
+                    research_overview: '/research-overview',
+                };
+                let targetUrl = null;
+
+                if (action === 'navigate') {
+                    const page = String(params.page || params.target || '').trim();
+                    targetUrl = makeAppUrl(pageMap[page] || pageMap[normalizeForMatch(page)] || '/');
+                } else if (action === 'search_documents') {
+                    targetUrl = makeAppUrl('/search');
+                    applyDocumentParams(targetUrl, params, { includeQuery: true });
+                } else if (action === 'filter_documents') {
+                    targetUrl = (params.query || params.keyword) ? makeAppUrl('/search') : currentDocumentListUrl();
+                    applyDocumentParams(targetUrl, params, { includeQuery: Boolean(params.query || params.keyword) });
+                } else if (action === 'sort_documents') {
+                    targetUrl = currentDocumentListUrl();
+                    applyDocumentParams(targetUrl, { sort: params.sort || 'latest' }, { includeQuery: false });
+                } else if (action === 'run_literature_search') {
+                    targetUrl = makeAppUrl('/literature-search');
+                    const query = String(params.query || params.keyword || params.topic || '').trim();
+                    if (query) targetUrl.searchParams.set('q', query);
+                    const sortMode = String(params.sort_mode || '').trim();
+                    if (['balanced', 'quality', 'relevance'].includes(sortMode)) targetUrl.searchParams.set('sort_mode', sortMode);
+                    const maxResults = parseInt(params.max_results, 10);
+                    if (Number.isFinite(maxResults)) targetUrl.searchParams.set('max_results', String(Math.max(5, Math.min(maxResults, 50))));
+                    const lookbackDays = parseInt(params.lookback_days, 10);
+                    if (Number.isFinite(lookbackDays)) targetUrl.searchParams.set('lookback_days', String(Math.max(30, Math.min(lookbackDays, 3650))));
+                } else if (action === 'run_research_overview') {
+                    targetUrl = makeAppUrl('/research-overview');
+                    const query = String(params.query || params.keyword || params.topic || '').trim();
+                    if (query) targetUrl.searchParams.set('q', query);
+                }
+
+                if (!targetUrl) {
+                    return false;
+                }
+
+                const planText = Array.isArray(commandPayload.plan) && commandPayload.plan.length
+                    ? commandPayload.plan.join('；')
+                    : (commandPayload.reply || '正在执行页面操作。');
+                setStatus(planText, 'success');
+                persistAssistantState({
+                    pendingCommand: {
+                        action,
+                        planText,
+                        targetUrl: targetUrl.toString(),
+                    },
+                });
+                window.location.assign(targetUrl.toString());
+                return true;
+            }
+
+            function renderMarkdownInline(text) {
+                let html = escapeHtml(text);
+                html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+                html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+                html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                return html;
+            }
+
+            function renderMarkdown(text) {
+                const normalized = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+                if (!normalized) return '';
+
+                const codeBlocks = [];
+                const withPlaceholders = normalized.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+                    const token = `@@CODEBLOCK_${codeBlocks.length}@@`;
+                    codeBlocks.push({
+                        lang: String(lang || '').trim(),
+                        code: escapeHtml(code.replace(/\n$/, '')),
+                    });
+                    return token;
+                });
+
+                return withPlaceholders.split(/\n{2,}/).map((block) => {
+                    const trimmedBlock = block.trim();
+                    if (!trimmedBlock) return '';
+
+                    const codeMatch = trimmedBlock.match(/^@@CODEBLOCK_(\d+)@@$/);
+                    if (codeMatch) {
+                        const codeInfo = codeBlocks[Number(codeMatch[1])] || { code: '' };
+                        return `<pre><code>${codeInfo.code}</code></pre>`;
+                    }
+
+                    if (/^(-{3,}|\*{3,})$/.test(trimmedBlock)) {
+                        return '<hr>';
+                    }
+
+                    const headingMatch = trimmedBlock.match(/^(#{1,4})\s+(.+)$/);
+                    if (headingMatch) {
+                        const level = Math.min(headingMatch[1].length, 4);
+                        return `<h${level}>${renderMarkdownInline(headingMatch[2].trim())}</h${level}>`;
+                    }
+
+                    const lines = trimmedBlock.split('\n');
+                    if (lines.every((line) => /^>\s?/.test(line.trim()))) {
+                        return `<blockquote>${lines.map((line) => renderMarkdownInline(line.replace(/^>\s?/, '').trim())).join('<br>')}</blockquote>`;
+                    }
+                    if (lines.every((line) => /^[-*+]\s+/.test(line.trim()))) {
+                        return `<ul>${lines.map((line) => `<li>${renderMarkdownInline(line.replace(/^[-*+]\s+/, '').trim())}</li>`).join('')}</ul>`;
+                    }
+                    if (lines.every((line) => /^\d+\.\s+/.test(line.trim()))) {
+                        return `<ol>${lines.map((line) => `<li>${renderMarkdownInline(line.replace(/^\d+\.\s+/, '').trim())}</li>`).join('')}</ol>`;
+                    }
+                    return `<p>${lines.map((line) => renderMarkdownInline(line.trim())).join('<br>')}</p>`;
+                }).join('');
+            }
+
+            function renderMessageContent(role, content) {
+                if (role === 'assistant') {
+                    return renderMarkdown(content);
+                }
+                return escapeHtml(content).replace(/\n/g, '<br>');
+            }
+
+            function buildMessageCopyButton(text) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'global-ai-copy-msg';
+                button.title = '复制这条消息';
+                button.setAttribute('aria-label', '复制这条消息');
+                button.dataset.copyText = String(text || '');
+                button.innerHTML = '<i class="fa fa-copy"></i>';
+                return button;
+            }
+
+            function formatMeta(item) {
+                if (item.role !== 'assistant') return '';
+                const metaParts = [];
+                if (item.model) metaParts.push(item.model);
+                if (item.elapsedText) metaParts.push(item.elapsedText);
+                return metaParts.join(' · ');
+            }
+
+            function formatElapsed(ms) {
+                const seconds = Number(ms || 0) / 1000;
+                if (!Number.isFinite(seconds) || seconds <= 0) return '';
+                return seconds >= 10 ? `${seconds.toFixed(1)}s` : `${seconds.toFixed(2)}s`;
+            }
+
+            function syncCopyButton() {
+                copyBtn.disabled = !state.lastAssistantReply;
+            }
+
+            function setStatus(message, tone) {
+                if (!statusNode) return;
+                statusNode.textContent = message || '';
+                statusNode.classList.remove('is-error', 'is-success');
+                if (tone === 'error') {
+                    statusNode.classList.add('is-error');
+                } else if (tone === 'success') {
+                    statusNode.classList.add('is-success');
+                }
+            }
+
+            function autosizeInput() {
+                inputNode.style.height = 'auto';
+                const maxHeight = 176;
+                inputNode.style.height = `${Math.min(inputNode.scrollHeight, maxHeight)}px`;
+                inputNode.style.overflowY = inputNode.scrollHeight > maxHeight ? 'auto' : 'hidden';
+            }
+
+            function scrollLogToBottom(force = false) {
+                if (force) {
+                    logNode.scrollTop = logNode.scrollHeight;
+                    return;
+                }
+                window.requestAnimationFrame(() => {
+                    logNode.scrollTop = logNode.scrollHeight;
+                });
+            }
+
+            function syncBatchCiteWrapperState(disabled) {
+                if (!batchCiteWrapper) return;
+                batchCiteWrapper.setAttribute('aria-hidden', disabled ? 'true' : 'false');
+                if ('inert' in batchCiteWrapper) {
+                    batchCiteWrapper.inert = !!disabled;
+                }
+            }
+
+            async function copyTextToClipboard(text) {
+                const value = String(text || '');
+                if (!value) return false;
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                }
+                const textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', 'readonly');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return ok;
+            }
+
+            function buildPendingNode() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'global-ai-row pending';
+                wrapper.id = 'global-ai-pending';
+                wrapper.innerHTML = `
+                    <div class="global-ai-message">
+                        <div class="global-ai-meta">${escapeHtml(state.model)}</div>
+                        <div class="global-ai-bubble">正在生成回复…</div>
+                    </div>
+                `;
+                return wrapper;
+            }
+
+            function renderHistory() {
+                logNode.innerHTML = '';
+                if (!state.history.length) {
+                    if (emptyNode) {
+                        logNode.appendChild(emptyNode);
+                    }
+                    syncCopyButton();
+                    return;
+                }
+
+                state.history.forEach((item) => {
+                    const row = document.createElement('div');
+                    row.className = `global-ai-row ${item.role}`;
+                    const meta = formatMeta(item);
+                    row.innerHTML = `
+                        <div class="global-ai-message">
+                            ${meta ? `<div class="global-ai-meta">${escapeHtml(meta)}</div>` : ''}
+                            <div class="global-ai-bubble">${renderMessageContent(item.role, item.content)}</div>
+                        </div>
+                    `;
+                    const bubble = row.querySelector('.global-ai-bubble');
+                    if (bubble) {
+                        bubble.appendChild(buildMessageCopyButton(item.content));
+                    }
+                    logNode.appendChild(row);
+                });
+                syncCopyButton();
+                persistAssistantState();
+                scrollLogToBottom();
+            }
+
+            function openSidebar() {
+                state.open = true;
+                renderSceneContext();
+                document.body.classList.add('global-ai-sidebar-open');
+                syncBatchCiteWrapperState(true);
+                root.classList.add('is-open');
+                overlay.classList.add('is-open');
+                root.setAttribute('aria-hidden', 'false');
+                overlay.setAttribute('aria-hidden', 'false');
+                window.requestAnimationFrame(() => {
+                    inputNode.focus();
+                    scrollLogToBottom(true);
+                });
+                persistAssistantState();
+            }
+
+            function closeSidebar() {
+                state.open = false;
+                document.body.classList.remove('global-ai-sidebar-open');
+                syncBatchCiteWrapperState(false);
+                root.classList.remove('is-open');
+                overlay.classList.remove('is-open');
+                root.setAttribute('aria-hidden', 'true');
+                overlay.setAttribute('aria-hidden', 'true');
+                persistAssistantState();
+            }
+
+            function resetChat(announce = true) {
+                renderSceneContext();
+                state.history = [];
+                state.lastAssistantReply = '';
+                renderHistory();
+                clearStoredAssistantState();
+                if (announce) {
+                    setStatus('已清空当前对话。', 'success');
+                } else {
+                    setStatus('', '');
+                }
+            }
+
+            function syncFabOffset() {
+                const defaultBottom = window.innerWidth <= 768 ? 16 : 24;
+                let nextBottom = defaultBottom;
+                const blockers = [
+                    document.getElementById('batch-cite-fab-wrapper'),
+                ].filter(Boolean);
+
+                blockers.forEach((node) => {
+                    const style = window.getComputedStyle(node);
+                    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') === 0) {
+                        return;
+                    }
+                    const rect = node.getBoundingClientRect();
+                    if (rect.width <= 0 || rect.height <= 0) {
+                        return;
+                    }
+                    const occupiedBottom = Math.max(window.innerHeight - rect.top + 12, defaultBottom);
+                    nextBottom = Math.max(nextBottom, occupiedBottom);
+                });
+
+                trigger.style.bottom = `${Math.round(nextBottom)}px`;
+            }
+
+            async function sendMessage() {
+                if (state.sending) return;
+                renderSceneContext();
+                const message = inputNode.value.trim();
+                if (!message) return;
+
+                state.sending = true;
+                sendBtn.disabled = true;
+                inputNode.disabled = true;
+                newChatBtn.disabled = true;
+                setStatus('正在理解你的意图…', '');
+
+                state.history.push({ role: 'user', content: message });
+                renderHistory();
+                const pendingNode = buildPendingNode();
+                logNode.appendChild(pendingNode);
+                scrollLogToBottom();
+
+                inputNode.value = '';
+                autosizeInput();
+                openSidebar();
+
+                try {
+                    const commandPayload = await parseAssistantCommand(message).catch((error) => {
+                        console.warn('智能助手指令解析失败，回退到普通问答', error);
+                        return null;
+                    });
+                    if (commandPayload && commandPayload.is_command && executeAssistantCommand(commandPayload)) {
+                        const pending = document.getElementById('global-ai-pending');
+                        if (pending) pending.remove();
+                        const planText = Array.isArray(commandPayload.plan) && commandPayload.plan.length
+                            ? commandPayload.plan.join('\n')
+                            : (commandPayload.reply || '已识别为页面操作，正在执行。');
+                        state.lastAssistantReply = planText;
+                        state.history.push({
+                            role: 'assistant',
+                            content: planText,
+                            model: state.model,
+                            elapsedText: '',
+                        });
+                        renderHistory();
+                        persistAssistantState({
+                            pendingCommand: {
+                                action: commandPayload.action || '',
+                                planText,
+                            },
+                        });
+                        return;
+                    }
+
+                    setStatus('正在等待当前模型回复…', '');
+                    const response = await fetch(apiUrl('/api/ai-chat/sidebar'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFTokenLocal(),
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            message,
+                            history: state.history.slice(0, -1),
+                            context_limit: state.contextLimit,
+                            page_title: document.title || '',
+                            page_hint: state.pageHint || '',
+                            assistant_scene: state.sceneTitle || '',
+                            page_context: state.pageContextText || '',
+                        }),
+                    });
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.error || 'AI 对话失败，请稍后重试。');
+                    }
+
+                    state.lastAssistantReply = String(payload.reply || '');
+                    state.model = String(payload.effective_model || state.model || '').trim() || '当前模型';
+                    state.history.push({
+                        role: 'assistant',
+                        content: state.lastAssistantReply,
+                        model: state.model,
+                        elapsedText: formatElapsed(payload.elapsed_ms),
+                    });
+                    if (modelPill) modelPill.textContent = state.model;
+                    if (headerModel) headerModel.textContent = state.model;
+                    renderHistory();
+                    persistAssistantState();
+                    setStatus(payload.context_warning || '对话完成。', payload.context_warning ? '' : 'success');
+                } catch (error) {
+                    const pending = document.getElementById('global-ai-pending');
+                    if (pending) pending.remove();
+                    state.history = state.history.filter((item, index) => !(index === state.history.length - 1 && item.role === 'assistant' && !item.content));
+                    renderHistory();
+                    persistAssistantState();
+                    setStatus(error.message || 'AI 对话失败，请稍后重试。', 'error');
+                } finally {
+                    const pending = document.getElementById('global-ai-pending');
+                    if (pending) pending.remove();
+                    state.sending = false;
+                    sendBtn.disabled = false;
+                    inputNode.disabled = false;
+                    newChatBtn.disabled = false;
+                    inputNode.focus();
+                    syncCopyButton();
+                    scrollLogToBottom();
+                }
+            }
+
+            trigger.addEventListener('click', openSidebar);
+            overlay.addEventListener('click', closeSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            sendBtn.addEventListener('click', () => { void sendMessage(); });
+            newChatBtn.addEventListener('click', () => resetChat(true));
+            copyBtn.addEventListener('click', async () => {
+                if (!state.lastAssistantReply) return;
+                try {
+                    await navigator.clipboard.writeText(state.lastAssistantReply);
+                    setStatus('已复制最新回复。', 'success');
+                } catch (error) {
+                    setStatus('复制失败，请检查浏览器权限。', 'error');
+                }
+            });
+            inputNode.addEventListener('input', autosizeInput);
+            inputNode.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void sendMessage();
+                }
+            });
+            logNode.addEventListener('click', async (event) => {
+                const button = event.target.closest('.global-ai-copy-msg');
+                if (!button) return;
+                event.preventDefault();
+                event.stopPropagation();
+                try {
+                    const ok = await copyTextToClipboard(button.dataset.copyText || '');
+                    setStatus(ok ? '已复制这条消息。' : '复制失败，请手动选择文本。', ok ? 'success' : 'error');
+                } catch (error) {
+                    setStatus('复制失败，请检查浏览器权限。', 'error');
+                }
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && state.open) {
+                    closeSidebar();
+                }
+            });
+            window.addEventListener('resize', syncFabOffset);
+            window.addEventListener('load', syncFabOffset);
+
+            autosizeInput();
+            renderSceneContext();
+            syncBatchCiteWrapperState(false);
+            const storedAssistantState = loadStoredAssistantState();
+            if (storedAssistantState) {
+                if (Array.isArray(storedAssistantState.history)) {
+                    state.history = storedAssistantState.history.filter((item) => item && typeof item === 'object');
+                }
+                if (storedAssistantState.lastAssistantReply) {
+                    state.lastAssistantReply = String(storedAssistantState.lastAssistantReply || '');
+                }
+                state.model = state.serverModel || state.model;
+                if (modelPill) modelPill.textContent = state.model;
+                if (headerModel) headerModel.textContent = state.model;
+                if (storedAssistantState.pendingCommand) {
+                    const pendingText = String(storedAssistantState.pendingCommand.planText || '页面操作已完成。').trim();
+                    setStatus(pendingText ? `已执行：${pendingText}` : '页面操作已完成。', 'success');
+                }
+            }
+            renderHistory();
+            syncFabOffset();
+            if (storedAssistantState?.open || storedAssistantState?.pendingCommand) {
+                window.requestAnimationFrame(() => openSidebar());
+            } else {
+                persistAssistantState();
+            }
         })();
     </script>
     {% endif %}

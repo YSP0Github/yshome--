@@ -21,12 +21,56 @@
         backdrop-filter: blur(6px);
         box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
+    .overview-hero-aside {
+        align-self: start;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .85rem;
+        align-content: start;
+    }
+    .overview-hero-stat-compact {
+        min-height: 116px;
+        padding: 1rem 1rem .9rem;
+        border-radius: 1.15rem;
+        display: flex;
+        flex-direction: column;
+        gap: .7rem;
+    }
+    .overview-hero-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+    .overview-hero-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .8rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .9rem;
+        color: #fff;
+        background: rgba(255,255,255,.22);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+        flex: 0 0 auto;
+    }
     .overview-hero-stat .overview-hero-label {
         color: rgba(239,246,255,.82);
     }
     .overview-hero-stat .overview-hero-value {
         color: #ffffff;
         text-shadow: 0 2px 10px rgba(15,23,42,.16);
+    }
+    .overview-hero-stat .overview-hero-value.is-text {
+        font-size: 1.1rem;
+        line-height: 1.25;
+        letter-spacing: -.01em;
+    }
+    .overview-hero-subhint {
+        font-size: .78rem;
+        line-height: 1.5;
+        color: rgba(239,246,255,.72);
     }
     .overview-form-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
     .overview-field-label { display: block; font-size: .92rem; color: rgba(239,246,255,.92); margin-bottom: .55rem; font-weight: 600; }
@@ -55,6 +99,18 @@
     .overview-summary-toggle:hover { color: #1d4ed8; }
     .overview-action-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .72rem 1rem; border-radius: .95rem; font-weight: 600; border: 1px solid rgba(191,219,254,.8); background: rgba(255,255,255,.84); color: #1d4ed8; }
     .overview-action-btn:hover { border-color: rgba(96,165,250,.65); background: rgba(239,246,255,.92); }
+    .overview-regenerate-btn {
+        border-color: rgba(249,115,22,.22);
+        background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 14px 28px rgba(239,68,68,.18);
+    }
+    .overview-regenerate-btn:hover {
+        border-color: rgba(234,88,12,.28);
+        background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+        color: #fff;
+    }
     .overview-loading-panel { background: rgba(255,255,255,.96); border: 1px solid rgba(191,219,254,.72); box-shadow: 0 18px 38px rgba(15,23,42,.08); }
     .overview-loading-spinner {
         width: 3.2rem; height: 3.2rem; border-radius: 9999px;
@@ -243,6 +299,13 @@
     body.auto-theme.auto-dark .overview-summary-toggle { color: #93c5fd; }
     body.dark-theme .overview-action-btn,
     body.auto-theme.auto-dark .overview-action-btn { background: rgba(15,23,42,.74); border-color: rgba(71,85,105,.82); color: #bfdbfe; }
+    body.dark-theme .overview-regenerate-btn,
+    body.auto-theme.auto-dark .overview-regenerate-btn {
+        border-color: rgba(251,146,60,.28);
+        background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+        color: #fff;
+        box-shadow: 0 16px 32px rgba(239,68,68,.22);
+    }
     body.dark-theme .overview-loading-panel,
     body.auto-theme.auto-dark .overview-loading-panel { background: rgba(15,23,42,.92); border-color: rgba(51,65,85,.86); box-shadow: 0 22px 44px rgba(2,6,23,.38); }
     body.dark-theme .overview-loading-spinner,
@@ -301,6 +364,11 @@
     @media (max-width: 768px) {
         .overview-ai-pill { width: 100%; }
         .overview-head-count { width: 100%; min-width: 0; }
+        .overview-hero-aside { grid-template-columns: 1fr 1fr; }
+        .overview-hero-stat-compact { min-height: 102px; }
+    }
+    @media (max-width: 640px) {
+        .overview-hero-aside { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -326,12 +394,19 @@
                     输入一个研究方向或问题，系统会优先检索近几年高相关期刊文献与综述/进展类文章，
                     再自动生成“当前研究现状”梳理，适合快速进入新方向或做开题前调研。
                 </p>
+                {% if direction_text and (overview_payload or overview_error) %}
+                <div class="mt-5 flex flex-wrap gap-3">
+                    <button type="button" class="overview-action-btn overview-regenerate-btn js-force-research-overview">
+                        <i class="fa fa-refresh"></i>重新梳理
+                    </button>
+                </div>
+                {% endif %}
                 <form id="research-overview-form" method="get" action="{{ url_for('research_overview_home') }}" class="overview-form-card mt-6 space-y-4 rounded-3xl p-4 md:p-5">
                     <div>
                         <label class="overview-field-label">研究方向 / 调研主题</label>
                         <textarea name="q" rows="3" class="w-full rounded-2xl border-0 px-4 py-4 text-base shadow-lg" placeholder="例如：月震深部结构、Apollo 月震数据再处理、月球内部结构反演方法、行星地震学中的月球案例">{{ direction_text }}</textarea>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div>
                             <label class="overview-field-label">侧重年限</label>
                             <input type="number" name="overview_years" min="1" max="15" value="{{ overview_years }}" class="w-full rounded-xl border-0 px-4 py-3">
@@ -345,6 +420,14 @@
                             <select name="focus_mode" class="w-full rounded-xl border-0 px-4 py-3">
                                 {% for key, label in focus_options.items() %}
                                 <option value="{{ key }}" {% if focus_mode == key %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="overview-field-label">生成模式</label>
+                            <select name="generation_mode" class="w-full rounded-xl border-0 px-4 py-3">
+                                {% for key, label in generation_options.items() %}
+                                <option value="{{ key }}" {% if generation_mode == key %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -376,22 +459,46 @@
                     </div>
                 </form>
             </div>
-            <div class="xl:col-span-4 grid grid-cols-2 gap-3">
-                <div class="overview-hero-stat rounded-2xl p-4">
-                    <div class="overview-hero-label text-xs">智能状态</div>
-                    <div class="overview-hero-value text-3xl font-black mt-1">{{ '已启用' if ai_enabled else '未配置' }}</div>
+            <div class="xl:col-span-4 overview-hero-aside">
+                <div class="overview-hero-stat overview-hero-stat-compact">
+                    <div class="overview-hero-stat-top">
+                        <div class="overview-hero-label text-xs">智能状态</div>
+                        <span class="overview-hero-icon"><i class="fa fa-bolt"></i></span>
+                    </div>
+                    <div class="overview-hero-value is-text font-black">{{ '已启用' if ai_enabled else '未配置' }}</div>
+                    <div class="overview-hero-subhint">{{ '将优先生成智能综述' if ai_enabled else '当前会回退到规则摘要' }}</div>
                 </div>
-                <div class="overview-hero-stat rounded-2xl p-4">
-                    <div class="overview-hero-label text-xs">候选论文</div>
-                    <div class="overview-hero-value text-3xl font-black mt-1">{{ selected_papers|length }}</div>
+                <div class="overview-hero-stat overview-hero-stat-compact">
+                    <div class="overview-hero-stat-top">
+                        <div class="overview-hero-label text-xs">分析策略</div>
+                        <span class="overview-hero-icon"><i class="fa fa-compass"></i></span>
+                    </div>
+                    <div class="overview-hero-value is-text font-black">{{ focus_options.get(focus_mode, focus_mode) }}</div>
+                    <div class="overview-hero-subhint">决定更偏综述梳理还是更偏前沿进展</div>
                 </div>
-                <div class="overview-hero-stat rounded-2xl p-4">
-                    <div class="overview-hero-label text-xs">综述倾向</div>
-                    <div class="overview-hero-value text-3xl font-black mt-1">{{ selected_stats.get('review_count', 0) }}</div>
+                <div class="overview-hero-stat overview-hero-stat-compact">
+                    <div class="overview-hero-stat-top">
+                        <div class="overview-hero-label text-xs">生成模式</div>
+                        <span class="overview-hero-icon"><i class="fa fa-cogs"></i></span>
+                    </div>
+                    <div class="overview-hero-value is-text font-black">{{ generation_options.get(generation_mode, generation_mode) }}</div>
+                    <div class="overview-hero-subhint">已选 {{ selected_sources|length }} 个数据源 · 近 {{ overview_years }} 年优先</div>
                 </div>
-                <div class="overview-hero-stat rounded-2xl p-4">
-                    <div class="overview-hero-label text-xs">近五年</div>
-                    <div class="overview-hero-value text-3xl font-black mt-1">{{ selected_stats.get('recent_count', 0) }}</div>
+                <div class="overview-hero-stat overview-hero-stat-compact">
+                    <div class="overview-hero-stat-top">
+                        <div class="overview-hero-label text-xs">结果概况</div>
+                        <span class="overview-hero-icon"><i class="fa fa-files-o"></i></span>
+                    </div>
+                    <div class="overview-hero-value text-2xl font-black">
+                        {{ selected_papers|length if selected_papers else (search_stats.get('on_topic_count', 0) or 0) }}
+                    </div>
+                    <div class="overview-hero-subhint">
+                        {% if selected_papers %}
+                        综述倾向 {{ selected_stats.get('review_count', 0) }} · 近五年 {{ selected_stats.get('recent_count', 0) }}
+                        {% else %}
+                        {% if direction_text %}等待本次梳理生成支撑论文池{% else %}输入方向后展示支撑论文统计{% endif %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -406,6 +513,7 @@
 <script type="application/json" id="overview-save-payload">{{ {
     'direction_text': direction_text,
     'focus_mode': focus_mode,
+    'generation_mode': generation_mode,
     'overview_years': overview_years,
     'selected_sources': selected_sources,
     'summary_markdown': payload.get('summary_markdown'),
@@ -416,16 +524,24 @@
     'enabled': auto_start_overview,
     'q': direction_text,
     'focus_mode': focus_mode,
+    'generation_mode': generation_mode,
     'overview_years': overview_years,
     'max_results': max_results,
     'sources': selected_sources,
     'has_payload': overview_payload is not none,
     'has_error': overview_error is not none,
+    'existing_job_id': existing_overview_job_id,
+    'existing_job_status': existing_overview_job_status,
+    'existing_job_step': existing_overview_job_step,
 } | tojson }}</script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    let overviewActiveJobId = '';
+    let overviewUpgradePollTimer = null;
+    let overviewLatestSummaryVersion = 0;
+
     function overviewApiUrl(path) {
         return window.withBasePath ? window.withBasePath(path) : path;
     }
@@ -458,6 +574,109 @@
         } catch (error) {
             return fallbackValue;
         }
+    }
+
+    function getOverviewJobMeta() {
+        const meta = overviewReadScriptJson('overview-job-meta', {}) || {};
+        const summaryVersion = Number(meta.summary_version || 0);
+        return {
+            summary_stage: String(meta.summary_stage || '').trim(),
+            upgrade_pending: !!meta.upgrade_pending,
+            summary_version: Number.isFinite(summaryVersion) && summaryVersion > 0 ? summaryVersion : 0,
+            quality_upgraded: !!meta.quality_upgraded,
+            generated_at: String(meta.generated_at || '').trim(),
+            upgraded_at: String(meta.upgraded_at || '').trim(),
+        };
+    }
+
+    function syncOverviewSummaryVersionFromDom() {
+        const meta = getOverviewJobMeta();
+        if (meta.summary_version > 0) {
+            overviewLatestSummaryVersion = meta.summary_version;
+        }
+        return meta;
+    }
+
+    function overviewEnsureToastStack() {
+        let stack = document.getElementById('overview-toast-stack');
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.id = 'overview-toast-stack';
+            stack.className = 'fixed top-24 right-4 z-[95] flex flex-col gap-3 w-[min(92vw,24rem)] pointer-events-none';
+            document.body.appendChild(stack);
+        }
+        return stack;
+    }
+
+    function overviewShowToast(message, tone = 'blue', duration = 3200) {
+        if (!message) return;
+        const palette = {
+            blue: 'bg-blue-50 text-blue-700 border border-blue-200',
+            amber: 'bg-amber-50 text-amber-700 border border-amber-200',
+            green: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+            red: 'bg-red-50 text-red-700 border border-red-200',
+        };
+        const stack = overviewEnsureToastStack();
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto p-4 rounded-xl shadow-lg transition-all duration-500 ${palette[tone] || palette.blue}`;
+        toast.textContent = message;
+        stack.appendChild(toast);
+        window.setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-x-2', 'pointer-events-none');
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        }, duration);
+    }
+
+    function stopOverviewUpgradePolling() {
+        if (overviewUpgradePollTimer) {
+            window.clearTimeout(overviewUpgradePollTimer);
+            overviewUpgradePollTimer = null;
+        }
+    }
+
+    function applyOverviewHtml(html) {
+        if (!overviewContent || !html) return;
+        overviewContent.innerHTML = html;
+        initOverviewSummaryCollapsible();
+        bindOverviewPageActions();
+        syncOverviewSummaryVersionFromDom();
+    }
+
+    async function monitorOverviewQualityUpgrade(jobId, options = {}) {
+        if (!jobId) return;
+        overviewActiveJobId = jobId;
+        stopOverviewUpgradePolling();
+        const pollOnce = async () => {
+            if (!overviewActiveJobId || overviewActiveJobId !== jobId) return;
+            try {
+                const response = await fetch(overviewApiUrl(`/api/research-overview/status/${jobId}`), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await overviewReadJson(response);
+                if (!response.ok) {
+                    throw new Error(data.error || '研究现状高质量版状态获取失败');
+                }
+                const meta = data.payload_meta || {};
+                const nextVersion = Number(meta.summary_version || 0);
+                const versionAdvanced = Number.isFinite(nextVersion) && nextVersion > overviewLatestSummaryVersion;
+                if (versionAdvanced && data.html) {
+                    applyOverviewHtml(data.html);
+                    if (String(meta.summary_stage || '').trim() === 'quality') {
+                        overviewShowToast('研究现状综述已升级为高质量版', 'green', 3600);
+                    }
+                }
+                if (meta.upgrade_pending) {
+                    overviewUpgradePollTimer = window.setTimeout(pollOnce, 3500);
+                } else {
+                    stopOverviewUpgradePolling();
+                }
+            } catch (error) {
+                console.warn(error);
+                overviewUpgradePollTimer = window.setTimeout(pollOnce, 5000);
+            }
+        };
+        overviewUpgradePollTimer = window.setTimeout(pollOnce, 3500);
     }
 
     function overviewSetBusy(button, html) {
@@ -586,6 +805,7 @@
     const overviewContent = document.getElementById('research-overview-content');
     let overviewJobStartedAt = 0;
     let overviewLoadingMetaTimer = null;
+    let overviewProgressHistory = [];
 
     function getOverviewLoadingPanel() {
         return document.getElementById('research-overview-loading');
@@ -608,12 +828,17 @@
         return payload && payload.direction_text ? payload.direction_text : '\u7814\u7a76\u73b0\u72b6\u7efc\u8ff0';
     }
 
+    function confirmForceOverview() {
+        return window.confirm('将放弃当前研究现状内容，并按当前表单设置重新梳理。确定继续吗？');
+    }
+
     function showOverviewLoading(stepText = '') {
         const panel = getOverviewLoadingPanel();
         const step = getOverviewLoadingStep();
         const meta = document.getElementById('research-overview-loading-meta');
         if (panel) panel.classList.remove('hidden');
         if (stepText && step) step.textContent = stepText;
+        if (stepText) pushOverviewProgressStep(stepText);
         if (!overviewJobStartedAt) overviewJobStartedAt = Date.now();
         const tickLoadingMeta = () => {
             if (!meta || !overviewJobStartedAt) return;
@@ -637,8 +862,44 @@
         overviewJobStartedAt = 0;
     }
 
+    function renderOverviewProgressHistory() {
+        const list = document.getElementById('research-overview-progress-log');
+        if (!list) return;
+        list.innerHTML = '';
+        const visibleSteps = overviewProgressHistory.slice(-6);
+        const displaySteps = visibleSteps.length >= 6
+            ? [visibleSteps[0], visibleSteps[1], '…', visibleSteps[3], visibleSteps[4], visibleSteps[5]]
+            : visibleSteps;
+        displaySteps.forEach((item) => {
+            const row = document.createElement('div');
+            if (item === '…') {
+                row.className = 'flex items-center justify-center text-slate-400 tracking-[0.35em]';
+                row.textContent = '...';
+            } else {
+                row.className = 'flex items-start gap-2 overflow-hidden';
+                row.innerHTML = `<span class="mt-1 text-blue-500 shrink-0"><i class="fa fa-circle-o-notch"></i></span><span class="min-w-0 flex-1 truncate">${item}</span>`;
+            }
+            list.appendChild(row);
+        });
+    }
+
+    function pushOverviewProgressStep(stepText = '') {
+        const text = String(stepText || '').trim();
+        if (!text) return;
+        if (overviewProgressHistory[overviewProgressHistory.length - 1] === text) return;
+        overviewProgressHistory.push(text);
+        if (overviewProgressHistory.length > 6) {
+            overviewProgressHistory = overviewProgressHistory.slice(-6);
+        }
+        renderOverviewProgressHistory();
+    }
+
     async function pollOverviewJob(jobId) {
+        overviewActiveJobId = jobId;
         for (let attempt = 0; attempt < 180; attempt += 1) {
+            if (overviewActiveJobId !== jobId) {
+                return { status: 'cancelled' };
+            }
             const response = await fetch(overviewApiUrl(`/api/research-overview/status/${jobId}`), {
                 method: 'GET',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -651,14 +912,16 @@
                 showOverviewLoading(data.step);
             }
             if (data.status === 'succeeded' || data.status === 'failed') {
-                if (overviewContent && data.html) {
-                    overviewContent.innerHTML = data.html;
-                }
+                if (data.html) applyOverviewHtml(data.html);
                 hideOverviewLoading();
-                initOverviewSummaryCollapsible();
-                bindOverviewPageActions();
                 if (data.status === 'failed' && data.error) {
                     console.warn(data.error);
+                }
+                if (data.status === 'succeeded' && data.payload_meta && data.payload_meta.upgrade_pending) {
+                    overviewShowToast('快速版已生成，后台正在继续升级高质量版…', 'amber', 3200);
+                    monitorOverviewQualityUpgrade(jobId);
+                } else {
+                    stopOverviewUpgradePolling();
                 }
                 return data;
             }
@@ -670,18 +933,25 @@
         throw new Error('研究现状任务等待时间较长。你可以继续留在本页等待，或稍后刷新页面再次查看结果。');
     }
 
-    async function startOverviewJobFromPage() {
+    async function startOverviewJobFromPage(options = {}) {
         if (!overviewForm) return;
+        const forceRefresh = !!options.forceRefresh;
         const formData = new FormData(overviewForm);
         const payload = {
             q: String(formData.get('q') || '').trim(),
             focus_mode: String(formData.get('focus_mode') || 'review_first').trim(),
+            generation_mode: String(formData.get('generation_mode') || 'fast').trim(),
             overview_years: String(formData.get('overview_years') || ''),
             max_results: String(formData.get('max_results') || ''),
             sources: formData.getAll('sources'),
+            force_refresh: forceRefresh,
         };
         if (!payload.q) return;
-        showOverviewLoading('\u7cfb\u7edf\u6b63\u5728\u521b\u5efa\u7814\u7a76\u73b0\u72b6\u4efb\u52a1...');
+        overviewActiveJobId = '';
+        stopOverviewUpgradePolling();
+        overviewLatestSummaryVersion = 0;
+        overviewProgressHistory = [];
+        showOverviewLoading(forceRefresh ? '\u7cfb\u7edf\u6b63\u5728\u91cd\u65b0\u521b\u5efa\u7814\u7a76\u73b0\u72b6\u4efb\u52a1...' : '\u7cfb\u7edf\u6b63\u5728\u521b\u5efa\u7814\u7a76\u73b0\u72b6\u4efb\u52a1...');
         const response = await fetch(overviewApiUrl('/api/research-overview/start'), {
             method: 'POST',
             headers: {
@@ -695,7 +965,7 @@
             hideOverviewLoading();
             throw new Error(data.error || '\u7814\u7a76\u73b0\u72b6\u4efb\u52a1\u521b\u5efa\u5931\u8d25');
         }
-        if (data.reused) {
+        if (data.reused && !forceRefresh) {
             showOverviewLoading(data.step || '检测到同条件任务仍在运行，正在继续获取结果…');
         }
         return pollOverviewJob(data.job_id);
@@ -705,6 +975,18 @@
         const overviewSavePayload = getOverviewSavePayload();
         const overviewSummaryMarkdown = getOverviewSummaryMarkdown();
         const overviewDirectionText = getOverviewDirectionText();
+
+        document.querySelectorAll('.js-force-research-overview').forEach((button) => {
+            if (button.dataset.bound) return;
+            button.dataset.bound = '1';
+            button.addEventListener('click', () => {
+                if (!confirmForceOverview()) return;
+                startOverviewJobFromPage({ forceRefresh: true }).catch((error) => {
+                    hideOverviewLoading();
+                    alert(error.message || '\u7814\u7a76\u73b0\u72b6\u751f\u6210\u5931\u8d25');
+                });
+            });
+        });
 
         const saveBtn = document.getElementById('overview-save-btn');
         if (saveBtn && overviewSavePayload && !saveBtn.dataset.bound) {
@@ -873,6 +1155,7 @@
 
     initOverviewSummaryCollapsible();
     bindOverviewPageActions();
+    const initialOverviewMeta = syncOverviewSummaryVersionFromDom();
 
     const overviewAutoStartConfig = overviewReadScriptJson('overview-auto-start-config', {});
     if (overviewAutoStartConfig && overviewAutoStartConfig.enabled && !overviewAutoStartConfig.has_payload && !overviewAutoStartConfig.has_error) {
@@ -880,6 +1163,15 @@
             hideOverviewLoading();
             alert(error.message || '\u7814\u7a76\u73b0\u72b6\u751f\u6210\u5931\u8d25');
         });
+    } else if (
+        overviewAutoStartConfig
+        && overviewAutoStartConfig.has_payload
+        && overviewAutoStartConfig.existing_job_id
+        && initialOverviewMeta.upgrade_pending
+    ) {
+        overviewActiveJobId = overviewAutoStartConfig.existing_job_id;
+        overviewShowToast('当前先展示快速版，后台完成高质量版后会自动更新。', 'amber', 3200);
+        monitorOverviewQualityUpgrade(overviewAutoStartConfig.existing_job_id);
     }
 
 </script>

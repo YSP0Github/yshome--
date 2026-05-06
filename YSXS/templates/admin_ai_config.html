@@ -4,7 +4,313 @@
 
 {% block extra_css %}
 <style>
-    .ai-admin-shell { max-width: 1380px; margin: 0 auto; }
+    html {
+        scroll-behavior: smooth;
+    }
+    main.flex-grow.container.mx-auto {
+        max-width: none !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    .ai-admin-shell {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        min-height: calc(100vh - 5.5rem);
+        padding: 1rem;
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 26%),
+            radial-gradient(circle at top right, rgba(6, 182, 212, 0.10), transparent 24%),
+            linear-gradient(180deg, rgba(248,250,252,0.96), rgba(241,245,249,0.92));
+    }
+    .dark .ai-admin-shell {
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 28%),
+            radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 24%),
+            linear-gradient(180deg, rgba(2,6,23,0.98), rgba(15,23,42,0.98));
+    }
+    .ai-admin-console {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+        width: 100%;
+    }
+    .ai-admin-sidebar {
+        position: sticky;
+        top: 1rem;
+    }
+    .ai-admin-sidebar-card,
+    .ai-admin-main-shell {
+        border-radius: 1.75rem;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(16px);
+    }
+    .dark .ai-admin-sidebar-card,
+    .dark .ai-admin-main-shell {
+        background: rgba(2, 6, 23, 0.72);
+        border-color: rgba(51, 65, 85, 0.92);
+        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.34);
+    }
+    .ai-admin-sidebar-card {
+        padding: 1.2rem;
+        min-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .ai-admin-main-shell {
+        padding: 1rem;
+    }
+    .ai-console-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: #2563eb;
+    }
+    .dark .ai-console-eyebrow {
+        color: #7dd3fc;
+    }
+    .ai-console-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .dark .ai-console-title {
+        color: #f8fafc;
+    }
+    .ai-console-desc {
+        font-size: .92rem;
+        line-height: 1.75;
+        color: #64748b;
+    }
+    .dark .ai-console-desc {
+        color: #94a3b8;
+    }
+    .ai-sidebar-group-title {
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: .6rem;
+    }
+    .ai-sidebar-nav {
+        display: grid;
+        gap: .55rem;
+    }
+    .ai-sidebar-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .8rem;
+        padding: .95rem 1rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: rgba(248, 250, 252, 0.86);
+        color: #334155;
+        text-decoration: none;
+        transition: all .18s ease;
+    }
+    .ai-sidebar-link:hover {
+        transform: translateX(2px);
+        border-color: rgba(59, 130, 246, 0.36);
+        color: #1d4ed8;
+        background: rgba(239, 246, 255, 0.96);
+    }
+    .ai-sidebar-link.is-active {
+        border-color: rgba(37, 99, 235, 0.5);
+        background: linear-gradient(135deg, rgba(219, 234, 254, 0.96), rgba(224, 242, 254, 0.94));
+        color: #1d4ed8;
+        box-shadow: inset 0 0 0 1px rgba(191, 219, 254, 0.92);
+    }
+    .dark .ai-sidebar-link {
+        background: rgba(15, 23, 42, 0.92);
+        border-color: rgba(51, 65, 85, 0.9);
+        color: #cbd5e1;
+    }
+    .dark .ai-sidebar-link:hover,
+    .dark .ai-sidebar-link.is-active {
+        color: #e0f2fe;
+        border-color: rgba(56, 189, 248, 0.34);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+        box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.16);
+    }
+    .ai-sidebar-link-title {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        font-weight: 700;
+    }
+    .ai-sidebar-link-meta {
+        font-size: .76rem;
+        color: #94a3b8;
+        white-space: nowrap;
+    }
+    .dark .ai-sidebar-link-meta {
+        color: #64748b;
+    }
+    .ai-sidebar-mini-grid {
+        display: grid;
+        gap: .75rem;
+    }
+    .ai-sidebar-mini-card {
+        border-radius: 1rem;
+        padding: .95rem 1rem;
+        border: 1px solid rgba(226, 232, 240, 0.86);
+        background: rgba(248, 250, 252, 0.86);
+    }
+    .dark .ai-sidebar-mini-card {
+        border-color: rgba(51, 65, 85, 0.9);
+        background: rgba(15, 23, 42, 0.92);
+    }
+    .ai-sidebar-mini-label {
+        font-size: .78rem;
+        color: #64748b;
+        margin-bottom: .35rem;
+    }
+    .dark .ai-sidebar-mini-label {
+        color: #94a3b8;
+    }
+    .ai-sidebar-mini-value {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+        word-break: break-word;
+    }
+    .dark .ai-sidebar-mini-value {
+        color: #f8fafc;
+    }
+    .ai-admin-main {
+        display: grid;
+        gap: 1rem;
+    }
+    .ai-top-statusbar {
+        border-radius: 1rem;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: rgba(255, 255, 255, 0.84);
+        backdrop-filter: blur(14px);
+    }
+    .dark .ai-top-statusbar {
+        border-color: rgba(51, 65, 85, 0.9);
+        background: rgba(15, 23, 42, 0.82);
+    }
+    .ai-admin-section {
+        scroll-margin-top: 1rem;
+    }
+    .ai-console-hero {
+        border-radius: 1.5rem;
+        padding: 1.35rem 1.35rem 1.25rem;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.82));
+        margin-bottom: 1rem;
+    }
+    .dark .ai-console-hero {
+        background:
+            linear-gradient(135deg, rgba(15,23,42,0.92), rgba(2,6,23,0.82));
+        border-color: rgba(51, 65, 85, 0.88);
+    }
+    .ai-console-hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: end;
+    }
+    .ai-console-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-top: 1rem;
+    }
+    .ai-console-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .65rem .95rem;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+        border: 1px solid rgba(191, 219, 254, 0.72);
+        background: rgba(239, 246, 255, 0.86);
+        color: #1d4ed8;
+    }
+    .dark .ai-console-stat-chip {
+        border-color: rgba(30, 64, 175, 0.5);
+        background: rgba(15, 23, 42, 0.86);
+        color: #bfdbfe;
+    }
+    .ai-console-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .75rem;
+    }
+    .ai-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .ai-panel-head-copy p {
+        margin-top: .3rem;
+    }
+    .ai-panel-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: .3rem;
+    }
+    @media (max-width: 1279px) {
+        .ai-admin-console {
+            grid-template-columns: 1fr;
+        }
+        .ai-admin-sidebar {
+            position: static;
+        }
+        .ai-admin-sidebar-card {
+            min-height: auto;
+        }
+        .ai-chat-sticky {
+            position: static;
+        }
+    }
+    @media (max-width: 768px) {
+        .ai-admin-shell {
+            padding: .75rem;
+        }
+        .ai-admin-main-shell {
+            padding: .75rem;
+        }
+        .ai-console-hero-grid {
+            grid-template-columns: 1fr;
+        }
+        .ai-chat-msg {
+            max-width: 88%;
+            min-width: 8.5rem;
+        }
+        .ai-chat-shell {
+            height: calc(100vh - 8.2rem);
+            min-height: 34rem;
+        }
+        .ai-chat-log {
+            min-height: 0;
+            max-height: none;
+        }
+    }
     .ai-admin-card {
         background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(226, 232, 240, 0.95);
@@ -194,77 +500,278 @@
     }
     .ai-preset-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+        gap: 1.15rem;
     }
     .ai-preset-option {
         position: relative;
-        display: block;
-        border-radius: 1.2rem;
-        border: 1px solid rgba(191, 219, 254, .75);
-        background: linear-gradient(180deg, rgba(248,250,252,.98), rgba(239,246,255,.9));
-        padding: 1rem;
-        transition: all .18s ease;
+        display: flex;
+        flex-direction: column;
+        min-height: 216px;
+        border-radius: 1rem;
+        border: 1px solid rgba(226,232,240,.96);
+        background: rgba(255,255,255,.98);
+        padding: 1.05rem 1.05rem 1rem;
+        transition: all .22s ease;
         cursor: pointer;
+        overflow: hidden;
+    }
+    .ai-preset-option::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: rgba(203,213,225,.9);
     }
     .ai-preset-option:hover {
         transform: translateY(-2px);
-        border-color: rgba(59,130,246,.42);
-        box-shadow: 0 14px 28px rgba(37,99,235,.12);
+        border-color: rgba(148,163,184,.52);
+        box-shadow: 0 10px 22px rgba(15,23,42,.08);
     }
     .ai-preset-option.is-active {
-        border-color: rgba(37,99,235,.9);
-        box-shadow: 0 18px 34px rgba(37,99,235,.16);
-        background: linear-gradient(180deg, rgba(239,246,255,.98), rgba(219,234,254,.94));
+        border-color: rgba(37,99,235,.55);
+        box-shadow: 0 14px 28px rgba(37,99,235,.10);
+        background: rgba(255,255,255,.99);
+    }
+    .ai-preset-option.is-active::before {
+        height: 3px;
+        background: #2563eb;
     }
     .dark .ai-preset-option {
-        background: linear-gradient(180deg, rgba(15,23,42,.94), rgba(30,41,59,.92));
-        border-color: rgba(71,85,105,.7);
+        background: rgba(15,23,42,.96);
+        border-color: rgba(51,65,85,.96);
     }
     .dark .ai-preset-option.is-active {
-        border-color: rgba(96,165,250,.9);
-        box-shadow: 0 18px 34px rgba(2,6,23,.34);
-        background: linear-gradient(180deg, rgba(30,41,59,.98), rgba(37,99,235,.20));
+        border-color: rgba(96,165,250,.62);
+        box-shadow: 0 16px 30px rgba(2,6,23,.28);
+        background: rgba(15,23,42,.98);
     }
     .ai-preset-radio {
         position: absolute;
-        top: 1rem;
+        top: 1.05rem;
         right: 1rem;
-        width: 1.05rem;
-        height: 1.05rem;
+        width: 1.1rem;
+        height: 1.1rem;
         accent-color: #2563eb;
+    }
+    .ai-preset-tags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .45rem;
+        padding-right: 1.9rem;
+        flex: 0 0 auto;
+    }
+    .ai-preset-selected-badge {
+        display: none;
+        align-items: center;
+        gap: .35rem;
+        padding: .32rem .72rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+        color: #1d4ed8;
+        background: rgba(239,246,255,.98);
+        border: 1px solid rgba(191,219,254,.9);
+        box-shadow: 0 6px 16px rgba(37,99,235,.10);
+    }
+    .ai-preset-option.is-active .ai-preset-selected-badge {
+        display: inline-flex;
+    }
+    .dark .ai-preset-selected-badge {
+        background: rgba(15,23,42,.92);
+        color: #bfdbfe;
+        border-color: rgba(71,85,105,.82);
     }
     .ai-preset-chip {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: .35rem;
-        padding: .22rem .6rem;
+        min-width: 3.6rem;
+        padding: .38rem .75rem;
         border-radius: 999px;
         font-size: .72rem;
         font-weight: 700;
-        background: rgba(37,99,235,.12);
-        color: #1d4ed8;
+        line-height: 1;
+        white-space: nowrap;
+        background: rgba(241,245,249,.96);
+        color: #475569;
+        border: 1px solid rgba(226,232,240,.95);
     }
     .dark .ai-preset-chip {
-        background: rgba(59,130,246,.2);
-        color: #bfdbfe;
+        background: rgba(30,41,59,.96);
+        color: #cbd5e1;
+        border-color: rgba(71,85,105,.82);
+    }
+    .ai-preset-topline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .8rem;
+        margin-bottom: .9rem;
+        padding-right: 0;
+    }
+    .ai-preset-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.4;
+        letter-spacing: -.01em;
+    }
+    .dark .ai-preset-title { color: #f8fafc; }
+    .ai-preset-subtitle {
+        font-size: .78rem;
+        color: #64748b;
+        margin-top: .28rem;
+        line-height: 1.55;
+    }
+    .dark .ai-preset-subtitle { color: #94a3b8; }
+    .ai-preset-specs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .7rem;
+        margin-bottom: .9rem;
+    }
+    .ai-preset-spec {
+        border-radius: .8rem;
+        padding: .72rem .8rem;
+        background: rgba(248,250,252,.96);
+        border: 1px solid rgba(226,232,240,.98);
+        min-width: 0;
+    }
+    .dark .ai-preset-spec {
+        background: rgba(2,6,23,.24);
+        border-color: rgba(51,65,85,.9);
+    }
+    .ai-preset-spec-label {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: .18rem;
+    }
+    .ai-preset-spec-value {
+        font-size: .83rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+    .dark .ai-preset-spec-value { color: #e2e8f0; }
+    .ai-preset-url {
+        border-radius: .8rem;
+        padding: .8rem .9rem;
+        background: rgba(248,250,252,.92);
+        border: 1px dashed rgba(203,213,225,.95);
+        color: #475569;
+        font-size: .78rem;
+        line-height: 1.65;
+        word-break: break-all;
+        flex: 1 1 auto;
+        margin-bottom: .95rem;
+    }
+    .dark .ai-preset-url {
+        background: rgba(2,6,23,.2);
+        color: #cbd5e1;
+        border-color: rgba(71,85,105,.82);
+    }
+    .ai-preset-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-top: auto;
     }
     .ai-preset-meta {
         display: inline-flex;
         align-items: center;
         gap: .4rem;
         padding: .45rem .8rem;
-        border-radius: .9rem;
+        border-radius: .75rem;
         font-size: .8rem;
         font-weight: 700;
-        color: #2563eb;
-        background: rgba(239,246,255,.95);
-        border: 1px solid rgba(191,219,254,.8);
+        color: #334155;
+        background: rgba(248,250,252,.96);
+        border: 1px solid rgba(226,232,240,.95);
     }
     .dark .ai-preset-meta {
-        background: rgba(30,41,59,.95);
-        color: #bfdbfe;
-        border-color: rgba(71,85,105,.8);
+        background: rgba(30,41,59,.9);
+        color: #cbd5e1;
+        border-color: rgba(71,85,105,.82);
+    }
+    .ai-preset-helper {
+        font-size: .74rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    .dark .ai-preset-helper { color: #94a3b8; }
+    .ai-preset-quick-save {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: .85rem 1rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(191,219,254,.88);
+        background: rgba(239,246,255,.82);
+    }
+    .dark .ai-preset-quick-save {
+        border-color: rgba(30,64,175,.48);
+        background: rgba(15,23,42,.82);
+    }
+    .ai-preset-quick-save-copy {
+        min-width: 0;
+    }
+    .ai-preset-quick-save-title {
+        font-size: .9rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+    .dark .ai-preset-quick-save-title {
+        color: #e2e8f0;
+    }
+    .ai-preset-quick-save-note {
+        margin-top: .18rem;
+        font-size: .76rem;
+        color: #64748b;
+        line-height: 1.5;
+    }
+    .dark .ai-preset-quick-save-note {
+        color: #94a3b8;
+    }
+    .ai-preset-save-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .45rem;
+        flex: 0 0 auto;
+        padding: .62rem .95rem;
+        border-radius: .8rem;
+        background: #2563eb;
+        color: #fff;
+        font-size: .84rem;
+        font-weight: 700;
+        box-shadow: 0 10px 20px rgba(37,99,235,.18);
+        transition: background .18s ease, transform .18s ease;
+    }
+    .ai-preset-save-btn:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+    @media (max-width: 640px) {
+        .ai-preset-quick-save {
+            align-items: stretch;
+            flex-direction: column;
+        }
+        .ai-preset-save-btn {
+            width: 100%;
+        }
     }
     .ai-config-locked {
         opacity: .72;
@@ -276,6 +783,443 @@
         line-height: 1.6;
     }
     .dark .ai-config-readonly-hint { color: #94a3b8; }
+    .ai-chat-shell {
+        border-radius: 1.25rem;
+        border: 1px solid rgba(226,232,240,.92);
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 8.75rem);
+        min-height: 46rem;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+    }
+    .dark .ai-chat-shell {
+        border-color: rgba(51,65,85,.92);
+        background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(2,6,23,.96));
+        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.34);
+    }
+    .ai-chat-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .ai-config-bottom-grid {
+        display: grid;
+        gap: 1rem;
+    }
+    .ai-config-subcard {
+        border-radius: 1.25rem;
+        border: 1px solid rgba(226,232,240,.92);
+        background: rgba(248,250,252,.72);
+        padding: 1rem;
+    }
+    .dark .ai-config-subcard {
+        border-color: rgba(51,65,85,.9);
+        background: rgba(15,23,42,.68);
+    }
+    .ai-config-save-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 100%;
+    }
+    .ai-config-save-hint {
+        font-size: .84rem;
+        line-height: 1.75;
+        color: #64748b;
+    }
+    .dark .ai-config-save-hint {
+        color: #94a3b8;
+    }
+    .ai-chat-sticky {
+        position: static;
+    }
+    .ai-chat-header {
+        padding: .9rem 1rem;
+        border-bottom: 1px solid rgba(226,232,240,.88);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.94));
+    }
+    .dark .ai-chat-header {
+        border-bottom-color: rgba(51,65,85,.92);
+        background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(15,23,42,.96));
+    }
+    .ai-chat-status {
+        font-size: .74rem;
+        color: #64748b;
+        line-height: 1.5;
+    }
+    .dark .ai-chat-status {
+        color: #94a3b8;
+    }
+    .ai-chat-log {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .9rem;
+        justify-content: flex-start;
+        background: linear-gradient(180deg, rgba(248,250,252,.72), rgba(255,255,255,.9));
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148,163,184,.72) transparent;
+    }
+    .dark .ai-chat-log {
+        background: linear-gradient(180deg, rgba(15,23,42,.45), rgba(2,6,23,.32));
+        scrollbar-color: rgba(71,85,105,.82) transparent;
+    }
+    .ai-chat-log::-webkit-scrollbar {
+        width: 9px;
+    }
+    .ai-chat-log::-webkit-scrollbar-thumb {
+        background: rgba(148,163,184,.62);
+        border-radius: 999px;
+    }
+    .dark .ai-chat-log::-webkit-scrollbar-thumb {
+        background: rgba(71,85,105,.82);
+    }
+    .ai-chat-empty {
+        margin: .2rem 0 0;
+        padding: 1.1rem 1.15rem;
+        border-radius: .95rem;
+        border: 1px dashed rgba(191,219,254,.95);
+        color: #64748b;
+        background: rgba(255,255,255,.82);
+        line-height: 1.7;
+        font-size: .86rem;
+    }
+    .dark .ai-chat-empty {
+        color: #94a3b8;
+        background: rgba(15,23,42,.74);
+        border-color: rgba(59,130,246,.24);
+    }
+    .ai-chat-msg {
+        position: relative;
+        display: inline-flex;
+        flex-direction: column;
+        width: auto;
+        max-width: 68%;
+        min-width: 10.5rem;
+        border-radius: .95rem;
+        padding: .85rem .95rem;
+        font-size: .84rem;
+        line-height: 1.72;
+        border: 1px solid rgba(226,232,240,.92);
+        box-shadow: 0 10px 24px rgba(15,23,42,.05);
+        word-break: break-word;
+    }
+    .ai-chat-msg-content {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .ai-chat-msg-content h1,
+    .ai-chat-msg-content h2,
+    .ai-chat-msg-content h3,
+    .ai-chat-msg-content h4 {
+        font-weight: 800;
+        color: inherit;
+        margin: .2rem 0 .55rem;
+        line-height: 1.35;
+    }
+    .ai-chat-msg-content h1 { font-size: 1.08rem; }
+    .ai-chat-msg-content h2 { font-size: 1rem; }
+    .ai-chat-msg-content h3,
+    .ai-chat-msg-content h4 { font-size: .92rem; }
+    .ai-chat-msg-content p { margin: 0 0 .7rem; }
+    .ai-chat-msg-content p:last-child { margin-bottom: 0; }
+    .ai-chat-msg-content ul,
+    .ai-chat-msg-content ol {
+        margin: .2rem 0 .7rem 1.1rem;
+        padding: 0;
+    }
+    .ai-chat-msg-content li { margin: .18rem 0; }
+    .ai-chat-msg-content hr {
+        border: 0;
+        border-top: 1px solid rgba(148,163,184,.26);
+        margin: .75rem 0;
+    }
+    .ai-chat-msg-content blockquote {
+        margin: .7rem 0;
+        padding: .1rem 0 .1rem .8rem;
+        border-left: 3px solid rgba(96,165,250,.55);
+        color: inherit;
+        opacity: .92;
+    }
+    .ai-chat-msg-content pre {
+        margin: .75rem 0;
+        padding: .8rem .9rem;
+        border-radius: .85rem;
+        overflow-x: auto;
+        background: rgba(15,23,42,.92);
+        color: #e5e7eb;
+        font-size: .78rem;
+        line-height: 1.65;
+    }
+    .ai-chat-msg-content code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: rgba(15,23,42,.08);
+        padding: .1rem .35rem;
+        border-radius: .35rem;
+        font-size: .78rem;
+    }
+    .ai-chat-msg-content pre code {
+        background: transparent;
+        padding: 0;
+        border-radius: 0;
+        font-size: inherit;
+    }
+    .ai-chat-msg-content a {
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    .ai-chat-msg.user {
+        align-self: flex-end;
+        max-width: 64%;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #f8fafc;
+        border-color: transparent;
+        box-shadow: 0 14px 28px rgba(37,99,235,.16);
+    }
+    .ai-chat-msg.assistant {
+        align-self: flex-start;
+        max-width: 70%;
+        background: rgba(255,255,255,.96);
+        color: #0f172a;
+    }
+    .dark .ai-chat-msg.assistant {
+        background: rgba(15,23,42,.96);
+        color: #e5e7eb;
+        border-color: rgba(51,65,85,.86);
+    }
+    .dark .ai-chat-msg.assistant .ai-chat-msg-content code,
+    .dark .ai-chat-msg.system .ai-chat-msg-content code {
+        background: rgba(255,255,255,.08);
+    }
+    .ai-chat-msg.system {
+        align-self: center;
+        max-width: 78%;
+        min-width: 0;
+        background: rgba(248,250,252,.9);
+        color: #475569;
+        border-style: dashed;
+    }
+    .dark .ai-chat-msg.system {
+        background: rgba(30,41,59,.78);
+        color: #cbd5e1;
+        border-color: rgba(71,85,105,.86);
+    }
+    .ai-chat-msg-meta {
+        margin-top: .35rem;
+        font-size: .72rem;
+        opacity: .72;
+        white-space: nowrap;
+    }
+    .ai-chat-copy-msg {
+        position: absolute;
+        right: .38rem;
+        bottom: .34rem;
+        width: 1.3rem;
+        height: 1.3rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: .42rem;
+        color: currentColor;
+        background: rgba(255,255,255,.78);
+        border: 1px solid rgba(148,163,184,.28);
+        font-size: .7rem;
+        line-height: 1;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .14s ease, background .14s ease, color .14s ease;
+    }
+    .ai-chat-msg:hover .ai-chat-copy-msg,
+    .ai-chat-copy-msg:focus-visible {
+        opacity: .86;
+        pointer-events: auto;
+    }
+    .ai-chat-copy-msg:hover {
+        color: #2563eb;
+        background: rgba(255,255,255,.96);
+    }
+    .dark .ai-chat-copy-msg {
+        background: rgba(15,23,42,.82);
+        border-color: rgba(71,85,105,.5);
+    }
+    .ai-chat-composer {
+        padding: .9rem 1rem 1rem;
+        border-top: 1px solid rgba(226,232,240,.88);
+        display: grid;
+        gap: .65rem;
+        flex: 0 0 auto;
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+    }
+    .dark .ai-chat-composer {
+        border-top-color: rgba(51,65,85,.92);
+        background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(15,23,42,.98));
+    }
+    .ai-chat-textarea {
+        width: 100%;
+        min-height: 5.2rem;
+        max-height: 12.5rem;
+        resize: none;
+        overflow-y: hidden;
+        box-sizing: border-box;
+        background: rgba(255,255,255,.98) !important;
+        color: #0f172a !important;
+        border-color: rgba(203,213,225,.92) !important;
+        border-radius: 1rem !important;
+    }
+    .ai-chat-textarea::placeholder {
+        color: #94a3b8;
+    }
+    .dark .ai-chat-textarea {
+        background: rgba(30,41,59,.92) !important;
+        color: #f3f4f6 !important;
+        border-color: rgba(71,85,105,.88) !important;
+    }
+    .dark .ai-chat-textarea::placeholder {
+        color: #94a3b8;
+    }
+    .ai-chat-toolbar {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .9rem;
+    }
+    .ai-chat-toolbar-meta {
+        font-size: .73rem;
+        color: #64748b;
+        display: flex;
+        flex-direction: column;
+        gap: .18rem;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .dark .ai-chat-toolbar-meta {
+        color: #94a3b8;
+    }
+    .ai-chat-toolbar-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: .7rem;
+        flex: 0 0 auto;
+    }
+    .ai-chat-model-dock {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .26rem;
+        border-radius: 999px;
+        border: 1px solid rgba(226,232,240,.9);
+        background: rgba(255,255,255,.84);
+        max-width: 100%;
+    }
+    .dark .ai-chat-model-dock {
+        border-color: rgba(71,85,105,.82);
+        background: rgba(30,41,59,.78);
+    }
+    .ai-chat-model-select {
+        min-width: 7.2rem;
+        max-width: 9.4rem;
+        padding: .38rem .62rem;
+        border-radius: 999px;
+        border: 1px solid rgba(203,213,225,.92);
+        background: rgba(255,255,255,.98);
+        color: #0f172a;
+        font-size: .76rem;
+        line-height: 1.1;
+    }
+    .dark .ai-chat-model-select {
+        border-color: rgba(71,85,105,.82);
+        background: rgba(15,23,42,.92);
+        color: #f3f4f6;
+    }
+    .ai-chat-model-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .32rem;
+        max-width: 8.4rem;
+        padding: .38rem .6rem;
+        border-radius: 999px;
+        background: rgba(248,250,252,.98);
+        border: 1px solid rgba(226,232,240,.92);
+        color: #475569;
+        font-size: .74rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 0 1 auto;
+    }
+    .dark .ai-chat-model-pill {
+        background: rgba(15,23,42,.92);
+        border-color: rgba(71,85,105,.82);
+        color: #cbd5e1;
+    }
+    .ai-chat-context-control {
+        display: inline-flex;
+        align-items: center;
+        gap: .38rem;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        line-height: 1.2;
+    }
+    .ai-chat-context-summary {
+        max-width: 12rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ai-chat-context-label {
+        opacity: .9;
+    }
+    .ai-chat-context-input {
+        width: 3.4rem;
+        max-width: 3.4rem;
+        text-align: center;
+        min-width: 0;
+        padding: .26rem .38rem;
+        border-radius: .7rem;
+        font-size: .76rem;
+        line-height: 1.1;
+    }
+    .ai-chat-context-warning {
+        font-size: .72rem;
+        color: #d97706;
+    }
+    .dark .ai-chat-context-warning {
+        color: #fbbf24;
+    }
+    .ai-chat-send-btn[disabled] {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+    .ai-chat-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        justify-content: flex-end;
+    }
+    .ai-chat-ghost-btn[disabled] {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+    @media (max-width: 1024px) {
+        .ai-chat-toolbar {
+            flex-wrap: wrap;
+        }
+        .ai-chat-toolbar-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
     .ai-table-wrap { overflow-x: auto; }
     .ai-table-scroll-y {
         max-height: 34rem;
@@ -354,440 +1298,744 @@
 {% set max_user_tokens = top_users[0].total_tokens if top_users else 1 %}
 {% set max_scene_tokens = scene_ranking[0].total_tokens if scene_ranking else 1 %}
 
-<div class="ai-admin-shell px-4 py-8">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
-        <div>
-            <div class="text-sm text-slate-500 dark:text-slate-400 mb-2">超级管理员 / 系统控制台</div>
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">智能管理系统</h1>
-            <p class="text-slate-600 dark:text-slate-300 mt-2">
-                统一查看智能配置、累计 Token、用户使用排行、调用趋势与最近调用记录。
-            </p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-            <span class="ai-badge-soft"><i class="fa fa-robot"></i>{{ 'AI 可用' if effective_ai else 'AI 未就绪' }}</span>
-            <span class="ai-badge-soft"><i class="fa fa-database"></i>总调用 {{ summary.total_calls }}</span>
-            <a href="{{ url_for('index') }}" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium">
-                <i class="fa fa-arrow-left mr-2"></i>返回首页
-            </a>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-6">
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">累计 Token</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_tokens|compact_number }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Prompt {{ summary.total_prompt_tokens|compact_number }} / Completion {{ summary.total_completion_tokens|compact_number }}</div>
-        </div>
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">今日 Token</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_tokens|compact_number }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">按北京时间自然日统计</div>
-        </div>
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">累计调用</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_calls }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">系统内所有智能请求</div>
-        </div>
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">今日调用</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_calls }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">今日活跃用户 {{ summary.today_active_users }}</div>
-        </div>
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">累计活跃用户</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_active_users }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">发生过智能调用的用户数</div>
-        </div>
-        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
-            <div class="text-sm text-slate-500 dark:text-slate-400">平均单次消耗</div>
-            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.avg_tokens_per_call }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Token / 调用</div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        <section class="xl:col-span-2 ai-admin-card rounded-3xl p-6 md:p-7">
-            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-5">
+<div id="ai-admin-root" class="ai-admin-shell">
+    <div class="ai-admin-console">
+        <aside class="ai-admin-sidebar">
+            <div class="ai-admin-sidebar-card">
                 <div>
-                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">调用趋势</h2>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">最近 14 天 Token 与请求次数变化</p>
+                    <div class="ai-console-eyebrow"><i class="fa fa-terminal"></i>AI CONTROL PANEL</div>
+                    <div class="ai-console-title mt-3">智能管理系统</div>
+                    <p class="ai-console-desc mt-3">
+                        这是超级管理员专用的全屏控制台，用于统一查看模型状态、Token 消耗、调用趋势、用户排行与系统配置。
+                    </p>
                 </div>
-                <div class="flex flex-wrap gap-2 text-xs">
-                    <button type="button" class="ai-chart-switch is-active" data-chart-mode="total">
-                        <i class="fa fa-circle text-[.7rem]"></i>总 Token
-                    </button>
-                    <button type="button" class="ai-chart-switch" data-chart-mode="prompt">
-                        <i class="fa fa-circle text-[.7rem]"></i>Prompt
-                    </button>
-                    <button type="button" class="ai-chart-switch" data-chart-mode="completion">
-                        <i class="fa fa-circle text-[.7rem]"></i>Completion
-                    </button>
-                    <button type="button" class="ai-chart-switch" data-chart-mode="calls">
-                        <i class="fa fa-circle text-[.7rem]"></i>调用次数
-                    </button>
+
+                <div>
+                    <div class="ai-sidebar-group-title">主导航</div>
+                    <nav class="ai-sidebar-nav">
+                        <a href="#section-overview" class="ai-sidebar-link is-active" data-ai-nav-link data-ai-target="section-overview">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-th-large"></i>总览仪表盘</span>
+                            <span class="ai-sidebar-link-meta">KPI</span>
+                        </a>
+                        <a href="#section-trend" class="ai-sidebar-link" data-ai-nav-link data-ai-target="section-trend">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-line-chart"></i>趋势分析</span>
+                            <span class="ai-sidebar-link-meta">14 天</span>
+                        </a>
+                        <a href="#section-users" class="ai-sidebar-link" data-ai-nav-link data-ai-target="section-users">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-trophy"></i>用户排行</span>
+                            <span class="ai-sidebar-link-meta">TOP {{ top_users|length }}</span>
+                        </a>
+                        <a href="#section-models" class="ai-sidebar-link" data-ai-nav-link data-ai-target="section-models">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-cubes"></i>模型概览</span>
+                            <span class="ai-sidebar-link-meta">{{ model_ranking|length }}</span>
+                        </a>
+                        <a href="#section-logs" class="ai-sidebar-link" data-ai-nav-link data-ai-target="section-logs">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-history"></i>最近调用</span>
+                            <span class="ai-sidebar-link-meta">{{ recent_logs|length }}</span>
+                        </a>
+                        <a href="#section-config" class="ai-sidebar-link" data-ai-nav-link data-ai-target="section-config">
+                            <span class="ai-sidebar-link-title"><i class="fa fa-sliders"></i>智能配置</span>
+                            <span class="ai-sidebar-link-meta">配置中心</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <div>
+                    <div class="ai-sidebar-group-title">运行状态</div>
+                    <div class="ai-sidebar-mini-grid">
+                        <div class="ai-sidebar-mini-card">
+                            <div class="ai-sidebar-mini-label">当前模型</div>
+                            <div class="ai-sidebar-mini-value">{{ effective_ai.model if effective_ai else '未就绪' }}</div>
+                        </div>
+                        <div class="ai-sidebar-mini-card">
+                            <div class="ai-sidebar-mini-label">当前接口</div>
+                            <div class="ai-sidebar-mini-value">{{ effective_ai.wire_api if effective_ai else '未解析到' }}</div>
+                        </div>
+                        <div class="ai-sidebar-mini-card">
+                            <div class="ai-sidebar-mini-label">今日调用</div>
+                            <div class="ai-sidebar-mini-value">{{ summary.today_calls }}</div>
+                        </div>
+                        <div class="ai-sidebar-mini-card">
+                            <div class="ai-sidebar-mini-label">今日 Token</div>
+                            <div class="ai-sidebar-mini-value">{{ summary.today_tokens|compact_number }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2 space-y-3">
+                    <a href="{{ url_for('index') }}" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium">
+                        <i class="fa fa-arrow-left mr-2"></i>返回首页
+                    </a>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+                        当前页已重排为控制台视图：左侧固定导航，右侧全屏工作区，适合集中管理与快速巡检。
+                    </div>
                 </div>
             </div>
-            <div>
-                <div id="ai-trend-chart-title" class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">总 Token 折线图</div>
-                <div id="ai-trend-chart" class="ai-chart-shell"></div>
-            </div>
-        </section>
-
-        <aside class="space-y-6">
-            <section class="ai-admin-card rounded-3xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">当前生效配置</h2>
-                    <span class="ai-badge-soft">{{ effective_ai.model if effective_ai else '未配置' }}</span>
-                </div>
-                <div class="space-y-0 text-sm">
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">智能状态</div>
-                        <div class="font-semibold text-slate-800 dark:text-slate-100">{{ '可用' if effective_ai else '不可用' }}</div>
-                    </div>
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">Base URL</div>
-                        <div class="font-medium text-slate-800 dark:text-slate-100 break-all">{{ effective_ai.base_url if effective_ai else '未解析到' }}</div>
-                    </div>
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">当前模型</div>
-                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.model if effective_ai else '未解析到' }}</div>
-                    </div>
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">Wire API</div>
-                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.wire_api if effective_ai else '未解析到' }}</div>
-                    </div>
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">配置来源</div>
-                        <div class="font-medium text-slate-800 dark:text-slate-100">
-                            {% if not effective_ai %}
-                                未解析到
-                            {% elif effective_ai.config_source == 'preset' %}
-                                .env 预设{% if effective_ai.preset_label %} · {{ effective_ai.preset_label }}{% endif %}
-                            {% elif effective_ai.config_source == 'manual' %}
-                                手动填写
-                            {% else %}
-                                环境变量自动回退
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="ai-metric-row">
-                        <div class="text-slate-500 dark:text-slate-400">ADS Token</div>
-                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ads_token_masked }}</div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="ai-admin-card rounded-3xl p-6">
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Usage 统计说明</h2>
-                <div class="space-y-3">
-                    {% for item in usage_sources %}
-                    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-3">
-                        <div>
-                            <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.call_count }} 次调用</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-base font-semibold text-slate-900 dark:text-white">{{ item.total_tokens|compact_number }}</div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400">Token</div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="text-sm text-slate-500 dark:text-slate-400">暂无 Token 统计记录，后续智能调用将自动累积。</div>
-                    {% endfor %}
-                </div>
-                <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-6">
-                    某些中转站不会返回 usage 字段，系统会按请求/响应字符数估算 Token，用于看趋势与排行。
-                </div>
-            </section>
         </aside>
-    </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        <section class="ai-admin-card rounded-3xl p-6 xl:col-span-2">
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">用户 Token 排行榜</h2>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">按累计 Token 从高到低排序</p>
+        <div class="ai-admin-main-shell">
+            <div class="ai-top-statusbar flex flex-wrap items-center justify-between gap-3 px-4 py-3 mb-4">
+                <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span class="ai-badge-soft"><i class="fa fa-robot"></i>{{ 'AI 可用' if effective_ai else 'AI 未就绪' }}</span>
+                    <span class="ai-badge-soft"><i class="fa fa-database"></i>总调用 {{ summary.total_calls }}</span>
+                    <span class="ai-badge-soft"><i class="fa fa-bolt"></i>活跃用户 {{ summary.total_active_users }}</span>
+                    <span class="ai-badge-soft"><i class="fa fa-clock-o"></i>北京时间统计</span>
                 </div>
-                <span class="ai-badge-soft"><i class="fa fa-trophy"></i>TOP {{ top_users|length }}</span>
+                <div class="text-xs text-slate-500 dark:text-slate-400">
+                    当前来源：
+                    {% if not effective_ai %}
+                        未解析到配置
+                    {% elif effective_ai.config_source == 'preset' %}
+                        .env 预设{% if effective_ai.preset_label %} · {{ effective_ai.preset_label }}{% endif %}
+                    {% elif effective_ai.config_source == 'manual' %}
+                        手动填写
+                    {% else %}
+                        环境变量自动回退
+                    {% endif %}
+                </div>
             </div>
-            <div class="space-y-4">
-                {% for item in top_users %}
-                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <span class="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold inline-flex items-center justify-center">{{ item.rank }}</span>
-                                <div class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ item.username }}</div>
-                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ item.custom_id }}</span>
-                            </div>
-                            <div class="text-sm text-slate-500 dark:text-slate-400 mt-2">最近调用：{{ item.last_used_at or '暂无' }}</div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4 text-sm">
+
+            <div class="ai-admin-main">
+                <section id="section-overview" class="ai-admin-section">
+                    <div class="ai-console-hero">
+                        <div class="ai-console-hero-grid">
                             <div>
-                                <div class="text-slate-500 dark:text-slate-400">累计 Token</div>
-                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.total_tokens|compact_number }}</div>
+                                <div class="ai-console-eyebrow"><i class="fa fa-shield"></i>SUPER ADMIN DASHBOARD</div>
+                                <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3">智能管理系统全屏控制台</h1>
+                                <p class="text-slate-600 dark:text-slate-300 mt-3 leading-7 max-w-4xl">
+                                    统一查看智能配置、累计 Token、用户使用排行、调用趋势与最近调用记录；当前布局已改为更接近专业控制台的工作台样式。
+                                </p>
+                                <div class="ai-console-chip-row">
+                                    <span class="ai-console-stat-chip"><i class="fa fa-microchip"></i>{{ effective_ai.model if effective_ai else 'AI 未就绪' }}</span>
+                                    <span class="ai-console-stat-chip"><i class="fa fa-exchange"></i>{{ effective_ai.wire_api if effective_ai else '未解析到接口' }}</span>
+                                    <span class="ai-console-stat-chip"><i class="fa fa-key"></i>ADS {{ effective_ads_token_masked }}</span>
+                                </div>
                             </div>
-                            <div>
-                                <div class="text-slate-500 dark:text-slate-400">调用次数</div>
-                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.call_count }}</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500 dark:text-slate-400">均值</div>
-                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.avg_tokens_per_call }}</div>
+                            <div class="ai-console-actions">
+                                <a href="#section-config" class="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
+                                    <i class="fa fa-sliders mr-2"></i>前往配置中心
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-4 ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_user_tokens or 1)) * 100) | round(2) }}%"></span></div>
-                </div>
-                {% else %}
-                <div class="text-sm text-slate-500 dark:text-slate-400">暂无用户使用数据。</div>
-                {% endfor %}
-            </div>
-        </section>
 
-        <section class="ai-admin-card rounded-3xl p-6">
-            <div class="mb-5">
-                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">功能场景排行</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">看看 Token 主要花在什么地方</p>
-            </div>
-            <div class="space-y-4">
-                {% for item in scene_ranking %}
-                <div>
-                    <div class="flex items-center justify-between gap-3 text-sm mb-2">
-                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
-                        <div class="text-slate-500 dark:text-slate-400">{{ item.total_tokens|compact_number }} Token · {{ item.call_count }} 次</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">累计 Token</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_tokens|compact_number }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Prompt {{ summary.total_prompt_tokens|compact_number }} / Completion {{ summary.total_completion_tokens|compact_number }}</div>
+                        </div>
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">今日 Token</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_tokens|compact_number }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">按北京时间自然日统计</div>
+                        </div>
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">累计调用</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_calls }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">系统内所有智能请求</div>
+                        </div>
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">今日调用</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.today_calls }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">今日活跃用户 {{ summary.today_active_users }}</div>
+                        </div>
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">累计活跃用户</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.total_active_users }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">发生过智能调用的用户数</div>
+                        </div>
+                        <div class="ai-admin-card ai-kpi-card rounded-2xl p-5">
+                            <div class="text-sm text-slate-500 dark:text-slate-400">平均单次消耗</div>
+                            <div class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ summary.avg_tokens_per_call }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Token / 调用</div>
+                        </div>
                     </div>
-                    <div class="ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_scene_tokens or 1)) * 100) | round(2) }}%"></span></div>
-                </div>
-                {% else %}
-                <div class="text-sm text-slate-500 dark:text-slate-400">暂无功能使用排行。</div>
-                {% endfor %}
-            </div>
-        </section>
-    </div>
+                </section>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:items-start mb-6">
-        <section class="ai-admin-card rounded-3xl p-6 self-start">
-            <div class="mb-5">
-                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">模型 / 接口使用概览</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">不同模型与接口方式的消耗情况</p>
-            </div>
-            <div class="ai-table-wrap">
-                <table class="ai-table">
-                    <thead>
-                        <tr>
-                            <th>模型</th>
-                            <th>接口</th>
-                            <th>Token</th>
-                            <th>调用</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in model_ranking %}
-                        <tr>
-                            <td>{{ item.model }}</td>
-                            <td>{{ item.wire_api }}</td>
-                            <td>{{ item.total_tokens|compact_number }}</td>
-                            <td>{{ item.call_count }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无模型使用数据。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                <section id="section-trend" class="ai-admin-section">
+                    <div class="ai-panel-head">
+                        <div class="ai-panel-head-copy">
+                            <div class="ai-panel-kicker"><i class="fa fa-line-chart"></i>趋势监控</div>
+                            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">调用趋势与运行状态</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">最近 14 天 Token 与请求次数变化，并显示当前生效配置与 usage 说明。</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <section class="xl:col-span-2 ai-admin-card rounded-3xl p-6 md:p-7">
+                            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-5">
+                                <div>
+                                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">调用趋势</h2>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">最近 14 天 Token 与请求次数变化</p>
+                                </div>
+                                <div class="flex flex-wrap gap-2 text-xs">
+                                    <button type="button" class="ai-chart-switch is-active" data-chart-mode="total">
+                                        <i class="fa fa-circle text-xs"></i>总 Token
+                                    </button>
+                                    <button type="button" class="ai-chart-switch" data-chart-mode="prompt">
+                                        <i class="fa fa-circle text-xs"></i>Prompt
+                                    </button>
+                                    <button type="button" class="ai-chart-switch" data-chart-mode="completion">
+                                        <i class="fa fa-circle text-xs"></i>Completion
+                                    </button>
+                                    <button type="button" class="ai-chart-switch" data-chart-mode="calls">
+                                        <i class="fa fa-circle text-xs"></i>调用次数
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <div id="ai-trend-chart-title" class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">总 Token 折线图</div>
+                                <div id="ai-trend-chart" class="ai-chart-shell"></div>
+                            </div>
+                        </section>
 
-        <section class="ai-admin-card rounded-3xl p-6 self-start">
-            <div class="mb-5">
-                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">最近调用记录</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">面板最多展示约 8 行高度，继续增加时可在卡片内滚动查看更多记录</p>
-            </div>
-            <div class="ai-table-wrap ai-table-scroll-y">
-                <table class="ai-table">
-                    <thead>
-                        <tr>
-                            <th>时间</th>
-                            <th>用户</th>
-                            <th>场景</th>
-                            <th>Token</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in recent_logs %}
-                        <tr>
-                            <td>{{ item.created_at }}</td>
-                            <td>{{ item.username }}</td>
-                            <td>
-                                <div>{{ item.scene_label }}</div>
-                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ item.model }} · {{ item.wire_api }} · {{ item.usage_source }}</div>
-                            </td>
-                            <td>{{ item.total_tokens|compact_number }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无调用记录。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </div>
+                        <aside class="space-y-6">
+                            <section class="ai-admin-card rounded-3xl p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">当前生效配置</h2>
+                                    <span class="ai-badge-soft">{{ effective_ai.model if effective_ai else '未配置' }}</span>
+                                </div>
+                                <div class="space-y-0 text-sm">
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">智能状态</div>
+                                        <div class="font-semibold text-slate-800 dark:text-slate-100">{{ '可用' if effective_ai else '不可用' }}</div>
+                                    </div>
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">Base URL</div>
+                                        <div class="font-medium text-slate-800 dark:text-slate-100 break-all">{{ effective_ai.base_url if effective_ai else '未解析到' }}</div>
+                                    </div>
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">当前模型</div>
+                                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.model if effective_ai else '未解析到' }}</div>
+                                    </div>
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">Wire API</div>
+                                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ai.wire_api if effective_ai else '未解析到' }}</div>
+                                    </div>
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">配置来源</div>
+                                        <div class="font-medium text-slate-800 dark:text-slate-100">
+                                            {% if not effective_ai %}
+                                                未解析到
+                                            {% elif effective_ai.config_source == 'preset' %}
+                                                .env 预设{% if effective_ai.preset_label %} · {{ effective_ai.preset_label }}{% endif %}
+                                            {% elif effective_ai.config_source == 'manual' %}
+                                                手动填写
+                                            {% else %}
+                                                环境变量自动回退
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="ai-metric-row">
+                                        <div class="text-slate-500 dark:text-slate-400">ADS Token</div>
+                                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ effective_ads_token_masked }}</div>
+                                    </div>
+                                </div>
+                            </section>
 
-    <section class="ai-admin-card rounded-3xl p-6 md:p-8">
-        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
-            <div>
-                <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">智能配置中心</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">优先从 .env 里的预设中单选切换；如需临时测试，也可以改为手动填写。</p>
+                            <section class="ai-admin-card rounded-3xl p-6">
+                                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Usage 统计说明</h2>
+                                <div class="space-y-3">
+                                    {% for item in usage_sources %}
+                                    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-3">
+                                        <div>
+                                            <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
+                                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.call_count }} 次调用</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-base font-semibold text-slate-900 dark:text-white">{{ item.total_tokens|compact_number }}</div>
+                                            <div class="text-xs text-slate-500 dark:text-slate-400">Token</div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">暂无 Token 统计记录，后续智能调用将自动累积。</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-6">
+                                    某些中转站不会返回 usage 字段，系统会按请求/响应字符数估算 Token，用于看趋势与排行。
+                                </div>
+                            </section>
+                        </aside>
+                    </div>
+                </section>
+
+                <section id="section-users" class="ai-admin-section">
+                    <div class="ai-panel-head">
+                        <div class="ai-panel-head-copy">
+                            <div class="ai-panel-kicker"><i class="fa fa-trophy"></i>用户排行</div>
+                            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">用户与功能消耗分布</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">从用户与功能两个维度观察主要 Token 消耗点。</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <section class="ai-admin-card rounded-3xl p-6 xl:col-span-2">
+                            <div class="flex items-center justify-between mb-5">
+                                <div>
+                                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">用户 Token 排行榜</h2>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">按累计 Token 从高到低排序</p>
+                                </div>
+                                <span class="ai-badge-soft"><i class="fa fa-trophy"></i>TOP {{ top_users|length }}</span>
+                            </div>
+                            <div class="space-y-4">
+                                {% for item in top_users %}
+                                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+                                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                        <div>
+                                            <div class="flex items-center gap-3 flex-wrap">
+                                                <span class="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold inline-flex items-center justify-center">{{ item.rank }}</span>
+                                                <div class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ item.username }}</div>
+                                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ item.custom_id }}</span>
+                                            </div>
+                                            <div class="text-sm text-slate-500 dark:text-slate-400 mt-2">最近调用：{{ item.last_used_at or '暂无' }}</div>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-4 text-sm">
+                                            <div>
+                                                <div class="text-slate-500 dark:text-slate-400">累计 Token</div>
+                                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.total_tokens|compact_number }}</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500 dark:text-slate-400">调用次数</div>
+                                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.call_count }}</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500 dark:text-slate-400">均值</div>
+                                                <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ item.avg_tokens_per_call }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_user_tokens or 1)) * 100) | round(2) }}%"></span></div>
+                                </div>
+                                {% else %}
+                                <div class="text-sm text-slate-500 dark:text-slate-400">暂无用户使用数据。</div>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <section class="ai-admin-card rounded-3xl p-6">
+                            <div class="mb-5">
+                                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">功能场景排行</h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">看看 Token 主要花在什么地方</p>
+                            </div>
+                            <div class="space-y-4">
+                                {% for item in scene_ranking %}
+                                <div>
+                                    <div class="flex items-center justify-between gap-3 text-sm mb-2">
+                                        <div class="font-medium text-slate-800 dark:text-slate-100">{{ item.label }}</div>
+                                        <div class="text-slate-500 dark:text-slate-400">{{ item.total_tokens|compact_number }} Token · {{ item.call_count }} 次</div>
+                                    </div>
+                                    <div class="ai-rank-bar"><span style="width: {{ ((item.total_tokens / (max_scene_tokens or 1)) * 100) | round(2) }}%"></span></div>
+                                </div>
+                                {% else %}
+                                <div class="text-sm text-slate-500 dark:text-slate-400">暂无功能使用排行。</div>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section id="section-models" class="ai-admin-section">
+                    <div class="ai-panel-head">
+                        <div class="ai-panel-head-copy">
+                            <div class="ai-panel-kicker"><i class="fa fa-cubes"></i>模型与日志</div>
+                            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">模型概览与最近调用</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">同时查看模型 / 接口使用分布，以及最新调用记录。</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:items-start">
+                        <section class="ai-admin-card rounded-3xl p-6 self-start">
+                            <div class="mb-5">
+                                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">模型 / 接口使用概览</h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">不同模型与接口方式的消耗情况</p>
+                            </div>
+                            <div class="ai-table-wrap">
+                                <table class="ai-table">
+                                    <thead>
+                                        <tr>
+                                            <th>模型</th>
+                                            <th>接口</th>
+                                            <th>Token</th>
+                                            <th>调用</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in model_ranking %}
+                                        <tr>
+                                            <td>{{ item.model }}</td>
+                                            <td>{{ item.wire_api }}</td>
+                                            <td>{{ item.total_tokens|compact_number }}</td>
+                                            <td>{{ item.call_count }}</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无模型使用数据。</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section id="section-logs" class="ai-admin-card rounded-3xl p-6 self-start">
+                            <div class="mb-5">
+                                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">最近调用记录</h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">面板最多展示约 8 行高度，继续增加时可在卡片内滚动查看更多记录</p>
+                            </div>
+                            <div class="ai-table-wrap ai-table-scroll-y">
+                                <table class="ai-table">
+                                    <thead>
+                                        <tr>
+                                            <th>时间</th>
+                                            <th>用户</th>
+                                            <th>场景</th>
+                                            <th>Token</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in recent_logs %}
+                                        <tr>
+                                            <td>{{ item.created_at }}</td>
+                                            <td>{{ item.username }}</td>
+                                            <td>
+                                                <div>{{ item.scene_label }}</div>
+                                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ item.model }} · {{ item.wire_api }} · {{ item.usage_source }}</div>
+                                            </td>
+                                            <td>{{ item.total_tokens|compact_number }}</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-slate-500 dark:text-slate-400">暂无调用记录。</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section id="section-config" class="ai-admin-section ai-admin-card rounded-3xl p-6 md:p-8">
+                    <div class="ai-panel-head">
+                        <div class="ai-panel-head-copy">
+                            <div class="ai-panel-kicker"><i class="fa fa-sliders"></i>配置中心</div>
+                            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">智能配置中心</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">优先从 .env 里的预设中单选切换；如需临时测试，也可以改为手动填写。</p>
+                        </div>
+                        <span class="ai-badge-soft"><i class="fa fa-shield"></i>仅超级管理员可修改</span>
+                    </div>
+
+                    <form method="post" class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="xl:col-span-7 space-y-6">
+                            <section>
+                                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">预设选择</h3>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400">这里的预设直接读取 .env。不同模型可以各自使用不同的 Base URL，保存后会按所选预设生效。</p>
+                                    </div>
+                                    <span class="ai-badge-soft"><i class="fa fa-sliders"></i>.env 为准</span>
+                                </div>
+                                <div class="ai-preset-quick-save">
+                                    <div class="ai-preset-quick-save-copy">
+                                        <div class="ai-preset-quick-save-title">选好模型后可直接保存</div>
+                                        <div class="ai-preset-quick-save-note">保存按钮放在预设卡片旁边，底部仍保留完整配置保存入口。</div>
+                                    </div>
+                                    <button type="submit" class="ai-preset-save-btn">
+                                        <i class="fa fa-save"></i>
+                                        <span>保存当前选择</span>
+                                    </button>
+                                </div>
+                                <div class="ai-preset-grid">
+                                    <label class="ai-preset-option text-left {% if form_data.preset_key == 'manual' %}is-active{% endif %}" data-ai-preset-option data-preset-label="手动 / 自定义" data-preset-source="manual">
+                                        <input type="radio" name="preset_key" value="manual" class="ai-preset-radio" {% if form_data.preset_key == 'manual' %}checked{% endif %}>
+                                        <div class="ai-preset-topline">
+                                            <div class="min-w-0">
+                                                <div class="ai-preset-title">手动填写 / 自定义</div>
+                                                <div class="ai-preset-subtitle">适合临时测试新接口、中转站或快速覆盖当前预设</div>
+                                            </div>
+                                            <div class="ai-preset-tags">
+                                                <span class="ai-preset-chip">备用</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-preset-specs">
+                                            <div class="ai-preset-spec">
+                                                <div class="ai-preset-spec-label">配置来源</div>
+                                                <div class="ai-preset-spec-value">页面输入框</div>
+                                            </div>
+                                            <div class="ai-preset-spec">
+                                                <div class="ai-preset-spec-label">适用场景</div>
+                                                <div class="ai-preset-spec-value">临时调试 / 覆盖</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-preset-url">Base URL、模型名、Wire API 将以下方输入框为准。</div>
+                                        <div class="ai-preset-footer">
+                                            <span class="ai-preset-meta"><i class="fa fa-keyboard-o"></i>使用手动配置</span>
+                                            <span class="ai-preset-helper">保存后立即切换</span>
+                                        </div>
+                                    </label>
+                                    {% for preset in env_presets %}
+                                    <label
+                                        class="ai-preset-option text-left {% if form_data.preset_key == preset.key %}is-active{% endif %}"
+                                        data-ai-preset-option
+                                        data-base-url="{{ preset.base_url }}"
+                                        data-model="{{ preset.model }}"
+                                        data-wire-api="{{ preset.wire_api }}"
+                                        data-preset-label="{{ preset.label }}"
+                                        data-preset-source="{{ preset.source or 'env' }}"
+                                    >
+                                        <input type="radio" name="preset_key" value="{{ preset.key }}" class="ai-preset-radio" {% if form_data.preset_key == preset.key %}checked{% endif %}>
+                                        <div class="ai-preset-topline">
+                                            <div class="min-w-0">
+                                                <div class="ai-preset-title">{{ preset.label }}</div>
+                                                <div class="ai-preset-subtitle">
+                                                    {% if preset.source == 'custom' %}自定义预设{% else %}.env 预设{% endif %} · 保存后按该组配置生效
+                                                </div>
+                                            </div>
+                                            <div class="ai-preset-tags">
+                                                <span class="ai-preset-chip">{{ '自定义' if preset.source == 'custom' else '.env' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-preset-specs">
+                                            <div class="ai-preset-spec">
+                                                <div class="ai-preset-spec-label">模型</div>
+                                                <div class="ai-preset-spec-value">{{ preset.model }}</div>
+                                            </div>
+                                            <div class="ai-preset-spec">
+                                                <div class="ai-preset-spec-label">Wire API</div>
+                                                <div class="ai-preset-spec-value">{{ preset.wire_api }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-preset-url">{{ preset.base_url }}</div>
+                                        <div class="ai-preset-footer">
+                                            <span class="ai-preset-meta"><i class="fa fa-check-circle"></i>按该预设生效</span>
+                                            <span class="ai-preset-helper">点击卡片即可切换</span>
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </section>
+
+                            <section id="ai-manual-config-section">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">OpenAI / Anthropic 兼容 / 中转站配置</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Base URL</label>
+                                        <input type="text" name="base_url" value="{{ form_data.base_url }}" class="ai-config-input" placeholder="如 https://api.openai.com/v1、https://token-plan-cn.xiaomimimo.com/anthropic/v1 或你的中转站地址">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">模型名</label>
+                                        <input type="text" name="model" value="{{ form_data.model }}" class="ai-config-input" placeholder="如 gpt-5.4、mimo-v2.5-pro">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Wire API</label>
+                                        <select name="wire_api" class="ai-config-select">
+                                            <option value="" {% if not form_data.wire_api %}selected{% endif %}>留空（自动回退）</option>
+                                            <option value="responses" {% if form_data.wire_api == 'responses' %}selected{% endif %}>responses</option>
+                                            <option value="chat_completions" {% if form_data.wire_api == 'chat_completions' %}selected{% endif %}>chat_completions</option>
+                                            <option value="anthropic_messages" {% if form_data.wire_api == 'anthropic_messages' %}selected{% endif %}>anthropic_messages</option>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-2 ai-config-readonly-hint" id="ai-preset-hint">
+                                        选中 .env 预设时，这里的 Base URL / 模型 / Wire API 仅作展示，并以 .env 中对应值为准；切换到“手动填写 / 自定义”后才会按输入框保存。
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">API Key</label>
+                                        <input type="password" name="api_key" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
+                                        <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
+                                            <span>当前已保存：{{ saved_api_key_masked }}</span>
+                                            <label class="inline-flex items-center gap-2">
+                                                <input type="checkbox" name="clear_api_key" class="rounded border-slate-300 dark:border-slate-600">
+                                                <span>清除已保存 API Key</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">NASA ADS 配置</h3>
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">NASA ADS API Token</label>
+                                    <input type="password" name="nasa_ads_api_token" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
+                                    <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
+                                        <span>当前已保存：{{ saved_ads_token_masked }}</span>
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="checkbox" name="clear_nasa_ads_api_token" class="rounded border-slate-300 dark:border-slate-600">
+                                            <span>清除 ADS Token</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <aside class="xl:col-span-5 ai-chat-sidebar">
+                            <section class="ai-chat-sticky">
+                                <div class="flex items-center justify-between gap-3 mb-4">
+                                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">当前所选 AI 对话面板</h3>
+                                    <span class="ai-badge-soft"><i class="fa fa-terminal"></i>未保存也可直接对话</span>
+                                </div>
+                                <div class="ai-chat-shell">
+                                    <div class="ai-chat-header">
+                                        <div>
+                                            <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">当前页面配置即时对话</div>
+                                            <div id="ai-chat-status" class="ai-chat-status">
+                                                这里会直接调用当前页面所选模型进行对话；只要能稳定回复，就说明当前配置基本可用。
+                                            </div>
+                                        </div>
+                                        <div class="ai-chat-header-actions">
+                                            <button type="button" id="ai-chat-copy-btn" class="ai-chat-ghost-btn px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium" disabled>
+                                                <i class="fa fa-copy"></i>复制回复
+                                            </button>
+                                            <button type="button" id="ai-chat-clear-btn" class="ai-chat-ghost-btn px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium">
+                                                <i class="fa fa-comments-o"></i>新建对话
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="ai-chat-log" class="ai-chat-log">
+                                        <div class="ai-chat-empty">
+                                            这里不是单纯探活，而是直接和<strong>当前所选 AI</strong> 对话。<br>
+                                            例如你可以先问：<strong>“请先做个自我介绍，并说明你更适合处理哪类任务。”</strong>
+                                        </div>
+                                    </div>
+                                    <div class="ai-chat-composer">
+                                        <textarea id="ai-chat-input" class="ai-config-textarea ai-chat-textarea" placeholder="直接输入你想和当前模型说的话，例如：请解释一下为什么月球深部结构研究需要结合地震学与重力学证据。"></textarea>
+                                        <div class="ai-chat-toolbar">
+                                            <div class="ai-chat-toolbar-meta">
+                                                <div class="ai-chat-context-control">
+                                                    <span id="ai-chat-context-summary" class="ai-chat-context-summary">默认携带最近 10 条上下文</span>
+                                                    <label class="inline-flex items-center gap-1.5">
+                                                        <!-- <span class="ai-chat-context-label">上下文</span>
+                                                        <input
+                                                            type="number"
+                                                            id="ai-chat-context-limit"
+                                                            min="2"
+                                                            max="30"
+                                                            step="1"
+                                                            value="{{ form_data.admin_chat_context_limit }}"
+                                                            class="ai-config-input ai-chat-context-input"
+                                                        >
+                                                        <span>条</span> -->
+                                                    </label>
+                                                </div>
+                                                <div id="ai-chat-context-warning" class="ai-chat-context-warning hidden">
+                                                    当前设置偏大，可能增加延迟与 Token 消耗。
+                                                </div>
+                                            </div>
+                                            <div class="ai-chat-toolbar-actions">
+                                                <div class="ai-chat-model-dock">
+                                                    <select id="ai-chat-model-select" class="ai-chat-model-select">
+                                                        <option value="manual">手动 / 自定义</option>
+                                                        {% for preset in env_presets %}
+                                                        <option value="{{ preset.key }}">{{ preset.label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <span id="ai-chat-model-pill" class="ai-chat-model-pill">gpt-5.4</span>
+                                                </div>
+                                                <button type="button" id="ai-chat-ping-btn" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium">
+                                                    <i class="fa fa-commenting-o mr-2"></i>打个招呼
+                                                </button>
+                                                <button type="button" id="ai-chat-send-btn" title="Enter 发送，Shift+Enter 换行" class="ai-chat-send-btn px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
+                                                    <i class="fa fa-paper-plane mr-2"></i>发送消息
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </aside>
+
+                        <div class="xl:col-span-12 ai-config-bottom-grid xl:grid-cols-12">
+                            <section class="xl:col-span-5 ai-config-subcard">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">配置备注</h3>
+                                <textarea name="notes" rows="8" class="ai-config-textarea" placeholder="记录当前账号用途、额度策略、模型切换原因等">{{ form_data.notes }}</textarea>
+                                {% if saved_config.notes %}
+                                <div class="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                                    <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">已保存备注</div>
+                                    <div class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line leading-7">{{ saved_config.notes }}</div>
+                                </div>
+                                {% endif %}
+                            </section>
+
+                            <section class="xl:col-span-4 ai-config-subcard text-sm text-slate-600 dark:text-slate-300 leading-7">
+                                <div class="font-semibold text-slate-800 dark:text-slate-100 mb-2">配置说明</div>
+                                <ul class="space-y-1 list-disc pl-5">
+                                    <li>推荐优先在 <code>.env</code> 中维护模型预设，本页只负责在这些预设之间切换。</li>
+                                    <li>如果选中了某个 .env 预设，实际生效的 Base URL / 模型 / Wire API 会以该预设为准。</li>
+                                    <li>只有切换到“手动填写 / 自定义”时，下方输入框才会真正作为覆盖配置保存。</li>
+                                    <li>API Key / ADS Token 留空不会覆盖旧值，勾选清除才会删除。</li>
+                                    <li>若中转站不返回 usage，Token 会按字符数估算，仅用于趋势参考。</li>
+                                    <li>配置文件保存在 instance 目录，仅本地部署环境可见。</li>
+                                </ul>
+                            </section>
+
+                            <section class="xl:col-span-3 ai-config-subcard ai-config-save-panel">
+                                <div>
+                                    <div class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">保存与生效</div>
+                                    <p class="ai-config-save-hint">
+                                        建议先在右侧对话面板测试当前模型是否能稳定回复，再保存到系统运行配置。保存后，文献深搜、研究综述与晨报等功能会按这里的配置继续工作。
+                                    </p>
+                                    <div class="mt-4">
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">默认对话上下文条数</label>
+                                        <input
+                                            type="number"
+                                            id="admin-chat-context-limit-save"
+                                            name="admin_chat_context_limit"
+                                            min="2"
+                                            max="30"
+                                            step="1"
+                                            value="{{ form_data.admin_chat_context_limit }}"
+                                            class="ai-config-input"
+                                        >
+                                        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                            默认 10 条。建议不超过 20 条；设置过大时，系统会给出警告。
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
+                                    <i class="fa fa-save mr-2"></i>保存智能管理系统配置
+                                </button>
+                            </section>
+                        </div>
+                    </form>
+                </section>
             </div>
-            <span class="ai-badge-soft"><i class="fa fa-shield"></i>仅超级管理员可修改</span>
         </div>
-
-        <form method="post" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="xl:col-span-2 space-y-6">
-                <section>
-                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">预设选择</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">这里的预设直接读取 .env。不同模型可以各自使用不同的 Base URL，保存后会按所选预设生效。</p>
-                        </div>
-                        <span class="ai-badge-soft"><i class="fa fa-sliders"></i>.env 为准</span>
-                    </div>
-                    <div class="ai-preset-grid">
-                        <label class="ai-preset-option text-left {% if form_data.preset_key == 'manual' %}is-active{% endif %}" data-ai-preset-option>
-                            <input type="radio" name="preset_key" value="manual" class="ai-preset-radio" {% if form_data.preset_key == 'manual' %}checked{% endif %}>
-                            <div class="flex items-start justify-between gap-3 mb-3 pr-8">
-                                <div class="min-w-0">
-                                    <div class="text-base font-semibold text-slate-900 dark:text-slate-100">手动填写 / 自定义</div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">适合临时测试新接口或中转站</div>
-                                </div>
-                                <span class="ai-preset-chip">备用</span>
-                            </div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400 break-all leading-6 mb-3">Base URL、模型名、Wire API 由下方输入框决定</div>
-                            <span class="ai-preset-meta"><i class="fa fa-keyboard-o"></i>使用手动配置</span>
-                        </label>
-                        {% for preset in env_presets %}
-                        <label
-                            class="ai-preset-option text-left {% if form_data.preset_key == preset.key %}is-active{% endif %}"
-                            data-ai-preset-option
-                            data-base-url="{{ preset.base_url }}"
-                            data-model="{{ preset.model }}"
-                            data-wire-api="{{ preset.wire_api }}"
-                        >
-                            <input type="radio" name="preset_key" value="{{ preset.key }}" class="ai-preset-radio" {% if form_data.preset_key == preset.key %}checked{% endif %}>
-                            <div class="flex items-start justify-between gap-3 mb-3 pr-8">
-                                <div class="min-w-0">
-                                    <div class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ preset.label }}</div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ preset.model }} · {{ preset.wire_api }}</div>
-                                </div>
-                                <span class="ai-preset-chip">{{ '自定义' if preset.source == 'custom' else '.env' }}</span>
-                            </div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400 break-all leading-6 mb-3">{{ preset.base_url }}</div>
-                            <span class="ai-preset-meta"><i class="fa fa-check-circle"></i>按该预设生效</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </section>
-
-                <section id="ai-manual-config-section">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">OpenAI / Anthropic 兼容 / 中转站配置</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Base URL</label>
-                            <input type="text" name="base_url" value="{{ form_data.base_url }}" class="ai-config-input" placeholder="如 https://api.openai.com/v1、https://token-plan-cn.xiaomimimo.com/anthropic/v1 或你的中转站地址">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">模型名</label>
-                            <input type="text" name="model" value="{{ form_data.model }}" class="ai-config-input" placeholder="如 gpt-5.4、mimo-v2.5-pro">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">Wire API</label>
-                            <select name="wire_api" class="ai-config-select">
-                                <option value="" {% if not form_data.wire_api %}selected{% endif %}>留空（自动回退）</option>
-                                <option value="responses" {% if form_data.wire_api == 'responses' %}selected{% endif %}>responses</option>
-                                <option value="chat_completions" {% if form_data.wire_api == 'chat_completions' %}selected{% endif %}>chat_completions</option>
-                                <option value="anthropic_messages" {% if form_data.wire_api == 'anthropic_messages' %}selected{% endif %}>anthropic_messages</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-2 ai-config-readonly-hint" id="ai-preset-hint">
-                            选中 .env 预设时，这里的 Base URL / 模型 / Wire API 仅作展示，并以 .env 中对应值为准；切换到“手动填写 / 自定义”后才会按输入框保存。
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">API Key</label>
-                            <input type="password" name="api_key" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
-                            <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
-                                <span>当前已保存：{{ saved_api_key_masked }}</span>
-                                <label class="inline-flex items-center gap-2">
-                                    <input type="checkbox" name="clear_api_key" class="rounded border-slate-300 dark:border-slate-600">
-                                    <span>清除已保存 API Key</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">NASA ADS 配置</h3>
-                    <div>
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 block">NASA ADS API Token</label>
-                        <input type="password" name="nasa_ads_api_token" value="" autocomplete="new-password" class="ai-config-input" placeholder="留空则保持现有值">
-                        <div class="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-xs text-slate-500 dark:text-slate-400">
-                            <span>当前已保存：{{ saved_ads_token_masked }}</span>
-                            <label class="inline-flex items-center gap-2">
-                                <input type="checkbox" name="clear_nasa_ads_api_token" class="rounded border-slate-300 dark:border-slate-600">
-                                <span>清除 ADS Token</span>
-                            </label>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <aside class="space-y-6">
-                <section>
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">配置备注</h3>
-                    <textarea name="notes" rows="9" class="ai-config-textarea" placeholder="记录当前账号用途、额度策略、模型切换原因等">{{ form_data.notes }}</textarea>
-                </section>
-                <section class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-4 text-sm text-slate-600 dark:text-slate-300 leading-7">
-                    <div class="font-semibold text-slate-800 dark:text-slate-100 mb-2">说明</div>
-                    <ul class="space-y-1 list-disc pl-5">
-                        <li>推荐优先在 <code>.env</code> 中维护模型预设，本页只负责在这些预设之间切换。</li>
-                        <li>如果选中了某个 .env 预设，实际生效的 Base URL / 模型 / Wire API 会以该预设为准。</li>
-                        <li>只有切换到“手动填写 / 自定义”时，下方输入框才会真正作为覆盖配置保存。</li>
-                        <li>API Key / ADS Token 留空不会覆盖旧值，勾选清除才会删除。</li>
-                        <li>若中转站不返回 usage，Token 会按字符数估算，仅用于趋势参考。</li>
-                        <li>配置文件保存在 instance 目录，仅本地部署环境可见。</li>
-                    </ul>
-                </section>
-                {% if saved_config.notes %}
-                <section class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-                    <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">已保存备注</div>
-                    <div class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line leading-7">{{ saved_config.notes }}</div>
-                </section>
-                {% endif %}
-                <button type="submit" class="w-full px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
-                    <i class="fa fa-save mr-2"></i>保存智能管理系统配置
-                </button>
-            </aside>
-        </form>
-    </section>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
+    const adminRoot = document.getElementById('ai-admin-root');
     const baseUrlInput = document.querySelector('input[name="base_url"]');
     const modelInput = document.querySelector('input[name="model"]');
     const wireApiSelect = document.querySelector('select[name="wire_api"]');
+    const configForm = document.querySelector('form[method="post"]');
     const manualSection = document.getElementById('ai-manual-config-section');
     const presetOptions = Array.from(document.querySelectorAll('[data-ai-preset-option]'));
     const presetRadios = Array.from(document.querySelectorAll('input[name="preset_key"]'));
+    const navLinks = Array.from(document.querySelectorAll('[data-ai-nav-link]'));
+    const apiKeyInput = document.querySelector('input[name="api_key"]');
+    const clearApiKeyInput = document.querySelector('input[name="clear_api_key"]');
+    const aiChatLog = document.getElementById('ai-chat-log');
+    const aiChatInput = document.getElementById('ai-chat-input');
+    const aiChatSendBtn = document.getElementById('ai-chat-send-btn');
+    const aiChatPingBtn = document.getElementById('ai-chat-ping-btn');
+    const aiChatClearBtn = document.getElementById('ai-chat-clear-btn');
+    const aiChatCopyBtn = document.getElementById('ai-chat-copy-btn');
+    const aiChatStatus = document.getElementById('ai-chat-status');
+    const aiChatContextLimitInput = document.getElementById('ai-chat-context-limit');
+    const aiChatContextLimitSaveInput = document.getElementById('admin-chat-context-limit-save');
+    const aiChatContextSummary = document.getElementById('ai-chat-context-summary');
+    const aiChatContextWarning = document.getElementById('ai-chat-context-warning');
+    const aiChatModelSelect = document.getElementById('ai-chat-model-select');
+    const aiChatModelPill = document.getElementById('ai-chat-model-pill');
+    const aiChatEndpoint = '{{ url_for("admin_ai_config_test_chat") }}';
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    let adminChatHistory = [];
+    let adminChatBusy = false;
+    let adminChatLastAssistantReply = '';
 
     const initialManualValues = {
         baseUrl: baseUrlInput ? baseUrlInput.value : '',
@@ -796,6 +2044,349 @@
     };
 
     let lastManualValues = { ...initialManualValues };
+
+    function syncAdminTheme() {
+        if (!adminRoot || !document.body) return;
+        const isDark = document.body.classList.contains('dark-theme')
+            || (
+                document.body.classList.contains('auto-theme')
+                && document.body.classList.contains('auto-dark')
+            );
+        adminRoot.classList.toggle('dark', isDark);
+    }
+
+    function setActiveNav(targetId) {
+        navLinks.forEach((link) => {
+            link.classList.toggle('is-active', link.dataset.aiTarget === targetId);
+        });
+    }
+
+    const observedSections = navLinks
+        .map((link) => ({
+            id: link.dataset.aiTarget || '',
+            node: document.getElementById(link.dataset.aiTarget || ''),
+        }))
+        .filter((item) => item.id && item.node);
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderMarkdownInline(text) {
+        let html = escapeHtml(text);
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        return html;
+    }
+
+    function renderMarkdown(text) {
+        const normalized = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+        if (!normalized) return '';
+
+        const codeBlocks = [];
+        const withPlaceholders = normalized.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+            const token = `@@CODEBLOCK_${codeBlocks.length}@@`;
+            codeBlocks.push({
+                lang: String(lang || '').trim(),
+                code: escapeHtml(code.replace(/\n$/, '')),
+            });
+            return token;
+        });
+
+        const blocks = withPlaceholders.split(/\n{2,}/);
+        const htmlParts = [];
+
+        blocks.forEach((block) => {
+            const trimmedBlock = block.trim();
+            if (!trimmedBlock) return;
+
+            const codeMatch = trimmedBlock.match(/^@@CODEBLOCK_(\d+)@@$/);
+            if (codeMatch) {
+                const codeInfo = codeBlocks[Number(codeMatch[1])] || { code: '' };
+                htmlParts.push(`<pre><code>${codeInfo.code}</code></pre>`);
+                return;
+            }
+
+            if (/^(-{3,}|\*{3,})$/.test(trimmedBlock)) {
+                htmlParts.push('<hr>');
+                return;
+            }
+
+            const headingMatch = trimmedBlock.match(/^(#{1,4})\s+(.+)$/);
+            if (headingMatch) {
+                const level = Math.min(headingMatch[1].length, 4);
+                htmlParts.push(`<h${level}>${renderMarkdownInline(headingMatch[2].trim())}</h${level}>`);
+                return;
+            }
+
+            const lines = trimmedBlock.split('\n');
+            if (lines.every((line) => /^>\s?/.test(line.trim()))) {
+                const quoteHtml = lines
+                    .map((line) => renderMarkdownInline(line.replace(/^>\s?/, '').trim()))
+                    .join('<br>');
+                htmlParts.push(`<blockquote>${quoteHtml}</blockquote>`);
+                return;
+            }
+
+            if (lines.every((line) => /^[-*+]\s+/.test(line.trim()))) {
+                const items = lines
+                    .map((line) => `<li>${renderMarkdownInline(line.replace(/^[-*+]\s+/, '').trim())}</li>`)
+                    .join('');
+                htmlParts.push(`<ul>${items}</ul>`);
+                return;
+            }
+
+            if (lines.every((line) => /^\d+\.\s+/.test(line.trim()))) {
+                const items = lines
+                    .map((line) => `<li>${renderMarkdownInline(line.replace(/^\d+\.\s+/, '').trim())}</li>`)
+                    .join('');
+                htmlParts.push(`<ol>${items}</ol>`);
+                return;
+            }
+
+            const paragraphHtml = lines
+                .map((line) => renderMarkdownInline(line.trim()))
+                .join('<br>');
+            htmlParts.push(`<p>${paragraphHtml}</p>`);
+        });
+
+        return htmlParts.join('');
+    }
+
+    function renderChatMessageHtml(role, content) {
+        if (role === 'assistant') {
+            return renderMarkdown(content);
+        }
+        return escapeHtml(content).replace(/\n/g, '<br>');
+    }
+
+    function getAdminChatRuntimePayload() {
+        const radio = selectedPresetRadio();
+        return {
+            preset_key: radio ? radio.value : 'manual',
+            base_url: baseUrlInput ? baseUrlInput.value : '',
+            model: modelInput ? modelInput.value : '',
+            wire_api: wireApiSelect ? wireApiSelect.value : '',
+            api_key: apiKeyInput ? apiKeyInput.value : '',
+            clear_api_key: !!(clearApiKeyInput && clearApiKeyInput.checked),
+        };
+    }
+
+    function setAdminChatStatus(text) {
+        if (aiChatStatus) {
+            aiChatStatus.textContent = text;
+        }
+    }
+
+    function syncAdminChatModelDock() {
+        const radio = selectedPresetRadio();
+        const option = selectedPresetOption();
+        const selectedValue = radio ? radio.value : 'manual';
+        if (aiChatModelSelect) {
+            aiChatModelSelect.value = selectedValue || 'manual';
+        }
+        const selectedLabel = option?.dataset.presetLabel
+            || option?.querySelector('.ai-preset-title')?.textContent?.trim()
+            || (selectedValue === 'manual' ? '手动 / 自定义' : '当前预设');
+        const selectedSource = String(option?.dataset.presetSource || (selectedValue === 'manual' ? 'manual' : 'env')).toLowerCase();
+        let sourceLabel = '.env';
+        if (selectedSource === 'manual') {
+            sourceLabel = '手动';
+        } else if (selectedSource === 'custom') {
+            sourceLabel = '自定义';
+        }
+        const modelText = (modelInput && modelInput.value ? modelInput.value : selectedLabel) || '未选择模型';
+        const wireText = (wireApiSelect && wireApiSelect.value ? wireApiSelect.value : '自动') || '自动';
+        if (aiChatModelPill) {
+            aiChatModelPill.textContent = modelText;
+            aiChatModelPill.title = `${selectedLabel} · ${sourceLabel} · ${wireText}`;
+        }
+    }
+
+    function autoSizeAdminChatInput() {
+        if (!aiChatInput) return;
+        aiChatInput.style.height = 'auto';
+        const maxHeight = 200;
+        const nextHeight = Math.min(Math.max(aiChatInput.scrollHeight, 84), maxHeight);
+        aiChatInput.style.height = `${nextHeight}px`;
+        aiChatInput.style.overflowY = aiChatInput.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    }
+
+    function getAdminChatContextLimit() {
+        const raw = aiChatContextLimitInput ? parseInt(aiChatContextLimitInput.value || '10', 10) : 10;
+        if (!Number.isFinite(raw)) return 10;
+        return Math.max(2, Math.min(raw, 30));
+    }
+
+    function syncAdminChatContextLimitUI(shouldNudgeStatus) {
+        const value = getAdminChatContextLimit();
+        if (aiChatContextLimitInput) aiChatContextLimitInput.value = String(value);
+        if (aiChatContextLimitSaveInput) aiChatContextLimitSaveInput.value = String(value);
+        if (aiChatContextSummary) {
+            aiChatContextSummary.textContent = `当前携带最近 ${value} 条上下文`;
+        }
+        const shouldWarn = value > 20;
+        if (aiChatContextWarning) {
+            aiChatContextWarning.classList.toggle('hidden', !shouldWarn);
+        }
+        if (shouldWarn && shouldNudgeStatus) {
+            setAdminChatStatus(`提示：当前上下文条数设为 ${value}，可能增加延迟与 Token 消耗。`);
+        }
+    }
+
+    function syncAdminChatCopyState() {
+        if (aiChatCopyBtn) {
+            aiChatCopyBtn.disabled = !String(adminChatLastAssistantReply || '').trim();
+        }
+    }
+
+    function syncAdminChatLogState() {
+        if (!aiChatLog) return;
+        const hasMessages = aiChatLog.querySelector('.ai-chat-msg') !== null;
+        aiChatLog.classList.toggle('has-messages', hasMessages);
+    }
+
+    function scrollAdminChatToBottom() {
+        if (!aiChatLog) return;
+        aiChatLog.scrollTop = aiChatLog.scrollHeight;
+    }
+
+    function buildAdminMessageCopyButton(text) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ai-chat-copy-msg';
+        button.title = '复制这条消息';
+        button.setAttribute('aria-label', '复制这条消息');
+        button.dataset.copyText = String(text || '');
+        button.innerHTML = '<i class="fa fa-copy"></i>';
+        return button;
+    }
+
+    async function copyAdminTextToClipboard(text) {
+        const value = String(text || '');
+        if (!value) return false;
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(value);
+            return true;
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = value;
+        textarea.setAttribute('readonly', 'readonly');
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return ok;
+    }
+
+    function appendAdminChatMessage(role, content, metaText) {
+        if (!aiChatLog) return;
+        const emptyNode = aiChatLog.querySelector('.ai-chat-empty');
+        if (emptyNode) emptyNode.remove();
+        const wrapper = document.createElement('div');
+        wrapper.className = `ai-chat-msg ${role}`;
+        wrapper.innerHTML = `<div class="ai-chat-msg-content">${renderChatMessageHtml(role, content)}</div>${metaText ? `<div class="ai-chat-msg-meta">${escapeHtml(metaText)}</div>` : ''}`;
+        wrapper.appendChild(buildAdminMessageCopyButton(content));
+        aiChatLog.appendChild(wrapper);
+        syncAdminChatLogState();
+        if (role === 'assistant') {
+            adminChatLastAssistantReply = String(content || '').trim();
+            syncAdminChatCopyState();
+        }
+        scrollAdminChatToBottom();
+    }
+
+    function resetAdminChat() {
+        adminChatHistory = [];
+        adminChatBusy = false;
+        adminChatLastAssistantReply = '';
+        if (aiChatLog) {
+            aiChatLog.innerHTML = `
+                <div class="ai-chat-empty">
+                    这里不是单纯探活，而是直接和<strong>当前所选 AI</strong> 对话。<br>
+                    例如你可以先问：<strong>“请先做个自我介绍，并说明你更适合处理哪类任务。”</strong>
+                </div>
+            `;
+        }
+        syncAdminChatLogState();
+        syncAdminChatCopyState();
+        setAdminChatStatus('这里会直接调用当前页面所选模型进行对话；只要能稳定回复，就说明当前配置基本可用。');
+        syncAdminChatContextLimitUI(false);
+        if (aiChatInput) {
+            aiChatInput.value = '';
+        }
+        autoSizeAdminChatInput();
+    }
+
+    function setAdminChatBusyState(busy) {
+        adminChatBusy = !!busy;
+        if (aiChatSendBtn) aiChatSendBtn.disabled = adminChatBusy;
+        if (aiChatPingBtn) aiChatPingBtn.disabled = adminChatBusy;
+    }
+
+    async function sendAdminChatMessage(messageText) {
+        const message = String(messageText || '').trim();
+        if (!message || adminChatBusy) return;
+        appendAdminChatMessage('user', message, '当前对话消息');
+        adminChatHistory.push({ role: 'user', content: message });
+        const contextLimit = getAdminChatContextLimit();
+        adminChatHistory = adminChatHistory.slice(-contextLimit);
+        setAdminChatBusyState(true);
+        setAdminChatStatus('正在调用当前所选模型回复，请稍候…');
+
+        try {
+            const response = await fetch(aiChatEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfMeta ? csrfMeta.getAttribute('content') || '' : '',
+                },
+                body: JSON.stringify({
+                    message,
+                    history: adminChatHistory.slice(-contextLimit),
+                    context_limit: contextLimit,
+                    ...getAdminChatRuntimePayload(),
+                }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const errorText = payload && payload.error ? payload.error : `对话失败（HTTP ${response.status}）`;
+                appendAdminChatMessage('system', errorText, '当前模型未成功回复');
+                setAdminChatStatus(errorText);
+                return;
+            }
+
+            const reply = String((payload && payload.reply) || '').trim() || '模型已返回空响应。';
+            const elapsedSeconds = Number(payload.elapsed_ms || 0) > 0
+                ? `${(Number(payload.elapsed_ms) / 1000).toFixed(2)}s`
+                : '';
+            const metaParts = [
+                payload.effective_model || '',
+                elapsedSeconds,
+            ].filter(Boolean);
+            appendAdminChatMessage('assistant', reply, metaParts.join(' · '));
+            adminChatHistory.push({ role: 'assistant', content: reply });
+            adminChatHistory = adminChatHistory.slice(-contextLimit);
+            const warningText = String((payload && payload.context_warning) || '').trim();
+            setAdminChatStatus(`${payload.effective_model || '当前模型'} 已正常回复${elapsedSeconds ? `，耗时 ${elapsedSeconds}` : ''}${warningText ? `。${warningText}` : '。'}`);
+        } catch (error) {
+            const errorText = error && error.message ? error.message : '请求发送失败，请检查网络或后端日志。';
+            appendAdminChatMessage('system', errorText, '请求异常');
+            setAdminChatStatus(`请求异常：${errorText}`);
+        } finally {
+            setAdminChatBusyState(false);
+        }
+    }
 
     function selectedPresetRadio() {
         return presetRadios.find((node) => node.checked) || null;
@@ -834,6 +2425,7 @@
             if (modelInput) modelInput.value = lastManualValues.model || '';
             if (wireApiSelect) wireApiSelect.value = lastManualValues.wireApi || '';
             setManualInputsDisabled(false);
+            syncAdminChatModelDock();
             return;
         }
 
@@ -850,6 +2442,15 @@
             wireApiSelect.value = option?.dataset.wireApi || '';
         }
         setManualInputsDisabled(true);
+        syncAdminChatModelDock();
+    }
+
+    if (configForm) {
+        configForm.addEventListener('submit', () => {
+            if (wireApiSelect) {
+                wireApiSelect.disabled = false;
+            }
+        });
     }
 
     [baseUrlInput, modelInput, wireApiSelect].forEach((node) => {
@@ -863,6 +2464,7 @@
                     wireApi: wireApiSelect ? wireApiSelect.value : '',
                 };
             }
+            syncAdminChatModelDock();
         });
     });
 
@@ -880,6 +2482,118 @@
     presetRadios.forEach((radio) => {
         radio.addEventListener('change', applyPresetState);
     });
+
+    syncAdminTheme();
+    if (document.body && 'MutationObserver' in window) {
+        const themeObserver = new MutationObserver(syncAdminTheme);
+        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    navLinks.forEach((link) => {
+        link.addEventListener('click', () => {
+            setActiveNav(link.dataset.aiTarget || '');
+        });
+    });
+
+    if (aiChatSendBtn) {
+        aiChatSendBtn.addEventListener('click', () => {
+            const text = aiChatInput ? aiChatInput.value : '';
+            if (aiChatInput) aiChatInput.value = '';
+            autoSizeAdminChatInput();
+            sendAdminChatMessage(text);
+        });
+    }
+    if (aiChatPingBtn) {
+        aiChatPingBtn.addEventListener('click', () => {
+            sendAdminChatMessage('你好，请先做一个简短自我介绍，并说明你更适合处理哪类任务。');
+        });
+    }
+    if (aiChatClearBtn) {
+        aiChatClearBtn.addEventListener('click', resetAdminChat);
+    }
+    if (aiChatLog) {
+        aiChatLog.addEventListener('click', async (event) => {
+            const button = event.target.closest('.ai-chat-copy-msg');
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+            try {
+                const ok = await copyAdminTextToClipboard(button.dataset.copyText || '');
+                setAdminChatStatus(ok ? '已复制这条消息。' : '复制失败，请手动选择文本。');
+            } catch (error) {
+                setAdminChatStatus('复制失败，请检查浏览器是否允许剪贴板访问。');
+            }
+        });
+    }
+    if (aiChatContextLimitInput) {
+        aiChatContextLimitInput.addEventListener('input', () => syncAdminChatContextLimitUI(false));
+        aiChatContextLimitInput.addEventListener('change', () => syncAdminChatContextLimitUI(true));
+    }
+    if (aiChatContextLimitSaveInput) {
+        aiChatContextLimitSaveInput.addEventListener('input', () => {
+            if (aiChatContextLimitInput) {
+                aiChatContextLimitInput.value = aiChatContextLimitSaveInput.value;
+            }
+            syncAdminChatContextLimitUI(false);
+        });
+        aiChatContextLimitSaveInput.addEventListener('change', () => {
+            if (aiChatContextLimitInput) {
+                aiChatContextLimitInput.value = aiChatContextLimitSaveInput.value;
+            }
+            syncAdminChatContextLimitUI(true);
+        });
+    }
+    if (aiChatModelSelect) {
+        aiChatModelSelect.addEventListener('change', () => {
+            const targetValue = aiChatModelSelect.value || 'manual';
+            const targetRadio = presetRadios.find((node) => node.value === targetValue);
+            if (targetRadio) {
+                targetRadio.checked = true;
+                applyPresetState();
+            }
+        });
+    }
+    if (aiChatCopyBtn) {
+        aiChatCopyBtn.addEventListener('click', async () => {
+            const text = String(adminChatLastAssistantReply || '').trim();
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                setAdminChatStatus('已复制最近一条助手回复。');
+            } catch (error) {
+                setAdminChatStatus('复制失败，请检查浏览器是否允许剪贴板访问。');
+            }
+        });
+    }
+    if (aiChatInput) {
+        aiChatInput.addEventListener('input', autoSizeAdminChatInput);
+        aiChatInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                if (aiChatSendBtn) aiChatSendBtn.click();
+            }
+        });
+    }
+    resetAdminChat();
+    syncAdminChatContextLimitUI(false);
+    autoSizeAdminChatInput();
+    syncAdminChatModelDock();
+
+    if ('IntersectionObserver' in window && observedSections.length) {
+        const sectionObserver = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            if (visible.length) {
+                setActiveNav(visible[0].target.id);
+            }
+        }, {
+            root: null,
+            threshold: [0.15, 0.35, 0.6],
+            rootMargin: '-15% 0px -55% 0px'
+        });
+        observedSections.forEach((item) => sectionObserver.observe(item.node));
+    }
 
     function formatChartValue(value) {
         const num = Number(value || 0);

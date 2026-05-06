@@ -27,6 +27,18 @@
     .smart-cite-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .78rem; border-radius: 999px; border: 1px solid rgba(253,230,138,.9); background: rgba(254,252,232,.92); color: #b45309; font-size: .78rem; font-weight: 700; }
     .smart-link-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(148,163,184,.42); color: #334155; background: rgba(255,255,255,.78); font-weight: 600; }
     .smart-link-btn:hover { color: #2563eb; border-color: rgba(59,130,246,.4); }
+    .smart-regenerate-btn {
+        border-color: rgba(249,115,22,.22);
+        background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 14px 28px rgba(239,68,68,.18);
+    }
+    .smart-regenerate-btn:hover {
+        color: #fff;
+        border-color: rgba(234,88,12,.28);
+        background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+    }
     .smart-import-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(16,185,129,.26); background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; font-weight: 700; box-shadow: 0 10px 22px rgba(16,185,129,.16); }
     .smart-import-btn:hover { background: linear-gradient(135deg, #047857 0%, #059669 100%); }
     .smart-doc-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-radius: .9rem; border: 1px solid rgba(37,99,235,.2); background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; }
@@ -225,6 +237,13 @@
     body.auto-theme.auto-dark .smart-link-btn { background: rgba(15,23,42,.68); border-color: rgba(71,85,105,.9); color: #e2e8f0; }
     body.dark-theme .smart-link-btn:hover,
     body.auto-theme.auto-dark .smart-link-btn:hover { color: #93c5fd; border-color: rgba(96,165,250,.7); }
+    body.dark-theme .smart-regenerate-btn,
+    body.auto-theme.auto-dark .smart-regenerate-btn {
+        border-color: rgba(251,146,60,.28);
+        background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+        color: #fff;
+        box-shadow: 0 16px 32px rgba(239,68,68,.22);
+    }
     body.dark-theme .smart-import-btn,
     body.auto-theme.auto-dark .smart-import-btn { box-shadow: 0 12px 26px rgba(16,185,129,.14); }
     body.dark-theme .smart-score-card,
@@ -335,6 +354,13 @@
                 <p class="text-base md:text-lg leading-8 text-blue-50/90 max-w-3xl">
                     支持手动输入一句研究问题，由智能助手提炼检索短语，再跨 OpenAlex / Crossref / arXiv / NASA ADS 搜索并综合相关性、被引、来源质量进行排序。
                 </p>
+                {% if query_text and (search_payload or search_error) %}
+                <div class="mt-5 flex flex-wrap gap-3">
+                    <button type="button" class="smart-link-btn smart-regenerate-btn js-force-literature-search">
+                        <i class="fa fa-refresh"></i>重新深搜
+                    </button>
+                </div>
+                {% endif %}
                 <form id="literature-search-form" method="get" action="{{ url_for('literature_search_home') }}" class="smart-form-card mt-6 space-y-4 rounded-3xl p-4 md:p-5">
                     <div>
                         <label class="smart-field-label">研究问题 / 检索需求</label>
@@ -452,6 +478,7 @@
     const searchContent = document.getElementById('literature-search-content');
     let searchJobStartedAt = 0;
     let searchLoadingMetaTimer = null;
+    let searchProgressHistory = [];
 
     function getSearchLoadingPanel() {
         return document.getElementById('literature-search-loading');
@@ -474,6 +501,7 @@
         const loadingMeta = document.getElementById('literature-search-loading-meta');
         if (searchLoadingPanel) searchLoadingPanel.classList.remove('hidden');
         if (loadingStep && stepText) loadingStep.textContent = stepText;
+        if (stepText) pushSearchProgressStep(stepText);
         if (!searchJobStartedAt) searchJobStartedAt = Date.now();
         const tickLoadingMeta = () => {
             if (!loadingMeta || !searchJobStartedAt) return;
@@ -501,6 +529,38 @@
             searchLoadingMetaTimer = null;
         }
         searchJobStartedAt = 0;
+    }
+
+    function renderSearchProgressHistory() {
+        const list = document.getElementById('literature-search-progress-log');
+        if (!list) return;
+        list.innerHTML = '';
+        const visibleSteps = searchProgressHistory.slice(-6);
+        const displaySteps = visibleSteps.length >= 6
+            ? [visibleSteps[0], visibleSteps[1], '…', visibleSteps[3], visibleSteps[4], visibleSteps[5]]
+            : visibleSteps;
+        displaySteps.forEach((item) => {
+            const row = document.createElement('div');
+            if (item === '…') {
+                row.className = 'flex items-center justify-center text-slate-400 tracking-[0.35em]';
+                row.textContent = '...';
+            } else {
+                row.className = 'flex items-start gap-2 overflow-hidden';
+                row.innerHTML = `<span class="mt-1 text-blue-500 shrink-0"><i class="fa fa-circle-o-notch"></i></span><span class="min-w-0 flex-1 truncate">${item}</span>`;
+            }
+            list.appendChild(row);
+        });
+    }
+
+    function pushSearchProgressStep(stepText = '') {
+        const text = String(stepText || '').trim();
+        if (!text) return;
+        if (searchProgressHistory[searchProgressHistory.length - 1] === text) return;
+        searchProgressHistory.push(text);
+        if (searchProgressHistory.length > 6) {
+            searchProgressHistory = searchProgressHistory.slice(-6);
+        }
+        renderSearchProgressHistory();
     }
 
     function setupSearchCollapsibleSummary(root) {
@@ -568,6 +628,10 @@
             button.innerHTML = '<i class="fa fa-book"></i>查看系统内文献';
             button.dataset.originalHtml = button.innerHTML;
         });
+    }
+
+    function confirmForceLiteratureSearch() {
+        return window.confirm('将放弃当前深搜结果，并按当前表单设置重新生成。确定继续吗？');
     }
 
     function bindLiteratureSearchActions() {
@@ -640,6 +704,18 @@
             }
             });
         });
+
+        document.querySelectorAll('.js-force-literature-search').forEach((button) => {
+            if (button.dataset.bound) return;
+            button.dataset.bound = '1';
+            button.addEventListener('click', () => {
+                if (!confirmForceLiteratureSearch()) return;
+                startLiteratureSearchJob({ forceRefresh: true }).catch((error) => {
+                    hideSearchSubmitLoading();
+                    alert(error.message || '智能深搜失败');
+                });
+            });
+        });
     }
 
     async function pollLiteratureSearchJob(jobId) {
@@ -665,8 +741,9 @@
         throw new Error('智能深搜等待时间较长。你可以继续留在本页等待，或稍后刷新页面再次查看结果。');
     }
 
-    async function startLiteratureSearchJob() {
+    async function startLiteratureSearchJob(options = {}) {
         if (!searchForm) return;
+        const forceRefresh = !!options.forceRefresh;
         const formData = new FormData(searchForm);
         const payload = {
             q: String(formData.get('q') || '').trim(),
@@ -674,9 +751,11 @@
             lookback_days: String(formData.get('lookback_days') || ''),
             sort_mode: String(formData.get('sort_mode') || 'balanced'),
             sources: formData.getAll('sources'),
+            force_refresh: forceRefresh,
         };
         if (!payload.q) return;
-        showSearchSubmitLoading('系统正在创建智能深搜任务...');
+        searchProgressHistory = [];
+        showSearchSubmitLoading(forceRefresh ? '系统正在重新创建智能深搜任务...' : '系统正在创建智能深搜任务...');
         const response = await fetch(apiUrl('/api/literature-search/start'), {
             method: 'POST',
             headers: {
@@ -690,7 +769,7 @@
             hideSearchSubmitLoading();
             throw new Error(data.error || '智能深搜任务创建失败');
         }
-        if (data.reused) {
+        if (data.reused && !forceRefresh) {
             showSearchSubmitLoading(data.step || '检测到同条件任务仍在运行，正在继续获取结果…');
         }
         return pollLiteratureSearchJob(data.job_id);

@@ -14,6 +14,16 @@
         border: 1px solid rgba(226, 232, 240, 0.95);
         box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
     }
+
+    .morning-settings-actionbar {
+        position: sticky;
+        top: 86px;
+        z-index: 20;
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(226,232,240,.95);
+        box-shadow: 0 14px 30px rgba(15,23,42,.06);
+    }
 </style>
 {% endblock %}
 
@@ -34,6 +44,21 @@
 
     <form method="post" class="morning-settings-card rounded-2xl p-6 md:p-8 space-y-8">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="morning-settings-actionbar rounded-2xl px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <div class="text-sm font-semibold text-slate-800">顶部快捷操作</div>
+                <div class="text-xs text-slate-500 mt-1">修改完参数后可直接在这里保存，不必滚动到页面底部。</div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{{ url_for('morning_report_home') }}" class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:border-blue-300 hover:text-blue-600 text-center font-medium">
+                    取消
+                </a>
+                <button type="submit" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                    保存参数
+                </button>
+            </div>
+        </div>
 
         <section>
             <h2 class="text-xl font-semibold text-slate-900 mb-4">关键词库</h2>
@@ -213,4 +238,43 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('.morning-settings-shell form');
+        if (!form) return;
+        form.addEventListener('submit', function () {
+            try {
+                window.sessionStorage.setItem('ysxs_morning_settings_saved_hint', '1');
+            } catch (error) {
+                console.warn('save morning settings hint failed', error);
+            }
+        });
+
+        try {
+            const hasHint = window.sessionStorage.getItem('ysxs_morning_settings_saved_hint');
+            if (!hasHint) return;
+            window.sessionStorage.removeItem('ysxs_morning_settings_saved_hint');
+            let stack = document.getElementById('morning-settings-toast-stack');
+            if (!stack) {
+                stack = document.createElement('div');
+                stack.id = 'morning-settings-toast-stack';
+                stack.className = 'fixed top-24 right-4 z-[95] flex flex-col gap-3 w-[min(92vw,24rem)] pointer-events-none';
+                document.body.appendChild(stack);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto fade-in p-4 rounded-xl shadow-lg transition-all duration-500 bg-blue-50 text-blue-700 border border-blue-200';
+            toast.textContent = '晨报参数已保存，可返回晨报页重新搜索验证新结果。';
+            stack.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-2', 'pointer-events-none');
+                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+            }, 3200);
+        } catch (error) {
+            console.warn('restore morning settings hint failed', error);
+        }
+    });
+</script>
 {% endblock %}

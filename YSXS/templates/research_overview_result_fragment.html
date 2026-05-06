@@ -8,6 +8,11 @@
 {% set ai_usage = payload.get('ai_usage', {}) if payload else {} %}
 {% set ai_status = ai_usage.get('status') if ai_usage else '' %}
 {% set ai_elapsed_text = ai_usage.get('elapsed_text') if ai_usage else '' %}
+{% set summary_stage = payload.get('summary_stage') if payload else '' %}
+{% set upgrade_pending = payload.get('upgrade_pending') if payload else false %}
+{% set summary_version = payload.get('summary_version') if payload else 0 %}
+{% set quality_upgraded = payload.get('quality_upgraded') if payload else false %}
+{% set upgraded_at = payload.get('upgraded_at') if payload else '' %}
 {% if ai_status == 'used' %}
     {% set ai_badge_class = 'is-used' %}
     {% set ai_badge_icon = 'fa-bolt' %}
@@ -31,7 +36,14 @@
 {% endif %}
     {% if overview_error %}
     <div class="overview-panel rounded-3xl p-5 mb-6 border border-red-200">
-        <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ overview_error }}</div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="text-red-600 font-semibold"><i class="fa fa-exclamation-circle mr-2"></i>{{ overview_error }}</div>
+            {% if direction_text %}
+            <button type="button" class="overview-action-btn overview-regenerate-btn js-force-research-overview">
+                <i class="fa fa-refresh"></i>重新梳理
+            </button>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 
@@ -42,6 +54,7 @@
             系统正在跨源检索相关文献、优先挑选近年综述与高质量论文，并调用智能助手生成研究现状总结，请稍候。
         </p> 
         <div id="research-overview-loading-meta" class="mt-4 text-xs text-slate-400">已耗时 0 秒</div>
+        <div id="research-overview-progress-log" class="mt-5 max-w-2xl mx-auto text-left text-sm text-slate-500 space-y-2"></div>
     </div>
 
     {% if payload %}
@@ -68,7 +81,10 @@
                         <div class="overview-head-count">
                             <div class="overview-head-count-value">{{ selected_papers|length }}</div>
                             <div class="overview-head-count-label">篇支撑论文</div>
-                            <div class="overview-head-count-note">{{ focus_options.get(focus_mode, focus_mode) }}</div>
+                            <div class="overview-head-count-note">
+                                {{ focus_options.get(focus_mode, focus_mode) }} ·
+                                {% if summary_stage == 'quality' %}高质量版{% elif summary_stage == 'fast' and upgrade_pending %}快速版（升级中）{% elif summary_stage == 'fast' %}快速版{% else %}{{ generation_options.get(generation_mode, generation_mode) }}{% endif %}
+                            </div>
                         </div>
                     </div>
                     <p class="mt-3 text-slate-600 leading-7">
@@ -79,11 +95,21 @@
             </div>
             <div class="overview-summary-panel rounded-3xl p-5 md:p-6">
                 <div class="flex flex-wrap gap-3 mb-4">
+                    <button type="button" class="overview-action-btn overview-regenerate-btn js-force-research-overview"><i class="fa fa-refresh"></i>重新梳理</button>
                     <button type="button" id="overview-save-btn" class="overview-action-btn"><i class="fa fa-save"></i>保存到系统</button>
                     <button type="button" id="overview-copy-btn" class="overview-action-btn"><i class="fa fa-copy"></i>一键复制</button>
                     <button type="button" id="overview-export-md-btn" class="overview-action-btn"><i class="fa fa-download"></i>导出 Markdown</button>
                     <button type="button" id="overview-export-txt-btn" class="overview-action-btn"><i class="fa fa-file-text-o"></i>导出文本</button>
                 </div>
+                {% if summary_stage == 'fast' and upgrade_pending %}
+                <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-700">
+                    <strong>当前显示快速版。</strong> 后台正在继续生成更完整的高质量版，完成后本页会自动更新。
+                </div>
+                {% elif summary_stage == 'quality' %}
+                <div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-700">
+                    <strong>当前显示高质量版。</strong>{% if upgraded_at %} 升级完成时间：{{ upgraded_at }}。{% elif quality_upgraded %} 已根据同一批支撑文献自动升级。{% endif %}
+                </div>
+                {% endif %}
                 {% if ai_usage %}
                 <div class="mb-4 rounded-2xl px-4 py-3 text-sm leading-7
                     {% if ai_usage.get('status') == 'used' %}border border-emerald-200 bg-emerald-50 text-emerald-700
@@ -143,9 +169,19 @@
                     <div class="text-lg font-bold text-slate-900 mt-1">{{ search_stats.get('deduped_count', 0) }}</div>
                 </div>
                 <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">方向相关保留</div>
+                    <div class="text-lg font-bold text-slate-900 mt-1">{{ search_stats.get('on_topic_count', search_stats.get('result_count', 0)) }}</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
                     <div class="text-xs text-slate-500">最终支撑论文</div>
                     <div class="text-lg font-bold text-slate-900 mt-1">{{ selected_papers|length }}</div>
                 </div>
+                {% if search_stats.get('off_topic_filtered_count') %}
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">已过滤偏题项</div>
+                    <div class="text-lg font-bold text-slate-900 mt-1">{{ search_stats.get('off_topic_filtered_count', 0) }}</div>
+                </div>
+                {% endif %}
                 <div class="overview-stat rounded-2xl px-4 py-4">
                     <div class="text-xs text-slate-500">来源</div>
                     <div class="text-sm font-semibold text-slate-900 mt-1">
@@ -155,6 +191,12 @@
                 <div class="overview-stat rounded-2xl px-4 py-4">
                     <div class="text-xs text-slate-500">时间范围</div>
                     <div class="text-sm font-semibold text-slate-900 mt-1">近 {{ overview_years }} 年优先</div>
+                </div>
+                <div class="overview-stat rounded-2xl px-4 py-4">
+                    <div class="text-xs text-slate-500">生成模式</div>
+                    <div class="text-sm font-semibold text-slate-900 mt-1">
+                        {% if summary_stage == 'quality' %}高质量版{% elif summary_stage == 'fast' %}快速版{% else %}{{ generation_options.get(generation_mode, generation_mode) }}{% endif %}
+                    </div>
                 </div>
             </div>
             {% if errors %}
@@ -279,6 +321,9 @@
             <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl"><i class="fa fa-search"></i></div>
             <h3 class="text-2xl font-black text-slate-900 mb-3">这次没有找到足够适合梳理现状的文献</h3>
             <p class="text-slate-600 leading-8 max-w-2xl mx-auto">可以尝试把研究方向写得更具体，或调大保留论文数、扩大时间范围后再试。</p>
+            <div class="mt-5">
+                <button type="button" class="overview-action-btn overview-regenerate-btn js-force-research-overview"><i class="fa fa-refresh"></i>重新梳理</button>
+            </div>
         </div>
         {% else %}
         <div class="overview-panel rounded-3xl text-center py-14 px-6">
@@ -296,9 +341,18 @@
     <script type="application/json" id="overview-save-payload">{{ {
         'direction_text': direction_text,
         'focus_mode': focus_mode,
+        'generation_mode': generation_mode,
         'overview_years': overview_years,
         'selected_sources': selected_sources,
         'summary_markdown': payload.get('summary_markdown'),
         'selected_papers': selected_papers,
+    } | tojson }}</script>
+    <script type="application/json" id="overview-job-meta">{{ {
+        'summary_stage': summary_stage,
+        'upgrade_pending': upgrade_pending,
+        'summary_version': summary_version,
+        'quality_upgraded': quality_upgraded,
+        'generated_at': payload.get('generated_at'),
+        'upgraded_at': upgraded_at,
     } | tojson }}</script>
     {% endif %}

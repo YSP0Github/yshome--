@@ -61,6 +61,7 @@
     .brief-toast.info { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
     .brief-toast.success { background: linear-gradient(135deg, #059669, #10b981); }
     .brief-toast.error { background: linear-gradient(135deg, #dc2626, #ef4444); }
+    .brief-running-banner { background: linear-gradient(135deg, rgba(29,78,216,.08), rgba(14,165,233,.10)); border: 1px solid rgba(96,165,250,.35); box-shadow: 0 18px 36px rgba(37,99,235,.08); }
     .brief-summary-rendered { line-height: 1.9; word-break: break-word; }
     .brief-summary-rendered h3,
     .brief-summary-rendered h4,
@@ -142,6 +143,8 @@
     body.auto-theme.auto-dark .brief-summary-toggle {
         color: #93c5fd;
     }
+    body.dark-theme .brief-running-banner,
+    body.auto-theme.auto-dark .brief-running-banner { background: linear-gradient(135deg, rgba(30,41,59,.92), rgba(15,23,42,.94)); border-color: rgba(59,130,246,.28); }
     @media (max-width: 768px) { .brief-toast-stack { left: 14px; right: 14px; top: 76px; } .brief-toast { max-width: none; min-width: 0; } }
 </style>
 {% endblock %}
@@ -198,6 +201,21 @@
         </div>
     </section>
 
+    <div id="morning-report-running-banner" class="brief-running-banner rounded-3xl px-5 py-4 mb-6 hidden">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <i class="fa fa-spinner fa-spin"></i>
+            </div>
+            <div>
+                <div class="text-sm font-bold text-blue-700 dark:text-blue-300">晨报正在按最新参数重新生成</div>
+                <div id="morning-report-running-text" class="mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    系统已接收重新搜索请求，旧内容将暂时隐藏。生成完成后页面会自动刷新为最新结果。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="morning-report-main-content">
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-7">
         <section class="xl:col-span-8 brief-panel rounded-3xl p-6 md:p-7">
             <div class="flex items-center justify-between gap-4 mb-5">
@@ -304,6 +322,17 @@
                     <i class="fa fa-random text-slate-300 text-2xl"></i>
                 </div>
                 <div class="brief-side-card rounded-2xl px-4 py-4 flex items-center justify-between"><div><div class="text-xs text-slate-500">强过滤</div><div class="text-sm font-semibold text-slate-700 mt-1">{{ '已开启' if report_settings.strict_filter_enabled else '已关闭' }}</div></div><i class="fa fa-filter text-slate-300 text-2xl"></i></div>
+            </div>
+            <div class="mt-6 pt-5 border-t border-slate-100">
+                <div class="text-sm text-slate-500 mb-3">本次生成使用的关键词快照</div>
+                <div class="flex flex-wrap gap-2">
+                    {% for keyword in (report_run.keyword_list() if report_run and report_run.keyword_list() else report_settings.keyword_list())[:12] %}
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+                {% if report_run and report_run.status == 'running' %}
+                <p class="mt-3 text-xs text-slate-500 leading-6">当前任务正在使用这组已保存关键词重新生成晨报。</p>
+                {% endif %}
             </div>
             {% if recent_runs %}
             <div class="mt-6 pt-5 border-t border-slate-100">
@@ -468,6 +497,7 @@
         </div>
         {% endif %}
     </section>
+    </div>
 </div>
 {% endblock %}
 
@@ -476,17 +506,20 @@
     const reportRunBtn = document.getElementById('run-report-btn');
     const reportRunEmptyBtn = document.getElementById('run-report-empty-btn');
     const reportRunHeroEmptyBtn = document.getElementById('run-report-hero-empty-btn');
+    const morningReportRunningBanner = document.getElementById('morning-report-running-banner');
+    const morningReportRunningText = document.getElementById('morning-report-running-text');
+    const morningReportMainContent = document.getElementById('morning-report-main-content');
     const initialReportStatus = {{ (report_run.status if report_run else 'idle')|tojson }};
     let morningReportStatusTimer = null;
 
-    function showReportToast(message, type = 'info') {
+    function showReportToast(message, type = 'info', duration = 4200) {
         const stack = document.getElementById('report-toast-stack');
         if (!stack) return alert(message);
         const toast = document.createElement('div');
         toast.className = `brief-toast ${type}`;
         toast.innerHTML = `<div class="font-semibold mb-1">${type === 'error' ? '操作失败' : type === 'success' ? '操作成功' : '提示'}</div><div class="text-sm leading-6 opacity-95">${message}</div>`;
         stack.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-4px)'; toast.style.transition = 'all .2s ease'; setTimeout(() => toast.remove(), 220); }, 3200);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-4px)'; toast.style.transition = 'all .2s ease'; setTimeout(() => toast.remove(), 220); }, Math.max(1800, Number(duration) || 4200));
     }
 
     async function readJsonResponse(response) {
@@ -510,6 +543,24 @@
 
     function apiUrl(path) {
         return window.withBasePath ? window.withBasePath(path) : path;
+    }
+
+    function showMorningReportRunningState(message = '') {
+        if (morningReportRunningBanner) morningReportRunningBanner.classList.remove('hidden');
+        if (morningReportRunningText && message) morningReportRunningText.textContent = message;
+        if (morningReportMainContent) {
+            morningReportMainContent.innerHTML = `
+                <div class="brief-panel rounded-3xl text-center py-14 px-6">
+                    <div class="w-20 h-20 rounded-3xl mx-auto mb-5 bg-blue-50 text-blue-700 flex items-center justify-center text-4xl">
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-3">正在按最新参数重新生成今日晨报</h3>
+                    <p class="text-slate-600 leading-8 max-w-2xl mx-auto">
+                        当前旧内容已隐藏。系统会根据你现在保存的关键词、排除词、来源和回溯参数重新抓取并筛选，完成后自动刷新为新结果。
+                    </p>
+                </div>
+            `;
+        }
     }
 
     function setupCollapsibleSummary(root) {
@@ -596,8 +647,13 @@
             const response = await fetch(apiUrl('/api/morning-report/run'), { method: 'POST', headers: { 'X-CSRFToken': window.getCSRFToken() } });
             const data = await readJsonResponse(response);
             if (!response.ok) throw new Error(data.error || '生成晨报失败');
-            showReportToast(data.message || '已开始后台搜索。', 'success');
-            setTimeout(() => { window.location.href = apiUrl(data.redirect_url || '/morning-report'); }, 300);
+            showReportToast(data.message || '已开始后台搜索。', 'success', 3000);
+            showMorningReportRunningState('系统已接收重新搜索请求，旧内容已隐藏。晨报将严格按当前用户参数重新生成，完成后自动刷新。');
+            if (morningReportStatusTimer) {
+                window.clearTimeout(morningReportStatusTimer);
+                morningReportStatusTimer = null;
+            }
+            morningReportStatusTimer = window.setTimeout(pollMorningReportStatusUntilDone, 1800);
         } catch (error) {
             showReportToast(error.message || '生成晨报失败，请稍后重试。', 'error');
         } finally {
@@ -613,6 +669,10 @@
             const data = await readJsonResponse(response);
             if (!response.ok) throw new Error(data.error || '读取晨报状态失败');
             if (data.status === 'ready' || data.status === 'failed') {
+                window.sessionStorage.setItem('ysxs_morning_report_refresh_notice', JSON.stringify({
+                    status: data.status,
+                    label: data.label || '',
+                }));
                 window.location.reload();
                 return;
             }
@@ -626,7 +686,22 @@
     reportRunEmptyBtn?.addEventListener('click', runMorningReport);
     reportRunHeroEmptyBtn?.addEventListener('click', runMorningReport);
     if (initialReportStatus === 'running') {
+        showMorningReportRunningState('当前晨报任务正在后台运行中。生成完成后页面会自动刷新为最新结果。');
         morningReportStatusTimer = window.setTimeout(pollMorningReportStatusUntilDone, 5000);
+    }
+    try {
+        const storedNotice = window.sessionStorage.getItem('ysxs_morning_report_refresh_notice');
+        if (storedNotice) {
+            window.sessionStorage.removeItem('ysxs_morning_report_refresh_notice');
+            const notice = JSON.parse(storedNotice || '{}');
+            if (notice.status === 'ready') {
+                showReportToast(notice.label || '晨报已按当前参数重新生成。', 'success', 3600);
+            } else if (notice.status === 'failed') {
+                showReportToast(notice.label || '晨报重新生成失败，请检查参数后重试。', 'error', 4200);
+            }
+        }
+    } catch (error) {
+        console.warn('restore morning report notice failed', error);
     }
     document.querySelectorAll('[data-collapsible-summary]').forEach(setupCollapsibleSummary);
     window.addEventListener('resize', () => {
