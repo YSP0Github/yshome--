@@ -1297,6 +1297,7 @@
         {{ {'is_authenticated': current_user.is_authenticated}|tojson }}
     </script>
     <script id="batch-cite-meta" type="application/json">{{ (batch_cite_ids or []) | tojson }}</script>
+    <script id="visible-documents-meta" type="application/json">{{ (sidebar_visible_documents or []) | tojson }}</script>
     <script>
 
         const listViewBtn = document.getElementById('list-view-btn');
@@ -1371,6 +1372,7 @@
                 setTimeout(() => toast.remove(), 250);
             }, duration);
         }
+        window.showToast = showToast;
 
         async function copyText(text) {
             if (navigator.clipboard && window.isSecureContext) {
@@ -1398,6 +1400,7 @@
                 }
             });
         }
+        window.copyText = copyText;
 
         function encodeHtml(str) {
             return (str ?? '').replace(/&/g, '&amp;')
@@ -1478,6 +1481,96 @@
             }
             btn.setAttribute('data-in-batch', isSelected ? 'true' : 'false');
         }
+
+        function syncBatchButtonsForDoc(docId, isSelected) {
+            const normalizedDocId = String(docId);
+            document.querySelectorAll(`.batch-cite-btn[data-doc-id="${normalizedDocId}"]`).forEach(btn => {
+                setBatchButtonState(btn, !!isSelected);
+            });
+        }
+
+        async function addDocumentsToBatchCite(docIds = []) {
+            if (!batchCiteState.isAuthenticated) {
+                throw new Error('登录后即可使用批量引用功能');
+            }
+            const normalizedIds = [];
+            (Array.isArray(docIds) ? docIds : [docIds]).forEach(item => {
+                const parsed = Number(item);
+                if (!Number.isNaN(parsed) && parsed > 0 && !normalizedIds.includes(parsed)) {
+                    normalizedIds.push(parsed);
+                }
+            });
+            if (!normalizedIds.length) {
+                throw new Error('没有可加入批量引用的文献');
+            }
+
+            const result = {
+                attempted: normalizedIds.length,
+                success_ids: [],
+                failed: [],
+                total: batchCiteState.ids.size,
+            };
+
+            for (const docId of normalizedIds) {
+                try {
+                    const res = await fetch(`/api/batch-cite/${docId}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': window.getCSRFToken()
+                        }
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.message || data.error || '加入失败');
+                    batchCiteState.ids.add(docId);
+                    syncBatchButtonsForDoc(docId, true);
+                    if (typeof data.total === 'number') {
+                        result.total = data.total;
+                    }
+                    result.success_ids.push(docId);
+                } catch (err) {
+                    result.failed.push({
+                        doc_id: docId,
+                        error: err?.message || '加入失败',
+                    });
+                }
+            }
+
+            if (result.success_ids.length) {
+                updateBatchSummaryCount(typeof result.total === 'number' ? result.total : undefined);
+            }
+            return result;
+        }
+
+        async function clearBatchCiteList() {
+            if (!batchCiteState.isAuthenticated) {
+                throw new Error('请先登录后再清空批量引用');
+            }
+            const res = await fetch('/api/batch-cite', {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': window.getCSRFToken()
+                }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || data.error || '清空失败');
+            batchCiteState.ids.clear();
+            document.querySelectorAll('.batch-cite-btn[data-in-batch="true"]').forEach(btn => setBatchButtonState(btn, false));
+            updateBatchSummaryCount(typeof data.total === 'number' ? data.total : 0);
+            return data;
+        }
+
+        window.YSXSBatchCiteHelpers = {
+            getIds: () => Array.from(batchCiteState.ids),
+            isAuthenticated: () => !!batchCiteState.isAuthenticated,
+            addDocumentsToBatchCite,
+            clearBatchCiteList,
+            openList: () => {
+                const url = batchCiteState.fabBtn?.dataset.listUrl;
+                if (url) {
+                    window.location.href = url;
+                }
+            },
+        };
 
         updateBatchSummaryCount();
 
@@ -1935,17 +2028,7 @@
                     batchCiteState.clearBtn.dataset.loading = 'true';
                     batchCiteState.clearBtn.classList.add('opacity-70', 'cursor-wait');
                     try {
-                        const res = await fetch('/api/batch-cite', {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': window.getCSRFToken()
-                            }
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.message || data.error || '清空失败');
-                        batchCiteState.ids.clear();
-                        document.querySelectorAll('.batch-cite-btn[data-in-batch="true"]').forEach(btn => setBatchButtonState(btn, false));
-                        updateBatchSummaryCount(typeof data.total === 'number' ? data.total : 0);
+                        const data = await clearBatchCiteList();
                         showToast(data.message || '批量引用列表已清空', 'success');
                     } catch (err) {
                         showToast(err.message || '清空失败，请稍后重试', 'error');
@@ -1974,23 +2057,27 @@
                     this.classList.add('opacity-70', 'cursor-wait');
 
                     try {
-                        const res = await fetch(`/api/batch-cite/${docId}`, {
-                            method: isInBatch ? 'DELETE' : 'POST',
-                            headers: {
-                                'X-CSRFToken': window.getCSRFToken()
-                            }
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.message || data.error || '操作失败');
-
                         if (isInBatch) {
+                            const res = await fetch(`/api/batch-cite/${docId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRFToken': window.getCSRFToken()
+                                }
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.message || data.error || '操作失败');
                             batchCiteState.ids.delete(docId);
+                            syncBatchButtonsForDoc(docId, false);
+                            updateBatchSummaryCount(typeof data.total === 'number' ? data.total : undefined);
+                            showToast(data.message || '已移出批量引用', 'success');
                         } else {
-                            batchCiteState.ids.add(docId);
+                            const result = await addDocumentsToBatchCite([docId]);
+                            if (!result.success_ids.length) {
+                                throw new Error(result.failed[0]?.error || '操作失败');
+                            }
+                            updateBatchSummaryCount(typeof result.total === 'number' ? result.total : undefined);
+                            showToast('已加入批量引用', 'success');
                         }
-                        setBatchButtonState(this, !isInBatch);
-                        updateBatchSummaryCount(typeof data.total === 'number' ? data.total : undefined);
-                        showToast(data.message || (isInBatch ? '已移出批量引用' : '已加入批量引用'), 'success');
                     } catch (err) {
                         showToast(err.message || '操作失败，请稍后重试', 'error');
                     } finally {

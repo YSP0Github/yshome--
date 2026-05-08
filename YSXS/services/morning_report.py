@@ -2910,6 +2910,8 @@ def _scene_ai_output_limit(scene: str | None, wire_api: str) -> int:
         return 2000
     if scene_key in {'research_overview_compact'}:
         return 1300
+    if scene_key in {'assistant_sidebar_workflow'}:
+        return 1200
     if scene_key in {'admin_ai_chat', 'admin_ai_test', 'admin_ai_console', 'user_sidebar_chat'}:
         return 1400
     if scene_key in {'paper_summary', 'document_summary'}:
@@ -2924,6 +2926,8 @@ def _scene_ai_retry_attempts(scene: str | None) -> int:
     default_attempts = max(1, min(_get_positive_int_env('YSXS_AI_RETRY_ATTEMPTS', 3), 5))
     if scene_key in {'research_overview_fast', 'research_overview_quality', 'research_overview_compact'}:
         return max(1, min(_get_positive_int_env('YSXS_RESEARCH_OVERVIEW_AI_RETRY_ATTEMPTS', 2), 3))
+    if scene_key in {'assistant_sidebar_workflow'}:
+        return max(1, min(_get_positive_int_env('YSXS_INTERACTIVE_AI_RETRY_ATTEMPTS', 2), 3))
     if scene_key in {'admin_ai_chat', 'admin_ai_test', 'admin_ai_console', 'user_sidebar_chat'}:
         return max(1, min(_get_positive_int_env('YSXS_INTERACTIVE_AI_RETRY_ATTEMPTS', 2), 3))
     return default_attempts

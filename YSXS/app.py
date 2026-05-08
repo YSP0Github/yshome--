@@ -15,7 +15,7 @@ from functools import wraps
 from io import BytesIO, StringIO
 from pathlib import Path
 from threading import Event, Thread
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import quote
 
 import requests
@@ -1183,6 +1183,10 @@ def render_document_page(**context):
     batch_ids = get_current_user_batch_ids()
     context.setdefault('batch_cite_ids', batch_ids)
     context.setdefault('batch_cite_count', len(batch_ids))
+    context.setdefault(
+        'sidebar_visible_documents',
+        _serialize_sidebar_visible_documents(context.get('documents') or [], batch_ids)
+    )
     endpoint_view_labels = {
         'index': '全部文献',
         'my_collected': '我的收藏',
@@ -1225,6 +1229,49 @@ def render_document_page(**context):
     context.setdefault('pagination', pagination)
     context.setdefault('pagination_url', build_page_url)
     return render_template('YSXS.html', **context)
+
+
+def _compact_sidebar_text(value: str | None, *, max_chars: int = 240) -> str:
+    normalized = re.sub(r'\s+', ' ', str(value or '').strip())
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[:max(1, max_chars - 1)].rstrip() + '…'
+
+
+def _serialize_sidebar_visible_documents(documents, batch_ids=None) -> list[dict[str, Any]]:
+    docs = list(documents or [])
+    if not docs:
+        return []
+
+    normalized_batch_ids = {int(item) for item in (batch_ids or []) if str(item).isdigit()}
+    favorite_ids: set[int] = set()
+    if getattr(current_user, 'is_authenticated', False):
+        doc_ids = [doc.id for doc in docs if getattr(doc, 'id', None)]
+        if doc_ids:
+            favorite_ids = {
+                int(row[0])
+                for row in current_user.favorites.with_entities(Document.id).filter(Document.id.in_(doc_ids)).all()
+                if row and row[0] is not None
+            }
+
+    payload: list[dict[str, Any]] = []
+    for doc in docs[:50]:
+        category_label = doc.category_obj.label if getattr(doc, 'category_obj', None) else (doc.category or '')
+        doc_type_label = doc.doc_type_obj.label if getattr(doc, 'doc_type_obj', None) else (doc.doc_type or '')
+        payload.append({
+            'id': int(doc.id),
+            'title': _compact_sidebar_text(doc.title, max_chars=220),
+            'authors': _compact_sidebar_text(doc.authors, max_chars=160),
+            'journal': _compact_sidebar_text(doc.journal, max_chars=120),
+            'year': doc.year,
+            'doc_type': _compact_sidebar_text(doc_type_label, max_chars=48),
+            'category': _compact_sidebar_text(category_label, max_chars=48),
+            'abstract_excerpt': _compact_sidebar_text(doc.abstract, max_chars=320),
+            'in_batch': int(doc.id) in normalized_batch_ids,
+            'is_favorited': int(doc.id) in favorite_ids,
+            'detail_url': url_for('document_detail', doc_id=doc.id),
+        })
+    return payload
 
 
 def paginate_documents(query, per_page: int = DOCUMENTS_PER_PAGE):
@@ -2633,6 +2680,7 @@ AI_SCENE_LABELS = {
     'search_result_summary': '深搜结果智能总结',
     'research_scope_filter': '科研方向强过滤',
     'user_sidebar_chat': '侧边 AI 对话',
+    'assistant_sidebar_workflow': '侧边栏工作流规划',
 }
 
 
@@ -3221,24 +3269,25 @@ def user_sidebar_ai_chat():
         return jsonify({'error': '请输入要发送的问题。'}), 400
 
     saved_config = load_runtime_ai_config()
-    context_limit = _sanitize_admin_chat_context_limit(
+    raw_context_limit = _sanitize_admin_chat_context_limit(
         payload.get('context_limit') or saved_config.get('admin_chat_context_limit')
     )
+    context_limit = min(raw_context_limit, 8)
     context_warning = ''
-    if context_limit > 20:
-        context_warning = f'当前上下文条数为 {context_limit}，可能增加响应延迟与 Token 消耗。'
+    if raw_context_limit > 8:
+        context_warning = '侧边栏已自动截断为最近 8 条上下文，以优先保证响应速度。'
 
     effective_config = get_ai_client_config()
     if not effective_config:
         return jsonify({'error': '当前系统尚未配置可用的 AI 模型，请联系管理员检查智能管理系统配置。'}), 503
 
-    history_lines = _build_chat_history_lines(payload.get('history') or [], context_limit, item_max_chars=1600)
+    history_lines = _build_chat_history_lines(payload.get('history') or [], context_limit, item_max_chars=900)
     page_title = str(payload.get('page_title') or '').strip()
     page_hint = str(payload.get('page_hint') or '').strip()
     assistant_scene = str(payload.get('assistant_scene') or '').strip()
     page_context = str(payload.get('page_context') or '').strip()
-    if len(page_context) > 2200:
-        page_context = page_context[:2200] + '…'
+    if len(page_context) > 1400:
+        page_context = page_context[:1400] + '…'
 
     prompt_parts = [
         "这是云凇学术系统中的全局侧边智能助手面板。",
@@ -3325,6 +3374,375 @@ def _extract_json_object(text_value: str) -> dict:
         except Exception:
             return {}
     return {}
+
+
+SIDEBAR_WORKFLOW_TYPES = {
+    'curate_batch_cite',
+    'build_reading_queue',
+}
+
+
+def _parse_simple_cn_number(value: str | None) -> int | None:
+    text_value = str(value or '').strip()
+    if not text_value:
+        return None
+    mapping = {
+        '零': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5,
+        '六': 6, '七': 7, '八': 8, '九': 9,
+    }
+    if text_value == '十':
+        return 10
+    if text_value.startswith('十'):
+        return 10 + mapping.get(text_value[1:], 0)
+    if text_value.endswith('十'):
+        return mapping.get(text_value[0], 0) * 10
+    if '十' in text_value:
+        left, _, right = text_value.partition('十')
+        return mapping.get(left, 0) * 10 + mapping.get(right, 0)
+    if text_value in mapping:
+        return mapping[text_value]
+    return None
+
+
+def _extract_sidebar_requested_count(message: str | None, *, default: int = 6, minimum: int = 3, maximum: int = 10) -> int:
+    text_value = str(message or '').strip()
+    digit_match = re.search(r'(?:前|挑|选|配|组|要|取|保留|给我|帮我)?\s*(\d{1,2})\s*(?:篇|个|条|项)', text_value)
+    if digit_match:
+        try:
+            parsed = int(digit_match.group(1))
+            return max(minimum, min(parsed, maximum))
+        except (TypeError, ValueError):
+            pass
+    cn_match = re.search(r'(?:前|挑|选|配|组|要|取|保留|给我|帮我)?\s*([一二两三四五六七八九十]{1,3})\s*(?:篇|个|条|项)', text_value)
+    if cn_match:
+        parsed_cn = _parse_simple_cn_number(cn_match.group(1))
+        if parsed_cn is not None:
+            return max(minimum, min(parsed_cn, maximum))
+    return max(minimum, min(default, maximum))
+
+
+def _normalize_sidebar_visible_documents(raw_items, *, limit: int = 24) -> list[dict[str, Any]]:
+    if not isinstance(raw_items, list):
+        return []
+    normalized_items: list[dict[str, Any]] = []
+    seen_ids: set[int] = set()
+    for raw in raw_items[:limit]:
+        if not isinstance(raw, dict):
+            continue
+        try:
+            doc_id = int(raw.get('id'))
+        except (TypeError, ValueError):
+            continue
+        if doc_id <= 0 or doc_id in seen_ids:
+            continue
+        seen_ids.add(doc_id)
+        title = _compact_sidebar_text(raw.get('title'), max_chars=220)
+        if not title:
+            continue
+        normalized_items.append({
+            'id': doc_id,
+            'title': title,
+            'authors': _compact_sidebar_text(raw.get('authors'), max_chars=160),
+            'journal': _compact_sidebar_text(raw.get('journal'), max_chars=120),
+            'year': _compact_sidebar_text(raw.get('year'), max_chars=24),
+            'doc_type': _compact_sidebar_text(raw.get('doc_type'), max_chars=48),
+            'category': _compact_sidebar_text(raw.get('category'), max_chars=48),
+            'abstract_excerpt': _compact_sidebar_text(raw.get('abstract_excerpt'), max_chars=320),
+            'in_batch': bool(raw.get('in_batch')),
+            'is_favorited': bool(raw.get('is_favorited')),
+            'detail_url': str(raw.get('detail_url') or '').strip(),
+        })
+    return normalized_items
+
+
+def _normalize_sidebar_batch_state(raw_state) -> dict[str, Any]:
+    if not isinstance(raw_state, dict):
+        return {'ids': [], 'count': 0}
+    ids: list[int] = []
+    for item in raw_state.get('ids') or []:
+        try:
+            parsed = int(item)
+        except (TypeError, ValueError):
+            continue
+        if parsed > 0 and parsed not in ids:
+            ids.append(parsed)
+    count = raw_state.get('count')
+    try:
+        normalized_count = int(count)
+    except (TypeError, ValueError):
+        normalized_count = len(ids)
+    return {
+        'ids': ids[:80],
+        'count': max(0, normalized_count),
+    }
+
+
+def _build_sidebar_workflow_doc_lines(visible_docs: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for item in visible_docs:
+        parts = [
+            f"doc_id={item['id']}",
+            f"标题={item['title']}",
+        ]
+        if item.get('authors'):
+            parts.append(f"作者={item['authors']}")
+        if item.get('year'):
+            parts.append(f"年份={item['year']}")
+        if item.get('journal'):
+            parts.append(f"来源={item['journal']}")
+        if item.get('doc_type'):
+            parts.append(f"类型={item['doc_type']}")
+        if item.get('category'):
+            parts.append(f"分类={item['category']}")
+        parts.append(f"已在批量引用={'是' if item.get('in_batch') else '否'}")
+        if item.get('is_favorited'):
+            parts.append("已收藏=是")
+        if item.get('abstract_excerpt'):
+            parts.append(f"摘要={item['abstract_excerpt']}")
+        lines.append(' | '.join(parts))
+    return lines
+
+
+def _fallback_sidebar_workflow_selection(
+    workflow: str,
+    visible_docs: list[dict[str, Any]],
+    requested_count: int,
+) -> list[dict[str, Any]]:
+    fallback_items = visible_docs[:max(1, requested_count)]
+    selections: list[dict[str, Any]] = []
+    for index, item in enumerate(fallback_items):
+        if workflow == 'build_reading_queue':
+            if index < min(3, len(fallback_items)):
+                priority = 'high'
+            elif index < min(6, len(fallback_items)):
+                priority = 'medium'
+            else:
+                priority = 'low'
+        else:
+            priority = 'high' if index < max(1, min(4, requested_count)) else 'medium'
+        selections.append({
+            'doc_id': item['id'],
+            'title': item.get('title') or f"文献 {item['id']}",
+            'authors': item.get('authors') or '',
+            'journal': item.get('journal') or '',
+            'year': item.get('year') or '',
+            'detail_url': item.get('detail_url') or '',
+            'in_batch': bool(item.get('in_batch')),
+            'priority': priority,
+            'reason': '当前页靠前且题录信息较完整，可先作为候选。',
+        })
+    return selections
+
+
+def _normalize_sidebar_workflow_payload(
+    parsed: dict,
+    *,
+    workflow: str,
+    visible_docs: list[dict[str, Any]],
+    requested_count: int,
+) -> dict[str, Any]:
+    doc_lookup = {item['id']: item for item in visible_docs}
+    allowed_ids = set(doc_lookup.keys())
+
+    raw_selection = parsed.get('selection') if isinstance(parsed.get('selection'), list) else []
+    normalized_selection: list[dict[str, Any]] = []
+    seen_ids: set[int] = set()
+    for raw_item in raw_selection:
+        if not isinstance(raw_item, dict):
+            continue
+        try:
+            doc_id = int(raw_item.get('doc_id'))
+        except (TypeError, ValueError):
+            continue
+        if doc_id not in allowed_ids or doc_id in seen_ids:
+            continue
+        seen_ids.add(doc_id)
+        priority = str(raw_item.get('priority') or '').strip().lower()
+        if priority not in {'high', 'medium', 'low'}:
+            priority = 'high' if workflow == 'curate_batch_cite' else 'medium'
+        doc_info = doc_lookup[doc_id]
+        normalized_selection.append({
+            'doc_id': doc_id,
+            'title': doc_info.get('title') or f'文献 {doc_id}',
+            'authors': doc_info.get('authors') or '',
+            'journal': doc_info.get('journal') or '',
+            'year': doc_info.get('year') or '',
+            'detail_url': doc_info.get('detail_url') or '',
+            'in_batch': bool(doc_info.get('in_batch')),
+            'priority': priority,
+            'reason': _compact_sidebar_text(raw_item.get('reason'), max_chars=220) or '适合作为当前任务的候选文献。',
+        })
+        if len(normalized_selection) >= requested_count:
+            break
+
+    if not normalized_selection:
+        normalized_selection = _fallback_sidebar_workflow_selection(workflow, visible_docs, requested_count)
+
+    raw_operations = parsed.get('operations') if isinstance(parsed.get('operations'), list) else []
+    operations: list[dict[str, Any]] = []
+    selected_ids = [item['doc_id'] for item in normalized_selection]
+    high_priority_ids = [item['doc_id'] for item in normalized_selection if item.get('priority') == 'high']
+    for raw_item in raw_operations[:4]:
+        if not isinstance(raw_item, dict):
+            continue
+        op_type = str(raw_item.get('type') or '').strip().lower()
+        if op_type != 'add_to_batch':
+            continue
+        doc_ids: list[int] = []
+        for value in raw_item.get('doc_ids') or []:
+            try:
+                parsed_id = int(value)
+            except (TypeError, ValueError):
+                continue
+            if parsed_id in selected_ids and parsed_id not in doc_ids:
+                doc_ids.append(parsed_id)
+        if not doc_ids:
+            continue
+        operations.append({
+            'type': 'add_to_batch',
+            'label': _compact_sidebar_text(raw_item.get('label'), max_chars=48) or '加入批量引用',
+            'doc_ids': doc_ids,
+        })
+
+    if not operations and selected_ids:
+        default_doc_ids = high_priority_ids or selected_ids
+        default_label = '将优先精读加入批量引用' if workflow == 'build_reading_queue' else '将候选文献加入批量引用'
+        operations.append({
+            'type': 'add_to_batch',
+            'label': default_label,
+            'doc_ids': default_doc_ids,
+        })
+
+    title = _compact_sidebar_text(parsed.get('title'), max_chars=60)
+    if not title:
+        title = '当前页批量引用候选' if workflow == 'curate_batch_cite' else '当前页阅读优先级建议'
+
+    summary = _compact_sidebar_text(parsed.get('summary'), max_chars=520)
+    if not summary:
+        if workflow == 'curate_batch_cite':
+            summary = f'已基于当前页可见文献挑出 {len(normalized_selection)} 篇更适合加入批量引用的候选。'
+        else:
+            summary = f'已基于当前页可见文献给出 {len(normalized_selection)} 篇阅读优先级建议，可先确认后加入批量引用。'
+
+    confirmation_text = _compact_sidebar_text(parsed.get('confirmation_text'), max_chars=120)
+    if not confirmation_text:
+        confirmation_text = '确认后将按当前预览结果执行批量引用操作。'
+
+    return {
+        'mode': 'preview',
+        'workflow': workflow,
+        'title': title,
+        'summary': summary,
+        'selection': normalized_selection,
+        'operations': operations,
+        'requires_confirmation': True,
+        'confirmation_text': confirmation_text,
+    }
+
+
+@app.route('/api/assistant/sidebar/workflow', methods=['POST'])
+@login_required
+def assistant_sidebar_workflow():
+    payload = request.get_json(silent=True) or {}
+    workflow = str(payload.get('workflow') or '').strip().lower()
+    if workflow not in SIDEBAR_WORKFLOW_TYPES:
+        return jsonify({'error': '暂不支持该侧边栏工作流。'}), 400
+
+    message = str(payload.get('message') or '').strip()
+    if not message:
+        return jsonify({'error': '请输入希望助手规划的任务。'}), 400
+
+    visible_docs = _normalize_sidebar_visible_documents(payload.get('visible_documents') or [])
+    if not visible_docs:
+        return jsonify({'error': '当前页没有可用于规划的文献，请先进入文献列表页。'}), 400
+
+    effective_config = get_ai_client_config()
+    if not effective_config:
+        return jsonify({'error': '当前系统尚未配置可用的 AI 模型，请联系管理员检查智能管理系统配置。'}), 503
+
+    requested_count = _extract_sidebar_requested_count(message)
+    page_title = _compact_sidebar_text(payload.get('page_title'), max_chars=120)
+    page_hint = _compact_sidebar_text(payload.get('page_hint'), max_chars=80)
+    page_context = _compact_sidebar_text(payload.get('page_context'), max_chars=1200)
+    batch_state = _normalize_sidebar_batch_state(payload.get('batch_state'))
+    workflow_label = '当前页批量引用候选规划' if workflow == 'curate_batch_cite' else '当前页阅读优先级规划'
+    candidate_lines = _build_sidebar_workflow_doc_lines(visible_docs)
+
+    schema_text = """
+只返回一个 JSON 对象，不要包含 Markdown 或解释文字。
+{
+  "title": "简短标题",
+  "summary": "对当前页候选结果的简短总结",
+  "selection": [
+    {
+      "doc_id": 123,
+      "reason": "为什么选择它",
+      "priority": "high | medium | low"
+    }
+  ],
+  "operations": [
+    {
+      "type": "add_to_batch",
+      "label": "按钮文案",
+      "doc_ids": [123, 456]
+    }
+  ],
+  "requires_confirmation": true,
+  "confirmation_text": "确认后会执行什么"
+}
+
+规则：
+- 只能从候选文献列表提供的 doc_id 中挑选，不要虚构不存在的文献编号。
+- selection 最多返回 requested_count 篇。
+- reason 必须具体，优先围绕“为什么对当前任务有用”，避免空泛套话。
+- curate_batch_cite：priority 主要使用 high / medium，目标是帮用户挑出适合加入批量引用的一组候选。
+- build_reading_queue：用 high / medium / low 对应“优先精读 / 可快速略读 / 先不处理”。
+- 如果文献已在批量引用中，可保留在 selection 中，但要在 reason 中体现是否仍值得保留。
+- operations 只允许使用 add_to_batch。
+""".strip()
+
+    prompt_parts = [
+        "你是云凇学术系统侧边栏中的页面内科研助理，只负责根据“当前页可见文献”规划下一步操作。",
+        schema_text,
+        f"工作流：{workflow_label}",
+        f"用户消息：{message}",
+        f"建议候选数量上限：{requested_count}",
+    ]
+    if page_title:
+        prompt_parts.append(f"页面标题：{page_title}")
+    if page_hint:
+        prompt_parts.append(f"页面标识：{page_hint}")
+    if page_context:
+        prompt_parts.append("页面上下文：\n" + page_context)
+    if batch_state.get('ids'):
+        prompt_parts.append(f"当前批量引用中已有 doc_id：{batch_state['ids'][:40]}")
+    prompt_parts.append("候选文献列表（只能从这里选）：\n" + "\n".join(candidate_lines))
+
+    started_at = time.time()
+    try:
+        raw_reply = call_ai_text(
+            "你是严谨的文献列表工作流规划助手，必须输出稳定可解析的 JSON，用于页面内预览与确认执行。",
+            "\n\n".join(prompt_parts),
+            timeout=max(16, min(int(payload.get('timeout') or 28), 45)),
+            usage_context={
+                'scene': 'assistant_sidebar_workflow',
+                'user_id': current_user.id,
+            },
+        )
+    except Exception as exc:
+        current_app.logger.warning("侧边栏工作流规划失败: %s", exc)
+        return jsonify({'error': f'当前工作流规划失败：{exc}'}), 502
+
+    parsed = _extract_json_object(raw_reply)
+    normalized_payload = _normalize_sidebar_workflow_payload(
+        parsed if isinstance(parsed, dict) else {},
+        workflow=workflow,
+        visible_docs=visible_docs,
+        requested_count=requested_count,
+    )
+    normalized_payload['elapsed_ms'] = int((time.time() - started_at) * 1000)
+    normalized_payload['effective_model'] = effective_config.get('model') or ''
+    return jsonify(normalized_payload)
 
 
 def _normalize_assistant_command_payload(parsed: dict) -> dict:

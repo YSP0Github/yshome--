@@ -828,6 +828,117 @@
             text-decoration: underline;
         }
 
+        .global-ai-preview {
+            margin-top: 0.8rem;
+            border-top: 1px dashed color-mix(in srgb, var(--border-color) 84%, transparent);
+            padding-top: 0.8rem;
+        }
+
+        .global-ai-preview-list {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .global-ai-preview-item {
+            border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+            border-radius: 0.85rem;
+            padding: 0.62rem 0.72rem;
+            background: color-mix(in srgb, var(--card-bg-muted, #f8fafc) 68%, transparent);
+        }
+
+        .global-ai-preview-item.is-in-batch {
+            opacity: 0.78;
+        }
+
+        .global-ai-preview-item-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.28rem;
+        }
+
+        .global-ai-preview-titleline {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-preview-meta {
+            font-size: 0.72rem;
+            color: var(--muted-text);
+            line-height: 1.5;
+        }
+
+        .global-ai-preview-reason {
+            margin-top: 0.36rem;
+            font-size: 0.76rem;
+            line-height: 1.58;
+            color: var(--heading-text, var(--text-color));
+        }
+
+        .global-ai-preview-priority {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.18rem 0.48rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .global-ai-preview-priority.high {
+            color: #b45309;
+            background: rgba(251, 191, 36, 0.18);
+        }
+
+        .global-ai-preview-priority.medium {
+            color: #1d4ed8;
+            background: rgba(59, 130, 246, 0.14);
+        }
+
+        .global-ai-preview-priority.low {
+            color: #475569;
+            background: rgba(148, 163, 184, 0.16);
+        }
+
+        .global-ai-preview-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+        }
+
+        .global-ai-preview-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.78rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .global-ai-preview-btn.primary {
+            color: #1d4ed8;
+            border-color: rgba(37, 99, 235, 0.24);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(59, 130, 246, 0.18));
+        }
+
+        .global-ai-preview-btn.secondary {
+            color: var(--muted-text);
+            background: transparent;
+        }
+
+        .global-ai-preview-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .global-ai-status {
             min-height: 1.2rem;
             padding: 0 1rem 0.45rem;
@@ -2819,7 +2930,7 @@
                 sending: false,
                 history: [],
                 lastAssistantReply: '',
-                contextLimit: Math.max(2, Number(root.dataset.contextLimit || 10) || 10),
+                contextLimit: Math.min(8, Math.max(2, Number(root.dataset.contextLimit || 10) || 10)),
                 model: String(root.dataset.model || '').trim() || '当前模型',
                 serverModel: String(root.dataset.model || '').trim() || '当前模型',
                 pageHint: String(root.dataset.endpoint || '').trim(),
@@ -2883,6 +2994,17 @@
                 return match ? decodeURIComponent(match[1]) : '';
             }
 
+            function readJSONScript(id, fallbackValue) {
+                const node = document.getElementById(id);
+                if (!node) return fallbackValue;
+                try {
+                    return JSON.parse(node.textContent || 'null') ?? fallbackValue;
+                } catch (error) {
+                    console.warn(`读取 ${id} 失败`, error);
+                    return fallbackValue;
+                }
+            }
+
             function escapeHtml(value) {
                 return String(value || '')
                     .replace(/&/g, '&amp;')
@@ -2900,6 +3022,72 @@
                 const normalized = normalizeText(value);
                 if (!normalized) return '';
                 return normalized.length > maxLength ? `${normalized.slice(0, Math.max(1, maxLength - 1))}…` : normalized;
+            }
+
+            function getVisibleDocumentsMeta() {
+                const rawItems = readJSONScript('visible-documents-meta', []);
+                if (!Array.isArray(rawItems)) return [];
+                return rawItems.filter((item) => item && typeof item === 'object').map((item) => ({
+                    id: Number(item.id),
+                    title: clampText(item.title, 220),
+                    authors: clampText(item.authors, 160),
+                    journal: clampText(item.journal, 120),
+                    year: clampText(item.year, 24),
+                    doc_type: clampText(item.doc_type, 48),
+                    category: clampText(item.category, 48),
+                    abstract_excerpt: clampText(item.abstract_excerpt, 320),
+                    in_batch: Boolean(item.in_batch),
+                    is_favorited: Boolean(item.is_favorited),
+                    detail_url: String(item.detail_url || '').trim(),
+                })).filter((item) => Number.isFinite(item.id) && item.id > 0 && item.title);
+            }
+
+            function currentPageSignature() {
+                const visibleIds = getVisibleDocumentsMeta().map((item) => item.id).join(',');
+                return [
+                    state.pageHint || '',
+                    window.location.pathname || '',
+                    window.location.search || '',
+                    visibleIds,
+                ].join('::');
+            }
+
+            function currentBatchIds() {
+                const helperIds = window.YSXSBatchCiteHelpers?.getIds?.();
+                if (Array.isArray(helperIds)) {
+                    return helperIds.map((item) => Number(item)).filter((item) => Number.isFinite(item) && item > 0);
+                }
+                return [];
+            }
+
+            function parseInlineCount(message, defaultCount = 6, minCount = 1, maxCount = 10) {
+                const text = String(message || '').trim();
+                const digitMatch = text.match(/(?:前|挑|选|配|组|要|取|保留|top)?\s*(\d{1,2})\s*(?:篇|个|条|项)/i);
+                if (digitMatch) {
+                    const parsed = parseInt(digitMatch[1], 10);
+                    if (Number.isFinite(parsed)) {
+                        return Math.max(minCount, Math.min(parsed, maxCount));
+                    }
+                }
+                const cnDigits = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+                const cnMatch = text.match(/(?:前|挑|选|配|组|要|取|保留)?\s*([一二两三四五六七八九十]{1,3})\s*(?:篇|个|条|项)/);
+                if (cnMatch) {
+                    const token = cnMatch[1];
+                    let parsed = null;
+                    if (token === '十') parsed = 10;
+                    else if (token.startsWith('十')) parsed = 10 + (cnDigits[token.slice(1)] || 0);
+                    else if (token.endsWith('十')) parsed = (cnDigits[token[0]] || 0) * 10;
+                    else if (token.includes('十')) {
+                        const parts = token.split('十');
+                        parsed = (cnDigits[parts[0]] || 0) * 10 + (cnDigits[parts[1]] || 0);
+                    } else {
+                        parsed = cnDigits[token];
+                    }
+                    if (Number.isFinite(parsed)) {
+                        return Math.max(minCount, Math.min(parsed, maxCount));
+                    }
+                }
+                return Math.max(minCount, Math.min(defaultCount, maxCount));
             }
 
             function pageTitleWithoutSuffix() {
@@ -3156,7 +3344,7 @@
                     if (normalized) snapshot.lines.push(`${label}：${normalized}`);
                 };
 
-                if (['index', 'category', 'my_collected', 'shared_documents'].includes(endpoint)) {
+                if (['index', 'category', 'my_collected', 'shared_documents', 'search_documents'].includes(endpoint)) {
                     pushLine('当前视图', textOf('.ysxs-toolbar h2'));
                     pushFact(textOf('#search-result-count'));
                     const sortText = selectedTextOf('#sort-select');
@@ -3226,6 +3414,9 @@
             }
 
             function resolveAssistantScenario() {
+                if (state.pageHint === 'search_documents') {
+                    return assistantScenarios.index;
+                }
                 return assistantScenarios[state.pageHint] || assistantScenarios.default;
             }
 
@@ -3459,6 +3650,279 @@
                 return makeAppUrl('/search');
             }
 
+            function isListAssistantPage() {
+                return new Set(['index', 'category', 'my_collected', 'shared_documents', 'search_documents']).has(state.pageHint)
+                    || window.location.pathname.endsWith('/search');
+            }
+
+            function getBatchCiteListUrl() {
+                const fab = document.getElementById('batch-cite-fab');
+                return String(fab?.dataset?.listUrl || '').trim();
+            }
+
+            function findMatchedOptionValues(message, options) {
+                const normalizedMessage = normalizeForMatch(message);
+                const matchedValues = [];
+                (Array.isArray(options) ? options : []).forEach((option) => {
+                    const value = String(option?.value || '').trim();
+                    const label = String(option?.label || '').trim();
+                    const candidates = [value, label].map((item) => normalizeForMatch(item)).filter(Boolean);
+                    if (!candidates.length) return;
+                    if (candidates.some((item) => normalizedMessage.includes(item)) && value && !matchedValues.includes(value)) {
+                        matchedValues.push(value);
+                    }
+                });
+                return matchedValues;
+            }
+
+            function detectSortFromMessage(message) {
+                const normalized = normalizeForMatch(message);
+                if (!normalized || !/(排序|sort|切换|改成|按|看)/.test(message)) return '';
+                if (normalized.includes('引用量') || normalized.includes('citations') || normalized.includes('被引')) return 'citations';
+                if (normalized.includes('最早')) return 'earliest';
+                if (normalized.includes('最新')) return 'latest';
+                if (normalized.includes('标题az') || normalized.includes('标题a-z') || normalized.includes('titleasc')) return 'title-asc';
+                if (normalized.includes('标题za') || normalized.includes('标题z-a') || normalized.includes('titledesc')) return 'title-desc';
+                return '';
+            }
+
+            function extractSearchQueryFromMessage(message) {
+                const text = String(message || '').trim();
+                const patterns = [
+                    /^(?:请)?(?:帮我)?(?:在当前(?:筛选|列表|页面)基础上)?(?:搜索|查找|检索)(?:一下)?[:：\s]*(.+)$/i,
+                    /^(?:请)?(?:帮我)?搜一下[:：\s]*(.+)$/i,
+                ];
+                for (const pattern of patterns) {
+                    const match = text.match(pattern);
+                    if (match && match[1]) {
+                        return clampText(match[1].replace(/[。！？.!?]+$/, ''), 80);
+                    }
+                }
+                return '';
+            }
+
+            function buildBatchAddPreview(documents, title, summary, buttonLabel) {
+                const selection = documents.map((item, index) => ({
+                    doc_id: item.id,
+                    title: item.title,
+                    authors: item.authors || '',
+                    journal: item.journal || '',
+                    year: item.year || '',
+                    detail_url: item.detail_url || '',
+                    in_batch: Boolean(item.in_batch),
+                    priority: index < Math.min(3, documents.length) ? 'high' : 'medium',
+                    reason: index === 0 ? '优先放入本轮候选清单。' : '可作为同一任务下的补充候选。',
+                }));
+                return {
+                    type: 'preview',
+                    content: summary,
+                    preview: {
+                        title,
+                        summary,
+                        selection,
+                        operations: [
+                            {
+                                type: 'add_to_batch',
+                                label: buttonLabel,
+                                doc_ids: documents.map((item) => item.id),
+                            },
+                        ],
+                        requires_confirmation: true,
+                        confirmation_text: `确认后会把这 ${documents.length} 篇文献加入批量引用。`,
+                        page_signature: currentPageSignature(),
+                    },
+                };
+            }
+
+            function resolveLocalAssistantIntent(message) {
+                const text = String(message || '').trim();
+                const visibleDocs = getVisibleDocumentsMeta();
+                const metadata = getFilterMetadata();
+
+                if (/(打开|查看|进入|前往).*(批量引用(?:列表|清单)?|引用清单)|(批量引用(?:列表|清单)?|引用清单).*(打开|查看|进入|前往)/.test(text)) {
+                    const listUrl = getBatchCiteListUrl();
+                    if (!listUrl) {
+                        return {
+                            type: 'assistant',
+                            content: '当前页面没有可打开的批量引用清单入口。',
+                        };
+                    }
+                    return {
+                        type: 'navigate_url',
+                        url: listUrl,
+                        planText: '正在打开批量引用清单。',
+                    };
+                }
+
+                if (/(清空|清除).*(批量引用|引用清单)/.test(text)) {
+                    const ids = currentBatchIds();
+                    if (!ids.length) {
+                        return {
+                            type: 'assistant',
+                            content: '当前批量引用列表已经是空的。',
+                        };
+                    }
+                    return {
+                        type: 'preview',
+                        content: `准备清空当前批量引用列表（共 ${ids.length} 篇）。`,
+                        preview: {
+                            title: '清空批量引用预览',
+                            summary: `当前批量引用中共有 ${ids.length} 篇文献。确认后将全部清空。`,
+                            selection: [],
+                            operations: [
+                                {
+                                    type: 'clear_batch',
+                                    label: '确认清空批量引用',
+                                    doc_ids: [],
+                                },
+                            ],
+                            requires_confirmation: true,
+                            confirmation_text: '确认后将清空当前批量引用列表。',
+                            page_signature: currentPageSignature(),
+                        },
+                    };
+                }
+
+                const addBatchPattern = /(当前页|本页|这页).*(前).*(篇|个).*(加入|添加|放进).*(批量引用|引用清单)|(批量引用|引用清单).*(当前页|本页|这页).*(前).*(篇|个)/;
+                if (isListAssistantPage() && visibleDocs.length && addBatchPattern.test(text)) {
+                    const count = Math.min(parseInlineCount(text, 5, 1, 10), visibleDocs.length);
+                    const selectedDocs = visibleDocs.slice(0, count);
+                    return buildBatchAddPreview(
+                        selectedDocs,
+                        '当前页批量引用预览',
+                        `准备把当前页前 ${selectedDocs.length} 篇文献加入批量引用。`,
+                        `确认加入 ${selectedDocs.length} 篇`
+                    );
+                }
+
+                if (/(首页|全部文献|文献库首页)/.test(text) && /(去|打开|回到|返回|进入)/.test(text)) {
+                    return {
+                        type: 'command',
+                        commandPayload: {
+                            action: 'navigate',
+                            params: { page: 'home' },
+                            plan: ['返回全部文献页'],
+                            reply: '正在返回全部文献页。',
+                        },
+                    };
+                }
+                if (/(收藏|我的收藏)/.test(text) && /(去|打开|进入|查看)/.test(text)) {
+                    return {
+                        type: 'command',
+                        commandPayload: {
+                            action: 'navigate',
+                            params: { page: 'favorites' },
+                            plan: ['打开我的收藏页'],
+                            reply: '正在打开我的收藏页。',
+                        },
+                    };
+                }
+                if (/(共享文献|共享页)/.test(text) && /(去|打开|进入|查看)/.test(text)) {
+                    return {
+                        type: 'command',
+                        commandPayload: {
+                            action: 'navigate',
+                            params: { page: 'shared' },
+                            plan: ['打开共享文献页'],
+                            reply: '正在打开共享文献页。',
+                        },
+                    };
+                }
+
+                const sortValue = isListAssistantPage() ? detectSortFromMessage(text) : '';
+                if (sortValue) {
+                    return {
+                        type: 'command',
+                        commandPayload: {
+                            action: 'sort_documents',
+                            params: { sort: sortValue },
+                            plan: [`切换到${sortValue === 'citations' ? '按引用量排序' : sortValue === 'earliest' ? '最早上传' : sortValue === 'latest' ? '最新上传' : sortValue}`],
+                            reply: '正在调整排序方式。',
+                        },
+                    };
+                }
+
+                const query = isListAssistantPage() ? extractSearchQueryFromMessage(text) : '';
+                if (query) {
+                    return {
+                        type: 'command',
+                        commandPayload: {
+                            action: 'filter_documents',
+                            params: { query },
+                            plan: [`在当前列表中搜索“${query}”`],
+                            reply: `正在按“${query}”筛选当前文献列表。`,
+                        },
+                    };
+                }
+
+                if (isListAssistantPage() && /(筛选|只看|限定|过滤)/.test(text)) {
+                    const categories = findMatchedOptionValues(text, metadata.category_options || []);
+                    const yearRanges = findMatchedOptionValues(text, metadata.year_filter_options || []);
+                    const docTypes = findMatchedOptionValues(text, metadata.doc_type_options || []);
+                    if (categories.length || yearRanges.length || docTypes.length) {
+                        return {
+                            type: 'command',
+                            commandPayload: {
+                                action: 'filter_documents',
+                                params: {
+                                    categories,
+                                    year_ranges: yearRanges,
+                                    doc_types: docTypes,
+                                },
+                                plan: ['应用当前消息中提到的筛选条件'],
+                                reply: '正在应用筛选条件。',
+                            },
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            function detectWorkflowIntent(message) {
+                if (!isListAssistantPage() || !getVisibleDocumentsMeta().length) return '';
+                const text = String(message || '').trim();
+                const wantsReadingQueue = /(阅读清单|优先级|优先读|先读|精读|略读)/.test(text);
+                const wantsBatchCuration = /(批量引用|相关工作|候选文献|最值得引用|挑.*篇|选.*篇|配.*清单|组.*清单)/.test(text);
+                if (wantsReadingQueue) return 'build_reading_queue';
+                if (wantsBatchCuration) return 'curate_batch_cite';
+                return '';
+            }
+
+            function looksLikePageControlIntent(message) {
+                const text = String(message || '').trim();
+                return /(打开|进入|跳到|返回|筛选|排序|搜索|查找|检索|批量引用|清空)/.test(text);
+            }
+
+            async function requestWorkflowPreview(message, workflow) {
+                const response = await fetch(apiUrl('/api/assistant/sidebar/workflow'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFTokenLocal(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        workflow,
+                        message,
+                        page_title: document.title || '',
+                        page_hint: state.pageHint || '',
+                        assistant_scene: state.sceneTitle || '',
+                        page_context: state.pageContextText || '',
+                        visible_documents: getVisibleDocumentsMeta(),
+                        batch_state: {
+                            ids: currentBatchIds(),
+                            count: currentBatchIds().length,
+                        },
+                    }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.error || '工作流规划失败，请稍后重试。');
+                }
+                return payload;
+            }
+
             function executeAssistantCommand(commandPayload) {
                 const action = String(commandPayload?.action || '').trim();
                 const params = commandPayload?.params && typeof commandPayload.params === 'object' ? commandPayload.params : {};
@@ -3588,6 +4052,79 @@
                 return escapeHtml(content).replace(/\n/g, '<br>');
             }
 
+            function previewPriorityLabel(priority) {
+                const normalized = String(priority || '').trim().toLowerCase();
+                if (normalized === 'high') return '优先精读';
+                if (normalized === 'medium') return '快速略读';
+                if (normalized === 'low') return '先不处理';
+                return '候选';
+            }
+
+            function buildPreviewMarkup(preview, historyIndex) {
+                if (!preview || typeof preview !== 'object') return '';
+                const selection = Array.isArray(preview.selection) ? preview.selection : [];
+                const operations = Array.isArray(preview.operations) ? preview.operations : [];
+                const selectionMarkup = selection.length ? `
+                    <div class="global-ai-preview-list">
+                        ${selection.map((item) => {
+                            const priority = String(item.priority || '').trim().toLowerCase();
+                            const metaParts = [
+                                item.authors ? clampText(item.authors, 48) : '',
+                                item.year ? String(item.year) : '',
+                                item.journal ? clampText(item.journal, 32) : '',
+                                item.in_batch ? '已在批量引用' : '',
+                            ].filter(Boolean);
+                            return `
+                                <div class="global-ai-preview-item ${item.in_batch ? 'is-in-batch' : ''}">
+                                    <div class="global-ai-preview-item-head">
+                                        <div class="global-ai-preview-titleline">${escapeHtml(item.title || `文献 ${item.doc_id || ''}`)}</div>
+                                        <span class="global-ai-preview-priority ${escapeHtml(priority || 'medium')}">${escapeHtml(previewPriorityLabel(priority))}</span>
+                                    </div>
+                                    ${metaParts.length ? `<div class="global-ai-preview-meta">${escapeHtml(metaParts.join(' · '))}</div>` : ''}
+                                    ${item.reason ? `<div class="global-ai-preview-reason">${escapeHtml(item.reason)}</div>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : '';
+                const actionsMarkup = operations.length ? `
+                    <div class="global-ai-preview-actions">
+                        ${operations.map((operation, index) => `
+                            <button
+                                type="button"
+                                class="global-ai-preview-btn primary"
+                                data-assistant-preview-action="confirm"
+                                data-history-index="${historyIndex}"
+                                data-operation-index="${index}"
+                                ${preview.executed ? 'disabled' : ''}>
+                                <i class="fa ${preview.executed ? 'fa-check-circle' : 'fa-check'}"></i>
+                                <span>${escapeHtml(preview.executed ? '已执行' : (operation.label || '确认执行'))}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : '';
+                return `
+                    <div class="global-ai-preview">
+                        ${selectionMarkup}
+                        ${actionsMarkup}
+                    </div>
+                `;
+            }
+
+            function buildAssistantPreviewItem(content, preview, meta = {}) {
+                return {
+                    role: 'assistant',
+                    content: String(content || preview?.summary || preview?.title || '已生成操作预览。').trim(),
+                    preview: {
+                        ...(preview || {}),
+                        page_signature: preview?.page_signature || currentPageSignature(),
+                        executed: Boolean(preview?.executed),
+                    },
+                    model: meta.model || state.model,
+                    elapsedText: meta.elapsedText || '',
+                };
+            }
+
             function buildMessageCopyButton(text) {
                 const button = document.createElement('button');
                 button.type = 'button';
@@ -3696,7 +4233,7 @@
                     return;
                 }
 
-                state.history.forEach((item) => {
+                state.history.forEach((item, historyIndex) => {
                     const row = document.createElement('div');
                     row.className = `global-ai-row ${item.role}`;
                     const meta = formatMeta(item);
@@ -3708,6 +4245,9 @@
                     `;
                     const bubble = row.querySelector('.global-ai-bubble');
                     if (bubble) {
+                        if (item.role === 'assistant' && item.preview) {
+                            bubble.insertAdjacentHTML('beforeend', buildPreviewMarkup(item.preview, historyIndex));
+                        }
                         bubble.appendChild(buildMessageCopyButton(item.content));
                     }
                     logNode.appendChild(row);
@@ -3780,6 +4320,100 @@
                 trigger.style.bottom = `${Math.round(nextBottom)}px`;
             }
 
+            async function addDocumentsToBatchFromPreview(docIds) {
+                if (window.YSXSBatchCiteHelpers?.addDocumentsToBatchCite) {
+                    return window.YSXSBatchCiteHelpers.addDocumentsToBatchCite(docIds);
+                }
+                const normalizedIds = (Array.isArray(docIds) ? docIds : [docIds])
+                    .map((item) => Number(item))
+                    .filter((item, index, arr) => Number.isFinite(item) && item > 0 && arr.indexOf(item) === index);
+                const result = { attempted: normalizedIds.length, success_ids: [], failed: [], total: 0 };
+                for (const docId of normalizedIds) {
+                    try {
+                        const response = await fetch(apiUrl(`/api/batch-cite/${docId}`), {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCSRFTokenLocal(),
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+                        const payload = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(payload.message || payload.error || '加入失败');
+                        result.success_ids.push(docId);
+                        if (typeof payload.total === 'number') result.total = payload.total;
+                    } catch (error) {
+                        result.failed.push({ doc_id: docId, error: error.message || '加入失败' });
+                    }
+                }
+                return result;
+            }
+
+            async function clearBatchFromPreview() {
+                if (window.YSXSBatchCiteHelpers?.clearBatchCiteList) {
+                    return window.YSXSBatchCiteHelpers.clearBatchCiteList();
+                }
+                const response = await fetch(apiUrl('/api/batch-cite'), {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFTokenLocal(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.message || payload.error || '清空失败');
+                }
+                return payload;
+            }
+
+            async function executePreviewOperation(historyIndex, operationIndex) {
+                const item = state.history[historyIndex];
+                const preview = item?.preview;
+                const operations = Array.isArray(preview?.operations) ? preview.operations : [];
+                const operation = operations[operationIndex];
+                if (!item || !preview || !operation) {
+                    throw new Error('预览操作不存在，请重新生成。');
+                }
+                if (preview.executed) {
+                    setStatus('该预览已经执行过了。', 'success');
+                    return;
+                }
+                if (preview.page_signature && preview.page_signature !== currentPageSignature()) {
+                    throw new Error('页面内容已变化，请重新生成这条预览后再执行。');
+                }
+
+                let summaryMessage = '';
+                if (operation.type === 'add_to_batch') {
+                    const result = await addDocumentsToBatchFromPreview(operation.doc_ids || []);
+                    const successCount = Array.isArray(result.success_ids) ? result.success_ids.length : 0;
+                    const failedCount = Array.isArray(result.failed) ? result.failed.length : 0;
+                    if (!successCount && failedCount) {
+                        throw new Error(result.failed[0]?.error || '加入批量引用失败');
+                    }
+                    summaryMessage = failedCount
+                        ? `已加入 ${successCount} 篇，另有 ${failedCount} 篇失败。`
+                        : `已将 ${successCount} 篇文献加入批量引用。`;
+                } else if (operation.type === 'clear_batch') {
+                    const result = await clearBatchFromPreview();
+                    summaryMessage = result?.message || '已清空批量引用列表。';
+                } else {
+                    throw new Error('暂不支持该确认操作。');
+                }
+
+                preview.executed = true;
+                item.preview = preview;
+                state.lastAssistantReply = summaryMessage;
+                state.history.push({
+                    role: 'assistant',
+                    content: summaryMessage,
+                    model: state.model,
+                    elapsedText: '',
+                });
+                renderHistory();
+                persistAssistantState();
+                setStatus(summaryMessage, 'success');
+            }
+
             async function sendMessage() {
                 if (state.sending) return;
                 renderSceneContext();
@@ -3803,10 +4437,113 @@
                 openSidebar();
 
                 try {
-                    const commandPayload = await parseAssistantCommand(message).catch((error) => {
-                        console.warn('智能助手指令解析失败，回退到普通问答', error);
-                        return null;
-                    });
+                    const localIntent = resolveLocalAssistantIntent(message);
+                    if (localIntent) {
+                        const pending = document.getElementById('global-ai-pending');
+                        if (pending) pending.remove();
+
+                        if (localIntent.type === 'assistant') {
+                            state.lastAssistantReply = String(localIntent.content || '').trim();
+                            state.history.push({
+                                role: 'assistant',
+                                content: state.lastAssistantReply,
+                                model: state.model,
+                                elapsedText: '',
+                            });
+                            renderHistory();
+                            persistAssistantState();
+                            setStatus('已处理你的快捷请求。', 'success');
+                            return;
+                        }
+
+                        if (localIntent.type === 'preview') {
+                            const previewItem = buildAssistantPreviewItem(localIntent.content, localIntent.preview, {
+                                model: state.model,
+                                elapsedText: '',
+                            });
+                            state.lastAssistantReply = previewItem.content;
+                            state.history.push(previewItem);
+                            renderHistory();
+                            persistAssistantState();
+                            setStatus('已生成预览，请确认后执行。', 'success');
+                            return;
+                        }
+
+                        if (localIntent.type === 'navigate_url') {
+                            const planText = String(localIntent.planText || '正在打开页面。').trim();
+                            state.lastAssistantReply = planText;
+                            state.history.push({
+                                role: 'assistant',
+                                content: planText,
+                                model: state.model,
+                                elapsedText: '',
+                            });
+                            renderHistory();
+                            persistAssistantState({
+                                pendingCommand: {
+                                    action: 'navigate_url',
+                                    planText,
+                                    targetUrl: localIntent.url,
+                                },
+                            });
+                            setStatus(planText, 'success');
+                            window.location.assign(localIntent.url);
+                            return;
+                        }
+
+                        if (localIntent.type === 'command' && executeAssistantCommand(localIntent.commandPayload)) {
+                            const planText = Array.isArray(localIntent.commandPayload.plan) && localIntent.commandPayload.plan.length
+                                ? localIntent.commandPayload.plan.join('\n')
+                                : (localIntent.commandPayload.reply || '已识别为页面操作，正在执行。');
+                            state.lastAssistantReply = planText;
+                            state.history.push({
+                                role: 'assistant',
+                                content: planText,
+                                model: state.model,
+                                elapsedText: '',
+                            });
+                            renderHistory();
+                            persistAssistantState({
+                                pendingCommand: {
+                                    action: localIntent.commandPayload.action || '',
+                                    planText,
+                                },
+                            });
+                            return;
+                        }
+                    }
+
+                    const workflowIntent = detectWorkflowIntent(message);
+                    if (workflowIntent) {
+                        setStatus('正在规划当前页的复杂操作…', '');
+                        const payload = await requestWorkflowPreview(message, workflowIntent);
+                        state.model = String(payload.effective_model || state.model || '').trim() || state.model;
+                        if (modelPill) modelPill.textContent = state.model;
+                        if (headerModel) headerModel.textContent = state.model;
+                        const previewItem = buildAssistantPreviewItem(payload.summary || payload.title || '已生成工作流预览。', {
+                            ...payload,
+                            page_signature: currentPageSignature(),
+                        }, {
+                            model: state.model,
+                            elapsedText: formatElapsed(payload.elapsed_ms),
+                        });
+                        const pending = document.getElementById('global-ai-pending');
+                        if (pending) pending.remove();
+                        state.lastAssistantReply = previewItem.content;
+                        state.history.push(previewItem);
+                        renderHistory();
+                        persistAssistantState();
+                        setStatus('已生成当前页预览，请确认后执行。', 'success');
+                        return;
+                    }
+
+                    let commandPayload = null;
+                    if (looksLikePageControlIntent(message)) {
+                        commandPayload = await parseAssistantCommand(message).catch((error) => {
+                            console.warn('智能助手指令解析失败，回退到普通问答', error);
+                            return null;
+                        });
+                    }
                     if (commandPayload && commandPayload.is_command && executeAssistantCommand(commandPayload)) {
                         const pending = document.getElementById('global-ai-pending');
                         if (pending) pending.remove();
@@ -3908,6 +4645,30 @@
                 }
             });
             logNode.addEventListener('click', async (event) => {
+                const previewButton = event.target.closest('[data-assistant-preview-action="confirm"]');
+                if (previewButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const historyIndex = parseInt(previewButton.dataset.historyIndex || '', 10);
+                    const operationIndex = parseInt(previewButton.dataset.operationIndex || '', 10);
+                    if (Number.isNaN(historyIndex) || Number.isNaN(operationIndex)) {
+                        setStatus('无法识别这条预览操作，请重新生成。', 'error');
+                        return;
+                    }
+                    if (previewButton.disabled) {
+                        setStatus('这条预览已经执行过了。', 'success');
+                        return;
+                    }
+                    previewButton.disabled = true;
+                    try {
+                        setStatus('正在执行已确认的操作…', '');
+                        await executePreviewOperation(historyIndex, operationIndex);
+                    } catch (error) {
+                        previewButton.disabled = false;
+                        setStatus(error.message || '执行失败，请稍后重试。', 'error');
+                    }
+                    return;
+                }
                 const button = event.target.closest('.global-ai-copy-msg');
                 if (!button) return;
                 event.preventDefault();
