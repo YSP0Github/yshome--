@@ -3666,7 +3666,7 @@ def build_focus_queries(
                 if len(piece) > 1:
                     queries.append(piece)
         else:
-            pieces = re.findall(r"[A-Za-z0-9][A-Za-z0-9\\-+/]{1,}", keyword)
+            pieces = re.findall(r"[A-Za-z0-9][A-Za-z0-9\-+/]{1,}", keyword)
             for piece in pieces:
                 if len(piece) > 2:
                     queries.append(piece)
