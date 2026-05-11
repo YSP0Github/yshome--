@@ -11,7 +11,7 @@ import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
-from html import escape, unescape
+from html import unescape
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
@@ -251,6 +251,19 @@ RESEARCH_TRACK_LABELS = {
     "apollo_reprocessing": "阿波罗数据再处理",
     "off_topic": "离题",
 }
+KEYWORD_VARIANT_MAP = {
+    "天体物理": ("astrophysics", "astrophysical", "space physics"),
+    "天体物理学": ("astrophysics", "astrophysical", "space physics"),
+    "空间物理": ("space physics", "space plasma"),
+    "电离层": ("ionosphere", "ionospheric", "ionospheric physics"),
+    "电离层物理": ("ionosphere", "ionospheric", "ionospheric physics"),
+    "深度学习": ("deep learning", "neural network", "machine learning"),
+    "机器学习": ("machine learning", "deep learning"),
+    "神经网络": ("neural network", "neural networks", "deep learning"),
+    "月震": ("moonquake", "lunar seismic", "lunar seismology"),
+    "月球内部结构": ("lunar interior", "moon interior", "internal structure"),
+    "阿波罗": ("apollo", "apollo seismic", "apollo passive seismic"),
+}
 
 
 def infer_display_source_track(query_text: str | None) -> str | None:
@@ -381,6 +394,37 @@ GENERIC_RESEARCH_TOKENS = {
     "new",
     "geophysics",
     "geophysical",
+}
+GENERIC_METHOD_KEYWORD_PHRASES = {
+    "deep learning",
+    "machine learning",
+    "artificial intelligence",
+    "neural network",
+    "neural networks",
+    "large language model",
+    "large language models",
+    "llm",
+    "llms",
+    "人工智能",
+    "深度学习",
+    "机器学习",
+    "神经网络",
+    "大语言模型",
+}
+GENERIC_METHOD_TOKENS = {
+    "ai",
+    "artificial",
+    "deep",
+    "intelligence",
+    "language",
+    "learning",
+    "llm",
+    "machine",
+    "model",
+    "models",
+    "network",
+    "networks",
+    "neural",
 }
 DEFAULT_STRICT_BLOCKLIST = {
     "governance",
@@ -999,7 +1043,8 @@ def generate_morning_report_for_user(
 
 
 def discover_papers(settings: MorningReportSettings) -> list[dict[str, Any]]:
-    keywords = settings.keyword_list() or list(DEFAULT_MORNING_REPORT_KEYWORDS)
+    raw_keywords = settings.keyword_list() or list(DEFAULT_MORNING_REPORT_KEYWORDS)
+    keywords = expand_keyword_list(raw_keywords, limit=18)
     enabled_sources = settings.enabled_source_list() if hasattr(settings, 'enabled_source_list') else ['openalex', 'crossref']
     strict_filter_enabled = bool(getattr(settings, 'strict_filter_enabled', True))
     exclude_keywords = settings.exclude_keyword_list() if hasattr(settings, 'exclude_keyword_list') else []
@@ -1071,7 +1116,7 @@ def discover_papers(settings: MorningReportSettings) -> list[dict[str, Any]]:
             best_ranked = ranked
 
         _get_logger().info(
-            "晨报检索窗口 %s 天：新增 %s 篇，候选累计 %s 篇，规则保留 %s 篇，AI 保留 %s 篇，已剔除系统重复 %s/%s 篇。",
+            "晨报检索窗口 %s 天：新增 %s 篇，候选累计 %s 篇，规则保留 %s 篇，AI 保留 %s 篇，已剔除系统重复 %s/%s 篇。原始关键词 %s 个，扩展后 %s 个。",
             window_days,
             new_count,
             len(collected_items),
@@ -1079,6 +1124,8 @@ def discover_papers(settings: MorningReportSettings) -> list[dict[str, Any]]:
             len(screened),
             duplicate_ranked_count,
             duplicate_screened_count,
+            len(raw_keywords),
+            len(keywords),
         )
 
         if len(screened) >= pool_size:
@@ -1096,6 +1143,13 @@ def discover_papers(settings: MorningReportSettings) -> list[dict[str, Any]]:
             target_count=pool_size,
             document_lookup=document_lookup,
         )[:pool_size]
+    if collected_items:
+        _get_logger().warning(
+            "晨报已抓到候选文献 %s 篇，但在当前关键词/过滤条件下未保留结果；来源错误：%s",
+            len(collected_items),
+            "；".join(errors[:3]) if errors else "无",
+        )
+        return []
     if errors:
         raise RuntimeError("可用文献源返回异常：" + "；".join(errors[:3]))
     return []
@@ -1707,7 +1761,7 @@ def fetch_crossref(keywords: list[str], since_date: str, limit: int) -> list[dic
                 "query.bibliographic": keyword,
             },
             headers={"User-Agent": "yshome-morning-report/1.0"},
-            timeout=30,
+            timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SMART_SEARCH_SOURCE_READ_TIMEOUT),
         )
         response.raise_for_status()
         payload = _as_dict(response.json())
@@ -1786,7 +1840,7 @@ def fetch_arxiv(keywords: list[str], since_date: str, limit: int) -> list[dict[s
                 "sortOrder": "descending",
             },
             headers={"User-Agent": "yshome-morning-report/1.0"},
-            timeout=30,
+            timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SMART_SEARCH_SOURCE_READ_TIMEOUT),
         )
         response.raise_for_status()
         root = ET.fromstring(response.text)
@@ -1875,7 +1929,7 @@ def fetch_nasa_ads(keywords: list[str], since_date: str, limit: int) -> list[dic
             "Authorization": f"Bearer {api_token}",
             "User-Agent": "yshome-morning-report/1.0",
         },
-        timeout=30,
+        timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SMART_SEARCH_SOURCE_READ_TIMEOUT),
     )
     response.raise_for_status()
     payload = _as_dict(response.json())
@@ -2344,6 +2398,46 @@ def dedupe_search_terms(values: list[Any], *, limit: int) -> list[str]:
     return results
 
 
+def expand_keyword_variants(keyword: str) -> list[str]:
+    cleaned = clean_source_text(keyword, strip_tags=False)
+    if not cleaned:
+        return []
+    variants: list[str] = [cleaned]
+    seen: set[str] = {cleaned.lower()}
+
+    direct_variants = KEYWORD_VARIANT_MAP.get(cleaned, ())
+    for value in direct_variants:
+        normalized = clean_source_text(value, strip_tags=False)
+        key = normalized.lower()
+        if normalized and key not in seen:
+            seen.add(key)
+            variants.append(normalized)
+
+    if re.search(r'[\u4e00-\u9fff]', cleaned):
+        for part in re.split(r'[\s,，;；/、]+', cleaned):
+            token = clean_source_text(part, strip_tags=False)
+            if not token:
+                continue
+            key = token.lower()
+            if key not in seen:
+                seen.add(key)
+                variants.append(token)
+            for value in KEYWORD_VARIANT_MAP.get(token, ()):
+                normalized = clean_source_text(value, strip_tags=False)
+                normalized_key = normalized.lower()
+                if normalized and normalized_key not in seen:
+                    seen.add(normalized_key)
+                    variants.append(normalized)
+    return variants
+
+
+def expand_keyword_list(keywords: list[str], *, limit: int = 18) -> list[str]:
+    expanded: list[str] = []
+    for keyword in keywords or []:
+        expanded.extend(expand_keyword_variants(str(keyword or '').strip()))
+    return dedupe_search_terms(expanded or keywords, limit=max(1, limit))
+
+
 def rerank_search_candidates_with_ai(
     candidates: list[dict[str, Any]],
     *,
@@ -2523,6 +2617,17 @@ def find_matched_keywords(title: str, abstract: str | None, keywords: list[str])
         if norm and norm in haystack and keyword not in matches:
             matches.append(keyword)
     return matches
+
+
+def clean_source_text(value: Any, *, strip_tags: bool = True) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    if strip_tags:
+        text = re.sub(r"<[^>]+>", " ", text)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | None = None) -> str:
@@ -3279,9 +3384,7 @@ def reconstruct_openalex_abstract(inverted_index: dict[str, list[int]] | None) -
 def clean_crossref_abstract(value: str | None) -> str | None:
     if not value:
         return None
-    text = re.sub(r"<[^>]+>", " ", value)
-    text = unescape(text)
-    text = re.sub(r"\s+", " ", text).strip()
+    text = clean_source_text(value, strip_tags=True)
     return text or None
 
 
@@ -3336,7 +3439,7 @@ def extract_crossref_date(item: dict[str, Any]) -> str | None:
 
 
 def build_paper_dedupe_key(item: dict[str, Any]) -> str:
-    title = re.sub(r"\s+", " ", str(item.get('title') or '').strip().lower())
+    title = clean_source_text(item.get('title'), strip_tags=True).lower()
     year = sanitize_publication_year(_safe_int(item.get('year')), published_at=item.get('published_at'))
     if title:
         if year:
@@ -3354,22 +3457,28 @@ def normalize_discovered_paper(item: dict[str, Any]) -> dict[str, Any] | None:
         return None
 
     paper = dict(item)
-    paper['title'] = str(paper.get('title') or '').strip()
+    paper['title'] = clean_source_text(paper.get('title'), strip_tags=True)
     if not paper['title']:
         return None
     paper['published_at'] = sanitize_publication_date(paper.get('published_at'))
     paper['year'] = sanitize_publication_year(paper.get('year'), published_at=paper.get('published_at'))
     paper['matched_keywords'] = [str(value).strip() for value in (paper.get('matched_keywords') or []) if str(value).strip()]
-    paper['topics'] = [str(value).strip() for value in (paper.get('topics') or []) if str(value).strip()]
-    paper['authors'] = [str(value).strip() for value in (paper.get('authors') or []) if str(value).strip()]
-    paper['journal'] = str(paper.get('journal') or '').strip() or None
-    paper['abstract'] = str(paper.get('abstract') or '').strip() or None
+    paper['topics'] = [
+        cleaned for value in (paper.get('topics') or [])
+        if (cleaned := clean_source_text(value, strip_tags=True))
+    ]
+    paper['authors'] = [
+        cleaned for value in (paper.get('authors') or [])
+        if (cleaned := clean_source_text(value, strip_tags=True))
+    ]
+    paper['journal'] = clean_source_text(paper.get('journal'), strip_tags=True) or None
+    paper['abstract'] = clean_source_text(paper.get('abstract'), strip_tags=True) or None
     paper['doi'] = normalize_doi(paper.get('doi'))
     return paper
 
 
 def normalize_title_key(raw: str | None) -> str:
-    value = re.sub(r"\s+", " ", str(raw or "").strip()).lower()
+    value = clean_source_text(raw, strip_tags=True).lower()
     return value
 
 
@@ -3522,6 +3631,13 @@ def should_keep_paper(
     phrase_match_count = len(keyword_matches)
     anchor_terms = derive_anchor_terms(keywords)
     anchor_hits = sum(1 for term in anchor_terms if term and term in haystack)
+    domain_anchor_terms = derive_domain_anchor_terms(keywords)
+    domain_anchor_hits = sum(1 for term in domain_anchor_terms if term and haystack_matches_term(haystack, term))
+    title_domain_hits = sum(1 for term in domain_anchor_terms if term and haystack_matches_term(title_haystack, term))
+    domain_keyword_match_count = sum(
+        1 for term in keyword_matches
+        if clean_source_text(term, strip_tags=False).lower() not in GENERIC_METHOD_KEYWORD_PHRASES
+    )
     directional_terms = derive_directional_terms(keywords)
     directional_hits = sum(1 for term in directional_terms if term and term in haystack)
     title_directional_hits = sum(1 for term in directional_terms if term and haystack_matches_term(title_haystack, term))
@@ -3531,6 +3647,8 @@ def should_keep_paper(
 
     if strict_filter_enabled:
         if suspect_hits > 0:
+            return False
+        if domain_anchor_terms and domain_keyword_match_count <= 0 and domain_anchor_hits <= 0 and title_domain_hits <= 0:
             return False
         if phrase_match_count <= 0 and directional_hits <= 0 and anchor_hits <= 0:
             return False
@@ -3606,6 +3724,30 @@ def derive_anchor_terms(keywords: list[str]) -> list[str]:
             if token in GENERIC_RESEARCH_TOKENS:
                 continue
             if len(token) < 3 and not re.search(r'[\u4e00-\u9fff]', token):
+                continue
+            seen.add(token)
+            anchors.append(token)
+    return anchors
+
+
+def derive_domain_anchor_terms(keywords: list[str]) -> list[str]:
+    anchors: list[str] = []
+    seen: set[str] = set()
+    for keyword in keywords:
+        value = clean_source_text(keyword, strip_tags=False).lower()
+        if not value or value in GENERIC_METHOD_KEYWORD_PHRASES:
+            continue
+        if re.search(r'[\u4e00-\u9fff]', value):
+            tokens = [value]
+        else:
+            tokens = re.findall(r"[a-z0-9-]+", value)
+        for token in tokens:
+            token = token.strip().lower()
+            if not token or token in seen:
+                continue
+            if token in GENERIC_RESEARCH_TOKENS or token in GENERIC_METHOD_TOKENS:
+                continue
+            if len(token) < 2 and not re.search(r'[\u4e00-\u9fff]', token):
                 continue
             seen.add(token)
             anchors.append(token)
@@ -3693,7 +3835,7 @@ def _fetch_openalex_results_for_query(query: str, since_date: str, limit: int) -
             "per-page": max(1, min(limit, 50)),
         },
         headers={"User-Agent": "yshome-morning-report/1.0"},
-        timeout=30,
+        timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SMART_SEARCH_SOURCE_READ_TIMEOUT),
     )
     response.raise_for_status()
     payload = _as_dict(response.json())
