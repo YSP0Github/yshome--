@@ -1196,7 +1196,7 @@ def fetch_candidates_for_sources(
             try:
                 items.extend(future.result())
             except Exception as exc:
-                errors.append(f"{source_label}: {exc}")
+                errors.append(format_source_error_message(source_label, exc))
                 _get_logger().exception("晨报检索来源 %s 失败: %s", source_label, exc)
     return items, errors
 
@@ -1298,7 +1298,8 @@ def search_literature_with_ai(
             profile['_query_profile_mode'] = 'disabled'
             profile['_query_profile_note'] = '当前环节已跳过智能检索词提炼，以减少整体等待时间。'
     query_phrases = profile.get('queries') or [cleaned_query]
-    keyword_terms = profile.get('keywords') or query_phrases
+    keyword_terms = expand_keyword_list(profile.get('keywords') or query_phrases, limit=12)
+    source_query_plan = build_source_query_plan(query_phrases, keyword_terms)
     since_date = (cn_now().date() - timedelta(days=lookback_days)).isoformat()
     desired_count = min(max_results, TARGET_PAPER_FLOOR)
     per_source = max(8, min(max_results * 2, SMART_SEARCH_PER_SOURCE_CAP))
@@ -1310,6 +1311,7 @@ def search_literature_with_ai(
         selected_sources,
         query_phrases=query_phrases,
         keyword_terms=keyword_terms,
+        source_query_plan=source_query_plan,
         since_date=since_date,
         per_source=per_source,
     )
@@ -1564,6 +1566,7 @@ def fetch_generic_candidates_for_sources(
     *,
     query_phrases: list[str],
     keyword_terms: list[str],
+    source_query_plan: dict[str, list[str]] | None,
     since_date: str,
     per_source: int,
 ) -> tuple[list[dict[str, Any]], list[str]]:
@@ -1575,7 +1578,7 @@ def fetch_generic_candidates_for_sources(
         'arxiv': search_arxiv_by_queries,
         'ads': search_nasa_ads_by_queries,
     }
-    active_jobs: list[tuple[str, str, Any]] = []
+    active_jobs: list[tuple[str, str, Any, list[str]]] = []
     for source_key in enabled_sources:
         fetcher = source_fetchers.get(source_key)
         if fetcher is None:
@@ -1584,7 +1587,11 @@ def fetch_generic_candidates_for_sources(
         if source_key == 'ads' and not get_nasa_ads_api_token():
             errors.append(f"{source_label}: 未配置 API Token")
             continue
-        active_jobs.append((source_key, source_label, fetcher))
+        source_queries = dedupe_search_terms(
+            (source_query_plan or {}).get(source_key) or query_phrases or keyword_terms,
+            limit=4,
+        )
+        active_jobs.append((source_key, source_label, fetcher, source_queries))
 
     if not active_jobs:
         return items, errors
@@ -1592,22 +1599,22 @@ def fetch_generic_candidates_for_sources(
     max_workers = max(1, min(len(active_jobs), 3))
     with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='ysxs-search-src') as executor:
         future_map = {
-            executor.submit(fetcher, query_phrases, keyword_terms, since_date, per_source): (source_key, source_label)
-            for source_key, source_label, fetcher in active_jobs
+            executor.submit(fetcher, source_queries, keyword_terms, since_date, per_source): (source_key, source_label, source_queries)
+            for source_key, source_label, fetcher, source_queries in active_jobs
         }
         for future in as_completed(future_map):
-            source_key, source_label = future_map[future]
+            source_key, source_label, source_queries = future_map[future]
             try:
                 fetched_items = future.result()
                 items.extend(fetched_items)
                 _get_logger().info(
                     "智能文献深搜来源完成 source=%s queries=%s results=%s",
                     source_label,
-                    len(query_phrases or []),
+                    len(source_queries or []),
                     len(fetched_items or []),
                 )
             except Exception as exc:
-                errors.append(f"{source_label}: {exc}")
+                errors.append(format_source_error_message(source_label, exc))
                 _get_logger().exception("智能文献深搜来源 %s 失败: %s", source_label, exc)
     return items, errors
 
@@ -1821,7 +1828,7 @@ def fetch_crossref(keywords: list[str], since_date: str, limit: int) -> list[dic
 
 
 def fetch_arxiv(keywords: list[str], since_date: str, limit: int) -> list[dict[str, Any]]:
-    queries = build_arxiv_queries(keywords)
+    queries = build_arxiv_queries(keywords)[:4]
     per_query = max(2, min(limit, 8))
     papers: list[dict[str, Any]] = []
     ns = {
@@ -1829,7 +1836,9 @@ def fetch_arxiv(keywords: list[str], since_date: str, limit: int) -> list[dict[s
         "arxiv": "http://arxiv.org/schemas/atom",
     }
 
-    for query in queries:
+    for index, query in enumerate(queries):
+        if index > 0:
+            time.sleep(0.35)
         response = requests.get(
             ARXIV_API_URL,
             params={
@@ -1916,22 +1925,16 @@ def fetch_nasa_ads(keywords: list[str], since_date: str, limit: int) -> list[dic
     if not api_token:
         raise RuntimeError("未检测到 NASA ADS API Token，请先配置环境变量 NASA_ADS_API_TOKEN。")
 
-    query = build_nasa_ads_query(keywords)
-    response = requests.get(
-        NASA_ADS_SEARCH_URL,
-        params={
-            "q": query,
-            "fl": "title,author,pub,year,abstract,doi,bibcode,citation_count,keyword,pubdate,property",
-            "rows": max(1, min(limit, 25)),
-            "sort": "date desc",
-        },
-        headers={
-            "Authorization": f"Bearer {api_token}",
-            "User-Agent": "yshome-morning-report/1.0",
-        },
-        timeout=(SMART_SEARCH_CONNECT_TIMEOUT, SMART_SEARCH_SOURCE_READ_TIMEOUT),
+    primary_terms = build_nasa_ads_terms(build_arxiv_queries(keywords), limit=4)
+    fallback_terms = build_nasa_ads_terms(derive_anchor_terms(keywords) or keywords, limit=3)
+    response = _request_nasa_ads(
+        api_token,
+        primary_terms=primary_terms,
+        fallback_terms=fallback_terms,
+        rows=max(1, min(limit, 25)),
+        sort="date desc",
+        user_agent="yshome-morning-report/1.0",
     )
-    response.raise_for_status()
     payload = _as_dict(response.json())
     docs = _as_list(_as_dict(payload.get("response")).get("docs"))
     papers: list[dict[str, Any]] = []
@@ -2127,11 +2130,13 @@ def search_arxiv_by_queries(
     since_date: str,
     limit: int,
 ) -> list[dict[str, Any]]:
-    queries = dedupe_search_terms(query_phrases, limit=3)
+    queries = dedupe_search_terms(query_phrases, limit=2)
     per_query = max(3, min(limit, 10))
     papers: list[dict[str, Any]] = []
     ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
-    for query in queries:
+    for index, query in enumerate(queries):
+        if index > 0:
+            time.sleep(0.35)
         response = requests.get(
             ARXIV_API_URL,
             params={
@@ -2201,6 +2206,60 @@ def search_arxiv_by_queries(
     return papers
 
 
+def _request_nasa_ads(
+    api_token: str,
+    *,
+    primary_terms: list[str],
+    fallback_terms: list[str],
+    rows: int,
+    sort: str,
+    user_agent: str,
+) -> requests.Response:
+    attempts: list[list[str]] = []
+    if primary_terms:
+        attempts.append(primary_terms[:4])
+    if fallback_terms:
+        trimmed_fallback = fallback_terms[:3]
+        if trimmed_fallback not in attempts:
+            attempts.append(trimmed_fallback)
+    if not attempts:
+        attempts.append(build_nasa_ads_terms(DEFAULT_MORNING_REPORT_KEYWORDS, limit=3))
+
+    last_error: Exception | None = None
+    for terms in attempts:
+        query = " OR ".join(_format_nasa_ads_term(term) for term in terms if term)
+        if not query:
+            continue
+        response = requests.get(
+            NASA_ADS_SEARCH_URL,
+            params={
+                "q": query,
+                "fl": "title,author,pub,year,abstract,doi,bibcode,citation_count,keyword,pubdate,property",
+                "rows": rows,
+                "sort": sort,
+            },
+            headers={"Authorization": f"Bearer {api_token}", "User-Agent": user_agent},
+            timeout=_smart_search_timeout(),
+        )
+        try:
+            response.raise_for_status()
+            return response
+        except requests.HTTPError as exc:
+            last_error = exc
+            status_code = getattr(response, "status_code", None)
+            if status_code == 400:
+                _get_logger().warning("NASA ADS 查询过于复杂，尝试简化后重试：%s", query)
+                continue
+            raise
+        except Exception as exc:
+            last_error = exc
+            raise
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("NASA ADS 没有可用的检索式。")
+
+
 def search_nasa_ads_by_queries(
     query_phrases: list[str],
     keyword_terms: list[str],
@@ -2210,23 +2269,18 @@ def search_nasa_ads_by_queries(
     api_token = get_nasa_ads_api_token()
     if not api_token:
         raise RuntimeError("未检测到 NASA ADS API Token，请先配置环境变量 NASA_ADS_API_TOKEN。")
-    query = " OR ".join(f'"{query}"' for query in dedupe_search_terms(query_phrases, limit=6))
-    if not query:
-        query = " OR ".join(f'"{term}"' for term in dedupe_search_terms(keyword_terms, limit=6))
-    if not query:
+    primary_terms = build_nasa_ads_terms(query_phrases, limit=4)
+    fallback_terms = build_nasa_ads_terms(keyword_terms, limit=3)
+    if not primary_terms and not fallback_terms:
         raise RuntimeError("没有可用的检索短语。")
-    response = requests.get(
-        NASA_ADS_SEARCH_URL,
-        params={
-            "q": query,
-            "fl": "title,author,pub,year,abstract,doi,bibcode,citation_count,keyword,pubdate,property",
-            "rows": max(1, min(limit, 30)),
-            "sort": "citation_count desc",
-        },
-        headers={"Authorization": f"Bearer {api_token}", "User-Agent": "yshome-smart-search/1.0"},
-        timeout=_smart_search_timeout(),
+    response = _request_nasa_ads(
+        api_token,
+        primary_terms=primary_terms,
+        fallback_terms=fallback_terms,
+        rows=max(1, min(limit, 30)),
+        sort="citation_count desc",
+        user_agent="yshome-smart-search/1.0",
     )
-    response.raise_for_status()
     payload = _as_dict(response.json())
     docs = _as_list(_as_dict(payload.get("response")).get("docs"))
     papers: list[dict[str, Any]] = []
@@ -2438,6 +2492,34 @@ def expand_keyword_list(keywords: list[str], *, limit: int = 18) -> list[str]:
     return dedupe_search_terms(expanded or keywords, limit=max(1, limit))
 
 
+def build_source_query_plan(query_phrases: list[str], keyword_terms: list[str]) -> dict[str, list[str]]:
+    base_queries = dedupe_search_terms(query_phrases, limit=6)
+    expanded_keywords = expand_keyword_list(keyword_terms, limit=12)
+    mixed_terms = dedupe_search_terms([*base_queries, *expanded_keywords], limit=12)
+    english_terms = [
+        term for term in mixed_terms
+        if term and not re.search(r'[\u4e00-\u9fff]', term)
+    ]
+    compact_english_terms = [
+        re.sub(r"\s+", " ", term).strip()
+        for term in english_terms
+        if re.sub(r"\s+", " ", term).strip()
+    ]
+
+    arxiv_terms = dedupe_search_terms(compact_english_terms, limit=2)
+    ads_terms = build_nasa_ads_terms([*base_queries, *expanded_keywords], limit=4)
+    openalex_terms = dedupe_search_terms([*base_queries, *expanded_keywords], limit=4)
+    crossref_terms = dedupe_search_terms([*base_queries, *expanded_keywords], limit=3)
+
+    fallback = base_queries or expanded_keywords or query_phrases or keyword_terms
+    return {
+        'openalex': openalex_terms or dedupe_search_terms(fallback, limit=3),
+        'crossref': crossref_terms or dedupe_search_terms(fallback, limit=3),
+        'arxiv': arxiv_terms or build_nasa_ads_terms(fallback, limit=2) or dedupe_search_terms(fallback, limit=2),
+        'ads': ads_terms or build_nasa_ads_terms(expanded_keywords or fallback, limit=3) or dedupe_search_terms(fallback, limit=2),
+    }
+
+
 def rerank_search_candidates_with_ai(
     candidates: list[dict[str, Any]],
     *,
@@ -2628,6 +2710,27 @@ def clean_source_text(value: Any, *, strip_tags: bool = True) -> str:
     text = unescape(text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
+
+def format_source_error_message(source_label: str, exc: Exception) -> str:
+    raw = clean_source_text(str(exc), strip_tags=False)
+    raw = re.sub(r"\s+for url:\s*https?://\S+", "", raw, flags=re.IGNORECASE).strip(" ：:")
+    lowered = raw.lower()
+    if isinstance(exc, requests.Timeout) or "read timed out" in lowered or "connect timeout" in lowered:
+        raw = "请求超时，请稍后重试。"
+    elif "400 client error" in lowered or "bad request" in lowered:
+        raw = "请求参数未被该来源接受。"
+    elif "401 client error" in lowered or "403 client error" in lowered:
+        raw = "接口鉴权失败或当前账号无权限。"
+    elif "404 client error" in lowered:
+        raw = "接口地址不可用。"
+    elif "429 client error" in lowered or "too many requests" in lowered:
+        raw = "请求过于频繁，已被该来源限流。"
+    elif "500 client error" in lowered or "502 client error" in lowered or "503 client error" in lowered or "504 client error" in lowered:
+        raw = "来源服务暂时异常。"
+    if not raw:
+        raw = "未知异常，请稍后重试。"
+    return f"{source_label}: {raw}"
 
 
 def summarize_paper_with_ai(paper: MorningReportPaper, *, keywords: list[str] | None = None) -> str:
@@ -3818,11 +3921,46 @@ def build_focus_queries(
 
 
 def build_nasa_ads_query(keywords: list[str]) -> str:
-    queries = build_arxiv_queries(keywords)
-    joined = " OR ".join(f'"{query}"' for query in queries if query)
+    queries = build_nasa_ads_terms(keywords, limit=4)
+    joined = " OR ".join(_format_nasa_ads_term(query) for query in queries if query)
     if not joined:
-        joined = " OR ".join(f'"{query}"' for query in DEFAULT_MORNING_REPORT_KEYWORDS[:3])
+        joined = " OR ".join(_format_nasa_ads_term(query) for query in DEFAULT_MORNING_REPORT_KEYWORDS[:3])
     return joined
+
+
+def build_nasa_ads_terms(values: list[str], *, limit: int) -> list[str]:
+    candidates = dedupe_search_terms(values, limit=max(limit * 2, limit))
+    results: list[str] = []
+    total_chars = 0
+    for raw in candidates:
+        value = clean_source_text(raw, strip_tags=False)
+        if not value:
+            continue
+        if re.search(r'[\u4e00-\u9fff]', value):
+            continue
+        compact = re.sub(r"\s+", " ", value).strip()
+        if not compact:
+            continue
+        if len(compact) > 64:
+            tokens = re.findall(r"[A-Za-z0-9][A-Za-z0-9\-+/]{1,}", compact)
+            compact = " ".join(tokens[:4]).strip() or compact[:64].strip()
+        projected = total_chars + len(compact)
+        if results and projected > 180:
+            break
+        results.append(compact)
+        total_chars = projected
+        if len(results) >= max(limit, 1):
+            break
+    return results
+
+
+def _format_nasa_ads_term(value: str) -> str:
+    cleaned = clean_source_text(value, strip_tags=False)
+    if not cleaned:
+        return ""
+    if " " in cleaned:
+        return f'"{cleaned}"'
+    return cleaned
 
 
 def _fetch_openalex_results_for_query(query: str, since_date: str, limit: int) -> list[dict[str, Any]]:

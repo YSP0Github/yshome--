@@ -105,9 +105,9 @@
                     </div>
                 </div>
                 {% if errors %}
-                <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700 leading-7">
+                <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700 leading-7 break-words overflow-hidden">
                     <div class="font-semibold mb-1">部分来源本次未完全可用</div>
-                    {% for item in errors[:4] %}<div>• {{ item }}</div>{% endfor %}
+                    {% for item in errors[:4] %}<div class="break-all whitespace-normal">• {{ item }}</div>{% endfor %}
                 </div>
                 {% endif %}
             </div>
@@ -215,7 +215,7 @@
                                     {% if external_url %}<a href="{{ external_url }}" target="_blank" rel="noopener noreferrer" class="smart-link-btn"><i class="fa fa-external-link"></i>查看原文</a>{% endif %}
                                     <button type="button" class="search-summary-btn smart-link-btn {% if not ai_enabled %}opacity-50 cursor-not-allowed{% endif %}" data-result-id="{{ loop.index }}" {% if not ai_enabled %}disabled{% endif %}><i class="fa fa-magic"></i>智能总结</button>
                                     {% if paper.existing_document_id %}
-                                    <a href="{{ (ysxs_url_prefix or '') ~ '/document/' ~ paper.existing_document_id }}" class="smart-doc-btn"><i class="fa fa-book"></i>查看系统内文献</a>
+                                    <a href="{{ url_for('document_detail', doc_id=paper.existing_document_id) }}" class="smart-doc-btn"><i class="fa fa-book"></i>查看系统内文献</a>
                                     {% else %}
                                     <button type="button" class="search-import-btn smart-import-btn" data-result-id="{{ loop.index }}" data-doc-id="{{ paper.existing_document_id or '' }}"><i class="fa fa-download"></i>一键导入系统</button>
                                     {% endif %}
