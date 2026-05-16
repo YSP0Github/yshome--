@@ -13,7 +13,7 @@
             color: #fff;
             overflow-x: hidden;
         }
-        canvas { position: fixed; inset: 0; z-index: 0; }
+        #bgCanvas { position: fixed; inset: 0; z-index: 0; }
         .ui {
             position: relative; z-index: 1;
             min-height: 100vh;
@@ -43,9 +43,11 @@
             height: 360px;
         }
         #taijiCanvas {
+            position: relative;
             width: 360px;
             height: 360px;
             border-radius: 50%;
+            display: block;
         }
         .controls {
             margin-top: 32px;
@@ -152,15 +154,18 @@
         </div>
 
         <div class="stats">
-            <div class="stat"><div class="stat-val" id="speedVal">1.0</div><div class="stat-lbl">转速</div></div>
+            <div class="stat"><div class="stat-val" id="speedVal">0.1</div><div class="stat-lbl">转速</div></div>
             <div class="stat"><div class="stat-val" id="particleVal">60</div><div class="stat-lbl">粒子</div></div>
             <div class="stat"><div class="stat-val" id="angleVal">0</div><div class="stat-lbl">角度</div></div>
         </div>
 
         <div class="controls">
             <div class="ctrl-group">
+                <button class="btn-theme" id="btnPause">暂停</button>
+            </div>
+            <div class="ctrl-group">
                 <span class="ctrl-label">转速</span>
-                <input type="range" id="speedRange" min="0.1" max="3" step="0.1" value="1">
+                <input type="range" id="speedRange" min="0.1" max="63" step="0.1" value="0.1">
             </div>
             <div class="ctrl-group">
                 <span class="ctrl-label">粒子</span>
@@ -215,12 +220,13 @@
     // Taiji canvas
     const tc = document.getElementById('taijiCanvas');
     const tctx = tc.getContext('2d');
-    const CX = 360, CY = 360, R = 140;
+    const CX = 360, CY = 360, R = 200;
 
-    let speed = 1;
+    let speed = 0.1;
     let angle = 0;
     let particleCount = 60;
     let theme = 'classic';
+    let paused = false;
     const particles = [];
 
     const themes = {
@@ -274,45 +280,40 @@
         tctx.translate(CX, CY);
         tctx.rotate(angle);
 
-        // Outer circle clip
-        tctx.beginPath();
-        tctx.arc(0, 0, R, 0, Math.PI * 2);
-        tctx.clip();
-
-        // Yang (white) half - right
+        // 1. Fill entire big circle with Yang (white)
         tctx.fillStyle = t.yang;
         tctx.beginPath();
-        tctx.arc(0, 0, R, -Math.PI / 2, Math.PI / 2);
+        tctx.arc(0, 0, R, 0, Math.PI * 2);
         tctx.fill();
 
-        // Yin (dark) half - left
+        // 2. Draw right half-circle with Yin (dark) — creates dark right side, white left side
         tctx.fillStyle = t.yin;
         tctx.beginPath();
-        tctx.arc(0, 0, R, Math.PI / 2, -Math.PI / 2);
+        tctx.arc(0, 0, R, -Math.PI / 2, Math.PI / 2, false);
         tctx.fill();
 
-        // Yang bump (top) - yin colored
-        tctx.fillStyle = t.yin;
+        // 3. Draw top small circle with Yang (white) — white bulge at top-right
+        tctx.fillStyle = t.yang;
         tctx.beginPath();
         tctx.arc(0, -R / 2, R / 2, 0, Math.PI * 2);
         tctx.fill();
 
-        // Yin bump (bottom) - yang colored
-        tctx.fillStyle = t.yang;
+        // 4. Draw bottom small circle with Yin (dark) — dark bulge at bottom-left
+        tctx.fillStyle = t.yin;
         tctx.beginPath();
         tctx.arc(0, R / 2, R / 2, 0, Math.PI * 2);
         tctx.fill();
 
-        // Yang eye (small yin dot in yang bump)
+        // 5. Yang eye — dark dot in white area (top)
         tctx.fillStyle = t.yangEye;
         tctx.beginPath();
-        tctx.arc(0, -R / 2, R / 8, 0, Math.PI * 2);
+        tctx.arc(0, -R / 2, R / 6, 0, Math.PI * 2);
         tctx.fill();
 
-        // Yin eye (small yang dot in yin bump)
+        // 6. Yin eye — light dot in dark area (bottom)
         tctx.fillStyle = t.yinEye;
         tctx.beginPath();
-        tctx.arc(0, R / 2, R / 8, 0, Math.PI * 2);
+        tctx.arc(0, R / 2, R / 6, 0, Math.PI * 2);
         tctx.fill();
 
         tctx.restore();
@@ -326,10 +327,13 @@
 
         // Particles
         syncParticles();
-        particles.forEach(p => { p.update(); p.draw(); });
+        if (!paused) {
+            particles.forEach(p => { p.update(); });
+            angle += 0.1 * speed;
+        }
+        particles.forEach(p => { p.draw(); });
 
         // Update stats
-        angle += 0.008 * speed;
         document.getElementById('angleVal').textContent = Math.round((angle * 180 / Math.PI) % 360) + '°';
 
         requestAnimationFrame(drawTaiji);
@@ -337,6 +341,10 @@
     drawTaiji();
 
     // Controls
+    document.getElementById('btnPause').addEventListener('click', function () {
+        paused = !paused;
+        this.textContent = paused ? '继续' : '暂停';
+    });
     document.getElementById('speedRange').addEventListener('input', e => {
         speed = parseFloat(e.target.value);
         document.getElementById('speedVal').textContent = speed.toFixed(1);
@@ -348,6 +356,7 @@
 
     document.querySelectorAll('.btn-theme').forEach(btn => {
         btn.addEventListener('click', () => {
+            if (!btn.dataset.theme) return;
             document.querySelectorAll('.btn-theme').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             theme = btn.dataset.theme;

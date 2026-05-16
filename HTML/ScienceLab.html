@@ -379,6 +379,7 @@
         <a href="#pendulum-lab">摆动实验</a>
         <a href="#resonance-lab">振动共振</a>
         <a href="#wave-lab">波动传播</a>
+        <a href="#solar-lab">太阳系</a>
       </nav>
     </div>
   </header>
@@ -390,7 +391,7 @@
         <h1>用交互式网页，把抽象的物理过程变成 <span>可以观察、可以操作、可以思考</span></h1>
         <p>
           这是一个面向科学可视化与科普展示的小型实验项目集合。页面中收录可直接上手的互动实验，
-          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播三个互动实验，可直接在网页中体验。
+          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播、3D太阳系天体旋转四个互动实验，可直接在网页中体验。
         </p>
         <div class="actions">
           <a href="#experiments" class="btn btn-primary">查看全部实验</a>
@@ -404,7 +405,7 @@
         <div class="section-head">
           <h2>实验目录</h2>
           <div class="divider"></div>
-          <p>项目以“短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的三个实验模块。</p>
+          <p>项目以”短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的四个实验模块。</p>
         </div>
 
         <div class="card-grid">
@@ -427,6 +428,13 @@
             <h3>波动传播实验</h3>
             <p>在二维波场中演示单源传播、双源干涉、脉冲激发与边界反射/吸收，适合用于讲解波前传播和干涉条纹形成。</p>
             <a href="#wave-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(245,158,11,0.14);color:#f4c152"><i class="fa fa-globe"></i></div>
+            <h3>3D 太阳系天体旋转</h3>
+            <p>以 Three.js 构建的交互式太阳系三维模型，八大行星沿轨道公转与自转，支持拖动旋转、滚轮缩放、点击查看行星详情，可调节公转/自转速度与轨道比例。</p>
+            <a href="#solar-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
           </article>
         </div>
       </div>
@@ -579,6 +587,58 @@
             <a href="../WaveLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
           </div>
           <iframe src="../WaveLab/static/index.html" title="RayleighWaveLab 面波教学实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="solar-lab" class="section section-alt">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(245,158,11,0.25);background:rgba(245,158,11,0.14);color:#f4c152"><i class="fa fa-globe"></i> 实验 04</span>
+          <h2>3D 太阳系天体旋转实验</h2>
+          <p>
+            这是一个基于 Three.js 的交互式太阳系三维可视化。太阳位于中心，八大行星沿各自的椭圆轨道公转并自转，同时保留了土星环、小行星带和太阳光晕等细节。
+            你可以用鼠标拖动旋转整个视角、滚轮缩放、点击任意行星查看简介，还可以通过控制面板调节公转/自转速度、轨道与行星比例。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>拖动鼠标 360° 旋转视角，滚轮缩放远近</li>
+              <li>调节公转速度、自转速度，观察行星运动差异</li>
+              <li>调节轨道大小和行星大小比例，看清细节或全局</li>
+              <li>点击任意行星，查看名称与科普简介</li>
+              <li>切换轨道线、名称标签、光效等显示选项</li>
+              <li>暂停/继续动画，重置所有参数</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>天文科普、太阳系结构教学、行星认知互动展示、网页 3D 可视化学习。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>行星公转与自转、轨道参数、行星相对大小、土星环、小行星带、太阳光晕。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../SolarSystem/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>拖动旋转视角 · 滚轮缩放 · 点击行星查看详情 · 右侧面板可调参数。</p>
+            </div>
+            <a href="../SolarSystem/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../SolarSystem/static/index.html" title="3D 太阳系天体旋转实验" loading="lazy"></iframe>
         </div>
       </div>
     </section>
