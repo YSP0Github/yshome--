@@ -11,7 +11,7 @@
   canvas { display: block; }
 
   #panel {
-    position: fixed; top: 16px; left: 16px; z-index: 10;
+    position: fixed; top: 16px; right: 16px; z-index: 10;
     background: rgba(8,12,28,0.92); backdrop-filter: blur(16px);
     border: 1px solid rgba(80,130,255,0.15); border-radius: 14px;
     padding: 18px 20px; min-width: 260px;
@@ -90,13 +90,41 @@
     pointer-events: none;
   }
 
+  #panelToggle {
+    display: none; cursor: pointer; padding: 6px 14px; border-radius: 10px;
+    background: rgba(8,12,28,0.92); backdrop-filter: blur(16px);
+    border: 1px solid rgba(80,130,255,0.15);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    font-size: 0.82rem; font-weight: 600; color: #7eb8ff;
+    position: fixed; top: 12px; right: 12px; z-index: 11;
+    user-select: none; -webkit-user-select: none;
+    transition: opacity 0.2s;
+  }
+  #panelToggle::after {
+    content: ''; display: inline-block; margin-left: 6px;
+    border: 4px solid transparent; border-top-color: #7eb8ff;
+    vertical-align: middle; transition: transform 0.2s;
+  }
+  #panelToggle.collapsed::after { transform: rotate(-90deg); }
+
   @media (max-width: 700px) {
-    #panel { min-width: auto; width: calc(100% - 24px); padding: 12px; }
+    #panel {
+      min-width: auto; width: calc(100% - 24px); padding: 12px;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.3s ease, opacity 0.25s ease, padding 0.3s ease;
+      padding-top: 0; padding-bottom: 0; border-width: 0;
+    }
+    #panel.open {
+      max-height: 80vh; opacity: 1; overflow-y: auto;
+      padding: 12px; border-width: 1px;
+    }
+    #panelToggle { display: block; }
   }
 </style>
 </head>
 <body>
 
+<div id="panelToggle" class="collapsed">控制台</div>
 <div id="panel">
   <h2>太阳系控制台</h2>
   <div class="row">
@@ -1690,28 +1718,28 @@ const JUPITER_MOONS = [
 ];
 
 const SATURN_MOONS = [
-  { name:'土卫六 Titan', eng:'Titan', radius:0.30, spin:0.006, year:0.0438, orbitDist:5.5,
+  { name:'土卫六 Titan', eng:'Titan', radius:0.30, spin:0.006, year:0.0438, orbitDist:20.6,
     texFn: textureTitan,
     detail: { type:'天然卫星', diam:'5,150 km', dist:'1,221,870 km (绕土星)', temp:'-179 °C', day:'15.95 地球日 (潮汐锁定)', year:'15.95 地球日', moons:'—', atm:'N₂ 95%, CH₄ 5%', fact:'太阳系中唯一拥有浓密大气层的卫星。表面有液态甲烷湖泊和河流，是除地球外唯一已知表面存在稳定液体的天体。' } },
-  { name:'土卫二 Enceladus', eng:'Enceladus', radius:0.15, spin:0.012, year:0.0093, orbitDist:3.6,
+  { name:'土卫二 Enceladus', eng:'Enceladus', radius:0.15, spin:0.012, year:0.0093, orbitDist:6.7,
     texFn: textureEnceladus,
     detail: { type:'天然卫星', diam:'504 km', dist:'238,020 km (绕土星)', temp:'-240 ~ -120 °C', day:'3.29 地球日 (潮汐锁定)', year:'3.29 地球日', moons:'—', atm:'极稀薄 (H₂O)', fact:'南极地区有巨大的冰喷泉 (虎纹裂缝)，喷射水冰颗粒高达数百公里。冰壳下可能存在液态海洋，是寻找地外生命的热门目标。' } },
-  { name:'土卫一 Mimas', eng:'Mimas', radius:0.12, spin:0.015, year:0.0039, orbitDist:3.0,
+  { name:'土卫一 Mimas', eng:'Mimas', radius:0.12, spin:0.015, year:0.0039, orbitDist:5.2,
     texFn: textureMimas,
     detail: { type:'天然卫星', diam:'396 km', dist:'185,520 km (绕土星)', temp:'-200 °C', day:'0.94 地球日 (潮汐锁定)', year:'0.94 地球日', moons:'—', atm:'无', fact:'表面有一个巨大的撞击坑「赫歇尔」直径 139 km，约占卫星直径的 1/3，使其外观酷似《星球大战》中的死星。' } },
-  { name:'土卫五 Rhea', eng:'Rhea', radius:0.17, spin:0.008, year:0.0124, orbitDist:5.0,
+  { name:'土卫五 Rhea', eng:'Rhea', radius:0.17, spin:0.008, year:0.0124, orbitDist:13.6,
     texFn: function () { return textureIcyMoon([215,212,205], 50); },
     detail: { type:'天然卫星', diam:'1,527 km', dist:'527,078 km (绕土星)', temp:'-220 °C', day:'4.52 地球日 (潮汐锁定)', year:'4.52 地球日', moons:'—', atm:'极稀薄 (O₂, CO₂)', fact:'土星第二大卫星，表面密布陨石坑，明亮的冰质表面。可能存在地下海洋。1672 年由卡西尼发现。' } },
-  { name:'土卫八 Iapetus', eng:'Iapetus', radius:0.16, spin:0.005, year:0.217, orbitDist:20.7,
+  { name:'土卫八 Iapetus', eng:'Iapetus', radius:0.16, spin:0.005, year:0.217, orbitDist:100.5,
     texFn: textureIapetus,
     detail: { type:'天然卫星', diam:'1,469 km', dist:'3,560,820 km (绕土星)', temp:'-143 °C (日照面)', day:'79.32 地球日 (潮汐锁定)', year:'79.32 地球日', moons:'—', atm:'无', fact:'以明暗双色著称——前导 hemisphere 极暗 (反照率仅 0.03)， trailing hemisphere 明亮。赤道脊高达 20 km。1671 年由卡西尼发现。' } },
-  { name:'土卫四 Dione', eng:'Dione', radius:0.14, spin:0.009, year:0.0075, orbitDist:4.5,
+  { name:'土卫四 Dione', eng:'Dione', radius:0.14, spin:0.009, year:0.0075, orbitDist:10.3,
     texFn: function () { return textureIcyMoon([200,198,192], 35, 'rgba(230,228,222,0.15)'); },
     detail: { type:'天然卫星', diam:'1,122 km', dist:'377,396 km (绕土星)', temp:'-186 °C', day:'2.74 地球日 (潮汐锁定)', year:'2.74 地球日', moons:'—', atm:'极稀薄 (O₂)', fact:'表面有明亮的冰崖 (chasmata) 和条纹 terrain。1684 年由卡西尼发现。' } },
-  { name:'土卫三 Tethys', eng:'Tethys', radius:0.13, spin:0.01, year:0.0052, orbitDist:3.8,
+  { name:'土卫三 Tethys', eng:'Tethys', radius:0.13, spin:0.01, year:0.0052, orbitDist:8.3,
     texFn: function () { return textureIcyMoon([225,222,218], 30); },
     detail: { type:'天然卫星', diam:'1,062 km', dist:'294,619 km (绕土星)', temp:'-187 °C', day:'1.89 地球日 (潮汐锁定)', year:'1.89 地球日', moons:'—', atm:'无', fact:'几乎由纯水冰构成，是太阳系最亮的天体之一。巨大撞击坑奥德修斯 (直径 400 km) 卫星直径的 2/5。伊萨卡峡谷环绕卫星 3/4 周。' } },
-  { name:'土卫七 Hyperion', eng:'Hyperion', radius:0.09, spin:0.003, year:0.0583, orbitDist:14.0,
+  { name:'土卫七 Hyperion', eng:'Hyperion', radius:0.09, spin:0.003, year:0.0583, orbitDist:40.7,
     texFn: textureHyperion,
     detail: { type:'天然卫星', diam:'270 km', dist:'1,481,009 km (绕土星)', temp:'-180 °C', day:'混沌翻滚 (无固定周期)', year:'21.28 地球日', moons:'—', atm:'无', fact:'太阳系最大的非球体，表面布满深坑呈海绵状。约 40% 是空隙 (太阳系最疏松天体之一)。自转轴 chaotic 翻滚，朝向不可预测。' } }
 ];
@@ -1832,7 +1860,7 @@ PLANETS.forEach(function (planetData) {
   let ringMesh = null;
   if (planetData.eng === 'Saturn' || planetData.eng === 'Uranus' || planetData.eng === 'Neptune') {
     const ringConfig = {
-      Saturn:  { inner: 1.25, outer: 2.4,  segments: 128, opacity: 0.72, colors: [
+      Saturn:  { inner: 1.11, outer: 2.26,  segments: 128, opacity: 0.72, colors: [
                   [0.00,'rgba(140,120,85,0.02)'],[0.08,'rgba(155,135,95,0.08)'],
                   [0.12,'rgba(180,160,115,0.18)'],[0.18,'rgba(170,150,108,0.22)'],
                   [0.22,'rgba(215,195,148,0.55)'],[0.30,'rgba(225,205,155,0.60)'],
@@ -2018,6 +2046,21 @@ try { createMoonSystem(neptunePlanet, NEPTUNE_MOONS); } catch (e) { console.erro
 
 /* ── UI 控件绑定 ── */
 function getEl(id) { return document.getElementById(id); }
+
+/* ── 面板折叠/展开 ── */
+(function () {
+  var toggle = getEl('panelToggle');
+  var panel = getEl('panel');
+  function togglePanel() {
+    var isOpen = panel.classList.toggle('open');
+    toggle.classList.toggle('collapsed', !isOpen);
+  }
+  toggle.addEventListener('click', togglePanel);
+  // 手机端点击面板外区域自动收起
+  panel.addEventListener('click', function (e) {
+    if (e.target.closest('.btn') || e.target.closest('input[type="range"]')) return;
+  });
+})();
 
 function bindSlider(sliderId, displayId, callback) {
   const slider = getEl(sliderId);
