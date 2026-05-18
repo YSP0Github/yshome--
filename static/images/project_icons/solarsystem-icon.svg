@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">太阳系实验图标</title>
+  <desc id="desc">太阳与行星轨道的太阳系项目图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="56" y1="56" x2="456" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a1006"/>
+      <stop offset="0.55" stop-color="#b45309"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="0.6" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#020617" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="120" fill="url(#bg)"/>
+  <circle cx="120" cy="120" r="14" fill="#fff" fill-opacity="0.12"/>
+  <circle cx="400" cy="100" r="10" fill="#fff" fill-opacity="0.1"/>
+  <circle cx="90" cy="400" r="8" fill="#fff" fill-opacity="0.08"/>
+
+  <g filter="url(#shadow)">
+    <!-- Orbit rings -->
+    <ellipse cx="256" cy="256" rx="180" ry="70" fill="none" stroke="#fde68a" stroke-opacity="0.15" stroke-width="3" transform="rotate(-20 256 256)"/>
+    <ellipse cx="256" cy="256" rx="130" ry="50" fill="none" stroke="#fde68a" stroke-opacity="0.2" stroke-width="3" transform="rotate(-20 256 256)"/>
+    <ellipse cx="256" cy="256" rx="80" ry="32" fill="none" stroke="#fde68a" stroke-opacity="0.25" stroke-width="3" transform="rotate(-20 256 256)"/>
+
+    <!-- Sun -->
+    <g filter="url(#glow)">
+      <circle cx="256" cy="256" r="42" fill="url(#sun)"/>
+    </g>
+    <!-- Sun corona -->
+    <circle cx="256" cy="256" r="56" fill="none" stroke="#fde68a" stroke-opacity="0.3" stroke-width="4"/>
+    <circle cx="256" cy="256" r="68" fill="none" stroke="#fde68a" stroke-opacity="0.12" stroke-width="3"/>
+
+    <!-- Planet 1 (inner) -->
+    <circle cx="196" cy="234" r="8" fill="#60a5fa"/>
+    <!-- Planet 2 (middle) -->
+    <circle cx="380" cy="220" r="12" fill="#34d399"/>
+    <!-- Planet with ring (outer) -->
+    <g transform="translate(150,310)">
+      <circle cx="0" cy="0" r="14" fill="#c084fc"/>
+      <ellipse cx="0" cy="0" rx="26" ry="8" fill="none" stroke="#c084fc" stroke-opacity="0.6" stroke-width="3" transform="rotate(-15)"/>
+    </g>
+
+    <!-- Small dots (stars) -->
+    <circle cx="160" cy="170" r="3" fill="#fde68a" fill-opacity="0.5"/>
+    <circle cx="350" cy="340" r="2.5" fill="#fde68a" fill-opacity="0.4"/>
+    <circle cx="320" cy="160" r="2" fill="#fde68a" fill-opacity="0.35"/>
+    <circle cx="180" cy="360" r="2" fill="#fde68a" fill-opacity="0.3"/>
+  </g>
+</svg>

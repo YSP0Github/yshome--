@@ -380,6 +380,11 @@
         <a href="#resonance-lab">振动共振</a>
         <a href="#wave-lab">波动传播</a>
         <a href="#solar-lab">太阳系</a>
+        <a href="#electro-lab">电磁场</a>
+        <a href="#optics-lab">光学</a>
+        <a href="#thermo-lab">热力学</a>
+        <a href="#waveoptics-lab">波动光学</a>
+        <a href="#momentum-lab">碰撞</a>
       </nav>
     </div>
   </header>
@@ -391,7 +396,7 @@
         <h1>用交互式网页，把抽象的物理过程变成 <span>可以观察、可以操作、可以思考</span></h1>
         <p>
           这是一个面向科学可视化与科普展示的小型实验项目集合。页面中收录可直接上手的互动实验，
-          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播、3D太阳系天体旋转四个互动实验，可直接在网页中体验。
+          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播、3D太阳系天体旋转、电磁场可视化、光学追迹、热力学分子运动、波动光学干涉、碰撞与动量守恒九个互动实验，可直接在网页中体验。
         </p>
         <div class="actions">
           <a href="#experiments" class="btn btn-primary">查看全部实验</a>
@@ -405,7 +410,7 @@
         <div class="section-head">
           <h2>实验目录</h2>
           <div class="divider"></div>
-          <p>项目以”短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的四个实验模块。</p>
+          <p>项目以”短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的九个实验模块。</p>
         </div>
 
         <div class="card-grid">
@@ -435,6 +440,41 @@
             <h3>3D 太阳系天体旋转</h3>
             <p>以 Three.js 构建的交互式太阳系三维模型，八大行星沿轨道公转与自转，支持拖动旋转、滚轮缩放、点击查看行星详情，可调节公转/自转速度与轨道比例。</p>
             <a href="#solar-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(168,85,247,0.14);color:#c084fc"><i class="fa fa-bolt"></i></div>
+            <h3>电磁场可视化实验</h3>
+            <p>交互式静电场可视化工具，可放置正负点电荷，实时绘制电场线、等势线和电场矢量，支持偶极子、四极子、平行板电容器等预设配置。</p>
+            <a href="#electro-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(14,165,233,0.14);color:#38bdf8"><i class="fa fa-diamond"></i></div>
+            <h3>光学追迹实验</h3>
+            <p>交互式几何光学模拟器，放置光源、平面镜、凸凹透镜和棱镜，实时绘制光线的反射、折射和聚焦路径，支持成像、望远镜、全反射等预设场景。</p>
+            <a href="#optics-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(239,68,68,0.14);color:#f87171"><i class="fa fa-fire"></i></div>
+            <h3>热力学分子运动</h3>
+            <p>理想气体分子运动模拟器，实时展示温度、压强、体积的关系，分子速率服从 Maxwell-Boltzmann 分布，支持加热冷却和调节分子数。</p>
+            <a href="#thermo-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(167,139,250,0.14);color:#c4b5fd"><i class="fa fa-wave-square"></i></div>
+            <h3>波动光学干涉</h3>
+            <p>物理光学可视化实验，模拟双缝干涉、单缝衍射和光栅衍射，可调节波长（颜色）、缝宽、缝距，实时观察干涉图样和强度分布。</p>
+            <a href="#waveoptics-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(34,211,238,0.14);color:#67e8f9"><i class="fa fa-circle-o"></i></div>
+            <h3>碰撞与动量守恒</h3>
+            <p>二维碰撞模拟器，支持弹性、非弹性、完全非弹性碰撞，实时显示动量和能量守恒验证，可拖动球体设置初始状态。</p>
+            <a href="#momentum-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
           </article>
         </div>
       </div>
@@ -639,6 +679,267 @@
             <a href="../SolarSystem/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
           </div>
           <iframe src="../SolarSystem/static/index.html" title="3D 太阳系天体旋转实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="electro-lab" class="section">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(168,85,247,0.25);background:rgba(168,85,247,0.14);color:#c084fc"><i class="fa fa-bolt"></i> 实验 05</span>
+          <h2>ElectroLab 电磁场可视化实验</h2>
+          <p>
+            这是一个交互式静电场可视化工具。你可以在画布上放置正负点电荷，系统会实时计算并绘制电场线、等势线和电场矢量箭头。
+            通过拖动电荷改变位置，可以直观观察电场分布如何随电荷配置变化，理解叠加原理和场的矢量特性。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>点击画布放置正/负点电荷，拖动改变位置，右键删除</li>
+              <li>实时绘制从正电荷发出、终止于负电荷的电场线</li>
+              <li>显示等势线，用颜色渐变表示电位高低（蓝=负，红=正）</li>
+              <li>开启矢量箭头模式，在网格上显示电场方向和强度</li>
+              <li>鼠标悬停查看任意点的电位和电场矢量数值</li>
+              <li>使用预设配置：偶极子、四极子、平行板电容器、线电荷</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>电磁学教学、电场叠加原理演示、等势面与电场线关系讲解、库仑定律可视化。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>点电荷、电场强度、电位、电场线、等势面、叠加原理、偶极子。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../ElectroLab/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>点击放置电荷 · 拖动移动 · 右键删除 · 悬停查看场值 · 顶部工具栏切换显示模式。</p>
+            </div>
+            <a href="../ElectroLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../ElectroLab/static/index.html" title="ElectroLab 电磁场可视化实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="optics-lab" class="section">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(14,165,233,0.25);background:rgba(14,165,233,0.14);color:#38bdf8"><i class="fa fa-diamond"></i> 实验 06</span>
+          <h2>OpticsLab 光学追迹实验</h2>
+          <p>
+            这是一个交互式几何光学模拟器。你可以在画布上放置平行光源或点光源，再添加平面镜、凸透镜、凹透镜、棱镜和遮挡板，
+            系统会实时追踪光线的反射和折射路径。通过拖动和旋转元件，可以直观理解成像原理、透镜组合、全反射等光学现象。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>放置平行光源或点光源，调节光线数量</li>
+              <li>添加平面镜（可旋转角度），观察反射光路</li>
+              <li>放置凸透镜/凹透镜，观察光线聚焦或发散</li>
+              <li>放置棱镜，观察色散和全反射现象</li>
+              <li>拖动移动元件，滚轮旋转，Delete 键删除</li>
+              <li>勾选"法线"显示入射/反射法线，勾选"焦点"标记透镜焦点</li>
+              <li>使用预设场景：凸透镜成像、望远镜、全反射、潜望镜</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>几何光学教学、透镜成像演示、光路追迹练习、望远镜/显微镜原理讲解。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>反射定律、折射定律（Snell 定律）、薄透镜、焦点、全反射、光路可逆。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../OpticsLab/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>点击放置元件 · 拖动移动 · 滚轮旋转 · 顶部工具栏切换元件类型与显示选项。</p>
+            </div>
+            <a href="../OpticsLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../OpticsLab/static/index.html" title="OpticsLab 光学追迹实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="thermo-lab" class="section">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.14);color:#f87171"><i class="fa fa-fire"></i> 实验 07</span>
+          <h2>ThermoLab 热力学分子运动实验</h2>
+          <p>
+            这是一个理想气体分子运动模拟器。大量分子在容器中做无规则热运动，实时模拟分子碰撞和壁面碰撞。
+            你可以调节温度、分子数量和容器体积，观察压强变化，并查看速率分布是否符合 Maxwell-Boltzmann 理论。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>调节温度，观察分子运动速度和颜色变化（蓝色=低温，红色=高温）</li>
+              <li>调节分子数量和容器体积，观察压强变化（PV=nRT）</li>
+              <li>开启轨迹模式，观察分子运动路径</li>
+              <li>查看实时速率分布直方图，与 Maxwell-Boltzmann 理论曲线对比</li>
+              <li>观察动量、动能、碰撞频率等热力学统计量</li>
+              <li>鼠标滚轮快速加热/冷却</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>热力学教学、理想气体定律演示、分子运动论入门、统计物理可视化。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>温度与动能、压强、PV=nRT、Maxwell-Boltzmann 分布、分子碰撞。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../ThermoLab/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>调节温度和分子数 · 滚轮加热冷却 · 右侧面板查看统计量和速率分布。</p>
+            </div>
+            <a href="../ThermoLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../ThermoLab/static/index.html" title="ThermoLab 热力学分子运动实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="waveoptics-lab" class="section section-alt">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(167,139,250,0.25);background:rgba(167,139,250,0.14);color:#c4b5fd"><i class="fa fa-wave-square"></i> 实验 08</span>
+          <h2>WaveOpticsLab 波动光学干涉实验</h2>
+          <p>
+            这是一个物理光学可视化实验，模拟双缝干涉、单缝衍射和光栅衍射三种经典光学现象。
+            你可以调节光波长（颜色）、缝宽、缝距和屏幕距离，实时观察干涉/衍射图样和强度分布曲线的变化。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>切换双缝干涉、单缝衍射、光栅衍射三种模式</li>
+              <li>调节波长（380-780 nm），观察不同颜色光的干涉条纹差异</li>
+              <li>调节缝宽，观察衍射宽度变化（缝越窄衍射越宽）</li>
+              <li>调节缝距，观察条纹间距变化（Δy = λL/d）</li>
+              <li>查看实时强度分布曲线，理解主极大和次极大</li>
+              <li>光栅模式可调节缝数，观察尖锐主极大</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>波动光学教学、杨氏双缝实验、衍射光栅原理、波长与条纹关系。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>相干叠加、干涉条纹、衍射包络、光栅方程、主极大、次极大。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../WaveOpticsLab/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>切换实验模式 · 调节波长/缝宽/缝距 · 查看强度分布曲线。</p>
+            </div>
+            <a href="../WaveOpticsLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../WaveOpticsLab/static/index.html" title="WaveOpticsLab 波动光学干涉实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="momentum-lab" class="section">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(34,211,238,0.25);background:rgba(34,211,238,0.14);color:#67e8f9"><i class="fa fa-circle-o"></i> 实验 09</span>
+          <h2>MomentumLab 碰撞与动量守恒实验</h2>
+          <p>
+            这是一个二维碰撞模拟器，展示经典力学中最核心的守恒定律——动量守恒和能量守恒。
+            你可以选择弹性碰撞、非弹性碰撞或完全非弹性碰撞（粘连），观察碰撞前后动量和能量的变化。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>调节两个球的质量和初始速度</li>
+              <li>选择弹性碰撞、非弹性碰撞或完全非弹性（粘连）</li>
+              <li>拖动球体设置初始位置，实时显示速度矢量箭头</li>
+              <li>查看碰撞前后动量和能量的数值对比</li>
+              <li>观察动量守恒验证（始终守恒）和能量守恒验证</li>
+              <li>查看动量随时间变化的图表</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>力学教学、动量守恒定律验证、碰撞类型对比、能量转换演示。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>动量守恒、动能守恒、弹性碰撞、非弹性碰撞、恢复系数。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../MomentumLab/static/index.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>拖动球设置初始状态 · 选择碰撞类型 · 查看动量能量守恒验证。</p>
+            </div>
+            <a href="../MomentumLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../MomentumLab/static/index.html" title="MomentumLab 碰撞与动量守恒实验" loading="lazy"></iframe>
         </div>
       </div>
     </section>

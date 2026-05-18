@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpticsLab 光学追迹实验</title>
+<link rel="icon" type="image/svg+xml" href="../../static/images/project_icons/opticslab-icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#06080f;color:#dce6f2;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:row}
+
+.right-col{width:260px;display:flex;flex-direction:column;background:rgba(8,8,24,.94);border-left:1px solid rgba(148,163,184,.12);overflow-y:auto;flex-shrink:0}
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
+
+.toolbar{display:flex;flex-direction:column;gap:8px;padding:10px;background:transparent;border-bottom:1px solid rgba(148,163,184,.12);flex-wrap:wrap;z-index:10;backdrop-filter:blur(10px)}
+.toolbar h1{font-size:1rem;font-weight:700;margin-right:8px;white-space:nowrap}
+.toolbar h1 span{color:#f59e0b}
+.sep{width:100%;height:1px;background:rgba(148,163,184,.18)}
+button{padding:6px 12px;border-radius:9px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.8rem;cursor:pointer;transition:.2s;white-space:nowrap;width:100%}
+button:hover{background:rgba(30,41,59,.9);border-color:rgba(245,158,11,.45)}
+button.active{background:rgba(245,158,11,.18);border-color:#f59e0b;color:#fbbf24}
+button.danger{border-color:rgba(239,68,68,.25);color:#f87171}
+button.danger:hover{background:rgba(239,68,68,.12)}
+label{font-size:.78rem;color:#8896aa;display:flex;align-items:center;gap:5px;white-space:nowrap}
+input[type=range]{width:60px;accent-color:#f59e0b}
+select{padding:4px 7px;border-radius:7px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.78rem}
+
+.canvas-wrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%;cursor:crosshair}
+
+.info-bar{position:absolute;bottom:10px;left:10px;padding:8px 14px;background:rgba(10,14,26,.88);border:1px solid rgba(148,163,184,.12);border-radius:12px;font-size:.78rem;color:#8896aa;backdrop-filter:blur(8px);pointer-events:none;line-height:1.7;max-width:320px}
+.info-bar b{color:#dce6f2}
+.tip{position:absolute;top:10px;right:10px;padding:7px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.22);border-radius:10px;font-size:.75rem;color:#fbbf24;pointer-events:none;opacity:.85}
+
+.legend{position:absolute;bottom:10px;right:10px;padding:8px 12px;background:rgba(10,14,26,.88);border:1px solid rgba(148,163,184,.12);border-radius:12px;font-size:.72rem;color:#8896aa;line-height:1.8}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+
+.side-panel{background:transparent;padding:10px;border-left:none}
+
+@media(max-width:768px){
+  .right-col{display:none}
+}
+</style>
+</head>
+<body>
+<div class="main-area">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div class="info-bar" id="info">点击工具栏选择元件类型，然后在画布上点击放置。拖动可移动元件，滚轮可旋转。</div>
+    <div class="tip" id="tip">点击放置 · 拖动移动 · 滚轮旋转 · Delete 删除</div>
+    <div class="legend">
+      <div><i style="background:#fde68a"></i>光线</div>
+      <div><i style="background:#60a5fa"></i>镜面</div>
+      <div><i style="background:#34d399"></i>透镜</div>
+      <div><i style="background:#c084fc"></i>棱镜</div>
+    </div>
+  </div>
+</div>
+
+<div class="right-col">
+  <div class="toolbar">
+    <h1><span>🔬</span> OpticsLab 光学追迹</h1>
+    <div class="sep"></div>
+    <button id="btnSelect" class="active" title="选择并拖动元件">选择</button>
+    <button id="btnSource" title="点击放置平行光源">平行光</button>
+    <button id="btnPointSrc" title="点击放置点光源">点光源</button>
+    <div class="sep"></div>
+    <button id="btnMirror" title="点击放置平面镜">平面镜</button>
+    <button id="btnConvex" title="点击放置凸透镜">凸透镜</button>
+    <button id="btnConcave" title="点击放置凹透镜">凹透镜</button>
+    <button id="btnPrism" title="点击放置棱镜">棱镜</button>
+    <button id="btnBlock" title="点击放置遮挡板">遮挡板</button>
+    <div class="sep"></div>
+    <label>光线数 <input type="range" id="rayCount" min="3" max="40" value="12"><span id="rayCountD">12</span></label>
+    <div class="sep"></div>
+    <label><input type="checkbox" id="chkNormal" > 法线</label>
+    <label><input type="checkbox" id="chkFocal"> 焦点标记</label>
+    <div class="sep"></div>
+    <span style="font-size:.78rem;color:#8896aa">预设：</span>
+    <button class="preset-btn" data-preset="imaging">凸透镜成像</button>
+    <button class="preset-btn" data-preset="telescope">望远镜</button>
+    <button class="preset-btn" data-preset="totalreflect">全反射</button>
+    <button class="preset-btn" data-preset="periscope">潜望镜</button>
+    <div class="sep"></div>
+    <button id="btnDel" class="danger" title="删除选中元件">删除选中</button>
+    <button id="btnClear" class="danger">清除全部</button>
+  </div>
+
+  <div class="side-panel"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const infoEl = document.getElementById('info');
+const tipEl = document.getElementById('tip');
+
+let W, H, dpr;
+const MAX_BOUNCES = 50;
+const MAX_RAY_LEN = 3000;
+let showNormal = false;
+let showFocal = false;
+
+// --- Utility math ---
+function vec(x,y){return{x,y}}
+function vadd(a,b){return{x:a.x+b.x,y:a.y+b.y}}
+function vsub(a,b){return{x:a.x-b.x,y:a.y-b.y}}
+function vmul(a,s){return{x:a.x*s,y:a.y*s}}
+function vdot(a,b){return a.x*b.x+a.y*b.y}
+function vlen(a){return Math.sqrt(a.x*a.x+a.y*a.y)}
+function vnorm(a){const l=vlen(a)||1;return{x:a.x/l,y:a.y/l}}
+function vcross(a,b){return a.x*b.y-a.y*b.x}
+function vrot(a,ang){const c=Math.cos(ang),s=Math.sin(ang);return{x:a.x*c-a.y*s,y:a.x*s+a.y*c}}
+
+function ptOnSeg(p,a,b){
+  const ab=vsub(b,a),ap=vsub(p,a);
+  const t=Math.max(0,Math.min(1,vdot(ap,ab)/vdot(ab,ab)));
+  return vadd(a,vmul(ab,t));
+}
+
+function distPtSeg(p,a,b){return vlen(vsub(p,ptOnSeg(p,a,b)))}
+
+function raySegIntersect(ro,rd,a,b){
+  const d=vsub(b,a),den=vcross(rd,d);
+  if(Math.abs(den)<1e-9)return null;
+  const t2=vcross(vsub(a,ro),d)/den;
+  const t1=vcross(vsub(a,ro),rd)/den;
+  if(t1>0.001 && t1<0.999 && t2>0.001){
+    return{t:t2,pt:vadd(ro,vmul(rd,t2)),u:t1};
+  }
+  return null;
+}
+
+function reflect(rd,n){
+  const d=2*vdot(rd,n);
+  return vsub(rd,vmul(n,d));
+}
+
+function refract(rd,n,eta){
+  const cosi=-vdot(rd,n);
+  const k=1-eta*eta*(1-cosi*cosi);
+  if(k<0)return null;
+  return vadd(vmul(rd,eta),vmul(n,eta*cosi-Math.sqrt(k)));
+}
+
+// --- Scene elements ---
+let elements=[];
+let selectedIdx=-1;
+let placing=null;
+let dragging=null;
+let dragOff={x:0,y:0};
+
+class Source{
+  constructor(x,y,angle,count,spread,isPoint){
+    this.x=x;this.y=y;this.angle=angle;this.count=count;
+    this.spread=spread||0;this.isPoint=isPoint||false;
+  }
+  get pt(){return vec(this.x,this.y)}
+  draw(){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.rotate(this.angle);
+    // Body
+    ctx.beginPath();
+    if(this.isPoint){
+      ctx.arc(0,0,14,0,Math.PI*2);
+      ctx.fillStyle='rgba(253,230,138,0.25)';
+      ctx.fill();
+      ctx.strokeStyle='#fde68a';
+      ctx.lineWidth=2;
+      ctx.stroke();
+      // Arrow indicating direction if spread > 0
+      if(this.spread>0){
+        ctx.beginPath();
+        ctx.moveTo(0,-8);ctx.lineTo(6,4);ctx.lineTo(-6,4);ctx.closePath();
+        ctx.fillStyle='#fde68a';ctx.fill();
+      }
+    } else {
+      // Parallel source: bar
+      ctx.fillStyle='rgba(253,230,138,0.2)';
+      ctx.strokeStyle='#fde68a';
+      ctx.lineWidth=2;
+      ctx.fillRect(-3,-30,6,60);
+      ctx.strokeRect(-3,-30,6,60);
+      // Direction arrows
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath();
+        ctx.moveTo(6,i*12);ctx.lineTo(14,i*12);
+        ctx.strokeStyle='#fde68a';ctx.lineWidth=1.5;ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(14,i*12);ctx.lineTo(10,i*12-3);ctx.moveTo(14,i*12);ctx.lineTo(10,i*12+3);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    if(selectedIdx===elements.indexOf(this)){
+      ctx.save();ctx.strokeStyle='rgba(245,158,11,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(this.x,this.y,24,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+    }
+  }
+  getRays(){
+    const rays=[];
+    if(this.isPoint){
+      const half=this.spread/2;
+      for(let i=0;i<this.count;i++){
+        const a=this.angle-half+(this.count>1?(this.spread*i/(this.count-1)):0);
+        rays.push({ox:this.x,oy:this.y,dx:Math.cos(a),dy:Math.sin(a)});
+      }
+    } else {
+      for(let i=0;i<this.count;i++){
+        const off=(this.count>1)?(-28+(56*i/(this.count-1))):0;
+        const px=this.x+off*Math.cos(this.angle+Math.PI/2);
+        const py=this.y+off*Math.sin(this.angle+Math.PI/2);
+        rays.push({ox:px,oy:py,dx:Math.cos(this.angle),dy:Math.sin(this.angle)});
+      }
+    }
+    return rays;
+  }
+  hitTest(px,py){return Math.hypot(px-this.x,py-this.y)<22}
+  rotate(da){this.angle+=da}
+}
+
+class Mirror{
+  constructor(x,y,len,angle){
+    this.x=x;this.y=y;this.len=len||120;this.angle=angle||0;
+  }
+  get a(){return vadd(this.pt,vmul(this.dir,-this.len/2))}
+  get b(){return vadd(this.pt,vmul(this.dir,this.len/2))}
+  get pt(){return vec(this.x,this.y)}
+  get dir(){return vec(Math.cos(this.angle),Math.sin(this.angle))}
+  get normal(){return vec(-Math.sin(this.angle),Math.cos(this.angle))}
+  draw(){
+    const a=this.a,b=this.b;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle='#60a5fa';ctx.lineWidth=4;ctx.lineCap='round';ctx.stroke();
+    // Hash marks on back
+    const n=this.normal;
+    const steps=Math.floor(this.len/12);
+    for(let i=0;i<=steps;i++){
+      const t=i/steps;
+      const px=a.x+(b.x-a.x)*t,py=a.y+(b.y-a.y)*t;
+      ctx.beginPath();
+      ctx.moveTo(px,py);ctx.lineTo(px-n.x*8,py-n.y*8);
+      ctx.strokeStyle='rgba(96,165,250,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+    if(selectedIdx===elements.indexOf(this)){
+      ctx.save();ctx.strokeStyle='rgba(245,158,11,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(this.x,this.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
+  hitTest(px,py){return distPtSeg(vec(px,py),this.a,this.b)<12}
+  rotate(da){this.angle+=da}
+}
+
+class Lens{
+  constructor(x,y,f,type,angle){
+    this.x=x;this.y=y;this.f=f||100;this.type=type||'convex';
+    this.h=80;this.angle=angle||0;
+  }
+  get pt(){return vec(this.x,this.y)}
+  get dir(){return vec(Math.cos(this.angle),Math.sin(this.angle))}
+  get normal(){return vec(-Math.sin(this.angle),Math.cos(this.angle))}
+  get focalPt(){
+    const d=this.type==='convex'?this.f:-this.f;
+    return vadd(this.pt,vmul(this.dir,d));
+  }
+  draw(){
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    const hh=this.h/2;
+    // Draw lens body rotated 90° so it's perpendicular to the optical axis
+    ctx.save();ctx.rotate(Math.PI/2);
+    if(this.type==='convex'){
+      ctx.beginPath();
+      ctx.moveTo(-hh,-20);ctx.quadraticCurveTo(0,-28,hh,-20);
+      ctx.lineTo(hh,20);ctx.quadraticCurveTo(0,28,-hh,20);
+      ctx.closePath();
+      ctx.fillStyle='rgba(52,211,153,0.12)';ctx.fill();
+      ctx.strokeStyle='#34d399';ctx.lineWidth=2.5;ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-hh,-20);ctx.quadraticCurveTo(0,-12,hh,-20);
+      ctx.lineTo(hh,20);ctx.quadraticCurveTo(0,12,-hh,20);
+      ctx.closePath();
+      ctx.fillStyle='rgba(52,211,153,0.08)';ctx.fill();
+      ctx.strokeStyle='#34d399';ctx.lineWidth=2.5;ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-hh+6,-16);ctx.quadraticCurveTo(0,-10,hh-6,-16);
+      ctx.moveTo(-hh+6,16);ctx.quadraticCurveTo(0,10,hh-6,16);
+      ctx.strokeStyle='rgba(52,211,153,0.4)';ctx.lineWidth=1;ctx.stroke();
+    }
+    ctx.restore();
+    // Optical axis (horizontal = direction of light)
+    ctx.beginPath();ctx.moveTo(-hh-10,0);ctx.lineTo(hh+10,0);
+    ctx.strokeStyle='rgba(52,211,153,0.2)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();
+    ctx.restore();
+
+    // Focal points
+    if(showFocal){
+      const fp=this.focalPt;
+      ctx.beginPath();ctx.arc(fp.x,fp.y,5,0,Math.PI*2);
+      ctx.fillStyle=this.type==='convex'?'rgba(52,211,153,0.6)':'rgba(52,211,153,0.3)';
+      ctx.fill();
+      ctx.font='11px Inter,sans-serif';ctx.fillStyle='rgba(52,211,153,0.7)';ctx.textAlign='center';
+      ctx.fillText('F',fp.x,fp.y-10);
+    }
+
+    if(selectedIdx===elements.indexOf(this)){
+      ctx.save();ctx.strokeStyle='rgba(245,158,11,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(this.x,this.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
+  hitTest(px,py){
+    const dx=px-this.x,dy=py-this.y;
+    const along=dx*this.dir.x+dy*this.dir.y;
+    const perp=-dx*this.normal.x+dy*this.normal.y;  // Fixed: use correct sign
+    // Actually: perp component = dot with normal
+    const perpVal = dx*(-Math.sin(this.angle)) + dy*(Math.cos(this.angle));
+    return Math.abs(along)<this.h/2+8 && Math.abs(perpVal)<22;
+  }
+  rotate(da){this.angle+=da}
+}
+
+class Prism{
+  constructor(x,y,size,angle){
+    this.x=x;this.y=y;this.size=size||70;this.angle=angle||0;this.n=1.5;
+  }
+  get pt(){return vec(this.x,this.y)}
+  get vertices(){
+    const s=this.size;
+    const pts=[
+      {x:0,y:-s*0.577},
+      {x:-s/2,y:s*0.289},
+      {x:s/2,y:s*0.289}
+    ];
+    return pts.map(p=>{
+      const r=vrot(p,this.angle);
+      return{x:this.x+r.x,y:this.y+r.y};
+    });
+  }
+  get edges(){
+    const v=this.vertices;
+    return[[v[0],v[1]],[v[1],v[2]],[v[2],v[0]]];
+  }
+  draw(){
+    const v=this.vertices;
+    ctx.beginPath();
+    ctx.moveTo(v[0].x,v[0].y);
+    ctx.lineTo(v[1].x,v[1].y);
+    ctx.lineTo(v[2].x,v[2].y);
+    ctx.closePath();
+    ctx.fillStyle='rgba(192,132,252,0.1)';ctx.fill();
+    ctx.strokeStyle='#c084fc';ctx.lineWidth=2.5;ctx.stroke();
+    if(selectedIdx===elements.indexOf(this)){
+      ctx.save();ctx.strokeStyle='rgba(245,158,11,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(this.x,this.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
+  hitTest(px,py){return Math.hypot(px-this.x,py-this.y)<this.size*0.6}
+  rotate(da){this.angle+=da}
+}
+
+class Block{
+  constructor(x,y,len,angle){
+    this.x=x;this.y=y;this.len=len||100;this.angle=angle||0;
+  }
+  get pt(){return vec(this.x,this.y)}
+  get dir(){return vec(Math.cos(this.angle),Math.sin(this.angle))}
+  get a(){return vadd(this.pt,vmul(this.dir,-this.len/2))}
+  get b(){return vadd(this.pt,vmul(this.dir,this.len/2))}
+  draw(){
+    const a=this.a,b=this.b;
+    const n=this.dir;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(a.x-n.y*4,a.y+n.x*4);
+    ctx.lineTo(b.x-n.y*4,b.y+n.x*4);
+    ctx.lineTo(b.x+n.y*4,b.y-n.x*4);
+    ctx.lineTo(a.x+n.y*4,a.y-n.x*4);
+    ctx.closePath();
+    ctx.fillStyle='rgba(100,116,139,0.4)';ctx.fill();
+    ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.stroke();
+    ctx.restore();
+    if(selectedIdx===elements.indexOf(this)){
+      ctx.save();ctx.strokeStyle='rgba(245,158,11,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(this.x,this.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
+  hitTest(px,py){return distPtSeg(vec(px,py),this.a,this.b)<10}
+  rotate(da){this.angle+=da}
+}
+
+// --- Ray tracing ---
+function traceRays(){
+  const allSegments=[];
+  for(const el of elements){
+    if(!(el instanceof Source)){
+      allSegments.push(el);
+    }
+  }
+
+  const sources=elements.filter(e=>e instanceof Source);
+  const colors=['#fde68a','#fcd34d','#fbbf24','#f59e0b'];
+
+  for(let si=0;si<sources.length;si++){
+    const src=sources[si];
+    const rays=src.getRays();
+    const color=colors[si%colors.length];
+
+    for(const ray of rays){
+      traceOneRay(ray.ox,ray.oy,ray.dx,ray.dy,0,color,allSegments);
+    }
+  }
+}
+
+function traceOneRay(ox,oy,dx,dy,depth,color,elems){
+  if(depth>MAX_BOUNCES)return;
+
+  let nearest=null;
+  let nearDist=MAX_RAY_LEN;
+  let nearEl=null;
+
+  for(const el of elems){
+    if(el instanceof Mirror || el instanceof Block){
+      const hit=raySegIntersect(vec(ox,oy),vec(dx,dy),el.a,el.b);
+      if(hit && hit.t<nearDist){
+        nearDist=hit.t;nearest=hit;nearEl=el;
+      }
+    } else if(el instanceof Lens){
+      // Treat lens as a thin line segment perpendicular to optical axis
+      const n=el.normal;
+      const a=vadd(el.pt,vmul(n,-el.h/2));
+      const b=vadd(el.pt,vmul(n,el.h/2));
+      const hit=raySegIntersect(vec(ox,oy),vec(dx,dy),a,b);
+      if(hit && hit.t<nearDist){
+        nearDist=hit.t;nearest=hit;nearEl=el;
+      }
+    } else if(el instanceof Prism){
+      for(const edge of el.edges){
+        const hit=raySegIntersect(vec(ox,oy),vec(dx,dy),edge[0],edge[1]);
+        if(hit && hit.t<nearDist){
+          nearDist=hit.t;nearest=hit;nearEl=el;
+        }
+      }
+    }
+  }
+
+  // Draw ray segment
+  const endPt=nearest?nearest.pt:vadd(vec(ox,oy),vmul(vec(dx,dy),MAX_RAY_LEN));
+  const grad=ctx.createLinearGradient(ox,oy,endPt.x,endPt.y);
+  grad.addColorStop(0,color);
+  grad.addColorStop(1,depth>0?'rgba(253,230,138,0.2)':'rgba(253,230,138,0.05)');
+  ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(endPt.x,endPt.y);
+  ctx.strokeStyle=depth===0?color:'rgba(253,230,138,0.5)';
+  ctx.lineWidth=depth===0?2:1.2;ctx.stroke();
+
+  if(!nearest)return;
+
+  const pt=nearest.pt;
+
+  if(nearEl instanceof Mirror){
+    const n=nearEl.normal;
+    const rd=reflect(vec(dx,dy),n);
+    if(showNormal){
+      ctx.beginPath();ctx.moveTo(pt.x,pt.y);ctx.lineTo(pt.x+n.x*30,pt.y+n.y*30);
+      ctx.strokeStyle='rgba(148,163,184,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+    }
+    traceOneRay(pt.x,pt.y,rd.x,rd.y,depth+1,color,elems);
+  }
+  else if(nearEl instanceof Block){
+    // Absorbed - stop
+    return;
+  }
+  else if(nearEl instanceof Lens){
+    // Thin lens: bend ray toward/away from optical axis
+    const dir=nearEl.dir;
+    const n=nearEl.normal;
+    // Distance from optical axis (perpendicular component)
+    const rel=vsub(pt,nearEl.pt);
+    const h=vdot(rel,n); // signed distance from axis
+    const f=nearEl.f;
+    // Deflection angle: theta ≈ -h/f (for thin lens)
+    const deflAngle = nearEl.type==='convex' ? -h/f : h/Math.abs(f);
+    const rd=vrot(vec(dx,dy),deflAngle);
+    // Show normal if requested
+    if(showNormal){
+      ctx.beginPath();ctx.moveTo(pt.x,pt.y);ctx.lineTo(pt.x+n.x*25,pt.y+n.y*25);
+      ctx.strokeStyle='rgba(148,163,184,0.3)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+    }
+    traceOneRay(pt.x,pt.y,rd.x,rd.y,depth+1,color,elems);
+  }
+  else if(nearEl instanceof Prism){
+    // Find which edge was hit, compute normal
+    const edges=nearEl.edges;
+    let hitEdge=null;
+    for(const edge of edges){
+      const hit=raySegIntersect(vec(ox,oy),vec(dx,dy),edge[0],edge[1]);
+      if(hit && Math.abs(hit.t-nearDist)<0.1){
+        hitEdge=edge;break;
+      }
+    }
+    if(!hitEdge)return;
+    const edgeDir=vsub(hitEdge[1],hitEdge[0]);
+    let n=vec(-edgeDir.y,edgeDir.x);
+    n=vnorm(n);
+    // Ensure normal points outward (away from prism center)
+    const toCenter=vsub(nearEl.pt,pt);
+    if(vdot(n,toCenter)>0)n=vmul(n,-1);
+
+    const rd=refract(vec(dx,dy),n,1/nearEl.n);
+    if(showNormal){
+      ctx.beginPath();ctx.moveTo(pt.x,pt.y);ctx.lineTo(pt.x+n.x*30,pt.y+n.y*30);
+      ctx.strokeStyle='rgba(148,163,184,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+    }
+    if(rd){
+      traceOneRay(pt.x,pt.y,rd.x,rd.y,depth+1,color,elems);
+    }
+    // Total internal reflection
+    else{
+      const refl=reflect(vec(dx,dy),n);
+      traceOneRay(pt.x,pt.y,refl.x,refl.y,depth+1,'rgba(251,191,36,0.6)',elems);
+    }
+  }
+}
+
+// --- Drawing ---
+function draw(){
+  ctx.fillStyle='#080c16';ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(148,163,184,0.04)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  showNormal=document.getElementById('chkNormal').checked;
+  showFocal=document.getElementById('chkFocal').checked;
+
+  for(const el of elements)el.draw();
+  traceRays();
+}
+
+function resize(){
+  const wrap=canvas.parentElement;
+  dpr=window.devicePixelRatio||1;
+  W=wrap.clientWidth;H=wrap.clientHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+window.addEventListener('resize',resize);
+
+// --- Interaction ---
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  return{x:(e.clientX||e.touches?.[0]?.clientX||0)-r.left,y:(e.clientY||e.touches?.[0]?.clientY||0)-r.top};
+}
+
+function hitTest(px,py){
+  for(let i=elements.length-1;i>=0;i--){
+    if(elements[i].hitTest(px,py))return i;
+  }
+  return-1;
+}
+
+function setMode(m){
+  placing=m;
+  document.getElementById('btnSelect').classList.toggle('active',!m);
+  ['btnSource','btnPointSrc','btnMirror','btnConvex','btnConcave','btnPrism','btnBlock'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.toggle('active',
+      (id==='btnSource'&&m==='source')||
+      (id==='btnPointSrc'&&m==='pointsrc')||
+      (id==='btnMirror'&&m==='mirror')||
+      (id==='btnConvex'&&m==='convex')||
+      (id==='btnConcave'&&m==='concave')||
+      (id==='btnPrism'&&m==='prism')||
+      (id==='btnBlock'&&m==='block')
+    );
+  });
+  canvas.style.cursor=m?'crosshair':'default';
+  const names={source:'平行光源',pointsrc:'点光源',mirror:'平面镜',convex:'凸透镜',concave:'凹透镜',prism:'棱镜',block:'遮挡板'};
+  tipEl.textContent=m?`点击画布放置${names[m]}`:'点击放置 · 拖动移动 · 滚轮旋转 · Delete 删除';
+}
+
+canvas.addEventListener('mousedown',e=>{
+  const pos=getPos(e);
+  if(e.button===2)return;
+
+  if(placing){
+    const cnt=parseInt(document.getElementById('rayCount').value);
+    let el;
+    switch(placing){
+      case 'source':el=new Source(pos.x,pos.y,0,cnt,0,false);break;
+      case 'pointsrc':el=new Source(pos.x,pos.y,-Math.PI/2,cnt,Math.PI*1.5,true);break;
+      case 'mirror':el=new Mirror(pos.x,pos.y,120,0);break;
+      case 'convex':el=new Lens(pos.x,pos.y,120,'convex',0);break;
+      case 'concave':el=new Lens(pos.x,pos.y,-120,'concave',0);break;
+      case 'prism':el=new Prism(pos.x,pos.y,70,0);break;
+      case 'block':el=new Block(pos.x,pos.y,100,0);break;
+    }
+    if(el){
+      elements.push(el);
+      selectedIdx=elements.length-1;
+      draw();
+    }
+    return;
+  }
+
+  // Select mode
+  const idx=hitTest(pos.x,pos.y);
+  selectedIdx=idx;
+  if(idx>=0){
+    dragging=idx;
+    dragOff.x=pos.x-elements[idx].x;
+    dragOff.y=pos.y-elements[idx].y;
+    canvas.style.cursor='grabbing';
+  }
+  draw();
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const pos=getPos(e);
+  if(dragging!==null){
+    elements[dragging].x=pos.x-dragOff.x;
+    elements[dragging].y=pos.y-dragOff.y;
+    draw();
+    return;
+  }
+  const idx=hitTest(pos.x,pos.y);
+  canvas.style.cursor=placing?'crosshair':(idx>=0?'grab':'default');
+});
+
+canvas.addEventListener('mouseup',()=>{
+  if(dragging!==null){dragging=null;canvas.style.cursor=placing?'crosshair':'default';}
+});
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(selectedIdx>=0){
+    elements[selectedIdx].rotate(e.deltaY>0?0.05:-0.05);
+    draw();
+  }
+},{passive:false});
+
+canvas.addEventListener('keydown',e=>{
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedIdx>=0){
+    elements.splice(selectedIdx,1);selectedIdx=-1;draw();
+  }
+});
+
+// Touch
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const pos=getPos(e);
+  if(placing){
+    const cnt=parseInt(document.getElementById('rayCount').value);
+    let el;
+    switch(placing){
+      case 'source':el=new Source(pos.x,pos.y,0,cnt,0,false);break;
+      case 'pointsrc':el=new Source(pos.x,pos.y,-Math.PI/2,cnt,Math.PI*1.5,true);break;
+      case 'mirror':el=new Mirror(pos.x,pos.y,120,0);break;
+      case 'convex':el=new Lens(pos.x,pos.y,120,'convex',0);break;
+      case 'concave':el=new Lens(pos.x,pos.y,-120,'concave',0);break;
+      case 'prism':el=new Prism(pos.x,pos.y,70,0);break;
+      case 'block':el=new Block(pos.x,pos.y,100,0);break;
+    }
+    if(el){elements.push(el);selectedIdx=elements.length-1;draw();}
+    return;
+  }
+  const idx=hitTest(pos.x,pos.y);
+  selectedIdx=idx;
+  if(idx>=0){dragging=idx;dragOff.x=pos.x-elements[idx].x;dragOff.y=pos.y-elements[idx].y;}
+  draw();
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(dragging!==null){const pos=getPos(e);elements[dragging].x=pos.x-dragOff.x;elements[dragging].y=pos.y-dragOff.y;draw();}
+},{passive:false});
+canvas.addEventListener('touchend',()=>{dragging=null;});
+
+// --- Buttons ---
+document.getElementById('btnSelect').addEventListener('click',()=>setMode(null));
+document.getElementById('btnSource').addEventListener('click',()=>setMode('source'));
+document.getElementById('btnPointSrc').addEventListener('click',()=>setMode('pointsrc'));
+document.getElementById('btnMirror').addEventListener('click',()=>setMode('mirror'));
+document.getElementById('btnConvex').addEventListener('click',()=>setMode('convex'));
+document.getElementById('btnConcave').addEventListener('click',()=>setMode('concave'));
+document.getElementById('btnPrism').addEventListener('click',()=>setMode('prism'));
+document.getElementById('btnBlock').addEventListener('click',()=>setMode('block'));
+
+document.getElementById('rayCount').addEventListener('input',e=>{
+  document.getElementById('rayCountD').textContent=e.target.value;
+  // Update selected source
+  if(selectedIdx>=0 && elements[selectedIdx] instanceof Source){
+    elements[selectedIdx].count=parseInt(e.target.value);
+    draw();
+  }
+});
+
+document.getElementById('chkNormal').addEventListener('change',draw);
+document.getElementById('chkFocal').addEventListener('change',draw);
+
+document.getElementById('btnDel').addEventListener('click',()=>{
+  if(selectedIdx>=0){elements.splice(selectedIdx,1);selectedIdx=-1;draw();}
+});
+document.getElementById('btnClear').addEventListener('click',()=>{
+  elements=[];selectedIdx=-1;draw();infoEl.innerHTML='已清空画布';
+});
+
+// Presets
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    elements=[];selectedIdx=-1;
+    const cx=W/2,cy=H/2;
+    const p=btn.dataset.preset;
+
+    if(p==='imaging'){
+      elements.push(new Source(cx-280,cy,0,8,0,false));
+      elements.push(new Lens(cx,cy,120,'convex',0));
+    }
+    else if(p==='telescope'){
+      elements.push(new Source(cx-320,cy-40,0.06,15,0.15,true));
+      elements.push(new Lens(cx-80,cy,150,'convex',0));
+      elements.push(new Lens(cx+120,cy,60,'convex',0));
+    }
+    else if(p==='totalreflect'){
+      // Prism with rays hitting at steep angle
+      elements.push(new Source(cx-250,cy+20,0.15,6,0,false));
+      elements.push(new Prism(cx+20,cy-20,90,0));
+    }
+    else if(p==='periscope'){
+      // Classic periscope: horizontal → mirror 1 deflects down → mirror 2 deflects back to horizontal
+      elements.push(new Source(cx-200,cy,0,6,0,false));
+      elements.push(new Mirror(cx-80,cy,100,Math.PI/4));   // 45° mirror: horizontal → downward
+      elements.push(new Mirror(cx-80,cy+120,100,-Math.PI/4)); // -45° mirror: downward → horizontal
+    }
+
+    draw();
+    infoEl.innerHTML=`已加载预设：<b>${btn.textContent}</b>`;
+  });
+});
+
+// Init
+resize();
+</script>
+</body>
+</html>

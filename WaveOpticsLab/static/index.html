@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WaveOpticsLab 波动光学干涉实验</title>
+<link rel="icon" type="image/svg+xml" href="../../static/images/project_icons/waveopticslab-icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#e0e8f0;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:row}
+.right-col{width:260px;display:flex;flex-direction:column;background:rgba(8,8,24,.94);border-left:1px solid rgba(148,163,184,.12);overflow-y:auto;flex-shrink:0}
+.toolbar{display:flex;flex-direction:column;gap:8px;padding:10px;background:transparent;border-bottom:1px solid rgba(148,163,184,.12);z-index:10;backdrop-filter:blur(10px)}
+.toolbar h1{font-size:1rem;font-weight:700;margin-right:8px;white-space:nowrap}
+.toolbar h1 span{color:#a78bfa}
+.sep{width:100%;height:1px;background:rgba(148,163,184,.18)}
+button{padding:6px 12px;border-radius:9px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.8rem;cursor:pointer;transition:.2s;white-space:nowrap;width:100%}
+button:hover{background:rgba(30,41,59,.9);border-color:rgba(167,139,250,.45)}
+button.active{background:rgba(167,139,250,.18);border-color:#a78bfa;color:#c4b5fd}
+label{font-size:.78rem;color:#8896aa;display:flex;align-items:center;gap:5px;white-space:nowrap}
+input[type=range]{width:70px;accent-color:#a78bfa}
+.main-area{flex:1;display:flex;position:relative;overflow:hidden}
+.canvas-wrap{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+.side-panel{background:transparent;padding:10px;border-left:none;display:flex;flex-direction:column;gap:14px}
+.panel-card{background:rgba(30,41,59,.35);border:1px solid rgba(148,163,184,.1);border-radius:12px;padding:14px}
+.panel-card h3{margin:0 0 10px;font-size:.85rem;color:#e0e8f0}
+.stat{display:flex;justify-content:space-between;font-size:.78rem;padding:3px 0;color:#8896aa}
+.stat b{color:#e0e8f0}
+#intensityCanvas{width:100%;height:120px;border-radius:8px;background:rgba(0,0,0,.3)}
+.tip{position:absolute;top:10px;left:10px;padding:7px 12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.22);border-radius:10px;font-size:.75rem;color:#c4b5fd;pointer-events:none}
+.wave-preview{height:24px;border-radius:6px;margin-top:6px}
+@media(max-width:720px){.right-col{display:none}.toolbar{gap:5px}label{font-size:.72rem}input[type=range]{width:55px}}
+</style>
+</head>
+<body>
+<div class="main-area">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div class="tip">调整波长、缝宽、缝距观察干涉/衍射图样变化</div>
+  </div>
+</div>
+
+<div class="right-col">
+  <div class="toolbar">
+    <h1><span>🌊</span> WaveOpticsLab 波动光学</h1>
+    <div class="sep"></div>
+    <button id="btnDouble" class="active">双缝干涉</button>
+    <button id="btnSingle">单缝衍射</button>
+    <button id="btnGrating">光栅衍射</button>
+    <div class="sep"></div>
+    <label>波长 <input type="range" id="wlSlider" min="380" max="780" value="550"><span id="wlDisp" style="min-width:55px">550 nm</span></label>
+    <label>缝宽 <input type="range" id="swSlider" min="5" max="100" value="20"><span id="swDisp">20 μm</span></label>
+    <label id="slitSepLabel">缝距 <input type="range" id="ssSlider" min="20" max="300" value="80"><span id="ssDisp">80 μm</span></label>
+    <label id="gratingNLabel" style="display:none">缝数 <input type="range" id="gnSlider" min="3" max="50" value="10"><span id="gnDisp">10</span></label>
+    <div class="sep"></div>
+    <label>屏幕距离 <input type="range" id="sdSlider" min="50" max="300" value="150"><span id="sdDisp">15.0 cm</span></label>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-card">
+      <h3>强度分布</h3>
+      <canvas id="intensityCanvas"></canvas>
+    </div>
+    <div class="panel-card">
+      <h3>参数</h3>
+      <div class="stat"><span>波长 λ</span><b id="sWl">550 nm</b></div>
+      <div class="stat"><span>缝宽 a</span><b id="sSw">20 μm</b></div>
+      <div class="stat"><span>缝距 d</span><b id="sSs">80 μm</b></div>
+      <div class="stat"><span>屏幕距离 L</span><b id="sSd">15.0 cm</b></div>
+      <div class="stat"><span>条纹间距</span><b id="sFringe">—</b></div>
+    </div>
+    <div class="panel-card">
+      <h3>当前波长预览</h3>
+      <div class="wave-preview" id="wavePreview" style="background:#22c55e"></div>
+    </div>
+    <div class="panel-card">
+      <h3>物理原理</h3>
+      <p style="font-size:.75rem;color:#8896aa;line-height:1.6">
+        <b>双缝干涉</b>：两相干光源叠加，产生等间距明暗条纹，间距 Δy = λL/d。<br>
+        <b>单缝衍射</b>：缝宽越小衍射越宽，中央亮纹宽度 = 2λL/a。<br>
+        <b>光栅</b>：多缝干涉产生尖锐主极大，级次 mλ = d sinθ。
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const intCanvas=document.getElementById('intensityCanvas');
+const ictx=intCanvas.getContext('2d');
+let W,H,dpr,iW,iH;
+
+let mode='double';
+let wavelength=550;
+let slitWidth=20;
+let slitSep=80;
+let gratingN=10;
+let screenDist=150;
+
+function wlToColor(wl){
+  let r=0,g=0,b=0;
+  if(wl>=380&&wl<440){r=-(wl-440)/(440-380);b=1;}
+  else if(wl>=440&&wl<490){g=(wl-440)/(490-440);b=1;}
+  else if(wl>=490&&wl<510){g=1;b=-(wl-510)/(510-490);}
+  else if(wl>=510&&wl<580){r=(wl-510)/(580-510);g=1;}
+  else if(wl>=580&&wl<645){r=1;g=-(wl-645)/(645-580);}
+  else if(wl>=645&&wl<=780){r=1;}
+  let f=1;
+  if(wl>=380&&wl<420)f=0.3+0.7*(wl-380)/(420-380);
+  else if(wl>700&&wl<=780)f=0.3+0.7*(780-wl)/(780-700);
+  return`rgb(${Math.round(r*f*255)},${Math.round(g*f*255)},${Math.round(b*f*255)})`;
+}
+
+function intensity(theta){
+  const lambda=wavelength/1000; // μm
+  const u=Math.PI*slitWidth*Math.sin(theta)/lambda;
+
+  if(mode==='single'){
+    return u===0?1:Math.pow(Math.sin(u)/u,2);
+  }
+  else if(mode==='double'){
+    const alpha=u===0?1:Math.pow(Math.sin(u)/u,2);
+    const beta=Math.PI*slitSep*Math.sin(theta)/lambda;
+    return alpha*Math.pow(Math.cos(beta),2);
+  }
+  else{
+    const alpha=u===0?1:Math.pow(Math.sin(u)/u,2);
+    const delta=2*Math.PI*slitSep*Math.sin(theta)/lambda;
+    const denom=Math.sin(delta/2);
+    const interference=denom===0?gratingN*gratingN:Math.pow(Math.sin(gratingN*delta/2)/denom,2);
+    return alpha*interference/gratingN;
+  }
+}
+
+function draw(){
+  ctx.fillStyle='#050510';ctx.fillRect(0,0,W,H);
+
+  const barrierX=W*0.35;
+  const screenX=W*0.88;
+  const cy=H/2;
+  const color=wlToColor(wavelength);
+
+  // Wavefronts from source
+  const sourceX=W*0.05;
+  ctx.strokeStyle='rgba(167,139,250,0.12)';
+  ctx.lineWidth=1;
+  for(let r=20;r<barrierX-sourceX;r+=wavelength/8){
+    ctx.beginPath();
+    ctx.arc(sourceX,cy,r,-Math.PI/2.5,Math.PI/2.5);
+    ctx.stroke();
+  }
+
+  // Source dot
+  ctx.beginPath();ctx.arc(sourceX,cy,4,0,Math.PI*2);
+  ctx.fillStyle='#a78bfa';ctx.fill();
+
+  // Barrier (drawn as opaque blocks with slit gaps)
+  const barrierW=6;
+  ctx.fillStyle='#1e293b';
+  ctx.fillRect(barrierX-barrierW/2,0,barrierW,H);
+
+  // Cut out slits (draw dark gaps)
+  ctx.fillStyle='#050510';
+  if(mode==='double'){
+    const halfGap=slitSep/2;
+    const halfW=slitWidth/2;
+    // Top slit gap
+    ctx.fillRect(barrierX-barrierW/2,cy-halfGap-halfW,barrierW,halfW*2);
+    // Bottom slit gap
+    ctx.fillRect(barrierX-barrierW/2,cy+halfGap-halfW,barrierW,halfW*2);
+    // Purple slit indicators
+    ctx.fillStyle='rgba(167,139,250,0.4)';
+    ctx.fillRect(barrierX-barrierW/2,cy-halfGap-halfW,barrierW,halfW*2);
+    ctx.fillRect(barrierX-barrierW/2,cy+halfGap-halfW,barrierW,halfW*2);
+  }
+  else if(mode==='single'){
+    const halfW=slitWidth/2;
+    ctx.fillRect(barrierX-barrierW/2,cy-halfW,barrierW,halfW*2);
+    ctx.fillStyle='rgba(167,139,250,0.4)';
+    ctx.fillRect(barrierX-barrierW/2,cy-halfW,barrierW,halfW*2);
+  }
+  else{
+    const gapH=slitSep;
+    const slitH=slitWidth;
+    const totalH=gratingN*gapH;
+    for(let i=0;i<gratingN;i++){
+      const y=cy-totalH/2+i*gapH;
+      ctx.fillStyle='#050510';
+      ctx.fillRect(barrierX-barrierW/2,y,barrierW,slitH);
+      ctx.fillStyle='rgba(167,139,250,0.3)';
+      ctx.fillRect(barrierX-barrierW/2,y,barrierW,slitH);
+    }
+  }
+
+  // Interference pattern on screen
+  const screenH=H*0.85;
+  const screenTop=(H-screenH)/2;
+
+  for(let py=0;py<screenH;py++){
+    const y=(py-screenH/2);
+    const theta=Math.atan2(y,screenDist*10);
+    const I=intensity(theta);
+    ctx.fillStyle=color;
+    ctx.globalAlpha=Math.min(1,I);
+    ctx.fillRect(screenX,screenTop+py,8,1);
+  }
+  ctx.globalAlpha=1;
+
+  // Screen border
+  ctx.strokeStyle='rgba(148,163,184,0.3)';ctx.lineWidth=2;
+  ctx.strokeRect(screenX-1,screenTop,10,screenH);
+
+  // Intensity curve overlay
+  ctx.beginPath();
+  ctx.strokeStyle='rgba(167,139,250,0.5)';ctx.lineWidth=1.5;
+  for(let py=0;py<screenH;py++){
+    const y=(py-screenH/2);
+    const theta=Math.atan2(y,screenDist*10);
+    const I=intensity(theta);
+    const x=screenX-16-I*50;
+    if(py===0)ctx.moveTo(x,screenTop+py);else ctx.lineTo(x,screenTop+py);
+  }
+  ctx.stroke();
+
+  // Labels
+  ctx.font='12px Inter,sans-serif';ctx.fillStyle='#8896aa';ctx.textAlign='center';
+  ctx.fillText('光源',sourceX,cy+24);
+  ctx.fillText('挡板',barrierX,H-16);
+  ctx.fillText('屏幕',screenX+4,H-16);
+
+  drawIntensity();
+  updateStats();
+}
+
+function drawIntensity(){
+  ictx.clearRect(0,0,iW,iH);
+  ictx.fillStyle='rgba(0,0,0,0.3)';
+  ictx.fillRect(0,0,iW,iH);
+
+  const color=wlToColor(wavelength);
+  const maxTheta=Math.PI/3;
+
+  // Filled area
+  ictx.beginPath();
+  ictx.moveTo(0,iH);
+  for(let i=0;i<=iW;i++){
+    const theta=(i/iW-0.5)*2*maxTheta;
+    const I=intensity(theta);
+    ictx.lineTo(i,iH-I*(iH-10));
+  }
+  ictx.lineTo(iW,iH);ictx.closePath();
+  ictx.fillStyle=color;ictx.globalAlpha=0.25;ictx.fill();
+  ictx.globalAlpha=1;
+
+  // Line
+  ictx.beginPath();
+  for(let i=0;i<=iW;i++){
+    const theta=(i/iW-0.5)*2*maxTheta;
+    const I=intensity(theta);
+    if(i===0)ictx.moveTo(i,iH-I*(iH-10));else ictx.lineTo(i,iH-I*(iH-10));
+  }
+  ictx.strokeStyle=color;ictx.lineWidth=1.5;ictx.stroke();
+
+  // Center line
+  ictx.beginPath();ictx.moveTo(iW/2,0);ictx.lineTo(iW/2,iH);
+  ictx.strokeStyle='rgba(148,163,184,0.2)';ictx.lineWidth=1;ictx.stroke();
+}
+
+function updateStats(){
+  document.getElementById('sWl').textContent=wavelength+' nm';
+  document.getElementById('sSw').textContent=slitWidth+' μm';
+  document.getElementById('sSs').textContent=slitSep+' μm';
+  document.getElementById('sSd').textContent=(screenDist/10).toFixed(1)+' cm';
+  document.getElementById('wavePreview').style.background=wlToColor(wavelength);
+
+  if(mode==='double'){
+    // Δy = λL/d, all in μm: λ(wavelength nm /1000 = μm), L(screenDist * 10 μm), d(slitSep μm)
+    const fringe=(wavelength/1000*screenDist*10)/slitSep;
+    document.getElementById('sFringe').textContent=fringe.toFixed(1)+' μm';
+  }else if(mode==='single'){
+    const central=(2*wavelength/1000*screenDist*10)/slitWidth;
+    document.getElementById('sFringe').textContent='中央 '+central.toFixed(1)+' μm';
+  }else{
+    document.getElementById('sFringe').textContent=gratingN+' 缝光栅';
+  }
+}
+
+// --- Resize ---
+function resize(){
+  const wrap=canvas.parentElement;
+  dpr=window.devicePixelRatio||1;
+  W=wrap.clientWidth;H=wrap.clientHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const iw=intCanvas.parentElement.clientWidth-28;
+  iW=iw;iH=120;
+  intCanvas.width=iw*dpr;intCanvas.height=120*dpr;
+  intCanvas.style.width=iw+'px';intCanvas.style.height='120px';
+  ictx.setTransform(dpr,0,0,dpr,0,0);
+
+  draw();
+}
+window.addEventListener('resize',resize);
+
+// --- Mode ---
+function setMode(m){
+  mode=m;
+  document.getElementById('btnDouble').classList.toggle('active',m==='double');
+  document.getElementById('btnSingle').classList.toggle('active',m==='single');
+  document.getElementById('btnGrating').classList.toggle('active',m==='grating');
+  document.getElementById('slitSepLabel').style.display=m==='single'?'none':'';
+  document.getElementById('gratingNLabel').style.display=m==='grating'?'':'none';
+  draw();
+}
+document.getElementById('btnDouble').addEventListener('click',()=>setMode('double'));
+document.getElementById('btnSingle').addEventListener('click',()=>setMode('single'));
+document.getElementById('btnGrating').addEventListener('click',()=>setMode('grating'));
+
+// --- Sliders ---
+document.getElementById('wlSlider').addEventListener('input',e=>{
+  wavelength=parseInt(e.target.value);
+  document.getElementById('wlDisp').textContent=wavelength+' nm';
+  draw();
+});
+document.getElementById('swSlider').addEventListener('input',e=>{
+  slitWidth=parseInt(e.target.value);
+  document.getElementById('swDisp').textContent=slitWidth+' μm';
+  draw();
+});
+document.getElementById('ssSlider').addEventListener('input',e=>{
+  slitSep=parseInt(e.target.value);
+  document.getElementById('ssDisp').textContent=slitSep+' μm';
+  draw();
+});
+document.getElementById('gnSlider').addEventListener('input',e=>{
+  gratingN=parseInt(e.target.value);
+  document.getElementById('gnDisp').textContent=gratingN;
+  draw();
+});
+document.getElementById('sdSlider').addEventListener('input',e=>{
+  screenDist=parseInt(e.target.value);
+  document.getElementById('sdDisp').textContent=(screenDist/10).toFixed(1)+' cm';
+  draw();
+});
+
+resize();
+</script>
+</body>
+</html>

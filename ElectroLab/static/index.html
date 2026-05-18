@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElectroLab 电磁场可视化实验</title>
+<link rel="icon" type="image/svg+xml" href="../../static/images/project_icons/electrolab-icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e8f0;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:row}
+.main-area{flex:1;display:flex;overflow:hidden}
+.right-col{width:260px;display:flex;flex-direction:column;background:rgba(8,8,24,.94);border-left:1px solid rgba(148,163,184,.12);overflow-y:auto;flex-shrink:0}
+.toolbar{display:flex;flex-direction:column;gap:10px;padding:10px;background:transparent;border-bottom:1px solid rgba(148,163,184,.12);z-index:10}
+.toolbar h1{font-size:1.05rem;font-weight:700;margin-right:12px;white-space:nowrap}
+.toolbar h1 span{color:#165dff}
+.sep{width:100%;height:1px;background:rgba(148,163,184,.2)}
+button{padding:7px 14px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:rgba(30,41,59,.7);color:#c8d5e7;font-size:.85rem;cursor:pointer;transition:.2s;white-space:nowrap;width:100%}
+button:hover{background:rgba(30,41,59,.95);border-color:rgba(22,93,255,.5)}
+button.active{background:rgba(22,93,255,.25);border-color:#165dff;color:#8db2ff}
+button.danger{border-color:rgba(239,68,68,.3);color:#f87171}
+button.danger:hover{background:rgba(239,68,68,.15)}
+label{font-size:.82rem;color:#94a3b8;display:flex;align-items:center;gap:6px;white-space:nowrap}
+input[type=range]{width:70px;accent-color:#165dff}
+select{padding:5px 8px;border-radius:8px;border:1px solid rgba(148,163,184,.2);background:rgba(30,41,59,.7);color:#c8d5e7;font-size:.82rem}
+.canvas-wrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%;cursor:crosshair}
+.info-bar{position:absolute;bottom:12px;left:12px;padding:10px 16px;background:rgba(15,23,42,.88);border:1px solid rgba(148,163,184,.15);border-radius:14px;font-size:.82rem;color:#94a3b8;backdrop-filter:blur(8px);pointer-events:none;line-height:1.7;max-width:340px}
+.info-bar b{color:#e0e8f0}
+.tip{position:absolute;top:12px;right:12px;padding:8px 14px;background:rgba(22,93,255,.12);border:1px solid rgba(22,93,255,.25);border-radius:12px;font-size:.8rem;color:#8db2ff;pointer-events:none;opacity:.9}
+.preset-btn{font-size:.78rem;padding:5px 10px}
+.side-panel{background:transparent;padding:10px;border-left:none}
+@media(max-width:768px){.right-col{display:none}}
+</style>
+</head>
+<body>
+<div class="main-area">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div class="info-bar" id="infoBar">在画布上点击放置电荷，或使用预设配置开始</div>
+    <div class="tip" id="tip">点击画布放置电荷 · 拖动移动 · 右键删除</div>
+  </div>
+</div>
+<div class="right-col">
+  <div class="toolbar">
+    <h1><span>⚡</span> ElectroLab 电磁场可视化</h1>
+    <div class="sep"></div>
+    <button id="btnAddPos" title="点击画布放置正电荷">+ 正电荷</button>
+    <button id="btnAddNeg" title="点击画布放置负电荷">− 负电荷</button>
+    <button id="btnDrag" class="active" title="拖动已有电荷">✋ 拖动</button>
+    <div class="sep"></div>
+    <label>电量 <input type="range" id="chargeVal" min="1" max="10" value="5"><span id="chargeValDisp">5</span></label>
+    <div class="sep"></div>
+    <label>
+      <input type="checkbox" id="chkFieldLines" checked> 电场线
+    </label>
+    <label>
+      <input type="checkbox" id="chkEquipotential" checked> 等势线
+    </label>
+    <label>
+      <input type="checkbox" id="chkArrows"> 矢量箭头
+    </label>
+    <div class="sep"></div>
+    <label>箭头密度
+      <select id="arrowDensity">
+        <option value="50">稀疏</option>
+        <option value="30" selected>适中</option>
+        <option value="20">密集</option>
+      </select>
+    </label>
+    <div class="sep"></div>
+    <span style="font-size:.82rem;color:#94a3b8">预设：</span>
+    <button class="preset-btn" data-preset="dipole">偶极子</button>
+    <button class="preset-btn" data-preset="quadrupole">四极子</button>
+    <button class="preset-btn" data-preset="plate">平行板</button>
+    <button class="preset-btn" data-preset="line">线电荷</button>
+    <div class="sep"></div>
+    <button id="btnClear" class="danger">清除全部</button>
+  </div>
+  <div class="side-panel"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const infoBar = document.getElementById('infoBar');
+const tip = document.getElementById('tip');
+
+let W, H, dpr;
+let charges = [];
+let mode = 'drag'; // 'drag' | 'addPos' | 'addNeg'
+let dragging = null;
+let dragOff = {x:0, y:0};
+
+const K = 800; // Coulomb constant (visual scale)
+
+function resize() {
+  const wrap = canvas.parentElement;
+  dpr = window.devicePixelRatio || 1;
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// Charge class
+class Charge {
+  constructor(x, y, q) {
+    this.x = x;
+    this.y = y;
+    this.q = q; // positive or negative
+  }
+}
+
+// Get potential at point
+function getPotential(px, py) {
+  let V = 0;
+  for (const c of charges) {
+    const dx = px - c.x, dy = py - c.y;
+    const r = Math.sqrt(dx*dx + dy*dy);
+    if (r < 5) return NaN;
+    V += K * c.q / r;
+  }
+  return V;
+}
+
+// Get electric field at point
+function getField(px, py) {
+  let Ex = 0, Ey = 0;
+  for (const c of charges) {
+    const dx = px - c.x, dy = py - c.y;
+    const r2 = dx*dx + dy*dy;
+    const r = Math.sqrt(r2);
+    if (r < 5) continue;
+    const E = K * c.q / r2;
+    Ex += E * dx / r;
+    Ey += E * dy / r;
+  }
+  return {x: Ex, y: Ey};
+}
+
+// --- Drawing ---
+
+function drawBackground() {
+  ctx.fillStyle = '#080c16';
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Equipotential lines using marching squares approximation (color fill)
+function drawEquipotential() {
+  const step = 6;
+  const imgData = ctx.createImageData(Math.ceil(W/step), Math.ceil(H/step));
+  const data = imgData.data;
+  const cols = imgData.width;
+  const rows = imgData.height;
+
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const px = i * step + step/2;
+      const py = j * step + step/2;
+      const V = getPotential(px, py);
+      const idx = (j * cols + i) * 4;
+
+      if (isNaN(V)) {
+        data[idx] = 255; data[idx+1] = 255; data[idx+2] = 255; data[idx+3] = 200;
+        continue;
+      }
+
+      // Color mapping: blue (negative) -> black (zero) -> red (positive)
+      const maxV = 30;
+      const t = Math.max(-1, Math.min(1, V / maxV));
+      let r, g, b;
+      if (t < 0) {
+        const s = -t;
+        r = Math.round(8 + 10 * s);
+        g = Math.round(12 + 40 * s);
+        b = Math.round(30 + 180 * s);
+      } else {
+        r = Math.round(8 + 200 * t);
+        g = Math.round(12 + 40 * t);
+        b = Math.round(30 + 20 * t);
+      }
+      data[idx] = r;
+      data[idx+1] = g;
+      data[idx+2] = b;
+      data[idx+3] = 180;
+    }
+  }
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  // Scale up
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = cols;
+  tmpCanvas.height = rows;
+  tmpCanvas.getContext('2d').putImageData(imgData, 0, 0);
+  ctx.drawImage(tmpCanvas, 0, 0, W, H);
+  ctx.restore();
+}
+
+// Draw equipotential contour lines
+function drawEquipotentialLines() {
+  if (charges.length === 0) return;
+  const levels = [];
+  for (let v = -40; v <= 40; v += 3) {
+    if (v !== 0) levels.push(v);
+  }
+
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.5;
+
+  for (const level of levels) {
+    ctx.strokeStyle = level > 0 ? 'rgba(255,120,80,0.4)' : 'rgba(80,140,255,0.4)';
+    ctx.beginPath();
+
+    const step = 8;
+    const visited = new Set();
+
+    for (let sy = 0; sy < H; sy += step) {
+      for (let sx = 0; sx < W; sx += step) {
+        const v00 = getPotential(sx, sy);
+        const v10 = getPotential(sx + step, sy);
+        const v01 = getPotential(sx, sy + step);
+        const v11 = getPotential(sx + step, sy + step);
+        if (isNaN(v00)||isNaN(v10)||isNaN(v01)||isNaN(v11)) continue;
+
+        // Simple marching squares
+        let c = 0;
+        if (v00 > level) c |= 1;
+        if (v10 > level) c |= 2;
+        if (v11 > level) c |= 4;
+        if (v01 > level) c |= 8;
+        if (c === 0 || c === 15) continue;
+
+        const lerp = (a, b, va, vb) => a + (level - va) / (vb - va) * (b - a);
+
+        const points = [];
+        if ((c & 1) !== (c & 2)) points.push(lerp(sx, sx+step, v00, v10), sy);
+        if ((c & 2) !== (c & 4)) points.push(sx+step, lerp(sy, sy+step, v10, v11));
+        if ((c & 4) !== (c & 8)) points.push(lerp(sx, sx+step, v01, v11), sy+step);
+        if ((c & 8) !== (c & 1)) points.push(sx, lerp(sy, sy+step, v00, v01));
+
+        if (points.length >= 4) {
+          ctx.moveTo(points[0], points[1]);
+          ctx.lineTo(points[2], points[3]);
+        }
+      }
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Electric field lines
+function drawFieldLines() {
+  if (charges.length === 0) return;
+
+  const dt = 4;
+  const maxSteps = 600;
+
+  for (const c of charges) {
+    if (c.q <= 0) continue; // Only draw from positive charges
+
+    const nLines = Math.round(8 * Math.abs(c.q));
+    for (let i = 0; i < nLines; i++) {
+      const angle = (2 * Math.PI * i) / nLines;
+      let x = c.x + Math.cos(angle) * 12;
+      let y = c.y + Math.sin(angle) * 12;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+
+      for (let s = 0; s < maxSteps; s++) {
+        const F = getField(x, y);
+        const mag = Math.sqrt(F.x * F.x + F.y * F.y);
+        if (mag < 0.01 || isNaN(mag)) break;
+
+        x += (F.x / mag) * dt;
+        y += (F.y / mag) * dt;
+
+        if (x < -20 || x > W+20 || y < -20 || y > H+20) break;
+
+        // Check if near a negative charge (terminate)
+        let terminated = false;
+        for (const ch of charges) {
+          if (ch.q < 0) {
+            const dx = x - ch.x, dy = y - ch.y;
+            if (dx*dx + dy*dy < 100) { terminated = true; break; }
+          }
+        }
+        if (terminated) { ctx.lineTo(x, y); break; }
+
+        ctx.lineTo(x, y);
+      }
+
+      // Gradient color based on distance from source
+      ctx.strokeStyle = 'rgba(200,220,255,0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Arrow at midpoint
+      const mid = Math.floor(maxSteps / 3);
+      let mx = c.x + Math.cos(angle) * 12, my = c.y + Math.sin(angle) * 12;
+      for (let s = 0; s < mid; s++) {
+        const F = getField(mx, my);
+        const mag = Math.sqrt(F.x*F.x + F.y*F.y);
+        if (mag < 0.01) break;
+        mx += (F.x/mag)*dt; my += (F.y/mag)*dt;
+      }
+      const Fm = getField(mx, my);
+      const magm = Math.sqrt(Fm.x*Fm.x + Fm.y*Fm.y);
+      if (magm > 0.01) {
+        drawArrowHead(mx, my, Fm.x/magm, Fm.y/magm, 6);
+      }
+    }
+  }
+
+  // Lines from negative charges (reverse direction)
+  for (const c of charges) {
+    if (c.q >= 0) continue;
+    const nLines = Math.round(8 * Math.abs(c.q));
+    for (let i = 0; i < nLines; i++) {
+      const angle = (2 * Math.PI * i) / nLines;
+      let x = c.x + Math.cos(angle) * 12;
+      let y = c.y + Math.sin(angle) * 12;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+
+      for (let s = 0; s < maxSteps; s++) {
+        const F = getField(x, y);
+        const mag = Math.sqrt(F.x * F.x + F.y * F.y);
+        if (mag < 0.01 || isNaN(mag)) break;
+        // Reverse direction (lines go INTO negative charge)
+        x -= (F.x / mag) * dt;
+        y -= (F.y / mag) * dt;
+        if (x < -20 || x > W+20 || y < -20 || y > H+20) break;
+        let terminated = false;
+        for (const ch of charges) {
+          if (ch.q > 0) {
+            const dx = x - ch.x, dy = y - ch.y;
+            if (dx*dx + dy*dy < 100) { terminated = true; break; }
+          }
+        }
+        if (terminated) { ctx.lineTo(x, y); break; }
+        ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = 'rgba(180,200,255,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawArrowHead(x, y, dx, dy, size) {
+  const angle = Math.atan2(dy, dx);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size, -size * 0.4);
+  ctx.lineTo(-size, size * 0.4);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,220,255,0.7)';
+  ctx.fill();
+  ctx.restore();
+}
+
+// Arrow grid
+function drawArrows() {
+  if (charges.length === 0) return;
+  const spacing = parseInt(document.getElementById('arrowDensity').value);
+
+  for (let y = spacing/2; y < H; y += spacing) {
+    for (let x = spacing/2; x < W; x += spacing) {
+      // Skip if too close to a charge
+      let near = false;
+      for (const c of charges) {
+        const dx = x-c.x, dy = y-c.y;
+        if (dx*dx+dy*dy < 400) { near = true; break; }
+      }
+      if (near) continue;
+
+      const F = getField(x, y);
+      const mag = Math.sqrt(F.x*F.x + F.y*F.y);
+      if (mag < 0.01) continue;
+
+      const len = Math.min(spacing * 0.4, mag * 2);
+      const nx = F.x / mag, ny = F.y / mag;
+      const ex = x + nx * len, ey = y + ny * len;
+
+      // Color by magnitude
+      const t = Math.min(1, mag / 15);
+      const r = Math.round(100 + 155 * t);
+      const g = Math.round(180 - 80 * t);
+      const b = Math.round(255 - 155 * t);
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(ex, ey);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.65)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      drawArrowHead(ex, ey, nx, ny, 4);
+    }
+  }
+}
+
+// Draw charges
+function drawCharges() {
+  for (const c of charges) {
+    const r = 16 + Math.abs(c.q) * 1.5;
+    const isPos = c.q > 0;
+
+    // Glow
+    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 2.5);
+    grd.addColorStop(0, isPos ? 'rgba(255,80,60,0.3)' : 'rgba(60,120,255,0.3)');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isPos ? '#ef4444' : '#3b82f6';
+    ctx.fill();
+    ctx.strokeStyle = isPos ? '#fca5a5' : '#93c5fd';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Sign
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${r}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isPos ? '+' : '−', c.x, c.y + 1);
+
+    // Charge value label
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText(`q=${c.q > 0 ? '+' : ''}${c.q}`, c.x, c.y + r + 14);
+  }
+}
+
+function draw() {
+  drawBackground();
+  if (document.getElementById('chkEquipotential').checked) {
+    drawEquipotential();
+    drawEquipotentialLines();
+  }
+  if (document.getElementById('chkFieldLines').checked) {
+    drawFieldLines();
+  }
+  if (document.getElementById('chkArrows').checked) {
+    drawArrows();
+  }
+  drawCharges();
+}
+
+// --- Interaction ---
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX || e.touches?.[0]?.clientX || 0) - rect.left,
+    y: (e.clientY || e.touches?.[0]?.clientY || 0) - rect.top
+  };
+}
+
+function findCharge(x, y) {
+  for (let i = charges.length - 1; i >= 0; i--) {
+    const c = charges[i];
+    const dx = x - c.x, dy = y - c.y;
+    if (dx*dx + dy*dy < 900) return i;
+  }
+  return -1;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const pos = getPos(e);
+
+  if (e.button === 2) { // Right click to delete
+    const idx = findCharge(pos.x, pos.y);
+    if (idx >= 0) {
+      charges.splice(idx, 1);
+      draw();
+    }
+    return;
+  }
+
+  if (mode === 'addPos' || mode === 'addNeg') {
+    const q = parseInt(document.getElementById('chargeVal').value);
+    charges.push(new Charge(pos.x, pos.y, mode === 'addPos' ? q : -q));
+    draw();
+    return;
+  }
+
+  // Drag mode
+  const idx = findCharge(pos.x, pos.y);
+  if (idx >= 0) {
+    dragging = idx;
+    dragOff.x = pos.x - charges[idx].x;
+    dragOff.y = pos.y - charges[idx].y;
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const pos = getPos(e);
+
+  if (dragging !== null) {
+    charges[dragging].x = pos.x - dragOff.x;
+    charges[dragging].y = pos.y - dragOff.y;
+    draw();
+  }
+
+  // Show field info
+  if (charges.length > 0) {
+    const F = getField(pos.x, pos.y);
+    const V = getPotential(pos.x, pos.y);
+    const mag = Math.sqrt(F.x*F.x + F.y*F.y);
+    if (!isNaN(V)) {
+      infoBar.innerHTML = `<b>位置</b> (${Math.round(pos.x)}, ${Math.round(pos.y)})<br><b>电位</b> V = ${V.toFixed(1)}<br><b>电场强度</b> |E| = ${mag.toFixed(2)}<br><b>电场方向</b> (${F.x.toFixed(2)}, ${F.y.toFixed(2)})`;
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  dragging = null;
+  canvas.style.cursor = mode === 'drag' ? 'grab' : 'crosshair';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  dragging = null;
+});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const pos = getPos(e);
+  if (mode === 'addPos' || mode === 'addNeg') {
+    const q = parseInt(document.getElementById('chargeVal').value);
+    charges.push(new Charge(pos.x, pos.y, mode === 'addPos' ? q : -q));
+    draw();
+    return;
+  }
+  const idx = findCharge(pos.x, pos.y);
+  if (idx >= 0) {
+    dragging = idx;
+    dragOff.x = pos.x - charges[idx].x;
+    dragOff.y = pos.y - charges[idx].y;
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (dragging !== null) {
+    const pos = getPos(e);
+    charges[dragging].x = pos.x - dragOff.x;
+    charges[dragging].y = pos.y - dragOff.y;
+    draw();
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchend', () => { dragging = null; });
+
+// --- Mode buttons ---
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnAddPos').classList.toggle('active', m === 'addPos');
+  document.getElementById('btnAddNeg').classList.toggle('active', m === 'addNeg');
+  document.getElementById('btnDrag').classList.toggle('active', m === 'drag');
+  canvas.style.cursor = m === 'drag' ? 'grab' : 'crosshair';
+  tip.textContent = m === 'drag' ? '拖动移动电荷 · 右键删除' : (m === 'addPos' ? '点击画布放置正电荷' : '点击画布放置负电荷');
+}
+
+document.getElementById('btnAddPos').addEventListener('click', () => setMode('addPos'));
+document.getElementById('btnAddNeg').addEventListener('click', () => setMode('addNeg'));
+document.getElementById('btnDrag').addEventListener('click', () => setMode('drag'));
+
+document.getElementById('chargeVal').addEventListener('input', e => {
+  document.getElementById('chargeValDisp').textContent = e.target.value;
+});
+
+document.getElementById('chkFieldLines').addEventListener('change', draw);
+document.getElementById('chkEquipotential').addEventListener('change', draw);
+document.getElementById('chkArrows').addEventListener('change', draw);
+document.getElementById('arrowDensity').addEventListener('change', draw);
+
+// Clear
+document.getElementById('btnClear').addEventListener('click', () => {
+  charges = [];
+  draw();
+  infoBar.innerHTML = '画布已清空，点击放置新电荷';
+});
+
+// Presets
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    charges = [];
+    const cx = W / 2, cy = H / 2;
+    const preset = btn.dataset.preset;
+
+    if (preset === 'dipole') {
+      charges.push(new Charge(cx - 120, cy, 5));
+      charges.push(new Charge(cx + 120, cy, -5));
+    } else if (preset === 'quadrupole') {
+      charges.push(new Charge(cx - 100, cy - 80, 5));
+      charges.push(new Charge(cx + 100, cy - 80, -5));
+      charges.push(new Charge(cx + 100, cy + 80, 5));
+      charges.push(new Charge(cx - 100, cy + 80, -5));
+    } else if (preset === 'plate') {
+      // Parallel plate capacitor
+      const n = 6;
+      for (let i = 0; i < n; i++) {
+        const y = cy - 120 + (240 / (n-1)) * i;
+        charges.push(new Charge(cx - 150, y, 4));
+        charges.push(new Charge(cx + 150, y, -4));
+      }
+    } else if (preset === 'line') {
+      const n = 8;
+      for (let i = 0; i < n; i++) {
+        const x = cx - 200 + (400 / (n-1)) * i;
+        charges.push(new Charge(x, cy, 3));
+      }
+    }
+
+    draw();
+    infoBar.innerHTML = `已加载预设：<b>${btn.textContent}</b>（${charges.length} 个电荷）`;
+  });
+});
+
+// Init
+resize();
+setMode('drag');
+</script>
+</body>
+</html>

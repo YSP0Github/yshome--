@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThermoLab 热力学分子运动实验</title>
+<link rel="icon" type="image/svg+xml" href="../../static/images/project_icons/thermolab-icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0608;color:#e0e8f0;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:row}
+.right-col{width:260px;display:flex;flex-direction:column;background:rgba(15,10,18,.94);border-left:1px solid rgba(148,163,184,.12);overflow-y:auto;flex-shrink:0}
+.toolbar{display:flex;flex-direction:column;padding:10px;background:transparent;border-bottom:1px solid rgba(148,163,184,.12);z-index:10;backdrop-filter:blur(10px)}
+.toolbar h1{font-size:1rem;font-weight:700;margin-right:8px;white-space:nowrap}
+.toolbar h1 span{color:#ef4444}
+.sep{width:100%;height:1px;background:rgba(148,163,184,.18)}
+button{padding:6px 12px;border-radius:9px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.8rem;cursor:pointer;transition:.2s;white-space:nowrap;width:100%}
+button:hover{background:rgba(30,41,59,.9);border-color:rgba(239,68,68,.45)}
+button.active{background:rgba(239,68,68,.18);border-color:#ef4444;color:#fca5a5}
+label{font-size:.78rem;color:#8896aa;display:flex;align-items:center;gap:5px;white-space:nowrap}
+input[type=range]{width:70px;accent-color:#ef4444}
+.main-area{flex:1;display:flex;position:relative;overflow:hidden}
+.canvas-wrap{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+.side-panel{background:transparent;padding:10px;border-left:none;display:flex;flex-direction:column;gap:14px}
+.panel-card{background:rgba(30,41,59,.35);border:1px solid rgba(148,163,184,.1);border-radius:12px;padding:14px}
+.panel-card h3{margin:0 0 10px;font-size:.85rem;color:#e0e8f0}
+.stat{display:flex;justify-content:space-between;font-size:.78rem;padding:3px 0;color:#8896aa}
+.stat b{color:#e0e8f0}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.legend span{font-size:.72rem;display:flex;align-items:center;gap:4px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+#histCanvas{width:100%;height:100px;border-radius:8px;background:rgba(0,0,0,.3)}
+.tip{position:absolute;top:10px;left:10px;padding:7px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.22);border-radius:10px;font-size:.75rem;color:#fca5a5;pointer-events:none}
+@media(max-width:720px){.right-col{display:none}.toolbar{gap:5px}label{font-size:.72rem}input[type=range]{width:55px}}
+</style>
+</head>
+<body>
+<div class="main-area">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div class="tip">滚轮加热/冷却 · 拖动滑块调节参数</div>
+  </div>
+</div>
+
+<div class="right-col">
+  <div class="toolbar">
+    <h1><span>🔬</span> ThermoLab 分子运动</h1>
+    <div class="sep"></div>
+    <label>温度 <input type="range" id="tempSlider" min="1" max="200" value="50"><span id="tempDisp">50</span></label>
+    <label>分子数 <input type="range" id="countSlider" min="10" max="300" value="80"><span id="countDisp">80</span></label>
+    <div class="sep"></div>
+    <label>体积 <input type="range" id="volSlider" min="30" max="100" value="100"><span id="volDisp">100</span>%</label>
+    <div class="sep"></div>
+    <label><input type="checkbox" id="chkTrail"> 轨迹</label>
+    <label><input type="checkbox" id="chkHist" checked> 速率分布</label>
+    <div class="sep"></div>
+    <button id="btnHeat">加热</button>
+    <button id="btnCool">冷却</button>
+    <button id="btnPause">暂停</button>
+    <button id="btnReset" class="danger">重置</button>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-card">
+      <h3>热力学参数</h3>
+      <div class="stat"><span>温度 T</span><b id="sTemp">50 K</b></div>
+      <div class="stat"><span>压强 P</span><b id="sPres">0 Pa</b></div>
+      <div class="stat"><span>平均速率</span><b id="sAvgV">0 m/s</b></div>
+      <div class="stat"><span>均方根速率</span><b id="sRmsV">0 m/s</b></div>
+      <div class="stat"><span>平均动能</span><b id="sKE">0 J</b></div>
+      <div class="stat"><span>碰撞次数/s</span><b id="sColl">0</b></div>
+    </div>
+    <div class="panel-card">
+      <h3>速率分布 (Maxwell-Boltzmann)</h3>
+      <canvas id="histCanvas"></canvas>
+      <div class="legend">
+        <span><i style="background:#ef4444"></i>模拟</span>
+        <span><i style="background:#fbbf24"></i>理论</span>
+      </div>
+    </div>
+    <div class="panel-card">
+      <h3>色温映射</h3>
+      <div class="legend" style="flex-direction:column">
+        <span><i style="background:#3b82f6"></i>低温 (蓝色)</span>
+        <span><i style="background:#22c55e"></i>中温 (绿色)</span>
+        <span><i style="background:#f59e0b"></i>高温 (黄色)</span>
+        <span><i style="background:#ef4444"></i>极高温 (红色)</span>
+      </div>
+    </div>
+    <div class="panel-card">
+      <h3>物理原理</h3>
+      <p style="font-size:.75rem;color:#8896aa;line-height:1.6">
+        理想气体中分子做无规则热运动。温度与平均动能成正比，
+        压强来自分子对壁面的碰撞。速率服从 Maxwell-Boltzmann 分布，
+        随温度升高分布右移变宽。
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const histCanvas=document.getElementById('histCanvas');
+const hctx=histCanvas.getContext('2d');
+let W,H,dpr,hW,hH;
+
+// --- Physics ---
+let molecules=[];
+let temperature=50;
+let prevTemperature=50;
+let containerFrac=1.0;
+let paused=false;
+let showTrail=false;
+let showHist=true;
+let totalWallCollisions=0;
+let collisionRate=0;
+let lastCollisionReset=Date.now();
+let wallMomentumTransfer=0;
+let wallContactLength=0;
+
+class Molecule{
+  constructor(x,y,vx,vy){
+    this.x=x;this.y=y;
+    this.vx=vx;this.vy=vy;
+    this.trail=[];
+    this.radius=3;
+  }
+  speed(){return Math.sqrt(this.vx*this.vx+this.vy*this.vy)}
+}
+
+// Spatial grid for fast neighbor lookup
+const GRID_SIZE=16;
+let grid={};
+
+function gridKey(cx,cy){return cx+','+cy;}
+function gridClear(){grid={};}
+function gridInsert(m){
+  const cx=Math.floor(m.x/GRID_SIZE);
+  const cy=Math.floor(m.y/GRID_SIZE);
+  const k=gridKey(cx,cy);
+  if(!grid[k])grid[k]=[];
+  grid[k].push(m);
+}
+function gridNeighbors(m){
+  const cx=Math.floor(m.x/GRID_SIZE);
+  const cy=Math.floor(m.y/GRID_SIZE);
+  const result=[];
+  for(let dx=-1;dx<=1;dx++){
+    for(let dy=-1;dy<=1;dy++){
+      const k=gridKey(cx+dx,cy+dy);
+      if(grid[k])result.push(...grid[k]);
+    }
+  }
+  return result;
+}
+
+function initMolecules(n){
+  molecules=[];
+  const c=getContainer();
+  for(let i=0;i<n;i++){
+    const x=c.x+Math.random()*c.w;
+    const y=c.y+Math.random()*c.h;
+    const angle=Math.random()*Math.PI*2;
+    const speed=Math.sqrt(temperature)*(.5+Math.random());
+    molecules.push(new Molecule(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed));
+  }
+}
+
+function getContainer(){
+  const cw=W*containerFrac,ch=H*containerFrac;
+  return{x:(W-cw)/2,y:(H-ch)/2,w:cw,h:ch};
+}
+
+function moleculeColor(speed){
+  const maxSpeed=Math.sqrt(temperature)*2.5||1;
+  const t=Math.min(1,speed/maxSpeed);
+  if(t<0.25)return`rgb(${Math.round(60+t*4*100)},${Math.round(100+t*4*80)},${Math.round(220-t*4*40)})`;
+  if(t<0.5)return`rgb(${Math.round(100+(t-.25)*4*80)},${Math.round(180-(t-.25)*4*40)},${Math.round(60)})`;
+  if(t<0.75)return`rgb(${Math.round(220)},${Math.round(140-(t-.5)*4*60)},${Math.round(20)})`;
+  return`rgb(${Math.round(240)},${Math.round(80-(t-.75)*4*60)},${Math.round(20)})`;
+}
+
+function rescaleVelocities(){
+  if(prevTemperature<=0)return;
+  const ratio=Math.sqrt(temperature/prevTemperature);
+  for(const m of molecules){
+    m.vx*=ratio;
+    m.vy*=ratio;
+  }
+  prevTemperature=temperature;
+}
+
+function step(){
+  if(paused)return;
+  const c=getContainer();
+  let wallHits=0;
+  let momTransfer=0;
+
+  // Build spatial grid
+  gridClear();
+  for(const m of molecules)gridInsert(m);
+
+  for(const m of molecules){
+    m.x+=m.vx;
+    m.y+=m.vy;
+
+    if(showTrail){
+      m.trail.push({x:m.x,y:m.y});
+      if(m.trail.length>20)m.trail.shift();
+    }else if(m.trail.length>0){m.trail=[];}
+
+    // Wall collisions with momentum transfer
+    if(m.x-m.radius<c.x){
+      m.x=c.x+m.radius;
+      momTransfer+=2*Math.abs(m.vx)*m.radius;
+      m.vx=Math.abs(m.vx);wallHits++;
+    }
+    if(m.x+m.radius>c.x+c.w){
+      m.x=c.x+c.w-m.radius;
+      momTransfer+=2*Math.abs(m.vx)*m.radius;
+      m.vx=-Math.abs(m.vx);wallHits++;
+    }
+    if(m.y-m.radius<c.y){
+      m.y=c.y+m.radius;
+      momTransfer+=2*Math.abs(m.vy)*m.radius;
+      m.vy=Math.abs(m.vy);wallHits++;
+    }
+    if(m.y+m.radius>c.y+c.h){
+      m.y=c.y+c.h-m.radius;
+      momTransfer+=2*Math.abs(m.vy)*m.radius;
+      m.vy=-Math.abs(m.vy);wallHits++;
+    }
+  }
+
+  // Molecule-molecule collisions using spatial grid
+  for(const m of molecules){
+    const neighbors=gridNeighbors(m);
+    for(const other of neighbors){
+      if(other===m)continue;
+      const dx=other.x-m.x,dy=other.y-m.y;
+      const dist2=dx*dx+dy*dy;
+      const minD=m.radius+other.radius;
+      if(dist2<minD*minD&&dist2>0){
+        const dist=Math.sqrt(dist2);
+        const nx=dx/dist,ny=dy/dist;
+        const dvx=m.vx-other.vx,dvy=m.vy-other.vy;
+        const dvn=dvx*nx+dvy*ny;
+        if(dvn>0){
+          m.vx-=dvn*nx;m.vy-=dvn*ny;
+          other.vx+=dvn*nx;other.vy+=dvn*ny;
+          const overlap=minD-dist;
+          m.x-=overlap*nx*0.5;m.y-=overlap*ny*0.5;
+          other.x+=overlap*nx*0.5;other.y+=overlap*ny*0.5;
+        }
+      }
+    }
+  }
+
+  wallMomentumTransfer=momTransfer;
+  totalWallCollisions+=wallHits;
+
+  const now=Date.now();
+  if(now-lastCollisionReset>500){
+    collisionRate=Math.round(totalWallCollisions/((now-lastCollisionReset)/1000));
+    totalWallCollisions=0;
+    lastCollisionReset=now;
+  }
+}
+
+// --- Drawing ---
+function draw(){
+  ctx.fillStyle='#0a0608';ctx.fillRect(0,0,W,H);
+
+  const c=getContainer();
+
+  // Container walls
+  ctx.strokeStyle='rgba(148,163,184,0.3)';ctx.lineWidth=3;
+  ctx.strokeRect(c.x,c.y,c.w,c.h);
+
+  // Piston indicators
+  ctx.fillStyle='rgba(148,163,184,0.15)';
+  ctx.fillRect(c.x-8,c.y,6,c.h);
+  ctx.fillRect(c.x+c.w+2,c.y,6,c.h);
+  ctx.fillRect(c.x,c.y-8,c.w,6);
+  ctx.fillRect(c.x,c.y+c.h+2,c.w,6);
+
+  // Molecules
+  for(const m of molecules){
+    if(showTrail&&m.trail.length>1){
+      ctx.beginPath();
+      ctx.moveTo(m.trail[0].x,m.trail[0].y);
+      for(let i=1;i<m.trail.length;i++)ctx.lineTo(m.trail[i].x,m.trail[i].y);
+      ctx.strokeStyle=moleculeColor(m.speed());
+      ctx.globalAlpha=0.3;ctx.lineWidth=1;ctx.stroke();ctx.globalAlpha=1;
+    }
+    ctx.beginPath();
+    ctx.arc(m.x,m.y,m.radius,0,Math.PI*2);
+    ctx.fillStyle=moleculeColor(m.speed());
+    ctx.fill();
+  }
+
+  if(showHist)drawHistogram();
+  updateStats();
+}
+
+function drawHistogram(){
+  hctx.clearRect(0,0,hW,hH);
+  hctx.fillStyle='rgba(0,0,0,0.3)';
+  hctx.fillRect(0,0,hW,hH);
+
+  if(molecules.length===0)return;
+
+  const speeds=molecules.map(m=>m.speed());
+  const maxSpeed=Math.max(...speeds,Math.sqrt(temperature)*3)||1;
+  const bins=30;
+  const binW=maxSpeed/bins;
+  const counts=new Array(bins).fill(0);
+  for(const s of speeds){
+    const bi=Math.min(bins-1,Math.floor(s/binW));
+    counts[bi]++;
+  }
+  const maxCount=Math.max(...counts,1);
+
+  // Draw simulated bars
+  const barW=hW/bins;
+  for(let i=0;i<bins;i++){
+    const bh=(counts[i]/maxCount)*(hH-10);
+    hctx.fillStyle='rgba(239,68,68,0.6)';
+    hctx.fillRect(i*barW+1,hH-bh,barW-2,bh);
+  }
+
+  // Draw theoretical Maxwell-Boltzmann
+  const T=temperature||1;
+  const sigma=Math.sqrt(T);
+  hctx.beginPath();
+  hctx.strokeStyle='#fbbf24';hctx.lineWidth=1.5;
+  let maxFv=0;
+  for(let i=0;i<=hW;i++){
+    const v=(i/hW)*maxSpeed;
+    const fv=(4*Math.PI)*v*v*Math.exp(-v*v/(2*sigma*sigma))/Math.pow(2*Math.PI*sigma*sigma,1.5);
+    if(fv>maxFv)maxFv=fv;
+  }
+  const scale=maxFv>0?(hH-10)/maxFv:1;
+  for(let i=0;i<=hW;i++){
+    const v=(i/hW)*maxSpeed;
+    const fv=(4*Math.PI)*v*v*Math.exp(-v*v/(2*sigma*sigma))/Math.pow(2*Math.PI*sigma*sigma,1.5);
+    const y=hH-fv*scale;
+    if(i===0)hctx.moveTo(i,y);else hctx.lineTo(i,y);
+  }
+  hctx.stroke();
+}
+
+function updateStats(){
+  if(molecules.length===0)return;
+  const speeds=molecules.map(m=>m.speed());
+  const avgV=speeds.reduce((a,b)=>a+b,0)/speeds.length;
+  const rmsV=Math.sqrt(speeds.reduce((a,b)=>a+b*b,0)/speeds.length);
+  const avgKE=0.5*rmsV*rmsV;
+  const c=getContainer();
+  const perimeter=2*(c.w+c.h);
+  const pressure=perimeter>0?wallMomentumTransfer/(perimeter*0.5):0;
+
+  document.getElementById('sTemp').textContent=temperature.toFixed(0)+' K';
+  document.getElementById('sPres').textContent=(pressure*100).toFixed(1)+' Pa';
+  document.getElementById('sAvgV').textContent=avgV.toFixed(1)+' m/s';
+  document.getElementById('sRmsV').textContent=rmsV.toFixed(1)+' m/s';
+  document.getElementById('sKE').textContent=avgKE.toFixed(2)+' J';
+  document.getElementById('sColl').textContent=collisionRate;
+}
+
+// --- Resize ---
+function resize(){
+  const wrap=canvas.parentElement;
+  dpr=window.devicePixelRatio||1;
+  W=wrap.clientWidth;H=wrap.clientHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const hw=histCanvas.parentElement.clientWidth-28;
+  hW=hw;hH=100;
+  histCanvas.width=hw*dpr;histCanvas.height=100*dpr;
+  histCanvas.style.width=hw+'px';histCanvas.style.height='100px';
+  hctx.setTransform(dpr,0,0,dpr,0,0);
+
+  draw();
+}
+window.addEventListener('resize',resize);
+
+// --- Controls ---
+document.getElementById('tempSlider').addEventListener('input',e=>{
+  prevTemperature=temperature;
+  temperature=parseInt(e.target.value);
+  document.getElementById('tempDisp').textContent=temperature;
+  rescaleVelocities();
+});
+
+document.getElementById('countSlider').addEventListener('input',e=>{
+  const n=parseInt(e.target.value);
+  document.getElementById('countDisp').textContent=n;
+  if(n>molecules.length){
+    const c=getContainer();
+    while(molecules.length<n){
+      const x=c.x+Math.random()*c.w;
+      const y=c.y+Math.random()*c.h;
+      const angle=Math.random()*Math.PI*2;
+      const speed=Math.sqrt(temperature)*(.5+Math.random());
+      molecules.push(new Molecule(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed));
+    }
+  }else if(n<molecules.length){
+    molecules.length=n;
+  }
+});
+
+document.getElementById('volSlider').addEventListener('input',e=>{
+  containerFrac=parseInt(e.target.value)/100;
+  document.getElementById('volDisp').textContent=parseInt(e.target.value);
+  const c=getContainer();
+  for(const m of molecules){
+    m.x=Math.max(c.x+m.radius,Math.min(c.x+c.w-m.radius,m.x));
+    m.y=Math.max(c.y+m.radius,Math.min(c.y+c.h-m.radius,m.y));
+  }
+});
+
+document.getElementById('chkTrail').addEventListener('change',e=>{showTrail=e.target.checked;});
+document.getElementById('chkHist').addEventListener('change',e=>{showHist=e.target.checked;});
+
+document.getElementById('btnHeat').addEventListener('click',()=>{
+  prevTemperature=temperature;
+  temperature=Math.min(200,temperature+20);
+  document.getElementById('tempSlider').value=temperature;
+  document.getElementById('tempDisp').textContent=temperature;
+  rescaleVelocities();
+});
+document.getElementById('btnCool').addEventListener('click',()=>{
+  prevTemperature=temperature;
+  temperature=Math.max(1,temperature-20);
+  document.getElementById('tempSlider').value=temperature;
+  document.getElementById('tempDisp').textContent=temperature;
+  rescaleVelocities();
+});
+
+document.getElementById('btnPause').addEventListener('click',()=>{
+  paused=!paused;
+  document.getElementById('btnPause').textContent=paused?'继续':'暂停';
+  document.getElementById('btnPause').classList.toggle('active',paused);
+});
+
+document.getElementById('btnReset').addEventListener('click',()=>{
+  temperature=50;prevTemperature=50;containerFrac=1;
+  document.getElementById('tempSlider').value=50;
+  document.getElementById('countSlider').value=80;
+  document.getElementById('volSlider').value=100;
+  document.getElementById('tempDisp').textContent='50';
+  document.getElementById('countDisp').textContent='80';
+  document.getElementById('volDisp').textContent='100';
+  initMolecules(80);
+});
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  prevTemperature=temperature;
+  temperature=Math.max(1,Math.min(200,temperature+(e.deltaY>0?-5:5)));
+  document.getElementById('tempSlider').value=temperature;
+  document.getElementById('tempDisp').textContent=temperature;
+  rescaleVelocities();
+},{passive:false});
+
+// --- Main loop ---
+function loop(){
+  step();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+resize();
+initMolecules(80);
+loop();
+</script>
+</body>
+</html>

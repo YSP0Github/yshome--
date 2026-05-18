@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MomentumLab 碰撞与动量守恒实验</title>
+<link rel="icon" type="image/svg+xml" href="../../static/images/project_icons/momentumlab-icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060810;color:#e0e8f0;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:row}
+.right-col{width:260px;display:flex;flex-direction:column;background:rgba(10,14,26,.94);border-left:1px solid rgba(148,163,184,.12);overflow-y:auto;flex-shrink:0}
+.toolbar{display:flex;flex-direction:column;gap:6px;padding:10px 10px;background:transparent;border-bottom:1px solid rgba(148,163,184,.12);flex-wrap:wrap;z-index:10}
+.toolbar h1{font-size:.95rem;font-weight:700;margin-right:6px;white-space:nowrap}
+.toolbar h1 span{color:#22d3ee}
+.sep{width:100%;height:1px;background:rgba(148,163,184,.18)}
+button{padding:5px 10px;border-radius:8px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.75rem;cursor:pointer;transition:.2s;white-space:nowrap;width:100%}
+button:hover{background:rgba(30,41,59,.9);border-color:rgba(34,211,238,.45)}
+button.active{background:rgba(34,211,238,.18);border-color:#22d3ee;color:#67e8f9}
+button.danger{border-color:rgba(239,68,68,.3)}
+button.danger:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.6);color:#fca5a5}
+label{font-size:.75rem;color:#8896aa;display:flex;align-items:center;gap:4px;white-space:nowrap}
+input[type=range]{width:55px;accent-color:#22d3ee}
+select{padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.65);color:#c0ccdd;font-size:.75rem}
+.main-area{flex:1;display:flex;position:relative;overflow:hidden}
+.canvas-wrap{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+.side-panel{background:transparent;padding:10px;display:flex;flex-direction:column;gap:10px}
+.panel-card{background:rgba(30,41,59,.35);border:1px solid rgba(148,163,184,.1);border-radius:10px;padding:12px}
+.panel-card h3{margin:0 0 6px;font-size:.8rem;color:#e0e8f0}
+.ball-info{display:flex;align-items:center;gap:6px;margin:3px 0}
+.ball-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.stat{display:flex;justify-content:space-between;font-size:.72rem;padding:1px 0;color:#8896aa}
+.stat b{color:#e0e8f0}
+.conservation{padding:6px 8px;border-radius:6px;margin-top:4px;font-size:.72rem;line-height:1.5}
+.conservation.ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#86efac}
+.conservation.warn{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#fcd34d}
+.energy-bars{display:flex;gap:8px;margin-top:6px}
+.energy-bar-group{flex:1;text-align:center}
+.energy-bar-label{font-size:.65rem;color:#8896aa;margin-bottom:3px}
+.energy-bar-track{height:8px;background:rgba(148,163,184,0.1);border-radius:4px;overflow:hidden}
+.energy-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.tip{position:absolute;top:8px;left:8px;padding:5px 10px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.18);border-radius:8px;font-size:.7rem;color:#67e8f9;pointer-events:none}
+#momentumChart{width:100%;height:50px;border-radius:6px;background:rgba(0,0,0,.3)}
+.preset-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.preset-btn{font-size:.7rem;padding:4px 8px}
+#ballList{max-height:120px;overflow-y:auto;margin-top:4px}
+.ball-list-item{display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:6px;font-size:.72rem;cursor:pointer;transition:.15s}
+.ball-list-item:hover{background:rgba(34,211,238,.08)}
+.ball-list-item.selected{background:rgba(34,211,238,.15);border:1px solid rgba(34,211,238,.3)}
+.ball-list-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ball-list-item .info{flex:1;color:#8896aa}
+@media(max-width:720px){.right-col{display:none}label{font-size:.7rem}input[type=range]{width:45px}}
+</style>
+</head>
+<body>
+<div class="main-area">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div class="tip">点击选中球 · 拖动移动/设置速度 · 右侧面板查看数据</div>
+  </div>
+</div>
+<div class="right-col">
+<div class="toolbar">
+  <h1><span>💥</span> MomentumLab</h1>
+  <div class="sep"></div>
+  <button id="btnPlay" class="active">▶ 播放</button>
+  <button id="btnPause">⏸ 暂停</button>
+  <button id="btnReset">↻ 重置</button>
+  <div class="sep"></div>
+  <button id="btnAddBall">+ 添加球</button>
+  <button id="btnDelBall" class="danger">删除选中</button>
+  <span id="ballCount" style="font-size:.72rem;color:#8896aa">共 2 球</span>
+  <div class="sep"></div>
+  <label id="selMassLabel" style="display:none">质量 <input type="range" id="selMass" min="1" max="20" value="5"><span id="selMassD">5</span></label>
+  <label id="selVelLabel" style="display:none">速度 <input type="range" id="selVel" min="-10" max="10" value="0"><span id="selVelD">0</span></label>
+  <div class="sep"></div>
+  <label>碰撞
+    <select id="collType">
+      <option value="elastic">弹性 (e=1)</option>
+      <option value="inelastic">非弹性</option>
+      <option value="sticky">完全非弹性</option>
+    </select>
+  </label>
+  <label id="corLabel" style="display:none">e <input type="range" id="corSlider" min="0" max="100" value="70"><span id="corDisp">0.70</span></label>
+  <div class="sep"></div>
+  <label><input type="checkbox" id="chkTrail" checked> 轨迹</label>
+  <label><input type="checkbox" id="chkVectors" checked> 箭头</label>
+</div>
+  <div class="side-panel">
+    <div class="panel-card">
+      <h3>预设场景</h3>
+      <div class="preset-row">
+        <button class="preset-btn" data-preset="headon">对心碰撞</button>
+        <button class="preset-btn" data-preset="heavy">重撞轻</button>
+        <button class="preset-btn" data-preset="light">轻撞重</button>
+        <button class="preset-btn" data-preset="newton">牛顿摆</button>
+        <button class="preset-btn" data-preset="oblique">斜碰</button>
+        <button class="preset-btn" data-preset="equal">等质量</button>
+        <button class="preset-btn" data-preset="stationary">撞静止</button>
+        <button class="preset-btn" data-preset="multi3">三球一线</button>
+        <button class="preset-btn" data-preset="multi5">五球排列</button>
+      </div>
+    </div>
+    <div class="panel-card">
+      <h3>球列表 <span id="selHint" style="font-size:.65rem;color:#67e8f9;font-weight:normal">(点击画布选中)</span></h3>
+      <div id="ballList"></div>
+    </div>
+    <div class="panel-card">
+      <h3>系统统计</h3>
+      <div class="stat"><span>总质量</span><b id="sysMass">—</b></div>
+      <div class="stat"><span>总动量 p</span><b id="sysP">—</b></div>
+      <div class="stat"><span>总动能 KE</span><b id="sysKE">—</b></div>
+      <div class="stat"><span>质心速度</span><b id="sysVcm">—</b></div>
+    </div>
+    <div class="panel-card">
+      <div class="energy-bars">
+        <div class="energy-bar-group">
+          <div class="energy-bar-label">碰撞前 KE</div>
+          <div class="energy-bar-track"><div class="energy-bar-fill" id="keBar1" style="width:0;background:#22d3ee"></div></div>
+        </div>
+        <div class="energy-bar-group">
+          <div class="energy-bar-label">碰撞后 KE</div>
+          <div class="energy-bar-track"><div class="energy-bar-fill" id="keBar2" style="width:0;background:#fbbf24"></div></div>
+        </div>
+      </div>
+      <div id="conservationBox" class="conservation ok" style="margin-top:6px">
+        动量: <span id="momCheck">—</span> | 能量: <span id="enCheck">—</span>
+      </div>
+    </div>
+    <div class="panel-card">
+      <h3>动量-时间</h3>
+      <canvas id="momentumChart"></canvas>
+      <div id="chartLegend" style="font-size:.65rem;color:#8896aa;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="color:#fbbf24">━ 总</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var momCanvas = document.getElementById('momentumChart');
+var mctx = momCanvas.getContext('2d');
+var W = 100, H = 100;
+var dpr = window.devicePixelRatio || 1;
+var mW = 100, mH = 50;
+
+var paused = false;
+var time = 0;
+var momentumHistory = [];
+var collisionFlash = null;
+var beforeSnapshot = null; // {velocities:[], momenta:[]}
+var selectedBall = null;
+
+var COLORS = ['#22d3ee','#f472b6','#a78bfa','#34d399','#fbbf24','#fb923c','#e879f9','#38bdf8'];
+
+function Ball(x, y, r, m, vx, vy, idx) {
+  this.x = x; this.y = y; this.r = r; this.m = m;
+  this.vx = vx; this.vy = vy;
+  this.color = COLORS[idx % COLORS.length];
+  this.label = String.fromCharCode(65 + (idx % 26));
+  this.trail = [];
+  this.stuck = false;
+  this.idx = idx;
+}
+
+Ball.prototype.update = function() {
+  if (this.stuck) return;
+  this.x += this.vx;
+  this.y += this.vy;
+  if (this.x - this.r < 0) { this.x = this.r; this.vx = Math.abs(this.vx); }
+  if (this.x + this.r > W) { this.x = W - this.r; this.vx = -Math.abs(this.vx); }
+  if (this.y - this.r < 0) { this.y = this.r; this.vy = Math.abs(this.vy); }
+  if (this.y + this.r > H) { this.y = H - this.r; this.vy = -Math.abs(this.vy); }
+  this.trail.push({x: this.x, y: this.y});
+  if (this.trail.length > 60) this.trail.shift();
+};
+
+Ball.prototype.speed = function() { return Math.sqrt(this.vx * this.vx + this.vy * this.vy); };
+Ball.prototype.px = function() { return this.m * this.vx; };
+Ball.prototype.py = function() { return this.m * this.vy; };
+Ball.prototype.ke = function() { return 0.5 * this.m * this.speed() * this.speed(); };
+
+var balls = [];
+var nextIdx = 0;
+
+function makeBall(x, y, m, vx, vy) {
+  var r = 8 + m * 1.5;
+  var b = new Ball(x, y, r, m, vx, vy, nextIdx++);
+  return b;
+}
+
+function getVal(id) { return parseInt(document.getElementById(id).value) || 0; }
+function setTxt(id, v) { document.getElementById(id).textContent = v; }
+
+function reset() {
+  paused = false;
+  document.getElementById('btnPlay').classList.add('active');
+  document.getElementById('btnPause').classList.remove('active');
+  nextIdx = 0;
+  balls = [
+    makeBall(W * 0.35, H / 2, 5, 4, 0),
+    makeBall(W * 0.65, H / 2, 8, -3, 0)
+  ];
+  selectedBall = null;
+  time = 0;
+  momentumHistory = [];
+  collisionFlash = null;
+  beforeSnapshot = takeSnapshot();
+  updateAllStats();
+  updateBallList();
+  updateSliders();
+  updateBallCount();
+}
+
+function takeSnapshot() {
+  return {
+    velocities: balls.map(function(b) { return {vx: b.vx, vy: b.vy}; }),
+    totalP: totalMomentum(),
+    totalKE: totalKE()
+  };
+}
+
+function totalMomentum() {
+  var tp = 0;
+  for (var i = 0; i < balls.length; i++) tp += balls[i].px();
+  return tp;
+}
+
+function totalMomentumY() {
+  var tp = 0;
+  for (var i = 0; i < balls.length; i++) tp += balls[i].py();
+  return tp;
+}
+
+function totalKE() {
+  var tk = 0;
+  for (var i = 0; i < balls.length; i++) tk += balls[i].ke();
+  return tk;
+}
+
+function totalMass() {
+  var tm = 0;
+  for (var i = 0; i < balls.length; i++) tm += balls[i].m;
+  return tm;
+}
+
+function updateBallCount() {
+  setTxt('ballCount', '共 ' + balls.length + ' 球');
+}
+
+function updateSliders() {
+  var ml = document.getElementById('selMassLabel');
+  var vl = document.getElementById('selVelLabel');
+  if (selectedBall) {
+    ml.style.display = '';
+    vl.style.display = '';
+    document.getElementById('selMass').value = selectedBall.m;
+    setTxt('selMassD', selectedBall.m);
+    document.getElementById('selVel').value = Math.round(selectedBall.vx);
+    setTxt('selVelD', Math.round(selectedBall.vx));
+  } else {
+    ml.style.display = 'none';
+    vl.style.display = 'none';
+  }
+}
+
+function updateBallList() {
+  var list = document.getElementById('ballList');
+  var html = '';
+  for (var i = 0; i < balls.length; i++) {
+    var b = balls[i];
+    var sel = (selectedBall === b) ? ' selected' : '';
+    html += '<div class="ball-list-item' + sel + '" data-idx="' + i + '">';
+    html += '<div class="dot" style="background:' + b.color + '"></div>';
+    html += '<span class="info">' + b.label + '  m=' + b.m + '  v=' + b.vx.toFixed(1) + '</span>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
+
+  // Bind click events
+  var items = list.querySelectorAll('.ball-list-item');
+  for (var j = 0; j < items.length; j++) {
+    (function(item) {
+      item.addEventListener('click', function() {
+        var idx = parseInt(item.getAttribute('data-idx'));
+        selectedBall = balls[idx] || null;
+        updateBallList();
+        updateSliders();
+      });
+    })(items[j]);
+  }
+}
+
+function updateAllStats() {
+  var tp = totalMomentum();
+  var tk = totalKE();
+  var tm = totalMass();
+  var vcm = tm > 0 ? tp / tm : 0;
+
+  setTxt('sysMass', tm + ' kg');
+  setTxt('sysP', tp.toFixed(1));
+  setTxt('sysKE', tk.toFixed(1));
+  setTxt('sysVcm', vcm.toFixed(2));
+
+  if (beforeSnapshot) {
+    var tp0 = beforeSnapshot.totalP;
+    var tk0 = beforeSnapshot.totalKE;
+    var momOk = Math.abs(tp - tp0) < Math.max(1, Math.abs(tp0) * 0.05);
+    var enOk = tk0 === 0 ? tk === 0 : Math.abs(tk - tk0) / tk0 < 0.05;
+    setTxt('momCheck', momOk ? '✓ 守恒' : '✗ 差异 ' + Math.abs(tp - tp0).toFixed(1));
+    setTxt('enCheck', enOk ? '✓ 守恒' : '✗ 损失 ' + ((1 - tk / tk0) * 100).toFixed(0) + '%');
+    document.getElementById('conservationBox').className = 'conservation ' + (momOk && enOk ? 'ok' : 'warn');
+    document.getElementById('keBar1').style.width = tk0 > 0 ? Math.min(100, tk0 / Math.max(tk0, tk) * 100) + '%' : '0';
+    document.getElementById('keBar2').style.width = tk0 > 0 ? Math.min(100, tk / Math.max(tk0, tk) * 100) + '%' : '0';
+  }
+
+  // Update chart legend
+  var legend = document.getElementById('chartLegend');
+  var lhtml = '<span style="color:#fbbf24">━ 总</span>';
+  for (var i = 0; i < balls.length; i++) {
+    lhtml += '<span style="color:' + balls[i].color + '">━ ' + balls[i].label + '</span>';
+  }
+  legend.innerHTML = lhtml;
+}
+
+function clearPostStats() {
+  setTxt('momCheck', '—');
+  setTxt('enCheck', '—');
+  document.getElementById('conservationBox').className = 'conservation ok';
+  document.getElementById('keBar1').style.width = '0';
+  document.getElementById('keBar2').style.width = '0';
+}
+
+function collide() {
+  for (var i = 0; i < balls.length; i++) {
+    for (var j = i + 1; j < balls.length; j++) {
+      var a = balls[i], b = balls[j];
+      var dx = b.x - a.x, dy = b.y - a.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var minD = a.r + b.r;
+      if (dist >= minD || dist === 0) continue;
+
+      var nx = dx / dist, ny = dy / dist;
+      var dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+      var dvn = dvx * nx + dvy * ny;
+      if (dvn <= 0) continue;
+
+      var overlap = minD - dist;
+      var sep = overlap / 2 + 0.5;
+      a.x -= sep * nx; a.y -= sep * ny;
+      b.x += sep * nx; b.y += sep * ny;
+
+      var type = document.getElementById('collType').value;
+      var e = type === 'elastic' ? 1 : type === 'sticky' ? 0 : getVal('corSlider') / 100;
+
+      var m1 = a.m, m2 = b.m;
+      var impulse = (1 + e) * dvn / (1 / m1 + 1 / m2);
+      a.vx -= impulse * nx / m1; a.vy -= impulse * ny / m1;
+      b.vx += impulse * nx / m2; b.vy += impulse * ny / m2;
+
+      var maxV = 30;
+      a.vx = Math.max(-maxV, Math.min(maxV, a.vx));
+      a.vy = Math.max(-maxV, Math.min(maxV, a.vy));
+      b.vx = Math.max(-maxV, Math.min(maxV, b.vx));
+      b.vy = Math.max(-maxV, Math.min(maxV, b.vy));
+
+      if (type === 'sticky') {
+        var cmx = (m1 * a.vx + m2 * b.vx) / (m1 + m2);
+        var cmy = (m1 * a.vy + m2 * b.vy) / (m1 + m2);
+        a.vx = cmx; a.vy = cmy; b.vx = cmx; b.vy = cmy;
+        a.stuck = true; b.stuck = true;
+        b.x = a.x + nx * minD; b.y = a.y + ny * minD;
+      }
+
+      collisionFlash = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, t: 20 };
+    }
+  }
+}
+
+function drawArrowHead(x, y, ang, size, color, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - size * Math.cos(ang - 0.4), y - size * Math.sin(ang - 0.4));
+  ctx.lineTo(x - size * Math.cos(ang + 0.4), y - size * Math.sin(ang + 0.4));
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function draw() {
+  ctx.fillStyle = '#060810';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(148,163,184,0.03)';
+  ctx.lineWidth = 1;
+  for (var gx = 0; gx < W; gx += 50) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+  for (var gy = 0; gy < H; gy += 50) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+  var showVectors = document.getElementById('chkVectors').checked;
+  var showTrail = document.getElementById('chkTrail').checked;
+
+  // Collision flash
+  if (collisionFlash && collisionFlash.t > 0) {
+    var f = collisionFlash;
+    var alpha = f.t / 20;
+    var fr = (20 - f.t) * 3;
+    var grd = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, fr);
+    grd.addColorStop(0, 'rgba(251,191,36,' + (alpha * 0.6) + ')');
+    grd.addColorStop(0.5, 'rgba(251,146,60,' + (alpha * 0.3) + ')');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, fr, 0, Math.PI * 2);
+    ctx.fill();
+    f.t--;
+  }
+
+  // Balls
+  for (var bi = 0; bi < balls.length; bi++) {
+    var b = balls[bi];
+
+    if (showTrail && b.trail.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(b.trail[0].x, b.trail[0].y);
+      for (var ti = 1; ti < b.trail.length; ti++) ctx.lineTo(b.trail[ti].x, b.trail[ti].y);
+      ctx.strokeStyle = b.color; ctx.globalAlpha = 0.2; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+
+    // Glow
+    var grd2 = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 2);
+    grd2.addColorStop(0, b.color + '30');
+    grd2.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd2;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 2, 0, Math.PI * 2); ctx.fill();
+
+    // Selected highlight
+    if (b === selectedBall) {
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Ball body
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = b.color; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Label + mass
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold ' + Math.max(9, b.r * 0.6) + 'px Inter,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b.label, b.x, b.y - b.r * 0.15);
+    ctx.font = Math.max(7, b.r * 0.35) + 'px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText(b.m + 'kg', b.x, b.y + b.r * 0.4);
+
+    // Velocity vector
+    if (showVectors && (Math.abs(b.vx) > 0.01 || Math.abs(b.vy) > 0.01)) {
+      var vscale = 5;
+      var vex = b.x + b.vx * vscale, vey = b.y + b.vy * vscale;
+      ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(vex, vey);
+      ctx.strokeStyle = b.color; ctx.lineWidth = 2.5; ctx.stroke();
+      drawArrowHead(vex, vey, Math.atan2(b.vy, b.vx), 7, b.color, 1);
+    }
+  }
+
+  drawMomentumChart();
+}
+
+function drawMomentumChart() {
+  mctx.clearRect(0, 0, mW, mH);
+  mctx.fillStyle = 'rgba(0,0,0,0.3)';
+  mctx.fillRect(0, 0, mW, mH);
+  if (momentumHistory.length < 2) return;
+
+  // Find max for scaling
+  var maxP = 10;
+  for (var i = 0; i < momentumHistory.length; i++) {
+    var h = momentumHistory[i];
+    for (var k = 0; k < h.p.length; k++) {
+      var v = Math.abs(h.p[k]);
+      if (v > maxP) maxP = v;
+    }
+    if (Math.abs(h.ptot) > maxP) maxP = Math.abs(h.ptot);
+  }
+
+  var mid = mH / 2;
+  mctx.beginPath(); mctx.moveTo(0, mid); mctx.lineTo(mW, mid);
+  mctx.strokeStyle = 'rgba(148,163,184,0.15)'; mctx.lineWidth = 1; mctx.stroke();
+
+  var step = mW / Math.max(1, momentumHistory.length - 1);
+
+  // Draw individual ball momenta
+  if (balls.length > 0) {
+    for (var bi = 0; bi < balls.length; bi++) {
+      mctx.beginPath();
+      mctx.strokeStyle = balls[bi].color;
+      mctx.lineWidth = 1;
+      mctx.globalAlpha = 0.6;
+      for (var mi = 0; mi < momentumHistory.length; mi++) {
+        var mx2 = mi * step;
+        var my2 = mid - momentumHistory[mi].p[bi] / maxP * (mid - 4);
+        if (mi === 0) mctx.moveTo(mx2, my2); else mctx.lineTo(mx2, my2);
+      }
+      mctx.stroke();
+      mctx.globalAlpha = 1;
+    }
+  }
+
+  // Draw total momentum
+  mctx.beginPath();
+  mctx.strokeStyle = '#fbbf24';
+  mctx.lineWidth = 2;
+  for (var mi2 = 0; mi2 < momentumHistory.length; mi2++) {
+    var mx3 = mi2 * step;
+    var my3 = mid - momentumHistory[mi2].ptot / maxP * (mid - 4);
+    if (mi2 === 0) mctx.moveTo(mx3, my3); else mctx.lineTo(mx3, my3);
+  }
+  mctx.stroke();
+}
+
+// --- Resize ---
+function resize() {
+  var wrap = canvas.parentElement;
+  dpr = window.devicePixelRatio || 1;
+  W = wrap.clientWidth || 400;
+  H = wrap.clientHeight || 400;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  var mw = momCanvas.parentElement.clientWidth - 24;
+  if (mw < 50) mw = 50;
+  mW = mw; mH = 50;
+  momCanvas.width = mw * dpr;
+  momCanvas.height = 50 * dpr;
+  momCanvas.style.width = mw + 'px';
+  momCanvas.style.height = '50px';
+  mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', function() { resize(); });
+
+// --- Controls ---
+document.getElementById('btnPlay').addEventListener('click', function() {
+  paused = false;
+  document.getElementById('btnPlay').classList.add('active');
+  document.getElementById('btnPause').classList.remove('active');
+});
+document.getElementById('btnPause').addEventListener('click', function() {
+  paused = true;
+  document.getElementById('btnPause').classList.add('active');
+  document.getElementById('btnPlay').classList.remove('active');
+});
+document.getElementById('btnReset').addEventListener('click', function() { reset(); });
+
+document.getElementById('btnAddBall').addEventListener('click', function() {
+  if (balls.length >= 20) return;
+  var m = 3 + Math.floor(Math.random() * 8);
+  var vx = Math.round((Math.random() - 0.5) * 8);
+  var vy = Math.round((Math.random() - 0.5) * 4);
+  var x = 50 + Math.random() * (W - 100);
+  var y = 50 + Math.random() * (H - 100);
+  var b = makeBall(x, y, m, vx, vy);
+  balls.push(b);
+  selectedBall = b;
+  beforeSnapshot = takeSnapshot();
+  updateAllStats();
+  updateBallList();
+  updateSliders();
+  updateBallCount();
+});
+
+document.getElementById('btnDelBall').addEventListener('click', function() {
+  if (!selectedBall || balls.length <= 1) return;
+  var idx = balls.indexOf(selectedBall);
+  if (idx >= 0) balls.splice(idx, 1);
+  selectedBall = null;
+  beforeSnapshot = takeSnapshot();
+  updateAllStats();
+  updateBallList();
+  updateSliders();
+  updateBallCount();
+});
+
+document.getElementById('selMass').addEventListener('input', function(e) {
+  if (!selectedBall) return;
+  selectedBall.m = parseInt(e.target.value);
+  selectedBall.r = 8 + selectedBall.m * 1.5;
+  setTxt('selMassD', selectedBall.m);
+  beforeSnapshot = takeSnapshot();
+  updateAllStats();
+  updateBallList();
+});
+
+document.getElementById('selVel').addEventListener('input', function(e) {
+  if (!selectedBall) return;
+  selectedBall.vx = parseInt(e.target.value);
+  selectedBall.trail = [];
+  setTxt('selVelD', selectedBall.vx);
+  beforeSnapshot = takeSnapshot();
+  updateAllStats();
+  updateBallList();
+});
+
+document.getElementById('collType').addEventListener('change', function(e) {
+  document.getElementById('corLabel').style.display = e.target.value === 'inelastic' ? '' : 'none';
+});
+document.getElementById('corSlider').addEventListener('input', function(e) {
+  setTxt('corDisp', (e.target.value / 100).toFixed(2));
+});
+document.getElementById('chkTrail').addEventListener('change', function() {
+  for (var i = 0; i < balls.length; i++) balls[i].trail = [];
+});
+
+// --- Presets ---
+var PRESETS = {
+  headon:    {balls: [{m:5,v:5,x:0.35},{m:5,v:-5,x:0.65}]},
+  heavy:     {balls: [{m:15,v:3,x:0.35},{m:3,v:0,x:0.65}]},
+  light:     {balls: [{m:2,v:6,x:0.35},{m:15,v:0,x:0.65}]},
+  newton:    {balls: [{m:5,v:5,x:0.25},{m:5,v:0,x:0.45},{m:5,v:0,x:0.55},{m:5,v:0,x:0.65},{m:5,v:0,x:0.75}]},
+  oblique:   {balls: [{m:5,v:5,x:0.35,y:0.45},{m:5,v:0,x:0.65,y:0.55}]},
+  equal:     {balls: [{m:8,v:4,x:0.35},{m:8,v:-4,x:0.65}]},
+  stationary:{balls: [{m:5,v:6,x:0.3},{m:5,v:0,x:0.65}]},
+  multi3:    {balls: [{m:3,v:5,x:0.2},{m:6,v:0,x:0.45},{m:3,v:0,x:0.7}]},
+  multi5:    {balls: [{m:4,v:4,x:0.1},{m:4,v:0,x:0.25},{m:4,v:0,x:0.4},{m:4,v:0,x:0.55},{m:4,v:0,x:0.7}]}
+};
+
+var presetBtns = document.querySelectorAll('.preset-btn');
+for (var pi = 0; pi < presetBtns.length; pi++) {
+  (function(btn) {
+    btn.addEventListener('click', function() {
+      var p = PRESETS[btn.getAttribute('data-preset')];
+      if (!p) return;
+      paused = false;
+      document.getElementById('btnPlay').classList.add('active');
+      document.getElementById('btnPause').classList.remove('active');
+      nextIdx = 0;
+      balls = [];
+      for (var k = 0; k < p.balls.length; k++) {
+        var bd = p.balls[k];
+        var by = bd.y !== undefined ? bd.y * H : H / 2;
+        balls.push(makeBall(W * bd.x, by, bd.m, bd.v, 0));
+      }
+      selectedBall = null;
+      time = 0;
+      momentumHistory = [];
+      collisionFlash = null;
+      beforeSnapshot = takeSnapshot();
+      updateAllStats();
+      updateBallList();
+      updateSliders();
+      updateBallCount();
+    });
+  })(presetBtns[pi]);
+}
+
+// --- Drag to move / select ---
+var dragBall = null;
+var dragStartX = 0, dragStartY = 0;
+var isDragging = false;
+
+function getMousePos(e) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (W / rect.width),
+    y: (e.clientY - rect.top) * (H / rect.height)
+  };
+}
+
+canvas.addEventListener('mousedown', function(e) {
+  var pos = getMousePos(e);
+  dragBall = null;
+  for (var i = balls.length - 1; i >= 0; i--) {
+    var b = balls[i];
+    if (Math.sqrt((pos.x - b.x) * (pos.x - b.x) + (pos.y - b.y) * (pos.y - b.y)) < b.r + 5) {
+      dragBall = b;
+      dragStartX = pos.x; dragStartY = pos.y;
+      isDragging = false;
+      break;
+    }
+  }
+  // Select ball
+  selectedBall = dragBall;
+  updateBallList();
+  updateSliders();
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  if (!dragBall) return;
+  var pos = getMousePos(e);
+  var dx = pos.x - dragStartX, dy = pos.y - dragStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+  if (isDragging) {
+    dragBall.x = pos.x;
+    dragBall.y = pos.y;
+    dragBall.vx = 0;
+    dragBall.vy = 0;
+    dragBall.trail = [];
+  }
+});
+
+canvas.addEventListener('mouseup', function(e) {
+  if (dragBall && isDragging) {
+    var pos = getMousePos(e);
+    var dx = pos.x - dragStartX, dy = pos.y - dragStartY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      dragBall.vx = dx * 0.15;
+      dragBall.vy = dy * 0.15;
+    }
+    beforeSnapshot = takeSnapshot();
+    updateAllStats();
+    updateBallList();
+    updateSliders();
+    momentumHistory = [];
+  }
+  dragBall = null;
+  isDragging = false;
+});
+
+// Touch support
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  var t = e.touches[0];
+  var rect = canvas.getBoundingClientRect();
+  var px = (t.clientX - rect.left) * (W / rect.width);
+  var py = (t.clientY - rect.top) * (H / rect.height);
+  dragBall = null;
+  for (var i = balls.length - 1; i >= 0; i--) {
+    var b = balls[i];
+    if (Math.sqrt((px - b.x) * (px - b.x) + (py - b.y) * (py - b.y)) < b.r + 10) {
+      dragBall = b; dragStartX = px; dragStartY = py; isDragging = false; break;
+    }
+  }
+  selectedBall = dragBall;
+  updateBallList();
+  updateSliders();
+}, {passive: false});
+
+canvas.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (!dragBall) return;
+  var t = e.touches[0];
+  var rect = canvas.getBoundingClientRect();
+  var px = (t.clientX - rect.left) * (W / rect.width);
+  var py = (t.clientY - rect.top) * (H / rect.height);
+  var dx = px - dragStartX, dy = py - dragStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+  if (isDragging) {
+    dragBall.x = px; dragBall.y = py;
+    dragBall.vx = 0; dragBall.vy = 0; dragBall.trail = [];
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchend', function(e) {
+  if (dragBall && isDragging) {
+    beforeSnapshot = takeSnapshot();
+    updateAllStats();
+    updateBallList();
+    updateSliders();
+    momentumHistory = [];
+  }
+  dragBall = null;
+  isDragging = false;
+});
+
+// --- Main loop ---
+function loop() {
+  if (!paused) {
+    for (var i = 0; i < balls.length; i++) balls[i].update();
+    collide();
+    time++;
+    if (time % 3 === 0 && balls.length >= 1) {
+      var h = {p: [], ptot: 0};
+      for (var k = 0; k < balls.length; k++) {
+        h.p.push(balls[k].px());
+        h.ptot += balls[k].px();
+      }
+      momentumHistory.push(h);
+      if (momentumHistory.length > 200) momentumHistory.shift();
+      updateAllStats();
+      if (time % 30 === 0) updateBallList();
+    }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// --- Init ---
+resize();
+reset();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
