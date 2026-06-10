@@ -15,10 +15,10 @@
       theme: {
         extend: {
           colors: {
-            primary: '#165DFF',
-            secondary: '#36CFC9',
-            dark: '#1D2129',
-            light: '#F2F3F5'
+            primary: '#3B82F6',
+            secondary: '#22D3EE',
+            dark: '#08111F',
+            light: '#F8FAFC'
           },
           fontFamily: {
             inter: ['Inter', 'sans-serif'],
@@ -45,22 +45,32 @@
         content-visibility: auto;
       }
       .text-shadow {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-shadow: 0 18px 50px rgba(0,0,0,0.35);
       }
       .bg-gradient-tech {
-        background: linear-gradient(135deg, #1D2129 0%, #2B303A 100%);
+        background: url('../static/images/blackhole.jpg') center center / cover no-repeat;
+        position: relative;
+      }
+      .bg-gradient-tech::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(8,17,31,0.65) 0%, rgba(8,17,31,0.75) 100%);
       }
       .hover-lift {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
       }
       .hover-lift:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px -5px rgba(22, 93, 255, 0.1), 0 8px 10px -6px rgba(22, 93, 255, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 18px 40px -24px rgba(34, 211, 238, 0.45);
       }
       .project-card {
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%);
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 17, 31, 0.98) 100%);
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+      }
+      .project-card:hover {
+        border-color: rgba(34, 211, 238, 0.35);
       }
       .project-card-extra {
         display: none;
@@ -82,7 +92,7 @@
       }
       .project-media {
         position: relative;
-        padding: 1rem 1rem 0;
+        padding: 0.875rem 0.875rem 0;
         background:
           radial-gradient(circle at top left, rgba(54, 207, 201, 0.16), transparent 34%),
           radial-gradient(circle at top right, rgba(22, 93, 255, 0.22), transparent 30%),
@@ -100,7 +110,7 @@
       }
       .project-shot {
         position: relative;
-        border-radius: 1rem;
+        border-radius: 0.5rem;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(2, 6, 23, 0.84);
@@ -125,23 +135,414 @@
         align-items: center;
         border-radius: 9999px;
         border: 1px solid rgba(59, 130, 246, 0.18);
-        background: rgba(22, 93, 255, 0.1);
+        background: rgba(59, 130, 246, 0.1);
         color: #9CC1FF;
         padding: 0.3rem 0.7rem;
         font-size: 0.75rem;
         line-height: 1;
+      }
+
+      .page-band {
+        position: relative;
+        overflow: hidden;
+      }
+      .page-band::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(34, 211, 238, 0.04), transparent 35%, rgba(59, 130, 246, 0.05)),
+          linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: auto, 48px 48px, 48px 48px;
+        mask-image: linear-gradient(180deg, transparent, black 12%, black 88%, transparent);
+        pointer-events: none;
+      }
+      .page-band > .container {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 滚动进度条 */
+      #scroll-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #3B82F6, #22D3EE);
+        z-index: 9999;
+        transition: width 0.1s linear;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);
+      }
+
+      /* 导航链接高亮 */
+      .nav-active {
+        color: #3B82F6 !important;
+        position: relative;
+      }
+      .nav-active::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 2px;
+        background: #3B82F6;
+        border-radius: 1px;
+      }
+
+      /* 区块序号标签 */
+      .section-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.3);
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      .section-tag .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.22);
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #3B82F6;
+        letter-spacing: 0;
+      }
+      .section-tag::after {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(59,130,246,0.45), transparent);
+      }
+
+      /* 滚动进入动画 */
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .reveal-delay-1 { transition-delay: 0.1s; }
+      .reveal-delay-2 { transition-delay: 0.2s; }
+      .reveal-delay-3 { transition-delay: 0.3s; }
+
+      /* 技能条动画 */
+      .skill-bar-fill {
+        width: 0;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .skill-bar-fill.animate {
+        width: var(--target-width);
+      }
+
+      /* Hero 粒子画布 */
+      #hero-particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.25;
+      }
+
+      /* 打字机光标 */
+      .typing-cursor {
+        display: inline-block;
+        width: 3px;
+        height: 1.1em;
+        background: #22D3EE;
+        margin-left: 4px;
+        vertical-align: text-bottom;
+        animation: blink 1s step-end infinite;
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+
+      /* Hero 渐变动画背景 */
+      .hero-bg-animated {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background:
+          linear-gradient(90deg, rgba(8, 17, 31, 0.94) 0%, rgba(8, 17, 31, 0.74) 44%, rgba(8, 17, 31, 0.24) 100%),
+          linear-gradient(180deg, rgba(8, 17, 31, 0.22) 0%, rgba(8, 17, 31, 0.72) 100%),
+          url('static/images/space_to_earth.jpg') center / cover no-repeat;
+        animation: heroShift 18s ease-in-out infinite alternate;
+      }
+      @keyframes heroShift {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.035); }
+      }
+      .hero-layout {
+        min-height: calc(100vh - 5rem);
+        display: grid;
+        align-items: center;
+      }
+      .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 999px;
+        background: rgba(8, 17, 31, 0.35);
+        color: rgba(226, 232, 240, 0.86);
+        backdrop-filter: blur(12px);
+      }
+      .hero-kicker::before {
+        content: '';
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+        background: #22D3EE;
+        box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.12);
+      }
+      .hero-copy {
+        max-width: 48rem;
+      }
+      .hero-actions a,
+      .hero-social a,
+      #toggleProjects,
+      button[type="submit"] {
+        border-radius: 0.5rem;
+      }
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        max-width: 46rem;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(148, 163, 184, 0.16);
+        backdrop-filter: blur(16px);
+      }
+      .hero-stat {
+        padding: 1rem;
+        background: rgba(8, 17, 31, 0.54);
+      }
+      .hero-stat strong {
+        display: block;
+        color: #F8FAFC;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+      }
+      .hero-stat span {
+        color: rgba(203, 213, 225, 0.72);
+        font-size: 0.78rem;
+        line-height: 1.4;
+      }
+
+      /* 专业技能卡片渐变边框 */
+      .skill-card-glow {
+        position: relative;
+        overflow: hidden;
+      }
+      .skill-card-glow::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #3B82F6, #22D3EE, transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .skill-card-glow:hover::before {
+        opacity: 1;
+      }
+
+      /* 个人信息卡片 */
+      .info-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px;
+        transition: all 0.25s;
+      }
+      .info-card:hover {
+        background: rgba(59, 130, 246, 0.06);
+        border-color: rgba(59, 130, 246, 0.18);
+        transform: translateX(4px);
+      }
+      .info-card .icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3B82F6;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+      }
+      .info-card .info-text span {
+        display: block;
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.4);
+        margin-bottom: 2px;
+      }
+      .info-card .info-text p {
+        font-size: 0.92rem;
+        color: #e5eefc;
+        font-weight: 500;
+      }
+      .info-card .info-text p a {
+        color: #3B82F6;
+        font-weight: 400;
+        font-size: 0.82rem;
+        margin-left: 6px;
+      }
+
+      /* 联系表单玻璃风格 */
+      .glass-form {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+      .glass-form input,
+      .glass-form textarea {
+        background: rgba(255,255,255,0.04) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        color: #e5eefc;
+        transition: all 0.25s;
+      }
+      .glass-form input:focus,
+      .glass-form textarea:focus {
+        background: rgba(59, 130, 246, 0.06) !important;
+        border-color: rgba(59, 130, 246, 0.34) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      .glass-form input::placeholder,
+      .glass-form textarea::placeholder {
+        color: rgba(255,255,255,0.25);
+      }
+
+      /* 联系信息卡片 */
+      .contact-info-card {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+
+      /* 页脚渐变边框 */
+      .footer-gradient-border {
+        position: relative;
+      }
+      .footer-gradient-border::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(59,130,246,0.42), rgba(34,211,238,0.34), transparent);
+      }
+
+      /* 区块之间的分隔线 */
+      .section-divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.06) 50%, transparent 95%);
+      }
+      .section-rule {
+        width: 4rem;
+        height: 2px;
+        margin: 0 auto;
+        background: linear-gradient(90deg, #3B82F6, #22D3EE);
+      }
+      .about-portrait {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(15, 23, 42, 0.55);
+        padding: 0.75rem;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+      }
+      .about-portrait img {
+        border-radius: 0.35rem;
+        width: 100%;
+        max-height: 34rem;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .profile-badge {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(34,211,238,0.78));
+        box-shadow: 0 18px 36px rgba(37, 99, 235, 0.25);
+      }
+      .skill-panel {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(8, 17, 31, 0.62);
+        padding: 1.5rem;
+      }
+      .skill-card-glow {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(8, 17, 31, 0.7);
+      }
+      @media (max-width: 767px) {
+        .hero-bg-animated {
+          background:
+            linear-gradient(180deg, rgba(8, 17, 31, 0.88), rgba(8, 17, 31, 0.76)),
+            url('static/images/space_to_earth.jpg') center / cover no-repeat;
+        }
+        .hero-layout {
+          min-height: auto;
+          padding-top: 3rem;
+          padding-bottom: 5rem;
+        }
+        .hero-stats {
+          grid-template-columns: 1fr;
+        }
+        .section-tag {
+          letter-spacing: 0.12em;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hero-bg-animated,
+        .typing-cursor,
+        .animate-bounce {
+          animation: none !important;
+        }
+        .reveal,
+        .skill-bar-fill,
+        .hover-lift {
+          transition: none !important;
+        }
       }
     }
   </style>
 </head>
 
 <body class="font-inter bg-dark text-light antialiased">
+  <!-- 滚动进度条 -->
+  <div id="scroll-progress"></div>
+
   <!-- 导航栏 - 固定顶部并在滚动时变化 -->
   <header id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4">
     <div class="container mx-auto px-4 md:px-6">
       <nav class="flex items-center justify-between">
         <!-- 网站Logo -->
-        <a href="#" class="text-2xl font-bold text-white flex items-center">
+        <a href="#home" class="text-2xl font-bold text-white flex items-center">
           <span class="text-primary mr-1">
             <img src="static/images/YS.png" alt="Logo" class="w-6 h-6 ">
           </span>
@@ -177,58 +578,63 @@
   </header>
 
   <!-- 英雄区域 -->
-  <section id="home" class="min-h-screen flex items-center pt-20 bg-gradient-tech overflow-hidden">
-    <div class="container mx-auto px-4 md:px-6 py-16">
-      <div class="flex flex-col md:flex-row items-center gap-12">
+  <section id="home" class="min-h-screen flex items-center pt-20 bg-gradient-tech overflow-hidden relative">
+    <div class="hero-bg-animated" style="z-index:0"></div>
+    <canvas id="hero-particles" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
+    <div class="container mx-auto px-4 md:px-6 relative z-10">
+      <div class="hero-layout">
         <!-- 文字内容 -->
-        <div class="md:w-1/2 space-y-6">
-          <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold leading-tight text-shadow">
+        <div class="hero-copy space-y-7">
+          <div class="hero-kicker text-xs md:text-sm">
+            地球物理 · 科研工具 · 独立开发
+          </div>
+          <h1 class="text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[0.98] text-shadow tracking-normal">
             你好，我是<span class="text-primary">云凇</span>
           </h1>
-          <p class="text-gray-300 text-lg md:text-xl max-w-lg">
-            我是一名热爱科技的地球物理工作者，致力于探索前沿技术，创造有价值的项目。
+          <p class="text-slate-200 text-lg md:text-2xl max-w-2xl leading-relaxed">
+            我把地球物理研究、数据处理和 Web 工具做成可使用的产品，<br class="hidden md:block">
+            <span id="hero-typing" class="text-primary font-medium"></span><span class="typing-cursor"></span>
           </p>
-          <div class="flex flex-wrap gap-4 pt-4">
-            <a href="#contact" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-lg shadow-primary/20">
-              联系我
-            </a>
-            <a href="#projects" class="px-6 py-3 bg-transparent border border-primary text-primary hover:bg-primary/10 rounded-lg transition-all">
+          <div class="hero-actions flex flex-wrap gap-3 pt-2">
+            <a href="#projects" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white transition-all shadow-lg shadow-primary/20">
               查看项目
             </a>
+            <a href="#contact" class="px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all backdrop-blur">
+              联系我
+            </a>
+          </div>
+
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong>科研工作流</strong>
+              <span>文献、数据、自动化工具持续沉淀</span>
+            </div>
+            <div class="hero-stat">
+              <strong>地震学软件</strong>
+              <span>波形处理、事件分析和实时快照展示</span>
+            </div>
+            <div class="hero-stat">
+              <strong>Web 实验室</strong>
+              <span>轻量交互页面，服务学习与展示</span>
+            </div>
           </div>
           
           <!-- 社交媒体图标 -->
-          <div class="flex items-center gap-4 pt-6">
-            <p class="text-gray-400">关注我：</p>
-            <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+          <div class="hero-social flex items-center gap-3 pt-1">
+            <p class="text-slate-400 text-sm">关注我</p>
+            <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
               <i class="fa fa-github"></i>
             </a>
-            <a href="HTML/wechat_qrcode.html" target="_blank"  class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <a href="HTML/wechat_qrcode.html" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
               <i class="fa fa-weixin"></i>
             </a>
-            <a href="https://weibo.com/yunsong519" target="_blank"  class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <a href="https://weibo.com/yunsong519" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
               <i class="fa fa-weibo"></i>
             </a>
-            <a href="https://user.qzone.qq.com/2542039659" target="_blank"  class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <a href="https://user.qzone.qq.com/2542039659" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
               <i class="fa fa-qq"></i>
             </a>
           </div>
-        </div>
-        
-        <!-- 头像/图片 -->
-        <div class="md:w-1/2 relative">
-          <div class="relative z-10 rounded-2xl overflow-hidden border-4 border-primary/20 shadow-2xl shadow-primary/10 hover-lift">
-            <img src="static/images/earth.jpg" alt="云凇" class="w-full h-auto">
-          </div>
-          <!-- 装饰元素 -->
-          <div class="absolute -bottom-8 -right-8 w-48 h-48 
-              bg-gradient-to-r from-primary/30 to-secondary/30 
-              rounded-full blur-3xl 
-              animate-pulse-slow"></div>
-          <div class="absolute -top-8 -left-8 w-36 h-36 
-              bg-gradient-to-b from-secondary/20 to-primary/20 
-              rounded-full blur-2xl 
-              animate-pulse-slow" style="animation-delay: 1s;"></div>
         </div>
       </div>
     </div>
@@ -241,19 +647,24 @@
     </div>
   </section>
 
+  <div class="section-divider"></div>
+
   <!-- 关于我区域 -->
-  <section id="about" class="py-20 bg-dark">
+  <section id="about" class="py-20 bg-dark page-band">
     <div class="container mx-auto px-4 md:px-6">
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">02</span> ABOUT ME
+        </div>
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">关于我</h2>
-        <div class="w-20 h-1 bg-primary mx-auto"></div>
+        <div class="section-rule"></div>
       </div>
       
       <div class="flex flex-col md:flex-row gap-12 items-center">
-        <div class="md:w-1/3">
-          <div class="relative">
-            <img src="static/images/YS/yunsong.png" alt="关于我的照片" class="rounded-lg shadow-xl">
-            <div class="absolute -bottom-5 -right-5 bg-primary p-4 rounded-lg shadow-lg">
+        <div class="md:w-1/3 reveal reveal-delay-1">
+          <div class="about-portrait relative">
+            <img src="static/images/YS/yunsong.png" alt="关于我的照片">
+            <div class="profile-badge absolute -bottom-5 -right-5 p-4">
               <p class="text-xl font-bold">5+ 年</p>
               <p class="text-sm">开发经验</p>
             </div>
@@ -270,39 +681,56 @@
           </p>
           
           <!-- 个人信息 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div class="flex items-center gap-3">
-              <span class="text-primary"><i class="fa fa-user"></i></span>
-              <span>姓名: 云凇</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-user"></i></div>
+              <div class="info-text">
+                <span>姓名</span>
+                <p>云凇</p>
+              </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-primary"><i class="fa fa-envelope"></i></span>
-              <span>邮箱: yusp519@qq.com  <a href="mailto:yusp519@qq.com" class="text-primary">发送邮件</a></span>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-envelope"></i></div>
+              <div class="info-text">
+                <span>邮箱</span>
+                <p>yusp519@qq.com <a href="mailto:yusp519@qq.com">发送邮件</a></p>
+              </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-primary"><i class="fa fa-map-marker"></i></span>
-              <span>地址: 武汉市</span>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-map-marker"></i></div>
+              <div class="info-text">
+                <span>地址</span>
+                <p>湖北省武汉市</p>
+              </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-primary"><i class="fa fa-code"></i></span>
-              <span>地球物理工作者、全栈开发者</span>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-code"></i></div>
+              <div class="info-text">
+                <span>职业</span>
+                <p>地球物理工作者 · 全栈开发者</p>
+              </div>
             </div>
           </div>
           
-          <a href="#" class="inline-block px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-lg shadow-primary/20 mt-4">
-            下载简历 <i class="fa fa-download ml-2"></i>
+          <a href="mailto:yusp519@qq.com?subject=%E7%AE%80%E5%8E%86%E4%B8%8E%E5%90%88%E4%BD%9C%E6%B2%9F%E9%80%9A&body=%E4%BA%91%E5%87%87%EF%BC%8C%E4%BD%A0%E5%A5%BD%EF%BC%81%0A%0A%E6%88%91%E5%AF%B9%E4%BD%A0%E7%9A%84%E9%A1%B9%E7%9B%AE%E5%BE%88%E6%84%9F%E5%85%B4%E8%B6%A3%EF%BC%8C%E5%B8%8C%E6%9C%9B%E8%83%BD%E8%8E%B7%E5%8F%96%E4%BD%A0%E7%9A%84%E7%AE%80%E5%8E%86%E5%B9%B6%E4%BA%A4%E6%B5%81%E5%90%88%E4%BD%9C%E6%9C%BA%E4%BC%9A%E3%80%82%0A%0A%E6%AD%A4%E8%87%B4%EF%BC%81%0A%0A%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%0A%E5%90%8D%E7%A7%B0%EF%BC%9A%0A%E5%8D%95%E4%BD%8D%EF%BC%9A%0A%E8%81%8C%E4%BD%8D%EF%BC%9A%0A%E9%82%AE%E7%AE%B1%EF%BC%9A%0A%E7%94%B5%E8%AF%9D%EF%BC%9A" class="inline-block px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-lg shadow-primary/20 mt-4">
+            获取简历 <i class="fa fa-envelope-o ml-2"></i>
           </a>
         </div>
       </div>
     </div>
   </section>
 
+  <div class="section-divider"></div>
+
   <!-- 技能区域 -->
-  <section id="skills" class="py-20 bg-gray-900">
+  <section id="skills" class="py-20 bg-gray-900 page-band">
     <div class="container mx-auto px-4 md:px-6">
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">03</span> SKILLS
+        </div>
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的技能</h2>
-        <div class="w-20 h-1 bg-primary mx-auto"></div>
+        <div class="section-rule"></div>
         <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
           多年的开发经验让我掌握了多种技术，能够独立完成从前端到后端的完整开发流程
         </p>
@@ -310,49 +738,49 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
         <!-- 技术技能 -->
-        <div class="space-y-6">
+        <div class="space-y-6 reveal reveal-delay-1 skill-panel">
           <h3 class="text-xl font-bold text-white">技术技能</h3>
-          
+
           <!-- 技能条 -->
           <div class="space-y-4">
-            
+
             <div>
               <div class="flex justify-between mb-1">
                 <span>Python</span>
                 <span>95%</span>
               </div>
               <div class="w-full bg-gray-800 rounded-full h-2.5">
-                <div class="bg-primary h-2.5 rounded-full" style="width: 95%"></div>
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 95%"></div>
               </div>
             </div>
-            
+
             <div>
               <div class="flex justify-between mb-1">
                 <span>Fortran</span>
                 <span>90%</span>
               </div>
               <div class="w-full bg-gray-800 rounded-full h-2.5">
-                <div class="bg-primary h-2.5 rounded-full" style="width: 90%"></div>
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 90%"></div>
               </div>
             </div>
-            
+
             <div>
               <div class="flex justify-between mb-1">
                 <span>HTML/CSS</span>
                 <span>90%</span>
               </div>
               <div class="w-full bg-gray-800 rounded-full h-2.5">
-                <div class="bg-primary h-2.5 rounded-full" style="width: 90%"></div>
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 90%"></div>
               </div>
             </div>
-            
+
             <div>
               <div class="flex justify-between mb-1">
                 <span>JavaScript</span>
                 <span>80%</span>
               </div>
               <div class="w-full bg-gray-800 rounded-full h-2.5">
-                <div class="bg-primary h-2.5 rounded-full" style="width: 80%"></div>
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 80%"></div>
               </div>
             </div>
 
@@ -362,42 +790,42 @@
                 <span>75%</span>
               </div>
               <div class="w-full bg-gray-800 rounded-full h-2.5">
-                <div class="bg-primary h-2.5 rounded-full" style="width: 75%"></div>
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 75%"></div>
               </div>
             </div>
           </div>
         </div>
         
         <!-- 专业技能 -->
-        <div class="space-y-6">
+        <div class="space-y-6 reveal reveal-delay-2">
           <h3 class="text-xl font-bold text-white">专业技能</h3>
-          
+
           <div class="grid grid-cols-2 gap-4">
-            <div class="bg-dark p-6 rounded-lg hover-lift">
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
               <div class="text-primary text-3xl mb-4">
                 <i class="fa fa-laptop"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">前端开发</h4>
               <p class="text-gray-400 text-sm">创建响应式、高性能的用户界面</p>
             </div>
-            
-            <div class="bg-dark p-6 rounded-lg hover-lift">
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
               <div class="text-primary text-3xl mb-4">
                 <i class="fa fa-server"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">后端开发</h4>
               <p class="text-gray-400 text-sm">设计和实现可靠的服务器端解决方案</p>
             </div>
-            
-            <div class="bg-dark p-6 rounded-lg hover-lift">
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
               <div class="text-primary text-3xl mb-4">
                 <i class="fa fa-database"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">地球物理软件开发</h4>
               <p class="text-gray-400 text-sm">开发地球物理数据处理和可视化工具</p>
             </div>
-            
-            <div class="bg-dark p-6 rounded-lg hover-lift">
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
               <div class="text-primary text-3xl mb-4">
                 <i class="fa fa-cogs"></i>
               </div>
@@ -410,12 +838,17 @@
     </div>
   </section>
 
+  <div class="section-divider"></div>
+
   <!-- 项目展示 -->
-  <section id="projects" class="py-20 bg-dark">
+  <section id="projects" class="py-20 bg-dark page-band">
     <div class="container mx-auto px-4 md:px-6">
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">04</span> PROJECTS
+        </div>
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的项目</h2>
-        <div class="w-20 h-1 bg-primary mx-auto"></div>
+        <div class="section-rule"></div>
         <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
           探索我的一些精选项目，展示了我的技术能力和解决问题的方法
         </p>
@@ -424,7 +857,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- 项目卡片1 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -459,7 +892,7 @@
         </div>
         
         <!-- 项目卡片2 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -494,7 +927,7 @@
         </div>
         
         <!-- 项目卡片3 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -522,7 +955,7 @@
               <span class="project-chip">AI 编程</span>
               <span class="project-chip">MCP 协议</span>
             </div>
-            <a href="HTML/mimo-promo/index.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+            <a href="HTML/mimo/mimo.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
           </div>
@@ -564,7 +997,7 @@
         </div> -->
 
         <!-- 项目卡片5 -->
-        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -599,7 +1032,7 @@
         </div> 
 
        <!-- 项目卡片6 -->
-        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -634,7 +1067,7 @@
         </div>
 
        <!-- 项目卡片7 -->
-        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -669,7 +1102,7 @@
         </div>
 
        <!-- 项目卡片8 -->
-        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -713,12 +1146,17 @@
     </div>
   </section>
 
+  <div class="section-divider"></div>
+
   <!-- 联系区域 -->
-  <section id="contact" class="py-20 bg-gray-900">
+  <section id="contact" class="py-20 bg-gray-900 page-band">
       <div class="container mx-auto px-4 md:px-6">
-          <div class="text-center mb-16">
+          <div class="text-center mb-16 reveal">
+              <div class="section-tag" style="margin:0 auto 16px">
+                  <span class="num">05</span> CONTACT
+              </div>
               <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">联系我</h2>
-              <div class="w-20 h-1 bg-primary mx-auto"></div>
+              <div class="section-rule"></div>
               <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
                   有任何问题或合作意向？请随时联系我，我会尽快回复
               </p>
@@ -726,13 +1164,13 @@
           
           <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
               <!-- 联系信息 -->
-              <div class="lg:col-span-2 space-y-8">
-                  <div class="bg-dark p-6 rounded-xl">
+              <div class="lg:col-span-2 space-y-6">
+                  <div class="contact-info-card p-6 rounded-lg">
                       <h3 class="text-xl font-bold mb-6">联系信息</h3>
-                      
+
                       <div class="space-y-4">
                           <div class="flex items-start gap-4">
-                              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
                                   <i class="fa fa-envelope"></i>
                               </div>
                               <div>
@@ -740,9 +1178,9 @@
                                   <p class="text-gray-400">yusp519@qq.com</p>
                               </div>
                           </div>
-                          
+
                           <div class="flex items-start gap-4">
-                              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
                                   <i class="fa fa-phone"></i>
                               </div>
                               <div>
@@ -750,9 +1188,9 @@
                                   <p class="text-gray-400">+86 173 7145 6519</p>
                               </div>
                           </div>
-                          
+
                           <div class="flex items-start gap-4">
-                              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
                                   <i class="fa fa-map-marker"></i>
                               </div>
                               <div>
@@ -762,56 +1200,54 @@
                           </div>
                       </div>
                   </div>
-                  
-                  <div class="bg-dark p-6 rounded-xl">
+
+                  <div class="contact-info-card p-6 rounded-lg">
                       <h3 class="text-xl font-bold mb-6">工作时间</h3>
-                      <div class="space-y-2">
-                          <div class="flex justify-between">
-                              <span>周一至周五</span>
-                              <span>9:00 - 17:00</span>
+                      <div class="space-y-3">
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周一至周五</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary">9:00 - 17:00</span>
                           </div>
-                          <div class="w-full h-px bg-gray-800 my-2"></div>
-                          <div class="flex justify-between">
-                              <span>周六</span>
-                              <span>10:00 - 16:00</span>
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周六</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-secondary/10 text-secondary">10:00 - 16:00</span>
                           </div>
-                          <div class="w-full h-px bg-gray-800 my-2"></div>
-                          <div class="flex justify-between">
-                              <span>周日</span>
-                              <span>休息</span>
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周日</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-gray-800 text-gray-500">休息</span>
                           </div>
                       </div>
                   </div>
               </div>
-              
+
               <!-- 联系表单 -->
-              <div class="lg:col-span-3 bg-dark p-6 md:p-8 rounded-xl">
+              <div class="lg:col-span-3 glass-form p-6 md:p-8 rounded-lg">
                   <h3 class="text-xl font-bold mb-6">发送消息</h3>
-                  
+
                   <form id="contactForm">
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                           <div>
-                              <label for="name" class="block text-sm font-medium mb-2">姓名</label>
-                              <input type="text" id="name" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="你的姓名" required>
+                              <label for="name" class="block text-sm font-medium mb-2 text-gray-400">姓名</label>
+                              <input type="text" id="name" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="你的姓名" required>
                           </div>
-                          
+
                           <div>
-                              <label for="email" class="block text-sm font-medium mb-2">邮箱</label>
-                              <input type="email" id="email" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="你的邮箱" required>
+                              <label for="email" class="block text-sm font-medium mb-2 text-gray-400">邮箱</label>
+                              <input type="email" id="email" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="你的邮箱" required>
                           </div>
                       </div>
-                      
-                      <div class="mb-6">
-                          <label for="subject" class="block text-sm font-medium mb-2">主题</label>
-                          <input type="text" id="subject" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="消息主题" required>
+
+                      <div class="mb-5">
+                          <label for="subject" class="block text-sm font-medium mb-2 text-gray-400">主题</label>
+                          <input type="text" id="subject" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="消息主题" required>
                       </div>
-                      
+
                       <div class="mb-6">
-                          <label for="message" class="block text-sm font-medium mb-2">消息</label>
-                          <textarea id="message" rows="5" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none" placeholder="你的消息内容" required></textarea>
+                          <label for="message" class="block text-sm font-medium mb-2 text-gray-400">消息</label>
+                          <textarea id="message" rows="5" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all resize-none" placeholder="你的消息内容" required></textarea>
                       </div>
-                      
-                      <button type="submit" class="w-full md:w-auto px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-lg shadow-primary/20">
+
+                      <button type="submit" class="w-full md:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl transition-all shadow-lg shadow-primary/25 font-medium">
                           发送消息 <i class="fa fa-paper-plane ml-2"></i>
                       </button>
                   </form>
@@ -821,32 +1257,32 @@
   </section>
 
   <!-- 页脚 -->
-  <footer class="py-10 bg-dark border-t border-gray-800">
+  <footer class="py-12 bg-dark footer-gradient-border">
     <div class="container mx-auto px-4 md:px-6">
       <div class="flex flex-col md:flex-row justify-between items-center">
         <div class="mb-6 md:mb-0">
-          <a href="#" class="text-2xl font-bold text-white flex items-center justify-center md:justify-start">
+          <a href="#home" class="text-2xl font-bold text-white flex items-center justify-center md:justify-start">
             <span class="text-primary mr-1">
               <img src="static/images/YS.png" alt="Logo" class="w-6 h-6">
             </span>
             <span>云凇之家</span>
           </a>
-          <p class="text-gray-400 text-sm mt-2 text-center md:text-left">
+          <p class="text-gray-500 text-sm mt-2 text-center md:text-left">
             探索技术，创造未来
           </p>
         </div>
         
         <div class="flex gap-4">
-          <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+          <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
             <i class="fa fa-github"></i>
           </a>
-          <a href="HTML/wechat_qrcode.html" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+          <a href="HTML/wechat_qrcode.html" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
             <i class="fa fa-weixin"></i>
           </a>
-          <a href="https://user.qzone.qq.com/2542039659" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+          <a href="https://user.qzone.qq.com/2542039659" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
             <i class="fa fa-qq"></i>
           </a>
-          <a href="https://weibo.com/yunsong519" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+          <a href="https://weibo.com/yunsong519" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
             <i class="fa fa-weibo"></i>
           </a>
         </div>
@@ -994,6 +1430,164 @@
           ? '收起项目 <span class="arrow">▼</span>'
           : '查看更多项目 <span class="arrow">▼</span>';
       });
+    }
+
+    // ========== 滚动进度条 ==========
+    const scrollProgress = document.getElementById('scroll-progress');
+    window.addEventListener('scroll', () => {
+      const scrollTop = document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const progress = (scrollTop / scrollHeight) * 100;
+      scrollProgress.style.width = progress + '%';
+    });
+
+    // ========== 导航高亮 ==========
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.hidden.md\\:flex a[href^="#"]');
+    function updateNavHighlight() {
+      const scrollPos = window.scrollY + 120;
+      sections.forEach(section => {
+        const top = section.offsetTop;
+        const height = section.offsetHeight;
+        const id = section.getAttribute('id');
+        if (scrollPos >= top && scrollPos < top + height) {
+          navLinks.forEach(link => {
+            link.classList.remove('nav-active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('nav-active');
+            }
+          });
+        }
+      });
+    }
+    window.addEventListener('scroll', updateNavHighlight);
+
+    // ========== 滚动进入动画 ==========
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ========== 技能条动画 ==========
+    const skillObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.skill-bar-fill').forEach(bar => {
+            bar.classList.add('animate');
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const skillsSection = document.getElementById('skills');
+    if (skillsSection) skillObserver.observe(skillsSection);
+
+    // ========== Hero 打字机效果 ==========
+    const typingEl = document.getElementById('hero-typing');
+    if (typingEl) {
+      const phrases = [
+        '致力于探索前沿技术',
+        '创造有价值的开源项目',
+        '让地球物理更智能',
+        '用代码解决实际问题'
+      ];
+      let phraseIndex = 0, charIndex = 0, isDeleting = false;
+
+      function typeLoop() {
+        const current = phrases[phraseIndex];
+        if (isDeleting) {
+          typingEl.textContent = current.substring(0, charIndex--);
+        } else {
+          typingEl.textContent = current.substring(0, charIndex++);
+        }
+
+        let delay = isDeleting ? 40 : 80;
+        if (!isDeleting && charIndex > current.length) {
+          delay = 2000;
+          isDeleting = true;
+        } else if (isDeleting && charIndex < 0) {
+          isDeleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          delay = 400;
+        }
+        setTimeout(typeLoop, delay);
+      }
+      setTimeout(typeLoop, 800);
+    }
+
+    // ========== Hero 粒子背景 ==========
+    const canvas = document.getElementById('hero-particles');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      function resizeCanvas() {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.5;
+          this.speedY = (Math.random() - 0.5) * 0.5;
+          this.opacity = Math.random() * 0.5 + 0.1;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+            this.reset();
+          }
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(59, 130, 246, ${this.opacity})`;
+          ctx.fill();
+        }
+      }
+
+      for (let i = 0; i < 50; i++) {
+        particles.push(new Particle());
+      }
+
+      function connectParticles() {
+        for (let a = 0; a < particles.length; a++) {
+          for (let b = a + 1; b < particles.length; b++) {
+            const dx = particles[a].x - particles[b].x;
+            const dy = particles[a].y - particles[b].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(34, 211, 238, ${0.12 * (1 - dist / 120)})`;
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[a].x, particles[a].y);
+              ctx.lineTo(particles[b].x, particles[b].y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        connectParticles();
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
     }
    </script>
     <!-- </script> -->
