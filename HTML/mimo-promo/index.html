@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIMO Agent - AI驱动的智能编程助手</title>
+<meta name="description" content="MIMO Agent 是适配小米 MiMo 大模型的免费开源 AI 编程助手，深度集成 VS Code，支持文件感知、上下文记忆、MCP 协议和用户自定义模型接入。">
+<meta name="keywords" content="MIMO Agent,MiMo,AI编程助手,VS Code扩展,MCP协议,小米大模型,智能编程">
+<meta property="og:title" content="MIMO Agent - AI驱动的智能编程助手">
+<meta property="og:description" content="基于小米 MiMo 大模型的免费开源 AI 编程助手，深度集成 VS Code。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FF6B35">
+<link rel="icon" type="image/svg+xml" href="assets/mimo-agent-icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/mimo-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/mimo-icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="canonical" href="https://mimo-agent.dev/">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#FF6B35;--primary-dark:#E55A2B;--accent:#FFD166;--bg:#FAFAF8;--text:#2D2A26;--text-light:#6B6560;--card:#FFFFFF;--border:#E8E4DF;--code-bg:#1E1E1E;--nav-bg:rgba(255,255,255,.92);--section-alt:#fff;--shadow:rgba(0,0,0,.1);--hero-gradient:linear-gradient(135deg,#FFF8F4 0%,#FFF0E6 50%,#FFF8F0 100%)}
+[data-theme="dark"]{--primary:#FF8C5A;--primary-dark:#FF6B35;--accent:#FFD166;--bg:#1A1A2E;--text:#E8E4DF;--text-light:#9A9590;--card:#242440;--border:#3A3A5C;--code-bg:#0D0D1A;--nav-bg:rgba(26,26,46,.95);--section-alt:#1E1E36;--shadow:rgba(0,0,0,.3);--hero-gradient:linear-gradient(135deg,#1A1A2E 0%,#242440 50%,#1A1A2E 100%)}
+[data-theme="dark"] .nav{background:var(--nav-bg);border-bottom-color:var(--border)}
+[data-theme="dark"] .nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.3)}
+[data-theme="dark"] section[style*="background:#fff"]{background:var(--section-alt) !important}
+[data-theme="dark"] #honesty{background:var(--section-alt) !important}
+[data-theme="dark"] #honesty .feature-card{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .feature-card{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .code-window{box-shadow:0 20px 60px rgba(0,0,0,.3)}
+[data-theme="dark"] .float-card{background:var(--card);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+[data-theme="dark"] .testimonial-card{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .testimonial-card:hover{box-shadow:0 12px 36px rgba(0,0,0,.15)}
+[data-theme="dark"] .provider-card{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .provider-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.15)}
+[data-theme="dark"] .mcp-visual{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .arch-box{background:var(--card);border-color:var(--border);color:var(--text)}
+[data-theme="dark"] .arch-box.accent{background:rgba(255,209,102,.1);color:var(--accent);border-color:rgba(255,209,102,.2)}
+[data-theme="dark"] .arch-box.light{background:rgba(255,107,53,.08);border-color:rgba(255,107,53,.15)}
+[data-theme="dark"] .feedback-section{background:var(--section-alt) !important}
+[data-theme="dark"] .feedback-form{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] .feedback-form input,.feedback-form textarea,.feedback-form select{background:var(--code-bg);color:var(--text);border-color:var(--border)}
+[data-theme="dark"] .feedback-form input:focus,.feedback-form textarea:focus,.feedback-form select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,107,53,.12)}
+[data-theme="dark"] .install-section{background:linear-gradient(135deg,#0D0D1A 0%,#1A1A2E 100%) !important}
+[data-theme="dark"] .cta-section{background:var(--hero-gradient) !important}
+[data-theme="dark"] .btn-outline{border-color:var(--border);color:var(--text)}
+[data-theme="dark"] .btn-outline:hover{border-color:var(--primary);background:rgba(255,107,53,.1)}
+[data-theme="dark"] .footer{border-top-color:var(--border)}
+[data-theme="dark"] .faq-item{border-bottom-color:var(--border)}
+[data-theme="dark"] .nav-cta{color:#fff}
+[data-theme="dark"] .hero::before{background:radial-gradient(circle,rgba(255,107,53,.05) 0%,transparent 70%)}
+[data-theme="dark"] .hamburger span{background:var(--text)}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;-webkit-font-smoothing:antialiased}
+.container{max-width:1140px;margin:0 auto;padding:0 24px}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:box-shadow .3s}
+.nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.08)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:700;font-size:1.15rem}
+.logo svg{width:32px;height:32px}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{text-decoration:none;color:var(--text-light);font-size:.9rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--primary)}
+.nav-cta{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;background:var(--primary);color:#fff;border-radius:8px;font-size:.85rem;font-weight:600;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.nav-toggles{display:flex;align-items:center;gap:6px}
+.nav-toggle{width:36px;height:36px;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:var(--text-light);transition:all .2s;user-select:none;line-height:1}
+.nav-toggle:hover{color:var(--primary);background:rgba(255,107,53,.06)}
+.nav-toggle.theme-toggle{font-size:1.1rem}
+[data-theme="dark"] .nav-toggle{color:var(--text-light)}
+[data-theme="dark"] .nav-toggle:hover{color:var(--primary);background:rgba(255,107,53,.1)}
+.hero{padding:140px 0 80px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;top:-100px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,107,53,.08) 0%,transparent 70%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.15);border-radius:100px;font-size:.8rem;color:var(--primary);font-weight:600;margin-bottom:20px}
+.hero-badge span{width:6px;height:6px;background:var(--primary);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:3rem;line-height:1.2;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
+.hero h1 em{font-style:normal;color:var(--primary)}
+.hero-desc{font-size:1.1rem;color:var(--text-light);margin-bottom:32px;max-width:480px}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;font-size:.95rem;font-weight:600;text-decoration:none;transition:all .25s;cursor:pointer;border:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,53,.3)}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--text);background:rgba(0,0,0,.02)}
+.hero-stats{display:flex;gap:32px;margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.hero-stats .num{font-size:1.5rem;font-weight:800;color:var(--text)}
+.hero-stats .label{font-size:.78rem;color:var(--text-light);margin-top:2px}
+.hero-visual{position:relative}
+.code-window{background:var(--code-bg);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.code-titlebar{display:flex;align-items:center;gap:8px;padding:14px 18px;background:#2D2D2D;border-bottom:1px solid #3E3E3E}
+.code-dot{width:12px;height:12px;border-radius:50%}
+.code-dot:nth-child(1){background:#FF5F57}.code-dot:nth-child(2){background:#FFBD2E}.code-dot:nth-child(3){background:#28C840}
+.code-titlebar span{margin-left:12px;color:#888;font-size:.78rem;font-family:monospace}
+.code-body{padding:20px;font-family:"Cascadia Code","Fira Code","JetBrains Mono",monospace;font-size:.82rem;line-height:1.8;color:#D4D4D4;overflow-x:auto}
+.code-body .kw{color:#C586C0}.code-body .fn{color:#DCDCAA}.code-body .str{color:#CE9178}.code-body .cm{color:#6A9955}.code-body .typ{color:#4EC9B0}.code-body .var{color:#9CDCFE}.code-body .num{color:#B5CEA8}
+.float-card{position:absolute;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.1);padding:14px 18px;font-size:.8rem;display:flex;align-items:center;gap:10px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.float-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.float-text strong{display:block;font-size:.78rem;color:var(--text)}.float-text span{color:var(--text-light);font-size:.72rem}
+section{padding:80px 0}
+.section-label{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;background:rgba(255,107,53,.06);border-radius:100px;font-size:.78rem;color:var(--primary);font-weight:600;margin-bottom:14px}
+.section-title{font-size:2rem;font-weight:800;letter-spacing:-.01em;margin-bottom:10px}
+.section-desc{color:var(--text-light);font-size:.98rem;max-width:560px}
+.section-header{margin-bottom:48px}
+.section-header.center{text-align:center;margin-left:auto;margin-right:auto}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;transition:all .3s;position:relative;overflow:hidden}
+.feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.06);border-color:rgba(255,107,53,.2)}
+.feature-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);transform:scaleX(0);transition:transform .3s;transform-origin:left}
+.feature-card:hover::before{transform:scaleX(1)}
+.feature-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px}
+.feature-card h3{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:.88rem;color:var(--text-light);line-height:1.7}
+.demo-section{background:var(--code-bg);padding:80px 0;position:relative;overflow:hidden}
+.demo-section .section-label{background:rgba(255,255,255,.08);color:var(--accent)}
+.demo-section .section-title{color:#fff}.demo-section .section-desc{color:rgba(255,255,255,.55)}
+.demo-window{margin-top:36px;background:#1E1E1E;border-radius:16px;border:1px solid #333;overflow:hidden}
+.demo-titlebar{display:flex;align-items:center;gap:8px;padding:14px 18px;background:#2D2D2D;border-bottom:1px solid #3E3E3E}
+.demo-titlebar span{margin-left:auto;color:#888;font-size:.78rem}
+.demo-body{padding:24px;font-family:"Cascadia Code","Fira Code",monospace;font-size:.82rem;line-height:1.9;color:#D4D4D4;min-height:300px}
+.demo-line{display:flex;gap:16px}
+.demo-ln{color:#555;min-width:28px;text-align:right;user-select:none}
+.prompt-line{color:#569CD6}.ai-line{color:#6A9955}
+.workflow{display:flex;gap:20px;position:relative}
+
+.workflow-step{flex:1;text-align:center;position:relative;z-index:1}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;margin:0 auto 16px;box-shadow:0 4px 16px rgba(255,107,53,.3)}
+.workflow-step h3{font-size:1rem;font-weight:700;margin-bottom:6px}
+.workflow-step p{font-size:.82rem;color:var(--text-light)}
+.providers-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.provider-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 16px;text-align:center;transition:all .3s}
+.provider-card:hover{border-color:rgba(255,107,53,.25);box-shadow:0 4px 20px rgba(0,0,0,.04)}
+.provider-logo{font-size:2rem;margin-bottom:10px}
+.provider-card h4{font-size:.92rem;font-weight:700;margin-bottom:4px}
+.provider-card p{font-size:.76rem;color:var(--text-light)}
+.arch-diagram{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;margin-top:36px}
+.arch-row{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.arch-box{padding:12px 24px;border-radius:10px;font-size:.85rem;font-weight:600;text-align:center;min-width:120px}
+.arch-box.primary{background:var(--primary);color:#fff}
+.arch-box.accent{background:rgba(255,209,102,.2);color:#9A7B2D;border:1px solid rgba(255,209,102,.4)}
+.arch-box.light{background:rgba(255,107,53,.06);color:var(--primary);border:1px solid rgba(255,107,53,.12)}
+.arch-box.dark{background:var(--code-bg);color:#D4D4D4}
+.arch-arrow{text-align:center;color:var(--text-light);font-size:1.2rem;margin:8px 0}
+.test-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.test-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px}
+.test-stars{color:#FFB800;font-size:.9rem;margin-bottom:12px}
+.test-text{font-size:.92rem;color:var(--text);line-height:1.8;margin-bottom:16px;font-style:italic}
+.test-author{display:flex;align-items:center;gap:12px}
+.test-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff}
+.test-info strong{font-size:.88rem;display:block}.test-info span{font-size:.76rem;color:var(--text-light)}
+.faq-list{max-width:720px}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:18px 0;font-size:.95rem;font-weight:600;cursor:pointer;transition:color .2s}
+.faq-q:hover{color:var(--primary)}.faq-q .icon{font-size:1.2rem;color:var(--text-light);transition:transform .3s}
+.faq-item.open .faq-q .icon{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.faq-item.open .faq-a{max-height:200px}
+.faq-a p{padding-bottom:18px;font-size:.88rem;color:var(--text-light);line-height:1.8}
+.cta-section{text-align:center;padding:100px 0;background:linear-gradient(135deg,#FFF8F4 0%,#FFF0E6 50%,#FFF8F0 100%);position:relative;overflow:hidden}
+.cta-section::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(255,107,53,.06) 0%,transparent 60%);pointer-events:none}
+.cta-section h2{font-size:2.2rem;font-weight:800;margin-bottom:14px}
+.cta-section p{color:var(--text-light);font-size:1.05rem;margin-bottom:32px}
+.cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.cta-note{margin-top:20px;font-size:.8rem;color:var(--text-light)}
+.feedback-section{padding:80px 0;background:#fff}
+.feedback-form{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:680px;margin:0 auto}
+.feedback-form h3{font-size:1.3rem;font-weight:700;margin-bottom:6px}
+.feedback-form .subtitle{color:var(--text-light);font-size:.88rem;margin-bottom:28px}
+.feedback-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.feedback-field{margin-bottom:18px}
+.feedback-field label{display:block;font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.feedback-field label .req{color:#EF4444;margin-left:2px}
+.feedback-field input,.feedback-field textarea,.feedback-field select{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:inherit;color:var(--text);background:var(--bg);transition:border-color .2s,box-shadow .2s;outline:none}
+.feedback-field input:focus,.feedback-field textarea:focus,.feedback-field select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,107,53,.1)}
+.feedback-field textarea{resize:vertical;min-height:130px;line-height:1.7}
+.feedback-field select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6560' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.feedback-actions{display:flex;align-items:center;gap:14px;margin-top:8px}
+.feedback-actions .btn{min-width:180px;justify-content:center}
+.feedback-hint{font-size:.78rem;color:var(--text-light);display:flex;align-items:center;gap:6px}
+.feedback-success{display:none;text-align:center;padding:48px 28px}
+.feedback-success .icon{font-size:3rem;margin-bottom:16px}
+.feedback-success h3{font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.feedback-success p{color:var(--text-light);font-size:.9rem;line-height:1.7}
+@media(max-width:640px){.feedback-row{grid-template-columns:1fr}.feedback-form{padding:28px 20px}.feedback-actions{flex-direction:column}.feedback-actions .btn{width:100%}}
+.footer{padding:40px 0;border-top:1px solid var(--border)}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-left{display:flex;align-items:center;gap:10px;font-size:.88rem;font-weight:600}
+.footer-left svg{width:24px;height:24px}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:.82rem;color:var(--text-light);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--primary)}
+.fade-up{opacity:0;transform:translateY(20px);transition:all .6s cubic-bezier(.16,1,.3,1)}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+.mcp-visual{display:flex;align-items:center;justify-content:center;gap:32px;padding:40px 20px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin-top:36px;flex-wrap:wrap}
+.mcp-server{text-align:center;flex:1;min-width:160px;padding:20px}
+.mcp-server h3{font-size:.95rem;font-weight:700;margin-bottom:8px}
+.mcp-server p{font-size:.82rem;color:var(--text-light)}
+.mcp-arrow{font-size:1.6rem;color:var(--primary);margin:10px 0;animation:pulse 2s infinite}
+.mcp-center{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(255,107,53,.08),rgba(255,209,102,.08));border-radius:50%;width:120px;height:120px;border:2px solid rgba(255,107,53,.15)}
+.mimo-icon{width:72px;height:72px}
+.testimonials-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.testimonial-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;transition:all .3s}
+.testimonial-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.06)}
+.testimonial-card p{font-size:.92rem;color:var(--text);line-height:1.8;margin-bottom:16px;font-style:italic}
+.stars{color:#FFB800;font-size:1rem;margin-bottom:14px;letter-spacing:2px}
+.testimonial-author{display:flex;align-items:center;gap:12px}
+.author-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-dark));flex-shrink:0}
+.testimonial-author strong{display:block;font-size:.88rem;color:var(--text)}.testimonial-author span{font-size:.76rem;color:var(--text-light);display:block;margin-top:2px}
+.provider-icon{font-size:2rem;display:block;margin-bottom:10px}
+.provider-name{font-size:.92rem;font-weight:700;margin-bottom:4px}
+.provider-desc{font-size:.76rem;color:var(--text-light)}
+.install-section{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#fff;padding:80px 0;text-align:center}
+.install-steps{display:flex;justify-content:center;gap:24px;margin-top:2rem;flex-wrap:nowrap}
+.install-step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;flex:1}
+.install-num{width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin-bottom:8px}
+.install-step p{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.install-step code{background:rgba(255,255,255,.1);padding:6px 16px;border-radius:6px;font-size:.8rem;font-family:monospace;color:rgba(255,255,255,.8)}
+.install-section .section-label{background:rgba(255,107,53,.15);color:#FFD166}
+.install-section .btn-primary{background:var(--primary);font-size:1.1rem;padding:.9rem 2.5rem}
+.install-section .btn-primary:hover{background:var(--primary-dark)}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;padding:40px 0 24px}
+.footer-grid h4{font-size:.85rem;font-weight:700;margin-bottom:12px;color:var(--text)}
+.footer-grid a{display:block;font-size:.82rem;color:var(--text-light);text-decoration:none;margin-bottom:8px;transition:color .2s}
+.footer-grid a:hover{color:var(--primary)}
+.footer-brand{font-size:1.1rem;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.footer-bottom{border-top:1px solid var(--border);padding:20px 0;text-align:center;font-size:.8rem;color:var(--text-light)}
+.workflow-steps{display:flex;gap:24px;justify-content:center;position:relative}
+.workflow-steps::before{content:none}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px}.hero h1{font-size:2.2rem}.features-grid{grid-template-columns:1fr 1fr}.workflow{flex-direction:column;align-items:center}.workflow-steps{flex-direction:column;align-items:center}.providers-grid{grid-template-columns:repeat(2,1fr)}.test-grid{grid-template-columns:1fr}.testimonials-grid{grid-template-columns:1fr}.mcp-visual{flex-direction:column;gap:16px}.install-steps{flex-direction:column;align-items:center}.footer-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}}
+@media(max-width:600px){.hero h1{font-size:1.8rem}.features-grid{grid-template-columns:1fr}.providers-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr}}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none;z-index:101}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translateY(7px)}.hamburger.active span:nth-child(2){opacity:0}.hamburger.active span:nth-child(3){transform:rotate(-45deg) translateY(-7px)}
+@media(max-width:900px){.hamburger{display:flex}.nav-links.open{display:flex;position:fixed;top:60px;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(12px);flex-direction:column;padding:20px 24px;gap:16px;border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.06)}.nav-links.open a{font-size:1rem;padding:8px 0}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;transition-duration:0.01ms !important}}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none;z-index:101}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translateY(7px)}.hamburger.active span:nth-child(2){opacity:0}.hamburger.active span:nth-child(3){transform:rotate(-45deg) translateY(-7px)}
+@media(max-width:900px){.hamburger{display:flex}.nav-links.open{display:flex;position:fixed;top:60px;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(12px);flex-direction:column;padding:20px 24px;gap:16px;border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.06)}.nav-links.open a{font-size:1rem;padding:8px 0}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;transition-duration:0.01ms !important}}
+
+
+    
+/* Nav toggle buttons */
+.nav-toggles{display:flex;align-items:center;gap:8px;margin-left:8px}
+.nav-toggle{width:36px;height:36px;border:none;border-radius:8px;background:transparent;color:var(--text);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.nav-toggle:hover{color:var(--primary);transform:scale(1.05)}
+.lang-toggle{font-weight:700;font-size:.9rem}
+.theme-toggle{font-size:1rem}
+@media(max-width:768px){
+.nav-toggles{position:absolute;right:60px;top:14px;display:flex;gap:4px}
+.nav-links.open~.nav-toggles{position:static;right:auto;top:auto;margin:12px 0 0 0;justify-content:center;order:3}
+}
+</style>
+</head>
+<body><nav class="nav" id="nav">
+<div class="container nav-inner">
+<a href="index.html" class="logo">
+<img src="assets/mimo-agent-icon.svg" alt="MIMO Agent" width="32" height="32">
+MIMO Agent
+</a>
+<ul class="nav-links" id="nav-links">
+<li><a href="#features" data-i18n="nav.features" data-i18n="footer.feat">核心功能</a></li>
+<li><a href="#workflow" data-i18n="nav.workflow" data-i18n="footer.wf">工作流程</a></li>
+<li><a href="#providers" data-i18n="nav.providers" data-i18n="footer.prov">模型支持</a></li>
+<li><a href="#testimonials" data-i18n="nav.testimonials">用户评价</a></li>
+<li><a href="#feedback" data-i18n="nav.feedback">用户反馈</a></li>
+</ul>
+<div class="nav-toggles">
+<button class="nav-toggle lang-toggle" id="langToggle" aria-label="Switch Language" title="Switch Language">中</button>
+<button class="nav-toggle theme-toggle" id="themeToggle" aria-label="Toggle Theme" title="Toggle Theme">☀️</button>
+</div>
+<a href="https://github.com/YSP0Github/MIMO-Agent" target="_blank" class="nav-cta">⭐ GitHub</a>
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+</div>
+</nav>
+
+<section class="hero" id="top" role="banner">
+<div class="container">
+<div class="hero-grid">
+<div>
+<div class="hero-badge" data-i18n="hero.badge"><span></span> 更适配小米 MiMo 大模型</div>
+<h1><span data-i18n="hero.title">写代码这件事，<br>交给 <em>MiMo</em> 就好</span></h1>
+<p class="hero-desc" data-i18n="hero.desc">ReAct-style Agent Loop 架构 · 意图路由 + 完成门控 + Workflow/Subagent 工程层 · 深度集成 VS Code，让 AI 真正读懂你的项目。</p>
+<div class="hero-btns">
+<a href="https://github.com/YSP0Github/MIMO-Agent" target="_blank" class="btn btn-primary">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+<span data-i18n="hero.github">查看源码</span>
+</a>
+<a href="install.html" class="btn btn-outline">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+<span data-i18n="hero.vscode">VS Code 扩展市场</span>
+</a>
+</div>
+<div class="hero-stats">
+<div><div class="num">100%</div><div class="label" data-i18n="hero.stat1">免费使用</div></div>
+<div><div class="num">6+</div><div class="label" data-i18n="hero.stat2">支持模型</div></div>
+<div><div class="num">MIT</div><div class="label" data-i18n="hero.stat3">开源协议</div></div>
+<div><div class="num">128K</div><div class="label" data-i18n="hero.stat4">上下文窗口</div></div>
+</div>
+</div>
+<div class="hero-visual" style="transition-delay:.2s">
+<div class="code-window">
+<div class="code-titlebar">
+<div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div>
+<span data-i18n="code.title">mimo-agent — 智能编程</span>
+</div>
+<div class="code-body">
+<div><span class="cm" data-i18n="code.comment1">// MIMO Agent 正在为你编写代码...</span></div>
+<div><span class="kw">import</span> { <span class="typ">MiMoAgent</span> } <span class="kw">from</span> <span class="str">'mimo-agent'</span>;</div>
+<div>&nbsp;</div>
+<div><span class="kw">const</span> <span class="var">agent</span> = <span class="kw">new</span> <span class="typ">MiMoAgent</span>({</div>
+<div>&nbsp;&nbsp;model: <span class="str">'mimo'</span>,</div>
+<div>&nbsp;&nbsp;tools: [<span class="str">'file_edit'</span>, <span class="str">'shell'</span>, <span class="str">'search'</span>],</div>
+<div>&nbsp;&nbsp;memory: <span class="kw">true</span></div>
+<div>});</div>
+<div>&nbsp;</div>
+<div><span class="cm" data-i18n="code.comment2">// 一句话描述需求，Agent 自动完成</span></div>
+<div><span class="kw">await</span> <span class="var">agent</span>.<span class="fn">execute</span>(<span class="str" data-i18n="code.task">'给项目添加暗色模式'</span>);</div>
+<div>&nbsp;</div>
+<div><span class="cm" data-i18n="code.output">// 输出: 已修改 12 个文件，新增 3 个组件</span></div>
+</div>
+</div>
+<div class="float-card" style="top:14%;right:-30px;animation-delay:0s">
+<div class="float-icon" style="background:#E8F5E9">🧠</div>
+<div class="float-text"><strong data-i18n="float.reasoning">深度推理</strong><span data-i18n="float.reasoning_desc">AI 思维链</span></div>
+</div>
+<div class="float-card" style="bottom:20%;left:-40px;animation-delay:1.5s">
+<div class="float-icon" style="background:#FFF3E0">⚡</div>
+<div class="float-text"><strong data-i18n="float.streaming">流式响应</strong><span data-i18n="float.streaming_desc">实时输出结果</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="features" style="background:#fff" role="region" data-i18n-aria="features.aria" aria-label="核心功能">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="features.label">✦ 核心能力</div>
+<h2 class="section-title" data-i18n="features.title">不只是补全代码，而是理解你的意图</h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto"><span data-i18n="features.desc">九大核心能力覆盖编程全流程——从读文件、改代码、跑测试，到连接外部服务，一个 Agent 全搞定。</span></p>
+</div>
+<div class="features-grid">
+<div class="feature-card fade-up">
+<div class="feature-icon" style="background:#FFF0E8">📂</div>
+<h3 data-i18n="feature1.title">文件感知</h3>
+<p><span data-i18n="feature1.desc">自动读取和编辑项目文件，理解上下文、依赖关系和代码结构，无需手动复制粘贴。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.05s">
+<div class="feature-icon" style="background:#E8F4FD">🔍</div>
+<h3 data-i18n="feature2.title">代码搜索</h3>
+<p><span data-i18n="feature2.desc">基于正则和语义的双重搜索能力，快速定位函数定义、变量引用和相关代码片段。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.1s">
+<div class="feature-icon" style="background:#F3E8FF">🖥️</div>
+<h3 data-i18n="feature3.title">终端集成</h3>
+<p><span data-i18n="feature3.desc">直接在 VS Code 内执行 Shell 命令，运行测试、安装依赖、启动服务，全流程自动化。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.15s">
+<div class="feature-icon" style="background:#E8FFF0">🔌</div>
+<h3 data-i18n="feature4.title">MCP 协议</h3>
+<p><span data-i18n="feature4.desc">通过 Model Context Protocol 连接数据库、API、外部服务，扩展 Agent 的能力边界。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.2s">
+<div class="feature-icon" style="background:#FFF8E8">💬</div>
+<h3 data-i18n="feature5.title">上下文记忆</h3>
+<p><span data-i18n="feature5.desc">记住对话历史和项目上下文，跨轮次保持连贯理解，减少重复解释的烦恼。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.25s">
+<div class="feature-icon" style="background:#FFE8E8">🎨</div>
+<h3 data-i18n="feature6.title">多模型切换</h3>
+<p><span data-i18n="feature6.desc">支持用户自定义配置任意模型，包括 MiMo 系列、DeepSeek 等，根据任务自由选择。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.3s">
+<div class="feature-icon" style="background:#E8F8FF">🖼️</div>
+<h3 data-i18n="feature7.title">图片理解</h3>
+<p><span data-i18n="feature7.desc">直接粘贴截图或 UI 设计稿，AI 视觉理解代码截图、错误信息和界面原型。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.35s">
+<div class="feature-icon" style="background:#FFF5E8">🎙️</div>
+<h3 data-i18n="feature8.title">语音输入</h3>
+<p><span data-i18n="feature8.desc">支持本地语音输入，用自然语言描述需求，解放双手。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.4s">
+<div class="feature-icon" style="background:#F0FFE8">🔄</div>
+<h3 data-i18n="feature9.title">任务恢复</h3>
+<p><span data-i18n="feature9.desc">中断的任务可以自动恢复，无需从头开始，保证长任务的连续性。</span></p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="innovation" style="background:var(--section-alt)" role="region" aria-label="创新优势">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="innovation.label">🚀 为什么选择 MIMO Agent</div>
+<h2 class="section-title" data-i18n="innovation.title">我们做了一些不一样的事</h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto"><span data-i18n="innovation.desc">不只是套壳调 API，而是从架构到体验的深度优化。</span></p>
+</div>
+<div class="features-grid" style="grid-template-columns:repeat(2,1fr)">
+<div class="feature-card fade-up">
+<div class="feature-icon" style="background:#FFF0E8">🧠</div>
+<h3 data-i18n="innov1.title">原生 MiMo 优化</h3>
+<p><span data-i18n="innov1.desc">专为小米 MiMo 大模型深度调优，128K 超长上下文窗口。意图路由器自动判断是否需要调用工具，简单问题秒回，复杂任务才启动 Agent 循环。当前版本已更新至 v1.6.8。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.05s">
+<div class="feature-icon" style="background:#E8F4FD">📦</div>
+<h3 data-i18n="innov2.title">零依赖极简架构</h3>
+<p><span data-i18n="innov2.desc">VSIX 仅约 68KB，零运行时 npm 依赖。不拖慢你的 VS Code，不偷偷装一堆包，干净利落。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.1s">
+<div class="feature-icon" style="background:#E8FFF0">🔌</div>
+<h3 data-i18n="innov3.title">开放 API 协议</h3>
+<p><span data-i18n="innov3.desc">基于 OpenAI 兼容协议，不锁定供应商。DeepSeek、Ollama、OpenRouter——任何兼容端点都能接入。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.15s">
+<div class="feature-icon" style="background:#FFF8E8">⚡</div>
+<h3 data-i18n="innov4.title">5 种智能工作模式</h3>
+<p><span data-i18n="innov4.desc">Auto（全自动）、Polling（交互确认）、Plan（先规划后执行）、Adversarial（多角色对抗审查）、Infinite（长任务持续执行）。不同场景，不同策略。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.2s">
+<div class="feature-icon" style="background:#F3E8FF">🎭</div>
+<h3 data-i18n="innov5.title">内置 Skills 技能系统</h3>
+<p><span data-i18n="innov5.desc">7 个内置技能——review、debug、refactor、test、doc、explain、git。一键触发专业工作流，无需手写 prompt。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.25s">
+<div class="feature-icon" style="background:#E8F5E9">🛡️</div>
+<h3 data-i18n="innov6.title">安全层 + 完成门控</h3>
+<p><span data-i18n="innov6.desc">路径安全检查、命令沙箱、SSRF 防护。完成门控自动验证结果是否充分，卡住了会自动注入恢复指令。</span></p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="mcp" role="region" data-i18n-aria="mcp.aria" aria-label="MCP 协议">
+<div class="container">
+<div class="section-header fade-up">
+<div class="section-label" data-i18n="mcp.label">🔗 能力扩展</div>
+<h2 class="section-title" data-i18n="mcp.title">MCP 协议：让 AI 连接万物</h2>
+</div>
+<div class="mcp-visual fade-up">
+<div class="mcp-server">
+<h3 data-i18n="mcp.server">🗂️ MCP Server</h3>
+<div class="mcp-arrow">⇄</div>
+<p><span data-i18n="mcp.server_desc">文件系统 · 数据库 · API · 搜索引擎</span></p>
+</div>
+<div class="mcp-center">
+<img src="assets/mimo-agent-icon.svg" alt="MIMO Agent" class="mimo-icon">
+</div>
+<div class="mcp-server">
+<h3 data-i18n="mcp.client">💬 MCP Client</h3>
+<div class="mcp-arrow">⇄</div>
+<p><span data-i18n="mcp.client_desc">VS Code · 终端 · 调试器 · Git</span></p>
+</div>
+</div>
+<p style="text-align:center;color:#666;max-width:640px;margin:2rem auto 0" class="fade-up">
+<span data-i18n="mcp.desc1">MCP（Model Context Protocol）是 AI Agent 与外部世界交互的标准协议。</span>
+<span data-i18n="mcp.desc2">MIMO Agent 作为 MCP Client 能连接各类 MCP Server，调用文件系统、数据库、搜索引擎等外部工具，扩展 AI 的能力边界。</span>
+</p>
+</div>
+</section>
+
+<section id="workflow" style="background:#fff" role="region" data-i18n-aria="workflow.aria" aria-label="工作流程">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="workflow.label">⚡ 工作流程</div>
+<h2 class="section-title" data-i18n="workflow.title">从想法到代码，只需三步</h2>
+</div>
+<div class="workflow-steps">
+<div class="workflow-step fade-up">
+<div class="step-num">1</div>
+<h3 data-i18n="step1.title">描述你的需求</h3>
+<p><span data-i18n="step1.desc">用自然语言告诉 MIMO Agent 你想做什么。支持中英文混合指令，如"给登录页面添加邮箱验证"、"重构这个函数"、"写一个爬虫脚本"——就像跟同事说话一样自然。</span></p>
+</div>
+<div class="workflow-step fade-up" style="transition-delay:.2s">
+<div class="step-num">2</div>
+<h3 data-i18n="step2.title">AI 分析并规划</h3>
+<p><span data-i18n="step2.desc">ReAct-style Agent Loop 启动：意图路由识别任务类型 → 读取相关文件、理解项目结构 → 制定多步执行计划。你可以实时看到 AI 的每一步思考和决策过程。</span></p>
+</div>
+<div class="workflow-step fade-up" style="transition-delay:.3s">
+<div class="step-num">3</div>
+<h3 data-i18n="step3.title">自动执行并验证</h3>
+<p><span data-i18n="step3.desc">Agent 通过 Workflow/Subagent 协作完成任务：创建文件、修改代码、运行测试、执行命令。完成门控自动验证结果，每一步都可审计、可回滚。完成后汇报详细变更摘要。</span></p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="providers" role="region" data-i18n-aria="providers.aria" aria-label="模型支持">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="providers.label">🔧 模型生态</div>
+<h2 class="section-title"><span data-i18n="providers.title">一个插件，接入全球顶尖 AI</span></h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto"><span data-i18n="providers.desc">内置 MiMo 普通余额、MiMo Token Plan、DeepSeek、OpenAI 等快速预设；也支持 Qwen、Zhipu、SiliconFlow、OpenRouter 和任意兼容端点。</span></p>
+</div>
+<div class="providers-grid fade-up">
+<div class="provider-card"><span class="provider-icon">🔵</span><div class="provider-name">MiMo</div><div class="provider-desc" data-i18n="prov.mimo">普通余额 / Token Plan · 语音与多模态</div></div>
+<div class="provider-card"><span class="provider-icon">🟢</span><div class="provider-name">DeepSeek</div><div class="provider-desc" data-i18n="prov.deepseek">deepseek-chat · deepseek-reasoner</div></div>
+<div class="provider-card"><span class="provider-icon">⚫</span><div class="provider-name">OpenAI</div><div class="provider-desc" data-i18n="prov.openai">Responses · GPT 系列（建议使用codex原生插件）</div></div>
+<div class="provider-card"><span class="provider-icon">🟡</span><div class="provider-name">Qwen / DashScope</div><div class="provider-desc" data-i18n="prov.qwen">qwen-plus · qwen-max · 兼容模式</div></div>
+<div class="provider-card"><span class="provider-icon">🟠</span><div class="provider-name">Zhipu GLM</div><div class="provider-desc" data-i18n="prov.zhipu">GLM 系列 · OpenAI 兼容</div></div>
+<div class="provider-card"><span class="provider-icon">🔴</span><div class="provider-name">SiliconFlow</div><div class="provider-desc" data-i18n="prov.siliconflow">Qwen · DeepSeek · 聚合接入</div></div>
+<div class="provider-card"><span class="provider-icon">🟣</span><div class="provider-name">OpenRouter</div><div class="provider-desc" data-i18n="prov.openrouter">多供应商路由 · OpenAI 兼容</div></div>
+<div class="provider-card"><span class="provider-icon">🔵</span><div class="provider-name">Custom OpenAI</div><div class="provider-desc" data-i18n="prov.custom">任何兼容 API 端点</div></div>
+</div>
+</div>
+</section>
+
+<section id="testimonials" style="background:#fff" role="region" data-i18n-aria="testimonials.aria" aria-label="用户评价">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="testimonials.label">💬 用户反馈</div>
+<h2 class="section-title"><span data-i18n="testimonials.title">来自开发者的真实声音</span></h2>
+</div>
+<div class="testimonials-grid">
+<div class="testimonial-card fade-up">
+<div class="stars">★★★★★</div>
+<p><span data-i18n="test1.text">"装了 MIMO Agent 之后，终于可以不开三个终端窗口了。文件编辑、搜索、Git 操作全在一个聊天框里完成，效率直接翻倍。"</span></p>
+<div class="testimonial-author">
+<div class="author-avatar">L</div>
+<div><strong><span data-i18n="test1.name">Larry · 全栈工程师</span></strong><span><span data-i18n="test1.role">5 年经验 · React/Node.js</span></div>
+</div>
+</div>
+<div class="testimonial-card fade-up" style="transition-delay:.1s">
+<div class="stars">★★★★★</div>
+<p><span data-i18n="test2.text">"最打动我的是可以直接在 VS Code 里跑测试和安装依赖，不用来回复制终端输出给 AI。MCP 协议的思路很前沿，期待后续生态更丰富。"</span></p>
+<div class="testimonial-author">
+<div class="author-avatar" style="background:linear-gradient(135deg,#4FACFE,#00F2FE)">W</div>
+<div><strong><span data-i18n="test2.name">小王 · 后端开发</span></strong><span><span data-i18n="test2.role">3 年经验 · Python/Go</span></div>
+</div>
+</div>
+<div class="testimonial-card fade-up" style="transition-delay:.2s">
+<div class="stars">★★★★★</div>
+<p><span data-i18n="test4.text">"作为 VS Code 扩展开发者，我用 MIMO Agent 来写 MIMO Agent 的功能。用 MiMo 模型写代码、改 bug、跑测试，体验非常丝滑。"</span></p>
+<div class="testimonial-author">
+<div class="author-avatar" style="background:linear-gradient(135deg,#FA709A,#FEE140)">Y</div>
+<div><strong><span data-i18n="test4.name">ysp · MIMO Agent 作者</span></strong><span data-i18n="test4.role">MiMo 深度用户</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="honesty" role="region" aria-label="坦诚相待">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="honesty.label">🤝 坦诚相待</div>
+<h2 class="section-title" data-i18n="honesty.title">我们知道还有提升空间</h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto"><span data-i18n="honesty.desc">不完美，但足够诚实。以下是我们正在改进的方向。</span></p>
+</div>
+<div class="features-grid" style="grid-template-columns:repeat(2,1fr)">
+<div class="feature-card fade-up">
+<div class="feature-icon" style="background:#FFF3E0">🚧</div>
+<h3 data-i18n="honest1.title">仍在快速迭代</h3>
+<p><span data-i18n="honest1.desc">当前 v1.6.8 版本，核心功能已就绪，但体验细节仍在持续打磨。欢迎反馈，你的每个 Issue 都会被认真对待。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.05s">
+<div class="feature-icon" style="background:#E8F5E9">🧠</div>
+<h3 data-i18n="honest2.title">模型能力持续进化</h3>
+<p><span data-i18n="honest2.desc">MiMo 模型在持续迭代升级中，中文场景表现优秀。部分复杂推理场景仍在追赶国际一线模型，但差距已越来越小。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.1s">
+<div class="feature-icon" style="background:#E3F2FD">🔌</div>
+<h3 data-i18n="honest3.title">MCP 生态建设中</h3>
+<p><span data-i18n="honest3.desc">第三方 MCP Server 数量有限，社区正在壮大。如果你有好的 Server 想接入，欢迎贡献。</span></p>
+</div>
+<div class="feature-card fade-up" style="transition-delay:.15s">
+<div class="feature-icon" style="background:#FCE4EC">💬</div>
+<h3 data-i18n="honest4.title">暂无跨设备同步</h3>
+<p><span data-i18n="honest4.desc">对话记录仅保存在本地，换设备需要重新开始。云端同步功能已在规划中。</span></p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="install-section" role="region" aria-label="快速安装">
+<div class="container center">
+<h2 class="section-title" style="color:#fff;margin-bottom:.8rem"><span data-i18n="install.title">快速安装</span></h2>
+<p style="color:rgba(255,255,255,.75);margin-bottom:1.8rem;font-size:1rem" data-i18n="install.desc">在 VS Code 中四步完成配置，立即体验 AI 编程</p>
+<div class="install-steps">
+<div class="install-step">
+<span class="install-num">1</span>
+<p data-i18n="install.step1">在 VS Code 扩展商店搜索 MIMO Agent 并安装</p>
+<code>Ctrl+Shift+X → 搜索 "MIMO Agent"</code>
+</div>
+<div class="install-step">
+<span class="install-num">2</span>
+<p data-i18n="install.step2">打开设置页，选择 MiMo Balance 或 Token Plan 预设</p>
+<code>MiMo: Settings → 选择预设方案</code>
+</div>
+<div class="install-step">
+<span class="install-num">3</span>
+<p data-i18n="install.step3">填写 API Key，保存后选择模型即可开始编程</p>
+<code>Save → 选择模型 → 开始对话</code>
+</div>
+</div>
+<div style="margin-top:2.5rem">
+<a href="install.html" class="btn btn-primary" style="font-size:1rem;padding:.85rem 2.4rem" data-i18n="install.btn">立即安装 MIMO Agent</a>
+</div>
+</div>
+</section>
+
+<!-- 用户反馈 -->
+<section id="feedback" class="feedback-section" role="region" aria-label="用户反馈">
+<div class="container">
+<div class="section-header center fade-up">
+<div class="section-label" data-i18n="feedback.label">💬 用户反馈</div>
+<h2 class="section-title" data-i18n="feedback.title">帮助我们变得更好</h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto"><span data-i18n="feedback.desc">你的每一条反馈都是改进的动力，无论是 Bug 报告、功能建议还是使用体验。</span></p>
+</div>
+<div class="feedback-form fade-up" id="feedbackForm">
+<h3 data-i18n="feedback.form.title">提交反馈</h3>
+<p class="subtitle" data-i18n="feedback.form.subtitle">带 <span style="color:#EF4444">*</span> 为必填项</p>
+<form id="mimoFeedbackForm" onsubmit="return false;">
+<div class="feedback-row">
+<div class="feedback-field">
+<label><span data-i18n="feedback.name">你的名字</span><span class="req">*</span></label>
+<input type="text" id="fbName" required data-i18n-placeholder="feedback.name.placeholder" placeholder="怎么称呼你？">
+</div>
+<div class="feedback-field">
+<label><span data-i18n="feedback.email">邮箱地址</span><span class="req">*</span></label>
+<input type="email" id="fbEmail" required data-i18n-placeholder="feedback.email.placeholder" placeholder="方便回复你">
+</div>
+</div>
+<div class="feedback-row">
+<div class="feedback-field">
+<label data-i18n="feedback.type">反馈类型</label>
+<select id="fbType">
+<option value="bug" data-i18n="feedback.type.bug">🐛 Bug 报告</option>
+<option value="feature" data-i18n="feedback.type.feature">✨ 功能建议</option>
+<option value="experience" data-i18n="feedback.type.experience">💡 使用体验</option>
+<option value="other" data-i18n="feedback.type.other">📝 其他</option>
+</select>
+</div>
+<div class="feedback-field">
+<label data-i18n="feedback.version">MIMO Agent 版本</label>
+<input type="text" id="fbVersion" data-i18n-placeholder="feedback.version.placeholder" placeholder="如 v1.6.8（可选）">
+</div>
+</div>
+<div class="feedback-field">
+<label><span data-i18n="feedback.content">反馈内容</span><span class="req">*</span></label>
+<textarea id="fbContent" required data-i18n-placeholder="feedback.content.placeholder" placeholder="请详细描述你遇到的问题、建议或想法..."></textarea>
+</div>
+<div class="feedback-actions">
+<button type="button" class="btn btn-primary" onclick="sendFeedback()" data-i18n="feedback.submit">📧 通过邮件发送</button>
+<div class="feedback-hint">
+<span>🔒</span>
+<span data-i18n="feedback.privacy">反馈将通过邮件发送，不会存储你的个人信息</span>
+</div>
+</div>
+</form>
+<div class="feedback-success" id="feedbackSuccess">
+<div class="icon">✅</div>
+<h3 data-i18n="feedback.success.title">邮件已准备就绪</h3>
+<p data-i18n="feedback.success.desc">你的默认邮件客户端已打开，请检查内容后点击发送。<br>感谢你的反馈！</p>
+</div>
+</div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+<div class="footer-grid">
+<div>
+<div class="footer-brand"><img src="assets/mimo-agent-icon.svg" alt="MIMO Agent" style="width:24px;height:24px;vertical-align:middle;margin-right:6px">MIMO Agent</div>
+<p><span data-i18n="footer.desc">小米 MiMo 大模型驱动的智能 AI 编程助手。<br>免费 · 开源 · 尊重隐私。</span></p>
+</div>
+<div>
+<h4 data-i18n="footer.product">产品</h4>
+<a href="#features" data-i18n="footer.feat">核心功能</a>
+<a href="#workflow" data-i18n="footer.wf">工作流程</a>
+<a href="#providers" data-i18n="footer.prov">模型支持</a>
+</div>
+<div>
+<h4 data-i18n="footer.resources">资源</h4>
+<a href="https://github.com/YSP0Github/MIMO-Agent" target="_blank" data-i18n="footer.gh">GitHub 仓库</a>
+<a href="https://github.com/YSP0Github/MIMO-Agent/issues" target="_blank" data-i18n="footer.issues">反馈建议</a>
+<a href="install.html" data-i18n="footer.ext">VS Code 扩展</a>
+</div>
+<div>
+<h4 data-i18n="footer.tech">技术</h4>
+<a href="https://spec.modelcontextprotocol.io/" target="_blank" data-i18n="footer.mcp">MCP 协议</a>
+<a href="https://mimo.xiaomi.com/" target="_blank" data-i18n="footer.mimo">小米 MiMo</a>
+<a href="https://openrouter.ai/" target="_blank" data-i18n="footer.openrouter">OpenRouter</a>
+</div>
+</div>
+<div class="footer-bottom">
+<p><span data-i18n="footer.copyright">© 2026 MIMO Agent · 基于 MIT 协议开源 · 由小米 MiMo 大模型提供动力</span></p>
+</div>
+</div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Smooth scroll — also close mobile menu on click
+    var navLinks = document.getElementById('nav-links');
+    var hamburger = document.getElementById('hamburger');
+    document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            var target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (navLinks) navLinks.classList.remove('open');
+            if (hamburger) hamburger.classList.remove('active');
+        });
+    });
+
+    // Hamburger menu toggle
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function () {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+    }
+
+    // Header scroll effect — debounced with rAF
+    var header = document.querySelector('.nav');
+    var scrollTicking = false;
+    window.addEventListener('scroll', function () {
+        if (!scrollTicking) {
+            window.requestAnimationFrame(function () {
+                if (window.scrollY > 60) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+                scrollTicking = false;
+            });
+            scrollTicking = true;
+        }
+    }, { passive: true });
+
+    // Intersection Observer for fade-in animations
+    var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    document.querySelectorAll('.fade-up').forEach(function (el) { observer.observe(el); });
+
+    // Typing effect for code line
+    var typingEl = document.querySelector('.typing');
+    if (typingEl) {
+        var text = typingEl.textContent;
+        typingEl.textContent = '';
+        typingEl.style.borderRight = '2px solid #4ECDC4';
+        var i = 0;
+        var typeTimer = setInterval(function () {
+            if (i < text.length) { typingEl.textContent += text[i]; i++; }
+            else { clearInterval(typeTimer); setTimeout(function () { typingEl.style.borderRight = 'none'; }, 1500); }
+        }, 80);
+    }
+
+    // Parallax on architecture diagram — debounced with rAF
+    var archSection = document.querySelector('.architecture');
+    if (archSection) {
+        var parallaxTicking = false;
+        window.addEventListener('scroll', function () {
+            if (!parallaxTicking) {
+                window.requestAnimationFrame(function () {
+                    var rect = archSection.getBoundingClientRect();
+                    if (rect.top < window.innerHeight && rect.bottom > 0) {
+                        var progress = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
+                        archSection.querySelectorAll('.arch-layer').forEach(function (layer, index) {
+                            layer.style.transform = 'translateY(' + ((progress - 0.5) * (index + 1) * 5) + 'px)';
+                        });
+                    }
+                    parallaxTicking = false;
+                });
+                parallaxTicking = true;
+            }
+        }, { passive: true });
+    }
+});
+
+    // ========== Language (i18n) System ==========
+    var translations = {
+        zh: {
+            'meta.title': 'MIMO Agent - AI驱动的智能编程助手',
+            'meta.desc': 'MIMO Agent 是适配小米 MiMo 大模型的免费开源 AI 编程助手，深度集成 VS Code，支持文件感知、上下文记忆、MCP 协议和用户自定义模型接入。',
+            'meta.ogtitle': 'MIMO Agent - AI驱动的智能编程助手',
+            'meta.ogdesc': '适配小米 MiMo 大模型的免费开源 AI 编程助手',
+            'meta.keywords': 'MIMO Agent,MiMo,AI编程助手,VS Code扩展,MCP协议,小米大模型,智能编程',
+            'installSectionLabel': '快速安装',
+            'test4.text': '\u201c作为 VS Code 扩展开发者，我用 MIMO Agent 来写 MIMO Agent 的功能。用 MiMo 模型写代码、改 bug、跑测试，体验非常丝滑。\u201d',
+            'test4.name': 'ysp · MIMO Agent 作者',
+            'test4.role': 'MiMo 深度用户',
+            'nav.features': '核心功能',
+            'nav.workflow': '工作流程',
+            'nav.providers': '模型支持',
+            'nav.testimonials': '用户评价',
+            'nav.feedback': '用户反馈',
+            'hero.badge': '<span></span> 更适配小米 MiMo 大模型',
+            'hero.title': '写代码这件事，<br>交给 <em>MiMo</em> 就好',
+            'hero.desc': 'ReAct-style Agent Loop 架构 · 意图路由 + 完成门控 + Workflow/Subagent 工程层 · 深度集成 VS Code，让 AI 真正读懂你的项目。',
+            'hero.github': '查看源码',
+            'hero.vscode': 'VS Code 扩展市场',
+            'hero.stat1': '免费使用',
+            'hero.stat2': '支持模型',
+            'hero.stat3': '开源协议',
+            'hero.stat4': '上下文窗口',
+            'code.title': 'mimo-agent — 智能编程',
+            'code.comment1': 'MIMO Agent 正在为你编写代码',
+            'code.comment2': '一句话描述需求，Agent 自动完成',
+            'code.task': '给项目添加暗色模式',
+            'code.output': '输出: 已修改 12 个文件，新增 3 个组件',
+            'float.reasoning': '深度推理',
+            'float.reasoning_desc': 'AI 思维链',
+            'float.streaming': '流式响应',
+            'float.streaming_desc': '实时输出结果',
+            'features.label': '✦ 核心能力',
+            'features.title': '不只是补全代码，而是理解你的意图',
+            'features.desc': '九大核心能力覆盖编程全流程——从读文件、改代码、跑测试，到连接外部服务，一个 Agent 全搞定。',
+            'feature1.title': '文件感知',
+            'feature1.desc': '自动读取和编辑项目文件，理解上下文、依赖关系和代码结构，无需手动复制粘贴。',
+            'feature2.title': '代码搜索',
+            'feature2.desc': '基于正则和语义的双重搜索能力，快速定位函数定义、变量引用和相关代码片段。',
+            'feature3.title': '终端集成',
+            'feature3.desc': '直接在 VS Code 内执行 Shell 命令，运行测试、安装依赖、启动服务，全流程自动化。',
+            'feature4.title': 'MCP 协议',
+            'feature4.desc': '通过 Model Context Protocol 连接数据库、API、外部服务，扩展 Agent 的能力边界。',
+            'feature5.title': '上下文记忆',
+            'feature5.desc': '记住对话历史和项目上下文，跨轮次保持连贯理解，减少重复解释的烦恼。',
+            'feature6.title': '多模型切换',
+            'feature6.desc': '支持用户自定义配置任意模型，包括 MiMo 系列、DeepSeek 等，根据任务自由选择。',
+            'feature7.title': '图片理解',
+            'feature7.desc': '直接粘贴截图或 UI 设计稿，AI 视觉理解代码截图、错误信息和界面原型。',
+            'feature8.title': '语音输入',
+            'feature8.desc': '支持本地语音输入，用自然语言描述需求，解放双手。',
+            'feature9.title': '任务恢复',
+            'feature9.desc': '中断的任务可以自动恢复，无需从头开始，保证长任务的连续性。',
+            'innovation.label': '🚀 为什么选择 MIMO Agent',
+            'innovation.title': '我们做了一些不一样的事',
+            'innovation.desc': '不只是套壳调 API，而是从架构到体验的深度优化。',
+            'innov1.title': '原生 MiMo 优化',
+            'innov1.desc': '专为小米 MiMo 大模型深度调优，128K 超长上下文窗口。意图路由器自动判断是否需要调用工具，简单问题秒回，复杂任务才启动 Agent 循环。当前版本已更新至 v1.6.8。',
+            'innov2.title': '零依赖极简架构',
+            'innov2.desc': 'VSIX 仅约 68KB，零运行时 npm 依赖。不拖慢你的 VS Code，不偷偷装一堆包，干净利落。',
+            'innov3.title': '开放 API 协议',
+            'innov3.desc': '基于 OpenAI 兼容协议，不锁定供应商。DeepSeek、Ollama、OpenRouter——任何兼容端点都能接入。',
+            'innov4.title': '5 种智能工作模式',
+            'innov4.desc': 'Auto（全自动）、Polling（交互确认）、Plan（先规划后执行）、Adversarial（多角色对抗审查）、Infinite（长任务持续执行）。不同场景，不同策略。',
+            'innov5.title': '内置 Skills 技能系统',
+            'innov5.desc': '7 个内置技能——review、debug、refactor、test、doc、explain、git。一键触发专业工作流，无需手写 prompt。',
+            'innov6.title': '安全层 + 完成门控',
+            'innov6.desc': '路径安全检查、命令沙箱、SSRF 防护。完成门控自动验证结果是否充分，卡住了会自动注入恢复指令。',
+            'mcp.label': '🔗 能力扩展',
+            'mcp.title': 'MCP 协议：让 AI 连接万物',
+            'mcp.server': '🗂️ MCP Server',
+            'mcp.server_desc': '文件系统 · 数据库 · API · 搜索引擎',
+            'mcp.client': '💬 MCP Client',
+            'mcp.client_desc': 'VS Code · 终端 · 调试器 · Git',
+            'mcp.desc1': 'MCP（Model Context Protocol）是 AI Agent 与外部世界交互的标准协议。',
+            'mcp.desc2': 'MIMO Agent 作为 MCP Client 能连接各类 MCP Server，调用文件系统、数据库、搜索引擎等外部工具，扩展 AI 的能力边界。',
+            'workflow.label': '⚡ 工作流程',
+            'workflow.title': '从想法到代码，只需三步',
+            'step1.title': '描述你的需求',
+            'step1.desc': '用自然语言告诉 MIMO Agent 你想做什么。支持中英文混合指令，如"给登录页面添加邮箱验证"、"重构这个函数"、"写一个爬虫脚本"——就像跟同事说话一样自然。',
+            'step2.title': 'AI 分析并规划',
+            'step2.desc': 'ReAct-style Agent Loop 启动：意图路由识别任务类型 → 读取相关文件、理解项目结构 → 制定多步执行计划。你可以实时看到 AI 的每一步思考和决策过程。',
+            'step3.title': '自动执行并验证',
+            'step3.desc': 'Agent 通过 Workflow/Subagent 协作完成任务：创建文件、修改代码、运行测试、执行命令。完成门控自动验证结果，每一步都可审计、可回滚。完成后汇报详细变更摘要。',
+            'providers.label': '🔧 模型生态',
+            'providers.title': '一个插件，接入全球顶尖 AI',
+            'providers.desc': '内置 MiMo 普通余额、MiMo Token Plan、DeepSeek、OpenAI 等快速预设；也支持 Qwen、Zhipu、SiliconFlow、OpenRouter 和任意兼容端点。',
+            'prov.mimo': '普通余额 / Token Plan · 语音与多模态',
+            'prov.deepseek': 'deepseek-chat · deepseek-reasoner',
+            'prov.openai': 'Responses · GPT-4o 系列',
+            'prov.qwen': 'qwen-plus · qwen-max · 兼容模式',
+            'prov.zhipu': 'GLM 系列 · OpenAI 兼容',
+            'prov.openrouter': '多供应商路由 · OpenAI 兼容',
+            'prov.siliconflow': 'Qwen · DeepSeek · 聚合接入',
+            'prov.kimi': 'Moonshot · 兼容接入',
+            'prov.chatglm': '智谱 AI · 兼容接入',
+            'prov.copilot': '未作为内置直连预设',
+            'prov.custom': '任何兼容 API 端点',
+            'providers.footer': '支持用户自定义接入更多模型和 API 端点，满足企业级部署和个性化需求。',
+            'testimonials.label': '💬 用户反馈',
+            'testimonials.title': '来自开发者的真实声音',
+            'test1.text': '“装了 MIMO Agent 之后，终于可以不开三个终端窗口了。文件编辑、搜索、Git 操作全在一个聊天框里完成，效率直接翻倍。”',
+            'test1.name': 'Larry · 全栈工程师',
+            'test1.role': '5 年经验 · React/Node.js',
+            'test2.text': '“最打动我的是可以直接在 VS Code 里跑测试和安装依赖，不用来回复制终端输出给 AI。MCP 协议的思路很前沿，期待后续生态更丰富。”',
+            'test2.name': '小王 · 后端开发',
+            'test2.role': '3 年经验 · Python/Go',
+            'test3.text': '“作为 VS Code Copilot 的付费用户，换了 MIMO Agent 后发现免费版已经够用了。支持自定义模型这点特别好，我可以接入自己的 API。”',
+            'test3.name': '小陈 · 前端开发',
+            'test3.role': '8 年经验 · Vue/TypeScript',
+            'install.title': '快速安装',
+            'install.desc': '在 VS Code 中四步完成配置，立即体验 AI 编程',
+            'install.step1': '在 VS Code 扩展商店搜索 MIMO Agent 并安装',
+            'install.step2': '打开设置页，选择 MiMo Balance 或 Token Plan 预设',
+            'install.step3': '填写 API Key，保存后选择模型即可开始编程',
+            'install.btn': '立即安装 MIMO Agent',
+            'honesty.label': '🤝 坦诚相待',
+            'honesty.title': '我们知道还有提升空间',
+            'honesty.desc': '不完美，但足够诚实。以下是我们正在改进的方向。',
+            'honest1.title': '仍在快速迭代',
+            'honest1.desc': '当前 v1.6.8 版本，核心功能已就绪，但体验细节仍在持续打磨。欢迎反馈，你的每个 Issue 都会被认真对待。',
+            'honest2.title': '模型能力持续进化',
+            'honest2.desc': 'MiMo 模型在持续迭代升级中，中文场景表现优秀。部分复杂推理场景仍在追赶国际一线模型，但差距已越来越小。',
+            'honest3.title': 'MCP 生态建设中',
+            'honest3.desc': '第三方 MCP Server 数量有限，社区正在壮大。如果你有好的 Server 想接入，欢迎贡献。',
+            'honest4.title': '暂无跨设备同步',
+            'honest4.desc': '对话记录仅保存在本地，换设备需要重新开始。云端同步功能已在规划中。',
+            'footer.desc': '小米 MiMo 大模型驱动的智能 AI 编程助手。<br>免费 · 开源 · 尊重隐私。',
+            'footer.copyright': '© 2026 MIMO Agent · 基于 MIT 协议开源 · 由小米 MiMo 大模型提供动力',
+            'footer.product': '产品',
+            'footer.feat': '核心功能',
+            'footer.wf': '工作流程',
+            'footer.prov': '模型支持',
+            'footer.resources': '资源',
+            'footer.gh': 'GitHub 仓库',
+            'footer.issues': '反馈建议',
+            'footer.ext': 'VS Code 扩展',
+            'footer.tech': '技术',
+            'footer.mcp': 'MCP 协议',
+            'footer.mimo': '小米 MiMo',
+            'feedback.label': '💬 用户反馈',
+            'feedback.title': '帮助我们变得更好',
+            'feedback.desc': '你的每一条反馈都是改进的动力，无论是 Bug 报告、功能建议还是使用体验。',
+            'feedback.form.title': '提交反馈',
+            'feedback.form.subtitle': '带 <span style="color:#EF4444">*</span> 为必填项',
+            'feedback.name': '你的名字',
+            'feedback.name.placeholder': '怎么称呼你？',
+            'feedback.email': '邮箱地址',
+            'feedback.email.placeholder': '方便回复你',
+            'feedback.type': '反馈类型',
+            'feedback.type.bug': '🐛 Bug 报告',
+            'feedback.type.feature': '✨ 功能建议',
+            'feedback.type.experience': '💡 使用体验',
+            'feedback.type.other': '📝 其他',
+            'feedback.version': 'MIMO Agent 版本',
+            'feedback.version.placeholder': '如 v1.6.8（可选）',
+            'feedback.content': '反馈内容',
+            'feedback.content.placeholder': '请详细描述你遇到的问题、建议或想法...',
+            'feedback.submit': '📧 通过邮件发送',
+            'feedback.privacy': '反馈将通过邮件发送，不会存储你的个人信息',
+            'feedback.success.title': '邮件已准备就绪',
+            'feedback.success.desc': '你的默认邮件客户端已打开，请检查内容后点击发送。<br>感谢你的反馈！'
+        },
+        en: {
+            'meta.title': 'MIMO Agent - AI-Powered Smart Coding Assistant',
+            'meta.desc': 'MIMO Agent is a free, open-source AI coding assistant for Xiaomi MiMo LLM, deeply integrated with VS Code, supporting file awareness, context memory, MCP protocol, and custom model integration.',
+            'installSectionLabel': 'Quick Start',
+            'test4.text': '"As a VS Code extension developer, I use MIMO Agent to build MIMO Agent. Writing code, fixing bugs, running tests with MiMo model \u2014 very smooth experience."',
+            'test4.name': 'ysp · MIMO Agent Author',
+            'test4.role': 'MiMo Power User',
+            'nav.features': 'Features',
+            'nav.workflow': 'Workflow',
+            'nav.providers': 'Models',
+            'nav.testimonials': 'Testimonials',
+            'nav.feedback': 'Feedback',
+            'hero.badge': '<span></span> Best with Xiaomi MiMo LLM',
+            'hero.title': 'Let <em>MiMo</em><br>write code for you',
+            'hero.desc': 'ReAct-style Agent Loop architecture · Intent routing + completion gating + Workflow/Subagent engineering layers · Deeply integrated with VS Code — AI that truly understands your project.',
+            'hero.github': 'View Source',
+            'hero.vscode': 'VS Code Marketplace',
+            'hero.stat1': 'Free to Use',
+            'hero.stat2': 'Supported Models',
+            'hero.stat3': 'Open Source',
+            'hero.stat4': 'Context Window',
+            'code.title': 'mimo-agent — Smart Coding',
+            'code.comment1': 'MIMO Agent is writing code for you',
+            'code.comment2': 'Describe what you need, Agent does the rest',
+            'code.task': 'Add dark mode to the project',
+            'code.output': 'Output: Modified 12 files, added 3 components',
+            'float.reasoning': 'Deep Reasoning',
+            'float.reasoning_desc': 'AI Thinking Chain',
+            'float.streaming': 'Streaming',
+            'float.streaming_desc': 'Real-time output',
+            'features.label': '✦ Core Features',
+            'features.title': 'Not just autocomplete — it understands your intent',
+            'features.desc': 'Nine core capabilities covering the full coding workflow — from reading files, editing code, running tests, to connecting external services. One Agent does it all.',
+            'feature1.title': 'File Awareness',
+            'feature1.desc': 'Automatically reads and edits project files, understanding context, dependencies, and code structure without manual copy-paste.',
+            'feature2.title': 'Code Search',
+            'feature2.desc': 'Dual search via regex and semantics — quickly locate function definitions, variable references, and related code snippets.',
+            'feature3.title': 'Terminal Integration',
+            'feature3.desc': 'Execute Shell commands directly in VS Code — run tests, install dependencies, launch services, all automated.',
+            'feature4.title': 'MCP Protocol',
+            'feature4.desc': 'Connect to databases, APIs, and external services via Model Context Protocol to extend Agent capabilities.',
+            'feature5.title': 'Context Memory',
+            'feature5.desc': 'Remembers conversation history and project context across sessions, maintaining coherent understanding and reducing repetition.',
+            'feature6.title': 'Multi-Model',
+            'feature6.desc': 'Supports custom model configuration including MiMo series, DeepSeek, and more. Choose freely based on your task.',
+            'feature7.title': 'Image Understanding',
+            'feature7.desc': 'Paste screenshots or UI mockups directly — AI vision understands code screenshots, error messages, and interface prototypes.',
+            'feature8.title': 'Voice Input',
+            'feature8.desc': 'Supports local voice input — describe requirements in natural language and free your hands.',
+            'feature9.title': 'Task Recovery',
+            'feature9.desc': 'Interrupted tasks can automatically resume without starting over, ensuring continuity for long-running tasks.',
+            'innovation.label': '🚀 Why MIMO Agent',
+            'innovation.title': 'We did things differently',
+            'innovation.desc': 'Not just a wrapper around an API — deep optimization from architecture to experience.',
+            'innov1.title': 'Native MiMo Optimization',
+            'innov1.desc': 'Deeply optimized for Xiaomi MiMo LLM with 128K context window. Intent router auto-detects whether tools are needed — simple questions get instant answers, complex tasks trigger the full Agent loop. Current version: v1.6.8.',
+            'innov2.title': 'Zero-Dependency Design',
+            'innov2.desc': 'VSIX only ~68KB, zero runtime npm dependencies. Won\'t slow down your VS Code, no hidden packages — clean and minimal.',
+            'innov3.title': 'Open API Protocol',
+            'innov3.desc': 'Based on OpenAI-compatible protocol, no vendor lock-in. DeepSeek, Ollama, OpenRouter — any compatible endpoint works.',
+            'innov4.title': '5 Intelligent Working Modes',
+            'innov4.desc': 'Auto (fully autonomous), Polling (interactive confirmation), Plan (plan-then-execute), Adversarial (multi-persona adversarial review), Infinite (continuous long-task execution). Different modes for different scenarios.',
+            'innov5.title': 'Built-in Skills System',
+            'innov5.desc': '7 built-in skills — review, debug, refactor, test, doc, explain, git. One click to trigger professional workflows, no prompt engineering needed.',
+            'innov6.title': 'Safety Layer + Completion Gate',
+            'innov6.desc': 'Path safety checks, command sandbox, SSRF protection. Completion gate auto-validates results — if stuck, it injects recovery instructions.',
+            'mcp.label': '🔗 Capabilities',
+            'mcp.title': 'MCP Protocol: Connect AI to Everything',
+            'mcp.server': '🗂️ MCP Server',
+            'mcp.server_desc': 'File System · Database · API · Search Engine',
+            'mcp.client': '💬 MCP Client',
+            'mcp.client_desc': 'VS Code · Terminal · Debugger · Git',
+            'mcp.desc1': 'MCP (Model Context Protocol) is the standard protocol for AI Agents to interact with the external world.',
+            'mcp.desc2': 'As an MCP Client, MIMO Agent connects to various MCP Servers — accessing file systems, databases, search engines, and other external tools to extend AI capabilities.',
+            'workflow.label': '⚡ Workflow',
+            'workflow.title': 'From Idea to Code in Three Steps',
+            'step1.title': 'Describe Your Needs',
+            'step1.desc': 'Tell MIMO Agent what you want in natural language. Supports mixed Chinese-English instructions like "Add email validation to the login page", "Refactor this function", "Write a web scraper" — as natural as talking to a colleague.',
+            'step2.title': 'AI Analyzes & Plans',
+            'step2.desc': 'ReAct-style Agent Loop activates: intent routing identifies task type → reads relevant files, understands project structure → creates multi-step execution plan. You can see every step of AI thinking and decision-making in real-time.',
+            'step3.title': 'Auto-Execute & Verify',
+            'step3.desc': 'Agent completes tasks through Workflow/Subagent collaboration: creates files, modifies code, runs tests, executes commands. Completion gate auto-validates results, every step is auditable and reversible. Detailed change summary provided upon completion.',
+            'providers.label': '🔧 Model Ecosystem',
+            'providers.title': 'One Plugin, Access to World-Class AI',
+            'providers.desc': 'Built-in presets for MiMo regular balance, MiMo Token Plan, DeepSeek, OpenAI, and more; also supports Qwen, Zhipu, SiliconFlow, OpenRouter, and any compatible endpoint.',
+            'prov.mimo': 'Regular Balance / Token Plan · Voice & Multimodal',
+            'prov.deepseek': 'deepseek-chat · deepseek-reasoner',
+            'prov.openai': 'Responses · GPT-4o series',
+            'prov.qwen': 'qwen-plus · qwen-max · Compatible Mode',
+            'prov.zhipu': 'GLM series · OpenAI compatible',
+            'prov.openrouter': 'Multi-provider routing · OpenAI compatible',
+            'prov.siliconflow': 'Qwen · DeepSeek · Aggregated Access',
+            'prov.kimi': 'Moonshot · Compatible Access',
+            'prov.chatglm': 'Zhipu AI · Compatible Access',
+            'prov.copilot': 'Not a built-in direct preset',
+            'prov.custom': 'Any Compatible API Endpoint',
+            'providers.footer': 'Supports custom integration of additional models and API endpoints for enterprise deployment and personalized needs.',
+            'testimonials.label': '💬 Testimonials',
+            'testimonials.title': 'Real Voices from Developers',
+            'test1.text': '"After installing MIMO Agent, I finally don\'t need three terminal windows. File editing, search, and Git operations all happen in one chat — efficiency doubled."',
+            'test1.name': 'Larry · Full-Stack Engineer',
+            'test1.role': '5 years exp · React/Node.js',
+            'test2.text': '"What impressed me most is being able to run tests and install dependencies directly in VS Code, no more copying terminal output to AI. The MCP protocol approach is cutting-edge."',
+            'test2.name': 'Xiao Wang · Backend Developer',
+            'test2.role': '3 years exp · Python/Go',
+            'test3.text': '"As a paying VS Code Copilot user, switching to MIMO Agent showed me the free version is sufficient. Custom model support is great — I can connect my own API."',
+            'test3.name': 'Xiao Chen · Frontend Developer',
+            'test3.role': '8 years exp · Vue/TypeScript',
+            'install.title': 'Quick Install',
+            'install.desc': 'Configure in VS Code in four steps, start coding with AI immediately',
+            'install.step1': 'Search for MIMO Agent in VS Code Extension Marketplace and install',
+            'install.step2': 'Open settings page, select MiMo Balance or Token Plan preset',
+            'install.step3': 'Enter API Key, save and select a model to start coding',
+            'install.btn': 'Install MIMO Agent',
+            'honesty.label': '🤝 Honest Truth',
+            'honesty.title': 'We know there\'s room to grow',
+            'honesty.desc': 'Not perfect, but honest. Here\'s what we\'re working on.',
+            'honest1.title': 'Still Iterating Fast',
+            'honest1.desc': 'Currently v1.6.8 — core features are ready, but UX details are still being polished. Your feedback matters, every Issue is read.',
+            'honest2.title': 'Model Quality Keeps Improving',
+            'honest2.desc': 'MiMo models are continuously iterating — strong in Chinese language tasks. Some complex reasoning scenarios are still catching up to leading international models, but the gap keeps narrowing.',
+            'honest3.title': 'MCP Ecosystem Growing',
+            'honest3.desc': 'Third-party MCP Servers are limited, but the community is expanding. Got a Server to contribute? We\'d love your help.',
+            'honest4.title': 'No Cross-Device Sync Yet',
+            'honest4.desc': 'Conversation history is stored locally only. Cloud sync is on our roadmap.',
+            'footer.desc': 'Intelligent AI coding assistant powered by Xiaomi MiMo LLM.<br>Free · Open Source · Privacy-first.',
+            'footer.copyright': '© 2026 MIMO Agent · MIT Licensed · Powered by Xiaomi MiMo LLM',
+            'footer.product': 'Product',
+            'footer.feat': 'Features',
+            'footer.wf': 'Workflow',
+            'footer.prov': 'Models',
+            'footer.resources': 'Resources',
+            'footer.gh': 'GitHub Repository',
+            'footer.issues': 'Feedback',
+            'footer.ext': 'VS Code Extension',
+            'footer.tech': 'Technology',
+            'footer.mcp': 'MCP Protocol',
+            'footer.mimo': 'Xiaomi MiMo',
+            'feedback.label': '💬 User Feedback',
+            'feedback.title': 'Help Us Improve',
+            'feedback.desc': 'Every piece of feedback drives improvement — whether it\'s a bug report, feature suggestion, or usage experience.',
+            'feedback.form.title': 'Submit Feedback',
+            'feedback.form.subtitle': 'Fields marked with <span style="color:#EF4444">*</span> are required',
+            'feedback.name': 'Your Name',
+            'feedback.name.placeholder': 'What should we call you?',
+            'feedback.email': 'Email Address',
+            'feedback.email.placeholder': 'So we can reply to you',
+            'feedback.type': 'Feedback Type',
+            'feedback.type.bug': '🐛 Bug Report',
+            'feedback.type.feature': '✨ Feature Request',
+            'feedback.type.experience': '💡 User Experience',
+            'feedback.type.other': '📝 Other',
+            'feedback.version': 'MIMO Agent Version',
+            'feedback.version.placeholder': 'e.g. v1.6.8 (optional)',
+            'feedback.content': 'Feedback Content',
+            'feedback.content.placeholder': 'Please describe the issue, suggestion, or thought in detail...',
+            'feedback.submit': '📧 Send via Email',
+            'feedback.privacy': 'Feedback is sent via email — your personal info is never stored',
+            'feedback.success.title': 'Email Ready',
+            'feedback.success.desc': 'Your default email client has opened. Please review the content and click send.<br>Thank you for your feedback!'
+        }
+    };
+
+    var currentLang = localStorage.getItem('mimo-lang') || 'zh';
+    var langToggle = document.getElementById('langToggle');
+
+    function applyLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('mimo-lang', lang);
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+        if (langToggle) langToggle.textContent = lang === 'zh' ? '中' : 'EN';
+        var dict = translations[lang];
+        // Update document title and meta description
+        if (dict['meta.title']) document.title = dict['meta.title'];
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc && dict['meta.desc']) metaDesc.setAttribute('content', dict['meta.desc']);
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n');
+            if (dict[key]) {
+                if (key === 'hero.badge') {
+                    el.innerHTML = dict[key];
+                } else {
+                    el.innerHTML = dict[key];
+                }
+            }
+        });
+    }
+
+    if (langToggle) {
+        langToggle.addEventListener('click', function () {
+            applyLang(currentLang === 'zh' ? 'en' : 'zh');
+        });
+    }
+    applyLang(currentLang);
+
+    // ========== Theme (Dark/Light) System ==========
+    var currentTheme = localStorage.getItem('mimo-theme') || 'light';
+    var themeToggle = document.getElementById('themeToggle');
+
+    function applyTheme(theme) {
+        currentTheme = theme;
+        localStorage.setItem('mimo-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        if (themeToggle) themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+    }
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+        });
+    }
+    applyTheme(currentTheme);
+
+    // ========== Feedback via Email ==========
+    function sendFeedback() {
+        var name = document.getElementById('fbName').value.trim();
+        var email = document.getElementById('fbEmail').value.trim();
+        var type = document.getElementById('fbType').value;
+        var version = document.getElementById('fbVersion').value.trim();
+        var content = document.getElementById('fbContent').value.trim();
+
+        if (!name || !email || !content) {
+            var msg = currentLang === 'zh' ? '请填写必填项（名字、邮箱、反馈内容）' : 'Please fill in required fields (name, email, content)';
+            alert(msg);
+            return;
+        }
+
+        var typeLabels = {
+            zh: { bug: 'Bug 报告', feature: '功能建议', experience: '使用体验', other: '其他' },
+            en: { bug: 'Bug Report', feature: 'Feature Request', experience: 'User Experience', other: 'Other' }
+        };
+        var typeLabel = (typeLabels[currentLang] || typeLabels.zh)[type] || type;
+
+        var subject = '[MIMO Agent Feedback] ' + typeLabel + ' - ' + name;
+        var body = '--- MIMO Agent User Feedback ---\n\n'
+            + 'Name: ' + name + '\n'
+            + 'Email: ' + email + '\n'
+            + 'Type: ' + typeLabel + '\n'
+            + (version ? 'Version: ' + version + '\n' : '')
+            + '\n--- Content ---\n\n'
+            + content;
+
+        var mailtoLink = 'mailto:yusp519@qq.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+        window.location.href = mailtoLink;
+
+        document.getElementById('mimoFeedbackForm').style.display = 'none';
+        document.getElementById('feedbackSuccess').style.display = 'block';
+    }
+
+    // Update placeholders on language switch
+    function applyPlaceholders() {
+        var dict = translations[currentLang];
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+            var key = el.getAttribute('data-i18n-placeholder');
+            if (dict[key]) el.placeholder = dict[key];
+        });
+    }
+    var origApplyLang = applyLang;
+    applyLang = function(lang) {
+        origApplyLang(lang);
+        applyPlaceholders();
+    };
+
+    </script>
+</body>
+</html>
+

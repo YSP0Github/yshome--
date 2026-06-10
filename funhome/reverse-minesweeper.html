@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💣 反向扫雷：你埋雷，AI排雷</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Segoe UI','Microsoft YaHei',sans-serif;
+  background:#1a1a2e; color:#eee;
+  min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; padding:20px;
+}
+h1 {
+  font-size:1.8em; margin-bottom:5px;
+  background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.subtitle { color:#888; margin-bottom:15px; font-size:0.95em; }
+.controls {
+  display:flex; gap:12px; align-items:center;
+  margin-bottom:15px; flex-wrap:wrap; justify-content:center;
+}
+.controls label { font-size:0.9em; color:#aaa; }
+.controls select {
+  background:#16213e; color:#eee; border:1px solid #0f3460;
+  border-radius:6px; padding:6px 10px; font-size:0.9em;
+}
+.controls select:focus { outline:none; border-color:#e94560; }
+button {
+  background:linear-gradient(135deg,#e94560,#c23152);
+  color:#fff; border:none; border-radius:8px;
+  padding:10px 22px; font-size:1em; cursor:pointer;
+  transition:all 0.2s; font-weight:600;
+}
+button:hover { transform:translateY(-1px); box-shadow:0 4px 15px rgba(233,69,96,0.4); }
+button:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+button.secondary {
+  background:linear-gradient(135deg,#0f3460,#16213e);
+  border:1px solid #0f3460;
+}
+.status-bar {
+  display:flex; gap:20px; margin-bottom:12px;
+  flex-wrap:wrap; justify-content:center;
+}
+.stat {
+  background:#16213e; border-radius:8px;
+  padding:8px 16px; text-align:center; min-width:100px;
+}
+.stat .label { font-size:0.75em; color:#888; text-transform:uppercase; letter-spacing:1px; }
+.stat .value { font-size:1.4em; font-weight:700; margin-top:2px; }
+.stat .value.red { color:#e94560; }
+.stat .value.green { color:#6bcb77; }
+.stat .value.yellow { color:#ffd93d; }
+.stat .value.blue { color:#4ecdc4; }
+.grid { display:grid; gap:2px; background:#0f3460; padding:3px; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.4); margin-bottom:15px; }
+.cell {
+  width:42px; height:42px; display:flex; align-items:center; justify-content:center;
+  font-size:1.1em; font-weight:700; border-radius:4px; cursor:pointer;
+  transition:all 0.15s; user-select:none;
+}
+.cell.unrevealed { background:#16213e; border:1px solid #1a1a3e; }
+.cell.unrevealed:hover { background:#1c2a4a; border-color:#e94560; }
+.cell.mine-placed {
+  background:linear-gradient(135deg,#4a1525,#3a0a15);
+  border:2px solid #e94560; animation:pulse 0.4s ease-out;
+}
+@keyframes pulse { 0%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.cell.revealed { background:#1b2838; border:1px solid #253545; cursor:default; }
+.cell.revealed.n1 { color:#4ecdc4; } .cell.revealed.n2 { color:#6bcb77; }
+.cell.revealed.n3 { color:#ffd93d; } .cell.revealed.n4 { color:#e94560; }
+.cell.revealed.n5 { color:#c23152; } .cell.revealed.n6 { color:#ff6b6b; }
+.cell.hit-mine {
+  background:radial-gradient(circle,#ff4444,#aa0000)!important;
+  border:2px solid #ff6666!important; animation:explode 0.5s ease-out;
+}
+@keyframes explode { 0%{transform:scale(1.5);box-shadow:0 0 20px #ff4444} 100%{transform:scale(1);box-shadow:none} }
+.cell.ai-thinking {
+  border:2px solid #4ecdc4!important;
+  animation:think 0.8s ease-in-out infinite;
+}
+@keyframes think { 0%,100%{box-shadow:0 0 5px rgba(78,205,196,0.3)} 50%{box-shadow:0 0 15px rgba(78,205,196,0.6)} }
+.cell.player-win-mine { background:linear-gradient(135deg,#1a3a1a,#0a2a0a); border:2px solid #6bcb77; }
+.cell.ai-flag { background:#16213e; border:2px solid #ffd93d; }
+.overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+  z-index:100; justify-content:center; align-items:center; backdrop-filter:blur(4px);
+}
+.overlay.show { display:flex; }
+.result-card {
+  background:#16213e; border:2px solid #0f3460; border-radius:16px;
+  padding:40px; text-align:center; max-width:400px;
+  animation:slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+.result-card h2 { font-size:2em; margin-bottom:10px; }
+.result-card p { color:#aaa; margin-bottom:20px; line-height:1.6; }
+.result-card .emoji { font-size:3em; margin-bottom:10px; }
+.log {
+  width:100%; max-width:460px; background:#16213e; border-radius:10px;
+  padding:12px 16px; max-height:160px; overflow-y:auto;
+  font-size:0.85em; line-height:1.6; color:#888;
+}
+.log .entry { border-bottom:1px solid #1a1a2e; padding:3px 0; }
+.log .entry:last-child { border-bottom:none; }
+.log .thinking { color:#4ecdc4; } .log .safe { color:#6bcb77; }
+.log .boom { color:#e94560; font-weight:700; }
+.log .info { color:#aaa; }
+@media(max-width:500px) { .cell{width:32px;height:32px;font-size:0.85em} h1{font-size:1.3em} }
+</style>
+</head>
+<body>
+<h1>💣 反向扫雷</h1>
+<p class="subtitle">你来埋雷，AI 来排雷 — 能骗过它吗？</p>
+<div class="controls">
+  <label>难度：<select id="difficulty">
+    <option value="easy">简单 8×8 · 8雷</option>
+    <option value="medium" selected>中等 10×10 · 15雷</option>
+    <option value="hard">困难 12×12 · 25雷</option>
+  </select></label>
+  <label>AI：<select id="aiLevel">
+    <option value="basic">基础</option>
+    <option value="smart" selected>聪明</option>
+    <option value="genius">天才</option>
+  </select></label>
+  <button id="btnReset" class="secondary">🔄 重新开始</button>
+  <button id="btnStartAI" disabled>🤖 AI开始排雷</button>
+</div>
+<div class="status-bar">
+  <div class="stat"><div class="label">已放雷</div><div class="value red" id="mineCount">0/15</div></div>
+  <div class="stat"><div class="label">安全格剩余</div><div class="value green" id="safeLeft">85</div></div>
+  <div class="stat"><div class="label">AI步数</div><div class="value blue" id="aiSteps">0</div></div>
+  <div class="stat"><div class="label">状态</div><div class="value yellow" id="gameStatus">放置地雷中</div></div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="log" id="log">
+  <div class="entry info">📋 点击格子放置地雷，放满后点击「AI开始排雷」</div>
+</div>
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="emoji" id="resultEmoji">🎉</div>
+    <h2 id="resultTitle">游戏结束</h2>
+    <p id="resultMsg"></p>
+    <button id="btnPlayAgain">🔄 再来一局</button>
+  </div>
+</div>
+<script>
+const DIFF={easy:{r:8,c:8,m:8},medium:{r:10,c:10,m:15},hard:{r:12,c:12,m:25}};
+let S={r:10,c:10,m:15,board:[],rev:[],num:[],phase:'place',mp:0,steps:0,safe:0,total:0,timer:null};
+
+function $i(id){return document.getElementById(id)}
+
+function init(){
+  const d=DIFF[$i('difficulty').value];
+  S.r=d.r;S.c=d.c;S.m=d.m;
+  S.board=Array.from({length:S.r},()=>Array(S.c).fill(0));
+  S.rev=Array.from({length:S.r},()=>Array(S.c).fill(false));
+  S.num=Array.from({length:S.r},()=>Array(S.c).fill(0));
+  S.phase='place';S.mp=0;S.steps=0;S.safe=0;S.total=S.r*S.c-S.m;
+  if(S.timer){clearTimeout(S.timer);S.timer=null}
+  $i('btnStartAI').disabled=true;
+  $i('overlay').classList.remove('show');
+  $i('difficulty').disabled=false;
+  $log().innerHTML='<div class="entry info">📋 点击格子放置 '+S.m+' 颗地雷</div>';
+  render();updateUI();
+}
+
+function render(){
+  const g=$i('grid');g.innerHTML='';
+  g.style.gridTemplateColumns='repeat('+S.c+',42px)';
+  for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++){
+    const d=document.createElement('div');
+    d.className='cell unrevealed';d.dataset.r=r;d.dataset.c=c;
+    d.onclick=()=>click(r,c);
+    g.appendChild(d);
+  }
+}
+
+function cell(r,c){return $i('grid').children[r*S.c+c]}
+function $log(){return document.getElementById('log')}
+
+function neighbors(r,c,fn){
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    if(!dr&&!dc)continue;
+    const nr=r+dr,nc=c+dc;
+    if(nr>=0&&nr<S.r&&nc>=0&&nc<S.c)fn(nr,nc);
+  }
+}
+
+function calcNum(){
+  for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++){
+    if(S.board[r][c]){S.num[r][c]=-1;continue}
+    let n=0;neighbors(r,c,(nr,nc)=>{if(S.board[nr][nc])n++});S.num[r][c]=n;
+  }
+}
+
+function click(r,c){
+  if(S.phase!=='place')return;
+  if(S.board[r][c]){
+    S.board[r][c]=0;S.mp--;
+    cell(r,c).className='cell unrevealed';cell(r,c).textContent='';
+  }else{
+    if(S.mp>=S.m){addLog('⚠️ 已放满 '+S.m+' 雷','info');return}
+    S.board[r][c]=1;S.mp++;
+    cell(r,c).className='cell mine-placed';cell(r,c).textContent='💣';
+  }
+  calcNum();
+  $i('btnStartAI').disabled=S.mp!==S.m;
+  updateUI();
+}
+
+function startAI(){
+  if(S.phase!=='place'||S.mp!==S.m)return;
+  S.phase='ai';$i('btnStartAI').disabled=true;$i('difficulty').disabled=true;
+  for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++){
+    cell(r,c).className='cell unrevealed';cell(r,c).textContent='';
+  }
+  addLog('🤖 AI 开始排雷...','thinking');updateUI();
+  aiStep();
+}
+
+function aiStep(){
+  if(S.phase!=='ai')return;
+  const lv=$i('aiLevel').value;
+  const pick=aiPick(lv);
+  if(!pick){end('ai');return}
+  const[r,c]=pick;
+  const cl=cell(r,c);cl.classList.add('ai-thinking');
+  const delay=lv==='genius'?500:lv==='smart'?350:200;
+  S.timer=setTimeout(()=>{cl.classList.remove('ai-thinking');reveal(r,c)},delay);
+}
+
+function reveal(r,c){
+  if(S.board[r][c]){
+    cell(r,c).className='cell hit-mine';cell(r,c).textContent='💥';
+    addLog('💥 AI 踩雷！('+ (r+1)+','+(c+1)+')','boom');end('player');return;
+  }
+  S.rev[r][c]=true;S.safe++;S.steps++;
+  const n=S.num[r][c],cl=cell(r,c);
+  cl.className='cell revealed'+(n>0?' n'+n:'');cl.textContent=n>0?n:'';
+  addLog('✅ AI 排除 ('+(r+1)+','+(c+1)+') → '+(n===0?'空白':n+'雷'),'safe');
+  if(n===0)flood(r,c);
+  updateUI();
+  if(S.safe>=S.total){end('ai');return}
+  const lv=$i('aiLevel').value;
+  S.timer=setTimeout(aiStep,lv==='genius'?500:lv==='smart'?350:200);
+}
+
+function flood(r,c){
+  neighbors(r,c,(nr,nc)=>{
+    if(!S.rev[nr][nc]&&!S.board[nr][nc]){
+      S.rev[nr][nc]=true;S.safe++;S.steps++;
+      const n=S.num[nr][nc],cl=cell(nr,nc);
+      cl.className='cell revealed'+(n>0?' n'+n:'');cl.textContent=n>0?n:'';
+      if(n===0)flood(nr,nc);
+    }
+  });
+}
+
+function aiPick(lv){
+  const ur=[];for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++)if(!S.rev[r][c])ur.push([r,c]);
+  if(!ur.length)return null;
+  if(lv==='basic')return ur[Math.floor(Math.random()*ur.length)];
+  if(lv==='smart')return aiSmart(ur);
+  return aiGenius(ur);
+}
+
+function aiSmart(ur){
+  // Prefer cells next to revealed 0s
+  const safe=[];
+  for(const[r,c]of ur){
+    let has0=false;
+    neighbors(r,c,(nr,nc)=>{if(S.rev[nr][nc]&&S.num[nr][nc]===0)has0=true});
+    if(has0)safe.push([r,c]);
+  }
+  if(safe.length)return safe[Math.floor(Math.random()*safe.length)];
+  // Score by risk
+  const scored=ur.map(([r,c])=>{
+    let risk=0;
+    neighbors(r,c,(nr,nc)=>{
+      if(S.rev[nr][nc]&&S.num[nr][nc]>0){
+        let un=0;neighbors(nr,nc,(a,b)=>{if(!S.rev[a][b])un++});
+        risk+=S.num[nr][nc]/Math.max(un,1);
+      }
+    });
+    const edge=(r===0||r===S.r-1?1:0)+(c===0||c===S.c-1?1:0);
+    return{r,c,risk:risk-edge*0.3};
+  });
+  scored.sort((a,b)=>a.risk-b.risk);
+  const n=Math.random()<0.85?1:Math.min(3,scored.length);
+  const p=scored.slice(0,n)[Math.floor(Math.random()*n)];
+  return[p.r,p.c];
+}
+
+function aiGenius(ur){
+  const ds=[],rm=new Map();
+  for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++){
+    if(!S.rev[r][c]||S.num[r][c]<=0)continue;
+    const nb=[];
+    neighbors(r,c,(nr,nc)=>{if(!S.rev[nr][nc])nb.push([nr,nc])});
+    if(!nb.length)continue;
+    if(S.num[r][c]===0){nb.forEach(([a,b])=>{if(!ds.find(([x,y])=>x===a&&y===b))ds.push([a,b])})}
+    else{const cr=S.num[r][c]/nb.length;nb.forEach(([a,b])=>{const k=a+','+b;rm.set(k,(rm.get(k)||0)+cr)})}
+  }
+  const us=ds.filter(([r,c])=>!S.rev[r][c]);
+  if(us.length)return us[Math.floor(Math.random()*us.length)];
+  const scored=ur.map(([r,c])=>{
+    let risk=rm.get(r+','+c)||0;
+    const isC=(r===0||r===S.r-1)&&(c===0||c===S.c-1);
+    const isE=r===0||r===S.r-1||c===0||c===S.c-1;
+    if(isC)risk-=0.5;else if(isE)risk-=0.2;
+    let rn=0;neighbors(r,c,(nr,nc)=>{if(S.rev[nr][nc])rn++});
+    if(!rn)risk+=0.3;
+    return{r,c,risk};
+  });
+  scored.sort((a,b)=>a.risk-b.risk);
+  const n=Math.random()<0.9?1:Math.min(5,scored.length);
+  const p=scored.slice(0,n)[Math.floor(Math.random()*n)];
+  return[p.r,p.c];
+}
+
+function end(winner){
+  S.phase='done';if(S.timer){clearTimeout(S.timer);S.timer=null}
+  for(let r=0;r<S.r;r++)for(let c=0;c<S.c;c++){
+    if(S.board[r][c]&&!S.rev[r][c]){
+      const cl=cell(r,c);
+      if(winner==='player'){cl.className='cell player-win-mine';cl.textContent='💣'}
+      else{cl.className='cell ai-flag';cl.textContent='🚩'}
+    }
+  }
+  const e=$i('resultEmoji'),t=$i('resultTitle'),m=$i('resultMsg');
+  if(winner==='player'){
+    e.textContent='😈';t.textContent='你赢了！';
+    m.innerHTML='AI 在第 <b>'+S.steps+'</b> 步踩雷！你的狡猾布局成功了！';
+    addLog('😈 你赢了！AI 第 '+S.steps+' 步阵亡','boom');
+    $i('gameStatus').textContent='你赢了! 😈';
+  }else{
+    e.textContent='🤖';t.textContent='AI 获胜！';
+    m.innerHTML='AI 用 <b>'+S.steps+'</b> 步排除了所有安全格！下次更狡猾一点！';
+    addLog('🤖 AI 获胜！用了 '+S.steps+' 步','info');
+    $i('gameStatus').textContent='AI 获胜! 🤖';
+  }
+  $i('overlay').classList.add('show');$i('difficulty').disabled=false;
+}
+
+function updateUI(){
+  $i('mineCount').textContent=S.mp+'/'+S.m;
+  $i('safeLeft').textContent=S.total-S.safe;
+  $i('aiSteps').textContent=S.steps;
+  if(S.phase==='place'){
+    const left=S.m-S.mp;
+    $i('gameStatus').textContent=left>0?'还差 '+left+' 雷':'放满了！开始排雷 →';
+  }else if(S.phase==='ai')$i('gameStatus').textContent='AI 排雷中...';
+}
+
+function addLog(msg,cls){
+  const d=document.createElement('div');d.className='entry '+(cls||'');d.textContent=msg;
+  $log().appendChild(d);$log().scrollTop=$log().scrollHeight;
+}
+
+$i('btnReset').onclick=init;
+$i('btnStartAI').onclick=startAI;
+$i('btnPlayAgain').onclick=init;
+$i('difficulty').onchange=init;
+init();
+</script>
+</body>
+</html>

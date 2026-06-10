@@ -385,6 +385,7 @@
         <a href="#thermo-lab">热力学</a>
         <a href="#waveoptics-lab">波动光学</a>
         <a href="#momentum-lab">碰撞</a>
+        <a href="#ramanujan-lab">π公式</a>
       </nav>
     </div>
   </header>
@@ -396,7 +397,7 @@
         <h1>用交互式网页，把抽象的物理过程变成 <span>可以观察、可以操作、可以思考</span></h1>
         <p>
           这是一个面向科学可视化与科普展示的小型实验项目集合。页面中收录可直接上手的互动实验，
-          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播、3D太阳系天体旋转、电磁场可视化、光学追迹、热力学分子运动、波动光学干涉、碰撞与动量守恒九个互动实验，可直接在网页中体验。
+          通过参数调节、动画演示和现象说明，让经典物理过程更直观。现在已经完成多重摆、受迫振动与共振、二维波动传播、3D太阳系天体旋转、电磁场可视化、光学追迹、热力学分子运动、波动光学干涉、碰撞与动量守恒、拉马努金π公式可视化十个互动实验，可直接在网页中体验。
         </p>
         <div class="actions">
           <a href="#experiments" class="btn btn-primary">查看全部实验</a>
@@ -410,7 +411,7 @@
         <div class="section-head">
           <h2>实验目录</h2>
           <div class="divider"></div>
-          <p>项目以”短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的九个实验模块。</p>
+          <p>项目以”短说明 + 可交互 + 可扩展”为设计原则。下面展示已经可以直接使用的十个实验模块。</p>
         </div>
 
         <div class="card-grid">
@@ -475,6 +476,13 @@
             <h3>碰撞与动量守恒</h3>
             <p>二维碰撞模拟器，支持弹性、非弹性、完全非弹性碰撞，实时显示动量和能量守恒验证，可拖动球体设置初始状态。</p>
             <a href="#momentum-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" style="background:rgba(255,107,53,0.14);color:#ff8c5a"><i class="fa fa-calculator"></i></div>
+            <h3>拉马努金 π 公式可视化</h3>
+            <p>交互式展示拉马努金的 π 快速收敛公式，可调节项数实时计算 π 值，观察逐项逼近过程与收敛速度。</p>
+            <a href="#ramanujan-lab" class="text-link">查看实验 <i class="fa fa-arrow-right"></i></a>
           </article>
         </div>
       </div>
@@ -940,6 +948,57 @@
             <a href="../MomentumLab/static/index.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
           </div>
           <iframe src="../MomentumLab/static/index.html" title="MomentumLab 碰撞与动量守恒实验" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="ramanujan-lab" class="section section-alt">
+      <div class="container layout">
+        <div class="glass-card info-panel">
+          <span class="section-badge" style="border-color:rgba(255,107,53,0.25);background:rgba(255,107,53,0.14);color:#ff8c5a"><i class="fa fa-calculator"></i> 实验 10</span>
+          <h2>Ramanujan π 公式可视化</h2>
+          <p>
+            这是一个交互式数学可视化实验，展示印度数学家拉马努金（Srinivasa Ramanujan）发现的 π 快速收敛公式。
+            该公式每增加一项就能精确约 8 位十进制数字，收敛速度远超经典的莱布尼茨级数。
+            你可以调节计算项数，实时观察 π 值如何逐项逼近真实值。
+          </p>
+
+          <div class="glass-card feature-box">
+            <h3>你可以在实验里做什么？</h3>
+            <ul class="feature-list">
+              <li>滑动调节项数（1-50 项），实时计算 π 的近似值</li>
+              <li>逐位对比计算值与真实 π 值，绿色表示正确、橙色表示差异</li>
+              <li>观察每一项对最终结果的贡献大小</li>
+              <li>直观感受拉马努金公式的惊人收敛速度</li>
+            </ul>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <h4>适用场景</h4>
+              <p>数学可视化、级数收敛教学、数值分析演示、科学计算科普。</p>
+            </div>
+            <div class="mini-card">
+              <h4>核心概念</h4>
+              <p>拉马努金公式、级数收敛、π 的数值计算、无穷级数、逼近精度。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="../ramanujan-pi/ramanujan-pi.html" target="_blank" class="btn btn-primary">全屏打开实验</a>
+            <a href="#experiments" class="btn btn-secondary">返回实验目录</a>
+          </div>
+        </div>
+
+        <div class="glass-card preview-panel">
+          <div class="preview-top">
+            <div>
+              <h3>实验窗口预览</h3>
+              <p>拖动滑块调节项数 · 逐位对比 π 值精度 · 观察收敛过程。</p>
+            </div>
+            <a href="../ramanujan-pi/ramanujan-pi.html" target="_blank" class="text-link">新窗口打开 <i class="fa fa-external-link"></i></a>
+          </div>
+          <iframe src="../ramanujan-pi/ramanujan-pi.html" title="拉马努金 π 公式可视化" loading="lazy"></iframe>
         </div>
       </div>
     </section>

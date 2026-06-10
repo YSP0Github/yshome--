@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安装教程 - MIMO Agent</title>
+<meta name="description" content="MIMO Agent 安装指南：在 VS Code 中三步安装 MIMO Agent AI 编程助手">
+<link rel="icon" type="image/svg+xml" href="assets/mimo-agent-icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/mimo-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/mimo-icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#FF6B35;--primary-dark:#E55A2B;--primary-light:#FFF0E6;
+  --accent:#FFD166;--bg:#F7F6F3;--text:#1A1918;--text-light:#6B6560;
+  --card:#FFFFFF;--border:#E8E4DF;--code-bg:#2D2B2B;
+  --success:#22C55E;--radius:16px;--nav-bg:rgba(255,255,255,.88);
+  --hotkey-bg:#F0EDE8;--hotkey-border:#D4D0CA;--hotkey-bottom:#C8C3BA;
+  --footer-bg:rgba(255,255,255,.6);
+}
+[data-theme="dark"]{
+  --primary:#FF8C5A;--primary-dark:#FF6B35;--primary-light:rgba(255,107,53,.1);
+  --bg:#1A1A2E;--text:#E8E4DF;--text-light:#9A9590;
+  --card:#242440;--border:#3A3A5C;--code-bg:#0D0D1A;
+  --nav-bg:rgba(26,26,46,.95);--hotkey-bg:#1E1E36;--hotkey-border:#3A3A5C;--hotkey-bottom:#2A2A4A;
+  --footer-bg:rgba(26,26,46,.8);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--primary);text-decoration:none;transition:color .2s}a:hover{color:var(--primary-dark);text-decoration:underline}
+
+/* 导航栏 */
+.nav{background:var(--nav-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:820px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;color:var(--text);text-decoration:none}
+.nav-brand:hover{text-decoration:none;color:var(--primary)}
+.nav-brand img{width:30px;height:30px}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-toggle{width:36px;height:36px;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:700;color:var(--text-light);transition:all .2s;user-select:none;line-height:1}
+.nav-toggle:hover{color:var(--primary);background:rgba(255,107,53,.08)}
+[data-theme="dark"] .nav-toggle:hover{background:rgba(255,107,53,.12)}
+.nav-back{font-size:.9rem;color:var(--text-light);display:flex;align-items:center;gap:4px;white-space:nowrap;text-decoration:none}
+.nav-back:hover{color:var(--primary);text-decoration:none}
+
+/* 主容器 */
+.container{max-width:820px;margin:0 auto;padding:56px 28px 80px;flex:1}
+h1{font-size:2.1rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--text) 0%,var(--primary-dark) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{color:var(--text-light);font-size:1.05rem;margin-bottom:48px;padding-left:2px}
+
+/* 步骤卡片 */
+.step{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 32px 28px;margin-bottom:22px;position:relative;overflow:hidden;transition:all .3s ease;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.step:hover{box-shadow:0 8px 32px rgba(0,0,0,.08);transform:translateY(-2px)}
+.step::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--primary),var(--primary-dark));border-radius:4px 0 0 4px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;font-weight:700;font-size:.95rem;margin-bottom:14px;box-shadow:0 2px 8px rgba(255,107,53,.3)}
+.step h2{font-size:1.18rem;font-weight:700;margin-bottom:8px;color:var(--text)}
+.step p{color:var(--text-light);font-size:.92rem;line-height:1.85}
+
+/* 键盘快捷键 */
+.hotkey-group{display:inline-flex;align-items:center;gap:0;margin-top:14px;background:var(--hotkey-bg);border-radius:10px;padding:8px 12px;border:1px solid var(--border)}
+.hotkey{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:36px;padding:0 10px;background:#FFFFFF;border:1px solid var(--hotkey-border);border-bottom:3px solid var(--hotkey-bottom);border-radius:8px;font-family:"Cascadia Code","Fira Code","SF Mono","Consolas",monospace;font-size:.88rem;font-weight:600;color:var(--text);box-shadow:0 2px 0 var(--hotkey-bottom),0 3px 6px rgba(0,0,0,.08);user-select:none;letter-spacing:.3px}
+[data-theme="dark"] .hotkey{background:#1A1A2E}
+.hotkey-plus{color:var(--text-light);font-size:1.1rem;font-weight:500;padding:0 6px;user-select:none}
+
+/* 代码块 */
+.code-block{background:var(--code-bg);color:#D4D4D4;border-radius:10px;padding:14px 18px;font-family:"Cascadia Code","Fira Code","Consolas",monospace;font-size:.88rem;overflow-x:auto;margin-top:14px;position:relative;line-height:1.65;border:1px solid #3E3B3B}
+.code-block .prompt{color:#6A9955}
+.code-block .cmd{color:#DCDCAA;font-weight:600}
+.code-block .comment{color:#6A9955;font-style:italic}
+
+/* 提示框 */
+.tip{background:linear-gradient(135deg,#FFF8F4 0%,#FFF0E6 100%);border-radius:12px;padding:14px 18px;margin-top:16px;font-size:.88rem;color:var(--text);border-left:3px solid var(--primary);line-height:1.75}
+[data-theme="dark"] .tip{background:rgba(255,107,53,.06);border-left-color:var(--primary)}
+.tip strong{color:var(--text);font-weight:700}
+
+/* 完成卡片 */
+.step-complete{border-color:var(--success);background:linear-gradient(135deg,#F0FDF4 0%,#DCFCE7 100%)}
+[data-theme="dark"] .step-complete{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3)}
+.step-complete::before{background:linear-gradient(180deg,var(--success),#16A34A)}
+.step-complete .step-num{background:linear-gradient(135deg,var(--success),#16A34A);box-shadow:0 2px 8px rgba(34,197,94,.3)}
+
+/* 链接区域 */
+.links{margin-top:40px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px}
+.links h3{font-size:1.05rem;font-weight:700;margin-bottom:16px;color:var(--text)}
+.links ul{list-style:none;display:grid;gap:10px}
+.links li a{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;color:var(--text);font-size:.92rem;transition:all .2s;border:1px solid transparent}
+.links li a:hover{background:var(--primary-light);border-color:rgba(255,107,53,.15);text-decoration:none;color:var(--primary)}
+
+/* 页脚 */
+footer{text-align:center;padding:28px 24px;color:var(--text-light);font-size:.82rem;border-top:1px solid var(--border);background:var(--footer-bg)}
+
+/* 响应式 */
+@media(max-width:640px){
+  .container{padding:36px 18px 60px}
+  h1{font-size:1.6rem}
+  .step{padding:24px 20px 22px}
+  .hotkey{min-width:32px;height:32px;padding:0 8px;font-size:.82rem}
+  .hotkey-group{padding:6px 10px}
+  .links{padding:20px 22px}
+}
+
+/* 动画 */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.step,.links{animation:fadeUp .5s ease both}
+.step:nth-child(2){animation-delay:.08s}
+.step:nth-child(3){animation-delay:.16s}
+.step:nth-child(4){animation-delay:.24s}
+.step:nth-child(5){animation-delay:.32s}
+.links{animation-delay:.4s}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+<div class="nav-inner">
+<a class="nav-brand" href="index.html">
+<img src="assets/mimo-agent-icon.svg" alt="MIMO Agent">
+<span data-i18n="nav.title">MIMO Agent 安装指南</span>
+</a>
+<div class="nav-right">
+<button class="nav-toggle" id="langToggle" aria-label="Switch Language" title="Switch Language">中</button>
+<button class="nav-toggle" id="themeToggle" aria-label="Toggle Theme" title="Toggle Theme">☀️</button>
+<a class="nav-back" href="index.html" data-i18n="nav.back">← 返回首页</a>
+</div>
+</div>
+</nav>
+
+<main class="container">
+<h1 data-i18n="page.title">📦 MIMO Agent 安装教程</h1>
+<p class="subtitle" data-i18n="page.subtitle">四步完成安装，即刻体验 AI 编程助手</p>
+
+<div class="step">
+<div class="step-num">1</div>
+<h2 data-i18n="step1.title">打开 VS Code 扩展面板</h2>
+<p data-i18n="step1.desc">在 VS Code 中，点击左侧活动栏的扩展图标，或使用快捷键：</p>
+<div class="hotkey-group">
+<span class="hotkey">Ctrl</span>
+<span class="hotkey-plus">+</span>
+<span class="hotkey">Shift</span>
+<span class="hotkey-plus">+</span>
+<span class="hotkey">X</span>
+</div>
+<div class="tip" data-i18n="step1.tip">💡 也可以在顶部菜单栏选择 <strong>查看 → 扩展</strong> 打开扩展面板</div>
+</div>
+
+<div class="step">
+<div class="step-num">2</div>
+<h2 data-i18n="step2.title">搜索 "MIMO Agent"</h2>
+<p data-i18n="step2.desc">在扩展面板顶部的搜索框中，输入 <strong>MiMo</strong> 进行搜索。</p>
+<div class="code-block">
+<span class="comment" data-i18n="step2.comment">// 在搜索框中输入</span>
+<span class="cmd">MiMo</span>
+</div>
+<p style="margin-top:12px" data-i18n="step2.find">找到由 <strong>mimo-agent</strong> 发布的 <strong>MiMo</strong> 扩展，确认图标为橙色 M 标志。</p>
+<div class="tip" style="margin-top:14px" data-i18n="step2.tip">💡 也可以直接使用命令行安装（打开终端粘贴执行）：
+<div class="code-block" style="margin-top:8px">
+<span class="comment" data-i18n="step2.tipcomment">// 在 VS Code 终端中执行</span>
+<span class="cmd">ext install mimo-agent.MiMo</span>
+</div></div>
+</div>
+
+<div class="step">
+<div class="step-num">3</div>
+<h2 data-i18n="step3.title">安装并启用</h2>
+<p data-i18n="step3.desc">点击 <strong>MIMO Agent</strong> 扩展卡片上的 <strong>安装</strong> 按钮，等待安装完成。</p>
+<div class="tip" data-i18n="step3.tip">💡 安装完成后，重新加载 VS Code 窗口（<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → 输入 <strong>Reload Window</strong>）</div>
+</div>
+
+<div class="step">
+<div class="step-num">4</div>
+<h2 data-i18n="step4.title">配置模型与 API</h2>
+<p data-i18n="step4.desc">安装完成后，需要配置 AI 模型才能开始使用。打开 MIMO Agent 设置页面：</p>
+<div class="tip" data-i18n="step4.tip">💡 打开命令面板（<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → 输入 <strong>MiMo: Settings</strong>）</div>
+<p style="margin-top:14px" data-i18n="step4.inlist">在设置页面中：</p>
+<ol style="margin:12px 0 0 20px;line-height:2">
+<li data-i18n="step4.item1"><strong>选择预设模型</strong> — 从预设列表中选择一个模型方案（如 MiMo Balance、DeepSeek、OpenRouter 等）</li>
+<li data-i18n="step4.item2"><strong>填写 API Key</strong> — 根据所选模型，填入对应的 API 密钥</li>
+<li data-i18n="step4.item3"><strong>选择模型</strong> — 在模型下拉列表中选择要使用的具体模型</li>
+<li data-i18n="step4.item4"><strong>保存设置</strong> — 点击保存后即可开始对话</li>
+</ol>
+<div class="tip" style="margin-top:14px" data-i18n="step4.tip2">💡 如果你使用本地模型（如 Ollama），无需填写 API Key，只需选择 Ollama 预设并确保本地服务已启动即可。</div>
+</div>
+
+<div class="step step-complete">
+<div class="step-num">✓</div>
+<h2 data-i18n="done.title">安装完成！🎉</h2>
+<p data-i18n="done.desc">现在你可以直接向 MIMO Agent 发送自然语言命令来编写代码、修复 Bug、重构项目等</p>
+<p style="margin-top:12px;font-weight:600"><span data-i18n="done.try">试试输入：</span><span style="color:var(--primary)" data-i18n="done.example">"把按钮改成暗色模式"</span></p>
+</div>
+
+<div class="links">
+<h3 data-i18n="links.title">📖 更多资源</h3>
+<ul>
+<li><a href="index.html" data-i18n="links.home">🏠 回到首页</a></li>
+<li><a href="https://github.com/YSP0Github/MIMO-Agent" target="_blank" data-i18n="links.gh">🐙 GitHub 仓库</a></li>
+<li><a href="https://github.com/YSP0Github/MIMO-Agent/issues" target="_blank" data-i18n="links.issues">🐛 提交问题</a></li>
+<li><a href="https://github.com/YSP0Github/MIMO-Agent#readme" target="_blank" data-i18n="links.docs">📚 使用文档</a></li>
+</ul>
+</div>
+</main>
+
+<footer>
+<p data-i18n="footer">© 2024–2026 MIMO Agent · 基于 MIT 协议开源</p>
+</footer>
+
+<script>
+var translations = {
+  zh: {
+    'nav.title': 'MIMO Agent 安装指南',
+    'nav.back': '← 返回首页',
+    'page.title': '📦 MIMO Agent 安装教程',
+    'page.subtitle': '四步完成安装，即刻体验 AI 编程助手',
+    'step1.title': '打开 VS Code 扩展面板',
+    'step1.desc': '在 VS Code 中，点击左侧活动栏的扩展图标，或使用快捷键：',
+    'step1.tip': '💡 也可以在顶部菜单栏选择 <strong>查看 → 扩展</strong> 打开扩展面板',
+    'step2.title': '搜索 "MIMO Agent"',
+    'step2.desc': '在扩展面板顶部的搜索框中，输入 <strong>MiMo</strong> 进行搜索。',
+    'step2.comment': '// 在搜索框中输入',
+    'step2.find': '找到由 <strong>mimo-agent</strong> 发布的 <strong>MiMo</strong> 扩展，确认图标为橙色 M 标志。',
+    'step2.tip': '💡 也可以直接使用命令行安装（打开终端粘贴执行）：',
+    'step2.tipcomment': '// 在 VS Code 终端中执行',
+    'step3.title': '安装并启用',
+    'step3.desc': '点击 <strong>MIMO Agent</strong> 扩展卡片上的 <strong>安装</strong> 按钮，等待安装完成。',
+    'step3.tip': '💡 安装完成后，重新加载 VS Code 窗口（<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → 输入 <strong>Reload Window</strong>）',
+    'step4.title': '配置模型与 API',
+    'step4.desc': '安装完成后，需要配置 AI 模型才能开始使用。打开 MIMO Agent 设置页面：',
+    'step4.tip': '💡 打开命令面板（<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → 输入 <strong>MiMo: Settings</strong>）',
+    'step4.inlist': '在设置页面中：',
+    'step4.item1': '<strong>选择预设模型</strong> — 从预设列表中选择一个模型方案（如 MiMo Balance、DeepSeek、OpenRouter 等）',
+    'step4.item2': '<strong>填写 API Key</strong> — 根据所选模型，填入对应的 API 密钥',
+    'step4.item3': '<strong>选择模型</strong> — 在模型下拉列表中选择要使用的具体模型',
+    'step4.item4': '<strong>保存设置</strong> — 点击保存后即可开始对话',
+    'step4.tip2': '💡 如果你使用本地模型（如 Ollama），无需填写 API Key，只需选择 Ollama 预设并确保本地服务已启动即可。',
+    'done.title': '安装完成！🎉',
+    'done.desc': '现在你可以直接向 MIMO Agent 发送自然语言命令来编写代码、修复 Bug、重构项目等',
+    'done.try': '试试输入：',
+    'done.example': '"把按钮改成暗色模式"',
+    'links.title': '📖 更多资源',
+    'links.home': '🏠 回到首页',
+    'links.gh': '🐙 GitHub 仓库',
+    'links.issues': '🐛 提交问题',
+    'links.docs': '📚 使用文档',
+    'footer': '© 2024–2026 MIMO Agent · 基于 MIT 协议开源'
+  },
+  en: {
+    'nav.title': 'MIMO Agent Installation',
+    'nav.back': '← Back to Home',
+    'page.title': '📦 MIMO Agent Setup Guide',
+    'page.subtitle': 'Get up and running in four simple steps',
+    'step1.title': 'Open VS Code Extensions',
+    'step1.desc': 'In VS Code, click the Extensions icon in the left activity bar, or use the shortcut:',
+    'step1.tip': '💡 You can also open Extensions from the menu: <strong>View → Extensions</strong>',
+    'step2.title': 'Search for "MIMO Agent"',
+    'step2.desc': 'Type <strong>MiMo</strong> in the search box at the top of the Extensions panel.',
+    'step2.comment': '// Type in the search box',
+    'step2.find': 'Find the <strong>MiMo</strong> extension published by <strong>mimo-agent</strong>, and confirm the orange M icon.',
+    'step2.tip': '💡 Or install via command line (paste and run in terminal):',
+    'step2.tipcomment': '// Run in VS Code terminal',
+    'step3.title': 'Install & Enable',
+    'step3.desc': 'Click the <strong>Install</strong> button on the <strong>MIMO Agent</strong> extension card and wait for installation to complete.',
+    'step3.tip': '💡 After installation, reload the VS Code window (<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → type <strong>Reload Window</strong>)',
+    'step4.title': 'Configure Model & API',
+    'step4.desc': 'After installation, you need to configure an AI model to start using MIMO Agent. Open the settings page:',
+    'step4.tip': '💡 Open Command Palette (<span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Ctrl</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">Shift</span> + <span class="hotkey" style="display:inline-flex;min-width:auto;height:auto;padding:2px 8px;font-size:.82rem;border-bottom-width:2px;box-shadow:0 1px 0 var(--hotkey-bottom)">P</span> → type <strong>MiMo: Settings</strong>)',
+    'step4.inlist': 'On the settings page:',
+    'step4.item1': '<strong>Select a preset</strong> — Choose a model preset from the list (e.g. MiMo Balance, DeepSeek, OpenRouter, etc.)',
+    'step4.item2': '<strong>Enter API Key</strong> — Paste the API key for your selected model provider',
+    'step4.item3': '<strong>Choose a model</strong> — Select the specific model from the dropdown',
+    'step4.item4': '<strong>Save settings</strong> — Click save and you\'re ready to chat',
+    'step4.tip2': '💡 If you\'re using a local model (e.g. Ollama), no API Key is needed — just select the Ollama preset and make sure your local service is running.',
+    'done.title': 'Installation Complete! 🎉',
+    'done.desc': 'You can now send natural language commands to MIMO Agent to write code, fix bugs, refactor projects, and more.',
+    'done.try': 'Try typing: ',
+    'done.example': '"Change the button to dark mode"',
+    'links.title': '📖 More Resources',
+    'links.home': '🏠 Back to Home',
+    'links.gh': '🐙 GitHub Repository',
+    'links.issues': '🐛 Report Issues',
+    'links.docs': '📚 Documentation',
+    'footer': '© 2024–2026 MIMO Agent · MIT Licensed'
+  }
+};
+
+var currentLang = localStorage.getItem('mimo-lang') || 'zh';
+var langToggle = document.getElementById('langToggle');
+
+function applyLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('mimo-lang', lang);
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  if (langToggle) langToggle.textContent = lang === 'zh' ? '中' : 'EN';
+  var dict = translations[lang];
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (dict[key]) el.innerHTML = dict[key];
+  });
+}
+
+if (langToggle) {
+  langToggle.addEventListener('click', function() {
+    applyLang(currentLang === 'zh' ? 'en' : 'zh');
+  });
+}
+applyLang(currentLang);
+
+// ========== Theme ==========
+var currentTheme = localStorage.getItem('mimo-theme') || 'light';
+var themeToggle = document.getElementById('themeToggle');
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('mimo-theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+  if (themeToggle) themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', function() {
+    applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+  });
+}
+applyTheme(currentTheme);
+</script>
+</body>
+</html>

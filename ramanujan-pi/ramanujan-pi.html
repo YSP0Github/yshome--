@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拉马努金 π 公式可视化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:#0a0a1a;color:#e0e0e0;font-family:"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-size:1.8rem;margin:20px 0 5px;background:linear-gradient(135deg,#ff6b35,#f7c948);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;opacity:0;animation:fadeDn .6s ease forwards}
+.subtitle{color:#888;margin-bottom:25px;font-size:.9rem;text-align:center;opacity:0;animation:fadeDn .6s .15s ease forwards}
+@keyframes fadeDn{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.card-enter{opacity:0;animation:fadeUp .5s ease forwards}
+.card-enter:nth-child(2){animation-delay:.1s}
+.card-enter:nth-child(3){animation-delay:.2s}
+.card-enter:nth-child(4){animation-delay:.3s}
+.card-enter:nth-child(5){animation-delay:.4s}
+.formula-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:30px 40px;margin-bottom:25px;text-align:center;backdrop-filter:blur(10px);max-width:700px;width:100%}
+.formula-title{color:#f7c948;font-size:1rem;margin-bottom:15px;font-weight:600}
+.formula{font-size:1.3rem;font-family:"Cambria Math","Times New Roman",serif;color:#fff;line-height:2}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;margin:0 8px}
+.frac-num{border-bottom:2px solid #ccc;padding-bottom:2px;text-align:center}
+.frac-den{padding-top:2px;text-align:center}
+.controls{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:25px 30px;margin-bottom:25px;max-width:700px;width:100%}
+.ctrl-row{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+label{color:#aaa;min-width:80px;font-size:.9rem}
+input[type=range]{flex:1;min-width:150px;accent-color:#ff6b35;cursor:pointer}
+.badge-val{background:rgba(255,107,53,0.15);color:#ff6b35;padding:4px 12px;border-radius:20px;font-size:.85rem;font-weight:600;min-width:50px;text-align:center;transition:transform .15s}
+.badge-val.pop{animation:popN .25s ease}
+@keyframes popN{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.kb-hint{color:#555;font-size:.7rem;margin-top:8px;text-align:center}
+.result-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:25px;margin-bottom:25px;max-width:700px;width:100%;text-align:center}
+.result-label{color:#888;font-size:.85rem;margin-bottom:8px}
+.pi-display{font-family:"Courier New",monospace;font-size:1.4rem;word-break:break-all;line-height:1.8}
+.pi-display .d{display:inline-block;transition:color .3s,transform .3s}
+.pi-display .d.ok{color:#4ecdc4}
+.pi-display .d.er{color:#ff6b35}
+.pi-display .d.nw{transform:scale(1.15)}
+.pi-true{font-size:.85rem;color:#555;margin-top:8px;font-family:"Courier New",monospace}
+.err-wrap{margin-top:15px}
+.err-label{color:#888;font-size:.8rem;margin-bottom:5px}
+.err-bar-bg{background:rgba(255,255,255,0.08);border-radius:8px;height:28px;position:relative;overflow:hidden}
+.err-bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;transition:width .5s cubic-bezier(.4,0,.2,1),background .3s;min-width:100px}
+.badges{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.bdg{padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600}
+.bdg-g{background:rgba(78,205,196,0.15);color:#4ecdc4}
+.bdg-y{background:rgba(247,201,72,0.15);color:#f7c948}
+.bdg-r{background:rgba(255,107,53,0.15);color:#ff6b35}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);color:#ff6b35;padding:6px 16px;border-radius:20px;font-size:.8rem;cursor:pointer;margin-top:12px;transition:background .2s,transform .15s}
+.copy-btn:hover{background:rgba(255,107,53,0.2);transform:scale(1.05)}
+.copy-btn:active{transform:scale(.95)}
+.copy-btn.done{background:rgba(78,205,196,0.15);color:#4ecdc4;border-color:rgba(78,205,196,0.3)}
+.export-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:#4ecdc4;padding:6px 16px;border-radius:20px;font-size:.8rem;cursor:pointer;transition:background .2s,transform .15s}
+.export-btn:hover{background:rgba(78,205,196,0.2);transform:scale(1.05)}
+.export-btn:active{transform:scale(.95)}
+.chart-wrap{max-width:700px;width:100%;margin-bottom:25px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px}
+.chart-title{color:#aaa;font-size:.9rem;margin-bottom:12px;text-align:center}
+.chart-canvas{width:100%;height:160px;display:block}
+.circle-wrap{max-width:700px;width:100%;margin-bottom:25px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px}
+.circle-canvas{width:100%;height:300px;display:block}
+.circle-info{text-align:center;color:#888;font-size:.8rem;margin-top:8px}
+.circle-info span{color:#f7c948;font-weight:600}
+.viz-grid{display:grid;grid-template-columns:1fr;width:100%;max-width:1100px;gap:0}
+.tbl-section{max-width:700px;width:100%;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-title{color:#aaa;font-size:.9rem;margin-bottom:12px;text-align:center}
+table{width:100%;border-collapse:separate;border-spacing:0 6px}
+th{color:#666;font-size:.75rem;font-weight:400;padding:4px 10px;text-align:left}
+td{background:rgba(255,255,255,0.03);padding:8px 12px;font-size:.85rem;font-family:"Courier New",monospace;transition:background .3s}
+tr.cur td{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:8px}
+td:first-child{border-radius:8px 0 0 8px}
+td:last-child{border-radius:0 8px 8px 0}
+.c-ok{color:#4ecdc4}
+.c-err{color:#ff6b35}
+.info{background:rgba(247,201,72,0.05);border:1px solid rgba(247,201,72,0.15);border-radius:12px;padding:20px;max-width:700px;width:100%;font-size:.85rem;color:#aaa;line-height:1.7}
+.info b{color:#f7c948}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+@media(min-width:900px){body{padding:30px 40px}.viz-grid{grid-template-columns:1fr 1fr}.chart-wrap,.circle-wrap{max-width:none;min-width:0}.formula-card,.controls,.result-card,.tbl-section,.info{max-width:1100px}.chart-canvas{height:200px}.circle-canvas{height:320px}}
+@media(max-width:500px){.formula{font-size:1rem}.pi-display{font-size:1.1rem}h1{font-size:1.4rem}.formula-card{padding:20px}.controls{padding:15px 20px}.result-card{padding:15px}body{padding:12px}}
+@media print{body{background:#fff;color:#000}.copy-btn,.kb-hint,.controls{display:none}.formula-card,.result-card,.chart-wrap,.tbl-section,.info{background:#fff;border-color:#ccc;backdrop-filter:none}h1{-webkit-text-fill-color:#333;background:none}.pi-display .d.ok{color:#090}.pi-display .d.er{color:#c00}.bdg-g,.bdg-y,.bdg-r{color:#333;background:#eee}}
+</style>
+</head>
+<body>
+<h1>拉马努金 π 公式</h1>
+<p class="subtitle">Srinivasa Ramanujan, 1910 — 每项约增加 8 位精确小数</p>
+
+<div class="formula-card card-enter">
+<div class="formula-title">拉马努金级数公式</div>
+<div class="formula">
+<span class="frac"><span class="frac-num">1</span><span class="frac-den">π</span></span>=
+<span class="frac"><span class="frac-num">2√2</span><span class="frac-den">9801</span></span>
+∑<sub>k=0</sub><sup>∞</sup>
+<span class="frac"><span class="frac-num">(4k)!(1103 + 26390k)</span><span class="frac-den">(k!)<sup>4</sup> · 396<sup>4k</sup></span></span>
+</div>
+</div>
+
+<div class="controls card-enter">
+<div class="ctrl-row">
+<label for="slider">项数 n =</label>
+<input type="range" id="slider" min="0" max="15" value="1" aria-label="迭代项数" aria-valuemin="0" aria-valuemax="15" aria-valuenow="1">
+<span class="badge-val" id="nVal">1</span>
+</div>
+<div class="kb-hint">💡 鼠标拖动滑块，或按 ← → 键微调</div>
+</div>
+
+<div class="result-card card-enter">
+<div class="result-label">π 的近似值（绿色 = 与 π 一致的位）</div>
+<div class="pi-display" id="piDisp"></div>
+<div class="pi-true">π (真值) = 3.14159265358979323846...</div>
+<div class="err-wrap">
+<div class="err-label">相对误差（对数刻度）</div>
+<div class="err-bar-bg"><div class="err-bar-fill" id="eBar"></div></div>
+</div>
+<div class="badges" id="bds" aria-live="polite"></div>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+<button class="copy-btn" id="copyBtn" title="复制近似值">📋 复制 π 值</button>
+<button class="export-btn" id="exportBtn" title="导出计算结果">📥 导出 CSV</button>
+</div>
+</div>
+
+<div class="viz-grid">
+<div class="chart-wrap card-enter">
+<div class="chart-title">📈 收敛曲线：正确位数 vs 项数</div>
+<canvas class="chart-canvas" id="chart" role="img" aria-label="收敛曲线图：正确位数随项数增加的可视化"></canvas>
+</div>
+
+<div class="circle-wrap card-enter">
+<div class="chart-title">🔵 圆的逼近：正多边形 → π</div>
+<canvas class="circle-canvas" id="circleCanvas" role="img" aria-label="正多边形逼近圆的可视化"></canvas>
+<div class="circle-info" id="circleInfo"></div>
+</div>
+</div>
+
+<div class="tbl-section card-enter">
+<div class="tbl-title">收敛对比表</div>
+<table aria-label="收敛对比表">
+<caption class="visually-hidden">不同迭代项数下的 π 近似值、正确位数和误差</caption>
+<thead><tr><th>n</th><th>π 近似值</th><th>正确位数</th><th>误差</th></tr></thead>
+<tbody id="tBody"></tbody>
+</table>
+</div>
+
+<div class="info card-enter">
+<b>关于这个公式：</b>拉马努金在 1910 年发现了这个令人惊叹的公式。仅 k=0 一项就给出 π ≈ 3.141592653...（精确到小数点后 6 位）。1985 年，此公式的变体被用于计算 π 到 1700 万位。<br><br>
+<b>关键常数：</b>9801 = 99²；1103 是拉马努金发现的神奇常数；396 = 4×99。每次迭代约增加 8 位精确数字，比当时任何已知公式都快得多。
+</div>
+
+<script>
+const PI="3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196";
+const DIGITS=100;
+const TROWS=[0,1,2,3,5,8,10,15];
+const cache=new Map();
+const $=id=>document.getElementById(id);
+const el={n:$("nVal"),pi:$("piDisp"),bar:$("eBar"),bds:$("bds"),tb:$("tBody"),sl:$("slider"),cp:$("copyBtn"),cv:$("chart"),cc:$("circleCanvas"),ci:$("circleInfo")};
+
+function fac(n){let r=1n;for(let i=2n;i<=n;i++)r*=i;return r}
+function isqrt(n){if(n<2n)return n;let x=n,y=(x+n/x)>>1n;while(y<x){x=y;y=(x+n/x)>>1n}return x}
+
+function computePi(nTerms){
+  if(cache.has(nTerms))return cache.get(nTerms);
+  if(nTerms<=0){const v="3."+"0".repeat(DIGITS);cache.set(nTerms,v);return v}
+  const P=DIGITS+30,S=10n**BigInt(P),sq=isqrt(2n*S*S);
+  let sum=0n;
+  for(let k=0;k<nTerms;k++){
+    const b=BigInt(k),num=fac(4n*b)*(1103n+26390n*b),den=fac(b)**4n*396n**(4n*b);
+    sum+=num*S/den;
+  }
+  const inv=2n*sq*sum/(9801n*S),pi=S*S/inv;
+  const r=pi.toString().padStart(P+1,"0"),v=r.slice(0,r.length-P)+"."+r.slice(r.length-P,r.length-P+DIGITS);
+  cache.set(nTerms,v);return v;
+}
+
+function countCorrect(a){for(let i=0;i<Math.min(a.length,PI.length);i++){if(a[i]!==PI[i])return i-1}return Math.min(a.length,PI.length)-1}
+
+// 收敛图
+let conv=[];
+function buildConv(){conv=[];for(let i=0;i<=15;i++){const a=computePi(i),c=countCorrect(a);conv.push({n:i,c})}}
+function drawChart(hl){
+  const cv=el.cv,dpr=devicePixelRatio||1,rc=cv.getBoundingClientRect();
+  cv.width=rc.width*dpr;cv.height=rc.height*dpr;
+  const ctx=cv.getContext("2d");ctx.scale(dpr,dpr);
+  const W=rc.width,H=rc.height,p={t:20,r:20,b:30,l:45},pw=W-p.l-p.r,ph=H-p.t-p.b;
+  const mx=Math.max(1,...conv.map(d=>d.c));
+  ctx.strokeStyle="rgba(255,255,255,0.06)";ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=p.t+(ph/4)*i;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(W-p.r,y);ctx.stroke();
+    ctx.fillStyle="#555";ctx.font="11px sans-serif";ctx.textAlign="right";ctx.fillText(Math.round(mx*(4-i)/4)+"位",p.l-8,y+4);
+  }
+  ctx.textAlign="center";
+  for(let i=0;i<=15;i+=3){ctx.fillStyle="#555";ctx.fillText("n="+i,p.l+(i/15)*pw,H-8)}
+  // area
+  ctx.beginPath();
+  for(let i=0;i<conv.length;i++){const x=p.l+(i/15)*pw,y=p.t+ph-(conv[i].c/mx)*ph;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+  ctx.lineTo(p.l+pw,p.t+ph);ctx.lineTo(p.l,p.t+ph);ctx.closePath();
+  const g=ctx.createLinearGradient(0,p.t,0,p.t+ph);g.addColorStop(0,"rgba(78,205,196,0.2)");g.addColorStop(1,"rgba(78,205,196,0.02)");
+  ctx.fillStyle=g;ctx.fill();
+  // line
+  ctx.beginPath();ctx.strokeStyle="#4ecdc4";ctx.lineWidth=2;ctx.lineJoin="round";
+  for(let i=0;i<conv.length;i++){const x=p.l+(i/15)*pw,y=p.t+ph-(conv[i].c/mx)*ph;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+  ctx.stroke();
+  // dots
+  for(let i=0;i<conv.length;i++){
+    const x=p.l+(i/15)*pw,y=p.t+ph-(conv[i].c/mx)*ph,h=i===hl;
+    ctx.beginPath();ctx.arc(x,y,h?6:3,0,Math.PI*2);ctx.fillStyle=h?"#ff6b35":"#4ecdc4";ctx.fill();
+    if(h){ctx.strokeStyle="rgba(255,107,53,0.4)";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#ff6b35";ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText(conv[i].c+"位",x,y-12)}
+  }
+}
+
+// 圆的逼近可视化
+function drawCircleApprox(n){
+  const cv=el.cc,dpr=devicePixelRatio||1,rc=cv.getBoundingClientRect();
+  cv.width=rc.width*dpr;cv.height=rc.height*dpr;
+  const ctx=cv.getContext("2d");ctx.scale(dpr,dpr);
+  const W=rc.width,H=rc.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-40;
+  // 真实圆（参考）
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle="rgba(255,255,255,0.12)";ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+  // 正多边形：边数 = 3 × 2^n，从三角形逐步倍增
+  const sides=Math.min(3*Math.pow(2,n),12288);
+  const co=countCorrect(computePi(n));
+  // 计算多边形内接半径，使其周长恰好等于 2×π近似值
+  // 内接正 n 边形周长 = 2nR sin(π/n)，与圆周长 2πR 的比值就是近似精度
+  const polyR=R; // 使用与圆相同半径（内接）
+  // 多边形
+  ctx.beginPath();
+  for(let i=0;i<=sides;i++){
+    const a=(Math.PI*2/sides)*i-Math.PI/2;
+    const x=cx+polyR*Math.cos(a),y=cy+polyR*Math.sin(a);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  // 填充
+  const fillColor=n<=2?"rgba(255,107,53,0.12)":n<=5?"rgba(247,201,72,0.1)":"rgba(78,205,196,0.08)";
+  ctx.fillStyle=fillColor;ctx.fill();
+  // 描边
+  const strokeColor=n<=2?"#ff6b35":n<=5?"#f7c948":"#4ecdc4";
+  ctx.strokeStyle=strokeColor;ctx.lineWidth=n<=3?2.5:2;ctx.lineJoin="round";ctx.stroke();
+  // 顶点标记（仅边数少时显示）
+  if(sides<=48){
+    for(let i=0;i<sides;i++){
+      const a=(Math.PI*2/sides)*i-Math.PI/2;
+      const x=cx+polyR*Math.cos(a),y=cy+polyR*Math.sin(a);
+      ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);
+      ctx.fillStyle=strokeColor;ctx.fill();
+    }
+  }
+  // 中心标注
+  ctx.fillStyle=strokeColor;ctx.font="bold 14px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(sides+"边形",cx,cy-12);
+  ctx.fillStyle="#888";ctx.font="11px sans-serif";
+  ctx.fillText("正确 "+co+" 位",cx,cy+8);
+  // 多边形周长 vs 圆周长的比值
+  const polyPeri=sides*Math.sin(Math.PI/sides); // 单位圆内接多边形周长/直径
+  const piApprox=polyPeri; // 这就是多边形对 π 的近似
+  ctx.fillStyle="#555";ctx.font="10px sans-serif";
+  ctx.fillText("周长比 ≈ "+piApprox.toFixed(Math.min(12,co+2)),cx,cy+26);
+  // 底部信息
+  el.ci.innerHTML="正 <span>"+sides+"</span> 边形逼近圆（边数 = 3 × 2<sup>"+n+"</sup>）｜多边形越接近圆，π 精度越高";
+}
+
+let prevC=-1;
+function render(n){
+  el.sl.setAttribute("aria-valuenow",n);
+  el.n.textContent=n;el.n.classList.remove("pop");void el.n.offsetWidth;el.n.classList.add("pop");
+  const ap=computePi(n),co=countCorrect(ap);
+  const piFrag=document.createDocumentFragment();
+  for(let i=0;i<ap.length;i++){const ok=i<=co,nw=prevC>=0&&i>prevC&&i<=co;const s=document.createElement("span");s.className="d "+(ok?"ok":"er")+(nw?" nw":"");s.textContent=ap[i];piFrag.appendChild(s)}
+  el.pi.replaceChildren(piFrag);
+  const pct=co>0?Math.max(5,Math.min(95,(co/60)*100)):5;
+  el.bar.style.width=pct+"%";el.bar.textContent=co>0?"误差 ~ 10^(−"+co+")，精度 "+co+"/100 位":"误差较大";
+  el.bar.style.background=co>15?"#4ecdc4":co>7?"#f7c948":"#ff6b35";el.bar.style.color="#000";
+  const bCls=co>=50?"bdg-g":co>=20?"bdg-g":co>=8?"bdg-g":co>=3?"bdg-y":"bdg-r";
+  const bTxt=co>=50?"🏆 超高精度 ("+co+"位)":co>=20?"✅ 机器精度 ("+co+"位)":co>=8?"✅ 高精度 ("+co+"位)":co>=3?"⚠️ 中等 ("+co+"位)":"❌ 低精度 ("+co+"位)";
+  const bSpan=document.createElement("span");bSpan.className="bdg "+bCls;bSpan.textContent=bTxt;
+  el.bds.replaceChildren(bSpan);
+  const f=document.createDocumentFragment();
+  for(const r of TROWS){
+    const a=computePi(r),c=countCorrect(a),tr=document.createElement("tr");
+    if(r===n)tr.className="cur";
+    const d=a.length>22?a.slice(0,22)+"…":a;
+    const td0=document.createElement("td");td0.textContent=r;
+    const td1=document.createElement("td");
+    for(let i=0;i<d.length;i++){
+      if(d[i]==="…"){const s=document.createElement("span");s.style.color="#555";s.textContent="…";td1.appendChild(s);break}
+      const s=document.createElement("span");s.className=i<=c?"c-ok":"c-err";s.textContent=d[i];td1.appendChild(s);
+    }
+    const td2=document.createElement("td");td2.style.textAlign="center";td2.textContent=c;
+    const td3=document.createElement("td");td3.style.textAlign="center";td3.textContent=c>0?"~10^(−"+c+")":"—";
+    tr.append(td0,td1,td2,td3);f.appendChild(tr);
+  }
+  el.tb.replaceChildren(f);
+  drawChart(n);drawCircleApprox(n);prevC=co;setHash(n);
+}
+
+let lastV=parseInt(el.sl.value),rafId=0;
+function scheduleRender(v){if(rafId)cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{rafId=0;render(v)})}
+el.sl.addEventListener("input",function(){lastV=+this.value;scheduleRender(lastV)});
+document.addEventListener("keydown",function(e){
+  if(e.key==="ArrowRight"||e.key==="ArrowUp"){e.preventDefault();lastV=Math.min(15,lastV+1);el.sl.value=lastV;render(lastV)}
+  else if(e.key==="ArrowLeft"||e.key==="ArrowDown"){e.preventDefault();lastV=Math.max(0,lastV-1);el.sl.value=lastV;render(lastV)}
+});
+el.cp.addEventListener("click",function(){
+  const v=computePi(lastV);
+  navigator.clipboard.writeText(v).then(()=>{el.cp.textContent="✅ 已复制！";el.cp.classList.add("done");setTimeout(()=>{el.cp.textContent="📋 复制 π 值";el.cp.classList.remove("done")},2e3)}).catch(()=>{
+    const t=document.createElement("textarea");t.value=v;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);
+    el.cp.textContent="✅ 已复制！";el.cp.classList.add("done");setTimeout(()=>{el.cp.textContent="📋 复制 π 值";el.cp.classList.remove("done")},2e3);
+  });
+});
+window.addEventListener("resize",()=>{drawChart(lastV);drawCircleApprox(lastV)});
+
+// 导出功能
+const exportBtn=document.getElementById("exportBtn");
+exportBtn.addEventListener("click",function(){
+  const rows=[["n","π近似值","正确位数","相对误差"]];
+  for(let i=0;i<=15;i++){
+    const piVal=computePi(i);
+    const correct=countCorrect(piVal);
+    rows.push([
+      i,
+      '"'+piVal+'"',
+      correct,
+      correct>0?"~10^(-"+correct+")":"—"
+    ]);
+  }
+  const csv=rows.map(r=>r.join(",")).join("\n");
+  const BOM="﻿";
+  const blob=new Blob([BOM+csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="ramanujan_pi_convergence.csv";
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  exportBtn.textContent="✅ 已导出！";
+  setTimeout(()=>{exportBtn.textContent="📥 导出 CSV"},2e3);
+});
+
+function setHash(n){history.replaceState(null,"","#"+n)}
+function readHash(){const h=location.hash.replace("#","");const v=parseInt(h);return isNaN(v)?null:(v>=0&&v<=15?v:null)}
+window.addEventListener("hashchange",()=>{const v=readHash();if(v!==null){lastV=v;el.sl.value=v;render(v)}});
+buildConv();const initV=readHash()??1;el.sl.value=initV;lastV=initV;render(initV);
+</script>
+</body>
+</html>

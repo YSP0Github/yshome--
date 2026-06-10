@@ -62,6 +62,24 @@
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%);
         box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
       }
+      .project-card-extra {
+        display: none;
+      }
+      .projects-expanded .project-card-extra {
+        display: block;
+      }
+      #toggleProjects {
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      #toggleProjects .arrow {
+        display: inline-block;
+        transition: transform 0.3s;
+        margin-left: 6px;
+      }
+      .projects-expanded #toggleProjects .arrow {
+        transform: rotate(180deg);
+      }
       .project-media {
         position: relative;
         padding: 1rem 1rem 0;
@@ -483,28 +501,28 @@
                 <span class="project-shot-dot bg-red-400"></span>
                 <span class="project-shot-dot bg-yellow-400"></span>
                 <span class="project-shot-dot bg-emerald-400"></span>
-                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisRT Live Monitor</span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">MIMO Agent</span>
               </div>
-              <img src="static/images/project_covers/SeisRT.png" alt="SeisRT 监测界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+              <img src="static/images/project_covers/project_mimoagent.png" alt="MIMO Agent 封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
             </div>
-            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
-              实时监测
+            <div class="absolute top-4 right-4 bg-orange-500/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              VS Code 插件
             </div>
           </div>
           <div class="p-6 pt-5">
             <div class="flex items-center justify-between gap-3 mb-2">
-              <h3 class="text-xl font-bold">地震实时监测系统</h3>
-              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">SeisRT</span>
+              <h3 class="text-xl font-bold">MIMO Agent</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-orange-400/80">MIMO</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              开发了一个 SeisRT 地震实时监测系统，支持实时采集、自动处理、监测可视化与教学演示入口
+              基于小米 MiMo 大模型的免费开源 AI 编程助手，支持多模型切换、MCP 协议、代码搜索与终端集成，打造高效智能的开发体验。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
-              <span class="project-chip">SeedLink</span>
-              <span class="project-chip">实时波形</span>
-              <span class="project-chip">台站地图</span>
+              <span class="project-chip">VS Code</span>
+              <span class="project-chip">AI 编程</span>
+              <span class="project-chip">MCP 协议</span>
             </div>
-            <a href="HTML/SeisRT.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+            <a href="HTML/mimo-promo/index.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
               查看详情 <i class="fa fa-arrow-right ml-2"></i>
             </a>
           </div>
@@ -546,7 +564,7 @@
         </div> -->
 
         <!-- 项目卡片5 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -581,7 +599,7 @@
         </div> 
 
        <!-- 项目卡片6 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -616,7 +634,7 @@
         </div>
 
        <!-- 项目卡片7 -->
-        <div class="project-card rounded-2xl overflow-hidden hover-lift">
+        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -650,12 +668,47 @@
           </div>
         </div>
 
+       <!-- 项目卡片8 -->
+        <div class="project-card project-card-extra rounded-2xl overflow-hidden hover-lift">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisRT Live Monitor</span>
+              </div>
+              <img src="static/images/project_covers/SeisRT.png" alt="SeisRT 监测界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              实时监测
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地震实时监测系统</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">SeisRT</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              开发了一个 SeisRT 地震实时监测系统，支持实时采集、自动处理、监测可视化与教学演示入口
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">SeedLink</span>
+              <span class="project-chip">实时波形</span>
+              <span class="project-chip">台站地图</span>
+            </div>
+            <a href="HTML/SeisRT.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
       </div>
-      
+
       <div class="text-center mt-12">
-        <a href="#" class="inline-block px-6 py-3 border border-primary text-primary hover:bg-primary hover:text-white rounded-lg transition-all">
-          查看更多项目
-        </a>
+        <button id="toggleProjects" class="inline-block px-6 py-3 border border-primary text-primary hover:bg-primary hover:text-white rounded-lg transition-all">
+          查看更多项目 <span class="arrow">▼</span>
+        </button>
       </div>
     </div>
   </section>
@@ -930,6 +983,18 @@
       document.body.classList.add('opacity-100');
       document.body.classList.remove('opacity-0');
     });
+
+    // 展开/折叠项目卡片
+    const toggleBtn = document.getElementById('toggleProjects');
+    const projectsGrid = document.querySelector('#projects .grid');
+    if (toggleBtn && projectsGrid) {
+      toggleBtn.addEventListener('click', () => {
+        const expanded = projectsGrid.classList.toggle('projects-expanded');
+        toggleBtn.innerHTML = expanded
+          ? '收起项目 <span class="arrow">▼</span>'
+          : '查看更多项目 <span class="arrow">▼</span>';
+      });
+    }
    </script>
     <!-- </script> -->
 </body>
