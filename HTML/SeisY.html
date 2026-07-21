@@ -135,7 +135,7 @@
                             <span class="project-shot-dot" style="background:#febc2e;"></span>
                             <span class="project-shot-dot" style="background:#28c840;"></span>
                         </div>
-                        <img src="../static/images/SeisY/SeisY-main.png" alt="SeisY 主界面截图" class="w-full h-auto">
+                        <img src="../static/images/SeisY/SeisY-main-v0.1.7-black.png" alt="SeisY 主界面截图" class="w-full h-auto">
                     </div>
                 </div>
             </div>
@@ -208,76 +208,63 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">软件下载</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版与便携版下载入口，后续版本可继续沿用同一页面更新。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版下载入口，后续版本可继续沿用同一页面更新。</p>
             </div>
 
-            <div class="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
-                <div class="bg-white rounded-2xl shadow-md p-8">
-                    <div class="flex items-center justify-between gap-4 mb-6">
+            <!-- 主下载卡片 -->
+            <div class="max-w-4xl mx-auto mb-12">
+                <div class="bg-white rounded-2xl shadow-lg p-8 md:p-10">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
                         <div>
                             <div class="text-sm uppercase tracking-[0.18em] text-primary/70 mb-2">Latest Release</div>
-                            <h3 class="text-2xl font-semibold">SeisY <span id="download-version">读取中</span></h3>
+                            <h3 class="text-3xl font-bold">SeisY <span id="download-version">读取中</span></h3>
+                            <p id="download-summary" class="text-dark/60 mt-2">正在读取版本说明…</p>
                         </div>
-                        <div class="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">Windows</div>
-                    </div>
-                    <p id="download-summary" class="text-dark/75 leading-7 mb-6">正在读取版本说明…</p>
-                    <div class="grid sm:grid-cols-2 gap-4 mb-6">
-                        <div class="rounded-xl bg-gray-50 border border-gray-100 p-4">
-                            <div class="text-xs uppercase tracking-[0.14em] text-dark/45 mb-2">发布日期</div>
-                            <div id="download-date" class="font-semibold text-dark">--</div>
-                        </div>
-                        <div class="rounded-xl bg-gray-50 border border-gray-100 p-4">
-                            <div class="text-xs uppercase tracking-[0.14em] text-dark/45 mb-2">下载来源</div>
-                            <div class="font-semibold text-dark">GitHub Releases</div>
+                        <div class="flex items-center gap-3">
+                            <div class="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">Windows</div>
+                            <div class="px-3 py-1.5 rounded-full bg-gray-100 text-dark/60 text-sm" id="download-date">--</div>
                         </div>
                     </div>
-                    <div class="mb-6">
-                        <a id="download-release-page-link" href="https://github.com/YSP0Github/SeisY-Releases/releases" target="_blank" rel="noopener" class="inline-flex items-center text-primary hover:text-primary/80 font-medium transition-custom">
-                            <i class="fa-brands fa-github mr-2"></i>查看 SeisY-Releases 全部版本
+
+                    <div class="grid md:grid-cols-3 gap-6 mb-8">
+                        <div id="download-cards" class="md:col-span-2">
+                            <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                <div class="text-dark/50 text-sm">正在加载下载项…</div>
+                            </div>
+                        </div>
+                        <div class="bg-dark text-white rounded-2xl p-6">
+                            <h4 class="font-semibold mb-3">下载说明</h4>
+                            <p class="text-white/70 text-sm leading-6 mb-4">
+                                安装版适合首次安装和长期使用，会自动创建程序入口和桌面快捷方式。
+                            </p>
+                            <div class="rounded-xl bg-white/10 border border-white/10 p-3 text-sm">
+                                <div class="font-medium mb-1">安装版建议</div>
+                                <p class="text-white/60">自动创建桌面快捷方式和开始菜单入口</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-gray-100">
+                        <ul id="download-notes" class="space-y-2 text-dark/70 text-sm flex-1">
+                            <li class="text-dark/50">正在加载版本说明…</li>
+                        </ul>
+                        <a id="download-release-page-link" href="https://github.com/YSP0Github/SeisY-Releases/releases" target="_blank" rel="noopener" class="inline-flex items-center text-primary hover:text-primary/80 font-medium transition-custom whitespace-nowrap">
+                            <i class="fa-brands fa-github mr-2"></i>查看全部版本
                             <i class="fa fa-external-link-alt ml-2 text-xs"></i>
                         </a>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-lg mb-4">版本说明</h4>
-                        <ul id="download-notes" class="space-y-3 text-dark/75">
-                            <li class="text-dark/50">正在加载版本说明…</li>
-                        </ul>
-                    </div>
                 </div>
+            </div>
 
-                <div class="space-y-6">
-                    <div id="download-cards" class="grid md:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                            <div class="text-dark/50 text-sm">正在加载下载项…</div>
-                        </div>
+            <!-- 版本历史 -->
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-md p-8">
+                    <div class="flex items-center justify-between gap-4 mb-6">
+                        <h4 class="text-xl font-semibold">版本历史</h4>
+                        <span class="text-sm text-dark/50">后续可继续追加</span>
                     </div>
-
-                    <div class="bg-dark text-white rounded-2xl p-8 shadow-xl">
-                        <h4 class="text-xl font-semibold mb-4">下载说明</h4>
-                        <p class="text-white/75 leading-7 mb-5">
-                            安装版适合首次安装和长期使用；便携版解压后即可运行，适合实验室电脑、移动硬盘或无需安装的临时使用场景。
-                            如需查看历史版本与发布说明，可前往 GitHub Releases 页面。
-                        </p>
-                        <div class="grid sm:grid-cols-2 gap-4 text-sm">
-                            <div class="rounded-xl bg-white/5 border border-white/10 p-4">
-                                <div class="font-medium mb-2">安装版建议</div>
-                                <p class="text-white/70">适合首次安装和普通用户，保留标准安装流程。</p>
-                            </div>
-                            <div class="rounded-xl bg-white/5 border border-white/10 p-4">
-                                <div class="font-medium mb-2">便携版建议</div>
-                                <p class="text-white/70">适合实验室电脑、U 盘分发或无需安装的临时使用场景。</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl shadow-md p-8">
-                        <div class="flex items-center justify-between gap-4 mb-4">
-                            <h4 class="text-xl font-semibold">版本历史</h4>
-                            <span class="text-sm text-dark/50">后续可继续追加</span>
-                        </div>
-                        <div id="download-history" class="space-y-3">
-                            <div class="text-dark/50">正在读取历史版本…</div>
-                        </div>
+                    <div id="download-history" class="space-y-3">
+                        <div class="text-dark/50">正在读取历史版本…</div>
                     </div>
                 </div>
             </div>
@@ -836,17 +823,17 @@
                                 ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold">推荐</span>'
                                 : '';
                             const card = document.createElement('article');
-                            card.className = 'bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col';
+                            card.className = 'bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full';
                             card.innerHTML = `
-                                <div class="flex items-start justify-between gap-4 mb-4">
+                                <div class="flex items-start justify-between gap-4 mb-3">
                                     <div>
-                                        <h5 class="text-xl font-semibold">${artifact.label || '下载文件'}</h5>
-                                        <div class="text-sm text-dark/50 mt-2">${meta.filename || ''}</div>
+                                        <h5 class="text-lg font-semibold">${artifact.label || '下载文件'}</h5>
+                                        <div class="text-xs text-dark/50 mt-1">${meta.filename || ''}</div>
                                     </div>
                                     ${recommendBadge}
                                 </div>
-                                <p class="text-dark/70 leading-7 mb-5 flex-1">${artifact.description || '下载说明待补充。'}</p>
-                                <div class="flex items-center justify-between text-sm text-dark/50 mb-5">
+                                <p class="text-dark/60 text-sm leading-6 mb-4 flex-1">${artifact.description || '下载说明待补充。'}</p>
+                                <div class="flex items-center justify-between text-xs text-dark/50 mb-4">
                                     <span>版本 ${latest.version || '--'}</span>
                                     <span>${artifact.size || '--'}</span>
                                 </div>
