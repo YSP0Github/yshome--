@@ -605,16 +605,6 @@
       }
 
       /* ========== 交互特效（参考优秀作品集，仅桌面端鼠标交互） ========== */
-      /* 全局噪点纹理，提升胶片质感 */
-      .noise-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 9998;
-        pointer-events: none;
-        opacity: 0.045;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      }
-
       /* 鼠标光斑跟随 */
       .cursor-glow {
         position: fixed;
@@ -649,7 +639,7 @@
       }
 
       @media (pointer: coarse) {
-        .cursor-glow, .noise-overlay { display: none; }
+        .cursor-glow { display: none; }
         .tilt-card { transition: none; }
         .magnetic { transition: none; }
       }
@@ -658,8 +648,7 @@
 </head>
 
 <body class="font-inter bg-dark text-light antialiased">
-  <!-- 交互特效层：全局噪点纹理 + 鼠标光斑 -->
-  <div class="noise-overlay" aria-hidden="true"></div>
+  <!-- 交互特效层：鼠标光斑 -->
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
   <!-- 导航栏 - 固定顶部并在滚动时变化 -->
