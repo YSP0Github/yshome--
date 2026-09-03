@@ -113,7 +113,7 @@
                     <span class="text-primary">地震数据处理与分析平台</span>
                 </h1>
                 <p class="text-lg md:text-xl text-dark/70 mb-10 max-w-2xl mx-auto fade-in delay-200">
-                    面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、震源定位、射线追踪与简正模分析等专业工具，当前提供 Windows 版本。
+                    面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、震源定位、射线追踪、简正模分析与月震工作流，并内置 AI 助手与异常修复引擎，当前提供 Windows 版本。
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4 fade-in delay-300">
                     <a href="#download" class="px-8 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-custom shadow-lg shadow-accent/20">
@@ -154,7 +154,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">软件概述</h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt6 构建，当前提供 Windows 桌面版，适用于地球物理研究与教学。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt5 构建，当前提供 Windows 桌面版，适用于地球物理研究与教学。</p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-12 items-center">
@@ -164,16 +164,16 @@
                         SeisY 面向地震、月震与行星地震数据的处理、分析与可视化，支持 MiniSEED、SAC、SEG-Y、SEG2、ASCII、TXT、CSV 等 8 种数据格式的导入导出，提供从数据预处理到高级分析的完整工作流。
                     </p>
                     <p class="text-dark/80 mb-8 leading-relaxed">
-                        软件集成波形处理、频谱分析、震源定位、射线追踪、简正模分析、月震工作流和 Apollo 数据管理等 15+ 专业工具模块，支持地球、月球和自定义行星速度模型。
+                        软件集成波形处理、频谱分析、震源定位、射线追踪、简正模分析、月震工作流、AI 助手与异常修复等 20+ 专业工具模块，支持地球、月球和自定义行星速度模型，并提供中英文双语界面与深浅色主题。
                     </p>
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
                         <div class="text-center">
-                            <div class="text-3xl font-bold text-primary mb-2">15+</div>
+                            <div class="text-3xl font-bold text-primary mb-2">20+</div>
                             <div class="text-dark/70 text-sm">专业工具</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold text-primary mb-2">20+</div>
+                            <div class="text-3xl font-bold text-primary mb-2">30+</div>
                             <div class="text-dark/70 text-sm">处理算法</div>
                         </div>
                         <div class="text-center">
@@ -181,7 +181,7 @@
                             <div class="text-dark/70 text-sm">数据格式</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold text-primary mb-2">6</div>
+                            <div class="text-3xl font-bold text-primary mb-2">8</div>
                             <div class="text-dark/70 text-sm">一级菜单</div>
                         </div>
                     </div>
@@ -358,6 +358,71 @@
                         <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> PDDM 去噪 / 噪声提取 / ULF 重构</li>
                     </ul>
                 </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
+                        <i class="fa fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">AI 助手</h3>
+                    <p class="text-dark/70 mb-4">内嵌的科研 AI 助手，用自然语言驱动数据处理与分析流程。</p>
+                    <ul class="text-dark/70 space-y-2">
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 多轮对话、多标签页、历史记录管理</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 基于数据上下文的推荐命令卡片</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 命令行风格处理与执行反馈</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
+                        <i class="fa fa-bandage"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">异常修复引擎</h3>
+                    <p class="text-dark/70 mb-4">自动检测并修复波形中的异常段、缺失值与尖峰，保护真实月震信号。</p>
+                    <ul class="text-dark/70 space-y-2">
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 滑动峰态检测 + 频谱替换修复</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 10 种缺失值插值 / 月震保护尖峰检测</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 修复前后对比报告与频谱验证</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
+                        <i class="fa fa-microchip"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">仪器响应管理</h3>
+                    <p class="text-dark/70 mb-4">独立的仪器响应管理器，统一处理台站响应元数据与去响应。</p>
+                    <ul class="text-dark/70 space-y-2">
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> FDSN 在线下载 StationXML（IRIS/USGS/GFZ…）</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 幅频/相位响应曲线可视化</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 事件级响应绑定与自动 fallback</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
+                        <i class="fa fa-database"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">数据全览与质量评估</h3>
+                    <p class="text-dark/70 mb-4">从多维度快速了解事件数据质量，并批量筛查月震候选事件。</p>
+                    <ul class="text-dark/70 space-y-2">
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 数据全览面板：波形/频谱/统计多维度预览</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 月震扫描器：SNR/稳定性/异常度批量评估</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> Apollo 数据质量浏览器：噪声/撞击分类</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
+                        <i class="fa fa-globe"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">3D 月球地质图</h3>
+                    <p class="text-dark/70 mb-4">基于 OpenGL 的月球球面渲染，叠加 USGS 统一地质图 GIS 数据。</p>
+                    <ul class="text-dark/70 space-y-2">
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 地质单元/接触线/线性特征球面绘制</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 2D 行星台站地图地质图层叠加</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 透明度控制与交互旋转</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </section>
@@ -420,6 +485,24 @@
                     </div>
                 </div>
             </div>
+
+            <div class="max-w-4xl mx-auto mt-12">
+                <h3 class="text-xl font-semibold mb-6 text-center">更多内置工具</h3>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-robot text-primary mr-2"></i>AI 助手</h4><p class="text-dark/70 text-sm">多轮对话式科研助手，可执行命令并给出上下文推荐。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-bandage text-primary mr-2"></i>异常修复引擎</h4><p class="text-dark/70 text-sm">异常段检测、频谱替换修复、缺失值插值与报告导出。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-microchip text-primary mr-2"></i>仪器响应管理器</h4><p class="text-dark/70 text-sm">FDSN 响应下载、Inventory 查看与幅频/相位响应曲线。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-globe text-primary mr-2"></i>3D 月球地质图</h4><p class="text-dark/70 text-sm">OpenGL 球面渲染 + USGS 月球统一地质图 GIS 叠加。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-database text-primary mr-2"></i>数据全览面板</h4><p class="text-dark/70 text-sm">事件波形、频谱、统计信息的多维度概览。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-search text-primary mr-2"></i>月震扫描器</h4><p class="text-dark/70 text-sm">平坦/尖峰/全模式批量筛查，SNR 与稳定性评分。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-check-double text-primary mr-2"></i>Apollo 数据质量浏览器</h4><p class="text-dark/70 text-sm">月震数据质量浏览与噪声/撞击事件分类。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-filter text-primary mr-2"></i>噪声提取器</h4><p class="text-dark/70 text-sm">自动地震噪声提取，含月震规避与稳定性评估。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-wave-square text-primary mr-2"></i>ULF-VLSNR-SE 重构器</h4><p class="text-dark/70 text-sm">超低频极低信噪比信号重构。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-chart-line text-primary mr-2"></i>滑动相关分析</h4><p class="text-dark/70 text-sm">长时噪声中滑动查找高相关片段。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-magic text-primary mr-2"></i>GDCST 滤波器</h4><p class="text-dark/70 text-sm">广义余弦基 S 变换滤波与时频可视化。</p></div>
+                    <div class="bg-gray-50 rounded-xl p-5 card-hover"><h4 class="font-semibold mb-1 flex items-center"><i class="fa fa-cogs text-primary mr-2"></i>批处理工作流</h4><p class="text-dark/70 text-sm">多步骤批量处理与自动执行。</p></div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -440,8 +523,8 @@
                                 <i class="fa fa-desktop"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">PyQt6 桌面框架</h4>
-                                <p class="text-dark/70">基于 PyQt6 的桌面 GUI，当前提供 Windows 版本。</p>
+                                <h4 class="font-semibold mb-1">PyQt5 桌面框架</h4>
+                                <p class="text-dark/70">基于 PyQt5 的桌面 GUI，支持中英文双语与深浅色主题，当前提供 Windows 版本。</p>
                             </div>
                         </div>
                         <div class="flex items-start">
