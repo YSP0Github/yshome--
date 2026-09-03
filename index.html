@@ -163,18 +163,6 @@
         z-index: 1;
       }
 
-      /* 滚动进度条 */
-      #scroll-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #3B82F6, #22D3EE);
-        z-index: 9999;
-        transition: width 0.1s linear;
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);
-      }
-
       /* 导航链接高亮 */
       .nav-active {
         color: #3B82F6 !important;
@@ -250,31 +238,6 @@
       }
 
       /* Hero 粒子画布 */
-      #hero-particles {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        opacity: 0.25;
-      }
-
-      /* 打字机光标 */
-      .typing-cursor {
-        display: inline-block;
-        width: 3px;
-        height: 1.1em;
-        background: #22D3EE;
-        margin-left: 4px;
-        vertical-align: text-bottom;
-        animation: blink 1s step-end infinite;
-      }
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-
       /* Hero 渐变动画背景 */
       .hero-bg-animated {
         position: absolute;
@@ -283,11 +246,6 @@
           linear-gradient(90deg, rgba(8, 17, 31, 0.94) 0%, rgba(8, 17, 31, 0.74) 44%, rgba(8, 17, 31, 0.24) 100%),
           linear-gradient(180deg, rgba(8, 17, 31, 0.22) 0%, rgba(8, 17, 31, 0.72) 100%),
           url('static/images/space_to_earth.jpg') center / cover no-repeat;
-        animation: heroShift 18s ease-in-out infinite alternate;
-      }
-      @keyframes heroShift {
-        0% { transform: scale(1); }
-        100% { transform: scale(1.035); }
       }
       .hero-layout {
         min-height: calc(100vh - 5rem);
@@ -519,7 +477,6 @@
       }
       @media (prefers-reduced-motion: reduce) {
         .hero-bg-animated,
-        .typing-cursor,
         .animate-bounce {
           animation: none !important;
         }
@@ -546,28 +503,6 @@
       /* 选中文字 */
       ::selection { background: rgba(34, 211, 238, 0.28); color: #fff; }
 
-      /* 标题渐变字 */
-      .text-gradient {
-        background: linear-gradient(120deg, #60a5fa 0%, #22d3ee 50%, #818cf8 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-
-      /* Hero 背景光晕装饰 */
-      .hero-glow {
-        position: absolute;
-        border-radius: 9999px;
-        filter: blur(70px);
-        pointer-events: none;
-        z-index: 0;
-        animation: glowFloat 9s ease-in-out infinite alternate;
-      }
-      @keyframes glowFloat {
-        0% { transform: translateY(0) scale(1); opacity: 0.85; }
-        100% { transform: translateY(-22px) scale(1.06); opacity: 1; }
-      }
-
       /* 导航链接下划线动画 */
       .nav-link-anim { position: relative; }
       .nav-link-anim::after {
@@ -583,44 +518,6 @@
         transition: width 0.3s ease;
       }
       .nav-link-anim:hover::after { width: 100%; }
-
-      /* 头像呼吸光环 */
-      .portrait-glow { position: relative; }
-      .portrait-glow::before {
-        content: '';
-        position: absolute;
-        inset: -2px;
-        border-radius: 0.6rem;
-        padding: 1px;
-        background: linear-gradient(135deg, rgba(59,130,246,0.75), rgba(34,211,238,0.55), transparent 62%);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        animation: glowPulse 4s ease-in-out infinite;
-        pointer-events: none;
-      }
-      @keyframes glowPulse {
-        0%, 100% { opacity: 0.55; }
-        50% { opacity: 1; }
-      }
-
-      /* 技能条光泽扫过 */
-      .skill-bar-fill { position: relative; overflow: hidden; }
-      .skill-bar-fill::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 60%;
-        height: 100%;
-        background: linear-gradient(105deg, transparent, rgba(255,255,255,0.35), transparent);
-        animation: barShine 2.8s ease-in-out infinite;
-      }
-      @keyframes barShine {
-        0% { left: -100%; }
-        55% { left: 130%; }
-        100% { left: 130%; }
-      }
 
       /* 技能图标渐变圆底 */
       .skill-icon {
@@ -673,11 +570,6 @@
         box-shadow: 0 18px 40px -14px rgba(34, 211, 238, 0.55);
       }
 
-      /* Hero 标题发光 */
-      .hero-title-glow {
-        text-shadow: 0 0 60px rgba(34, 211, 238, 0.22), 0 18px 50px rgba(0,0,0,0.35);
-      }
-
       /* 区块标题分割线发光 */
       .section-rule::after {
         content: '';
@@ -716,9 +608,6 @@
 </head>
 
 <body class="font-inter bg-dark text-light antialiased">
-  <!-- 滚动进度条 -->
-  <div id="scroll-progress"></div>
-
   <!-- 导航栏 - 固定顶部并在滚动时变化 -->
   <header id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4">
     <div class="container mx-auto px-4 md:px-6">
@@ -762,9 +651,6 @@
   <!-- 英雄区域 -->
   <section id="home" class="min-h-screen flex items-center pt-20 bg-gradient-tech overflow-hidden relative">
     <div class="hero-bg-animated" style="z-index:0"></div>
-    <div class="hero-glow" style="width:28rem;height:28rem;background:rgba(37,99,235,0.30);top:8%;right:4%"></div>
-    <div class="hero-glow" style="width:20rem;height:20rem;background:rgba(14,165,233,0.24);bottom:6%;left:2%"></div>
-    <canvas id="hero-particles" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
     <div class="container mx-auto px-4 md:px-6 relative z-10">
       <div class="hero-layout">
         <!-- 文字内容 -->
@@ -772,12 +658,12 @@
           <div class="hero-kicker text-xs md:text-sm">
             地球物理 · 科研工具 · 独立开发
           </div>
-          <h1 class="text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[0.98] tracking-normal hero-title-glow">
-            你好，我是<span class="text-gradient">云凇</span>
+          <h1 class="text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[0.98] tracking-normal">
+            你好，我是<span class="text-primary">云凇</span>
           </h1>
           <p class="text-slate-200 text-lg md:text-2xl max-w-2xl leading-relaxed">
-            我把地球物理研究、数据处理和 Web 工具做成可使用的产品，<br class="hidden md:block">
-            <span id="hero-typing" class="text-primary font-medium"></span><span class="typing-cursor"></span>
+            我是研究月球内部结构的地球物理博士生，<br class="hidden md:block">
+            平时用 Python、Fortran 和 GMT 处理地震与月震数据，把这些工具慢慢做成了能用的软件。
           </p>
           <div class="hero-actions flex flex-wrap gap-3 pt-2">
             <a href="#projects" class="px-6 py-3 btn-primary-grad text-white transition-all rounded-lg">
@@ -791,15 +677,15 @@
           <div class="hero-stats">
             <div class="hero-stat">
               <strong>科研工作流</strong>
-              <span>文献、数据、自动化工具持续沉淀</span>
+              <span>从文献检索、数据处理到出图，沉淀成一套自己的流程</span>
             </div>
             <div class="hero-stat">
               <strong>地震学软件</strong>
-              <span>波形处理、事件分析和实时快照展示</span>
+              <span>SeisY、SeisRT，波形处理到实时监测</span>
             </div>
             <div class="hero-stat">
               <strong>Web 实验室</strong>
-              <span>轻量交互页面，服务学习与展示</span>
+              <span>科学小实验和交互页面，写给自己也用给别人</span>
             </div>
           </div>
           
@@ -846,7 +732,7 @@
       
       <div class="flex flex-col md:flex-row gap-12 items-center">
         <div class="md:w-1/3 reveal reveal-delay-1">
-          <div class="about-portrait relative portrait-glow">
+          <div class="about-portrait relative">
             <img src="static/images/YS/yunsong.png" alt="关于我的照片">
             <div class="profile-badge absolute -bottom-5 -right-5 p-4">
               <p class="text-xl font-bold">5+ 年</p>
@@ -856,12 +742,12 @@
         </div>
         
         <div class="md:w-2/3 space-y-6">
-          <h3 class="text-2xl font-bold text-white">我是一名充满激情的地球物理工作者</h3>
+          <h3 class="text-2xl font-bold text-white">在地球物理里做研究，顺手写点顺手的工具</h3>
           <p class="text-gray-300">
-            拥有5年以上的地球物理工作经验及软件开发经验，专注于创建高效、美观且用户友好的数字产品。我热衷于学习新技术，并将其应用到实际项目中解决复杂问题。
+            博士阶段主要研究月球内部结构与自由振荡，常和 Apollo 月震数据、长周期波形打交道。数据多了就想着让处理过程省点事，于是自己写了 SeisY、SeisRT 这些工具，用 Python、Fortran 和 GMT 把从读数据到出图这一套流程串了起来。
           </p>
           <p class="text-gray-300">
-            我的技术栈涵盖前后端开发、地球物理软件开发和数据分析等领域。我相信良好的沟通和团队协作是项目成功的关键，并且始终以用户体验为中心进行开发。
+            技术栈主要在科学计算和 Web 之间来回：ObsPy、Mineos 处理波形和本征模，Flask 加 SQLite 做文献管理这类小平台。代码写得多了，慢慢养成了先想清楚数据怎么组织、再动手做界面的习惯。
           </p>
           
           <!-- 个人信息 -->
@@ -916,7 +802,7 @@
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的技能</h2>
         <div class="section-rule"></div>
         <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
-          多年的开发经验让我掌握了多种技术，能够独立完成从前端到后端的完整开发流程
+          用的最多的还是 Python 和 Fortran，前端、后端、数据可视化都自己写，主要围着科研数据处理这个场景转
         </p>
       </div>
       
@@ -990,7 +876,7 @@
                 <i class="fa fa-laptop"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">前端开发</h4>
-              <p class="text-gray-400 text-sm">创建响应式、高性能的用户界面</p>
+              <p class="text-gray-400 text-sm">把波形、数据和结果画成能看的页面</p>
             </div>
 
             <div class="p-6 rounded-lg hover-lift skill-card-glow">
@@ -998,7 +884,7 @@
                 <i class="fa fa-server"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">后端开发</h4>
-              <p class="text-gray-400 text-sm">设计和实现可靠的服务器端解决方案</p>
+              <p class="text-gray-400 text-sm">用 Flask 这类框架搭文献管理、数据服务小平台</p>
             </div>
 
             <div class="p-6 rounded-lg hover-lift skill-card-glow">
@@ -1006,7 +892,7 @@
                 <i class="fa fa-database"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">地球物理软件开发</h4>
-              <p class="text-gray-400 text-sm">开发地球物理数据处理和可视化工具</p>
+              <p class="text-gray-400 text-sm">把 ObsPy、Mineos 这类数据处理流程封装成顺手工具</p>
             </div>
 
             <div class="p-6 rounded-lg hover-lift skill-card-glow">
@@ -1014,7 +900,7 @@
                 <i class="fa fa-cogs"></i>
               </div>
               <h4 class="text-lg font-semibold mb-2">数据分析系统</h4>
-              <p class="text-gray-400 text-sm">设计可扩展、可维护的数据分析系统</p>
+              <p class="text-gray-400 text-sm">从原始波形到结论的整条链路，搭好一次能反复用</p>
             </div>
           </div>
         </div>
@@ -1034,7 +920,7 @@
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的项目</h2>
         <div class="section-rule"></div>
         <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
-          探索我的一些精选项目，展示了我的技术能力和解决问题的方法
+          下面这些是平时写的东西，大多是科研里用得上、顺手做成能用的
         </p>
       </div>
       
@@ -1062,7 +948,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-primary/80">YSXS</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              面向个人科研工作流的学术资料平台，支持文献检索、分类整理、收藏追踪与晨报辅助。
+              自己整理文献用的平台，把检索、分类、收藏和每日摘要放在一起，免得文献散得到处都是。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">Flask</span>
@@ -1097,7 +983,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-primary/80">SeisY</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              面向地球物理数据处理的桌面工具，支持波形浏览、事件分析、数据组织与处理结果可视化。
+              用 PyQt 写的桌面软件，读波形、看事件、整理数据、出图都在里面，做月震和地震数据分析时天天用。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">Python</span>
@@ -1132,7 +1018,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-orange-400/80">MIMO</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              基于小米 MiMo 大模型的免费开源 AI 编程助手，支持多模型切换、MCP 协议、代码搜索与终端集成，打造高效智能的开发体验。
+              免费开源的 VS Code 编程助手，基于小米 MiMo 模型，支持多模型切换、MCP 协议和终端集成。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">VS Code</span>
@@ -1202,7 +1088,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-fuchsia-300">funhome</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              开发了一个趣味屋网站，提供趣味项目展示和用户互动功能
+              一个收集小游戏和互动页面的地方，写着玩，也顺手练手。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">小游戏</span>
@@ -1237,7 +1123,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-primary/80">yunji</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              开发了一个云记编辑器，一款轻量级、高效的Python文本编辑器，专为开发者设计，简单易用且功能强大。
+              用 Python 写的轻量文本编辑器，不装插件也能快速改点小文件。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">Python</span>
@@ -1272,7 +1158,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">ScienceLab</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              整理并展示可交互的科学小实验页面，当前已接入 PendulumLab、ResonanceLab 与 RayleighWaveLab，用于观察摆动、共振与面波传播。
+              把几个交互式的物理小实验放在一起，摆锤、共振、瑞利波都能直接在页面上玩起来。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">PendulumLab</span>
@@ -1307,7 +1193,7 @@
               <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">SeisRT</span>
             </div>
             <p class="text-gray-400 text-sm mb-4 leading-6">
-              开发了一个 SeisRT 地震实时监测系统，支持实时采集、自动处理、监测可视化与教学演示入口
+              实时看波形的地震监测页面，接 SeedLink 数据流，自动处理并出图，也拿来当教学演示用。
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">SeedLink</span>
@@ -1342,7 +1228,7 @@
               <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">联系我</h2>
               <div class="section-rule"></div>
               <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
-                  有任何问题或合作意向？请随时联系我，我会尽快回复
+                  想交流、想合作，或者对哪个工具有改进意见，都可以直接找我。
               </p>
           </div>
           
@@ -1452,7 +1338,7 @@
             <span>云凇之家</span>
           </a>
           <p class="text-gray-500 text-sm mt-2 text-center md:text-left">
-            探索技术，创造未来
+            波形、代码，慢慢琢磨
           </p>
         </div>
         
@@ -1616,15 +1502,6 @@
       });
     }
 
-    // ========== 滚动进度条 ==========
-    const scrollProgress = document.getElementById('scroll-progress');
-    window.addEventListener('scroll', () => {
-      const scrollTop = document.documentElement.scrollTop;
-      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const progress = (scrollTop / scrollHeight) * 100;
-      scrollProgress.style.width = progress + '%';
-    });
-
     // ========== 导航高亮 ==========
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.hidden.md\\:flex a[href^="#"]');
@@ -1670,109 +1547,6 @@
 
     const skillsSection = document.getElementById('skills');
     if (skillsSection) skillObserver.observe(skillsSection);
-
-    // ========== Hero 打字机效果 ==========
-    const typingEl = document.getElementById('hero-typing');
-    if (typingEl) {
-      const phrases = [
-        '致力于探索前沿技术',
-        '创造有价值的开源项目',
-        '让地球物理更智能',
-        '用代码解决实际问题'
-      ];
-      let phraseIndex = 0, charIndex = 0, isDeleting = false;
-
-      function typeLoop() {
-        const current = phrases[phraseIndex];
-        if (isDeleting) {
-          typingEl.textContent = current.substring(0, charIndex--);
-        } else {
-          typingEl.textContent = current.substring(0, charIndex++);
-        }
-
-        let delay = isDeleting ? 40 : 80;
-        if (!isDeleting && charIndex > current.length) {
-          delay = 2000;
-          isDeleting = true;
-        } else if (isDeleting && charIndex < 0) {
-          isDeleting = false;
-          phraseIndex = (phraseIndex + 1) % phrases.length;
-          delay = 400;
-        }
-        setTimeout(typeLoop, delay);
-      }
-      setTimeout(typeLoop, 800);
-    }
-
-    // ========== Hero 粒子背景 ==========
-    const canvas = document.getElementById('hero-particles');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      let particles = [];
-      function resizeCanvas() {
-        canvas.width = canvas.parentElement.offsetWidth;
-        canvas.height = canvas.parentElement.offsetHeight;
-      }
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-
-      class Particle {
-        constructor() {
-          this.reset();
-        }
-        reset() {
-          this.x = Math.random() * canvas.width;
-          this.y = Math.random() * canvas.height;
-          this.size = Math.random() * 2 + 0.5;
-          this.speedX = (Math.random() - 0.5) * 0.5;
-          this.speedY = (Math.random() - 0.5) * 0.5;
-          this.opacity = Math.random() * 0.5 + 0.1;
-        }
-        update() {
-          this.x += this.speedX;
-          this.y += this.speedY;
-          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-            this.reset();
-          }
-        }
-        draw() {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(59, 130, 246, ${this.opacity})`;
-          ctx.fill();
-        }
-      }
-
-      for (let i = 0; i < 50; i++) {
-        particles.push(new Particle());
-      }
-
-      function connectParticles() {
-        for (let a = 0; a < particles.length; a++) {
-          for (let b = a + 1; b < particles.length; b++) {
-            const dx = particles[a].x - particles[b].x;
-            const dy = particles[a].y - particles[b].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 120) {
-              ctx.beginPath();
-              ctx.strokeStyle = `rgba(34, 211, 238, ${0.12 * (1 - dist / 120)})`;
-              ctx.lineWidth = 0.5;
-              ctx.moveTo(particles[a].x, particles[a].y);
-              ctx.lineTo(particles[b].x, particles[b].y);
-              ctx.stroke();
-            }
-          }
-        }
-      }
-
-      function animateParticles() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => { p.update(); p.draw(); });
-        connectParticles();
-        requestAnimationFrame(animateParticles);
-      }
-      animateParticles();
-    }
    </script>
     <!-- </script> -->
 </body>
