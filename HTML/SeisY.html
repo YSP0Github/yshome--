@@ -1012,5 +1012,46 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('section > div > div:not(.text-center)').forEach(section => observer.observe(section));
     </script>
+
+    <!-- 截图点击放大 (lightbox) -->
+    <style>
+        .lb { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }
+        .lb.open { display: flex; }
+        .lb img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,.6); }
+        .lb .lb-cap { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #e5e7eb; font-size: 14px; padding: 0 20px; }
+        #tools .card-hover img, #guide .card img { cursor: zoom-in; }
+    </style>
+    <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="图片放大预览">
+        <img id="lbImg" alt="" />
+        <div class="lb-cap" id="lbCap"></div>
+    </div>
+    <script>
+        (function () {
+            var lb = document.getElementById('lb');
+            var img = document.getElementById('lbImg');
+            var cap = document.getElementById('lbCap');
+            function open(src, text) {
+                if (!src) return;
+                img.src = src;
+                img.alt = text || '';
+                cap.textContent = text || '';
+                lb.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+            function close() {
+                lb.classList.remove('open');
+                img.removeAttribute('src');
+                document.body.style.overflow = '';
+            }
+            lb.addEventListener('click', close);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+            document.addEventListener('click', function (e) {
+                var t = e.target;
+                if (t && t.tagName === 'IMG' && t.closest('#tools .card-hover') && t.src && /static\/images\/SeisY\//.test(t.src)) {
+                    open(t.currentSrc || t.src, t.alt || '');
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
