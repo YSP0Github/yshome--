@@ -603,11 +603,65 @@
         color: #22D3EE !important;
         letter-spacing: 0.02em;
       }
+
+      /* ========== 交互特效（参考优秀作品集，仅桌面端鼠标交互） ========== */
+      /* 全局噪点纹理，提升胶片质感 */
+      .noise-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        pointer-events: none;
+        opacity: 0.045;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* 鼠标光斑跟随 */
+      .cursor-glow {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 340px;
+        height: 340px;
+        margin-left: -170px;
+        margin-top: -170px;
+        border-radius: 9999px;
+        background: radial-gradient(circle, rgba(37,99,235,0.16) 0%, rgba(14,165,233,0.09) 38%, transparent 68%);
+        pointer-events: none;
+        z-index: 2;
+        transform: translate3d(0,0,0);
+        will-change: transform;
+      }
+
+      /* 项目卡片 3D 倾斜（perspective 由 JS 内联控制，防闪烁） */
+      .tilt-card {
+        transition: transform 0.12s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
+        transform-style: preserve-3d;
+        will-change: transform;
+      }
+      .tilt-card .tilt-inner {
+        transform: translateZ(18px);
+      }
+
+      /* 磁吸按钮 */
+      .magnetic {
+        transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+      }
+
+      @media (pointer: coarse) {
+        .cursor-glow, .noise-overlay { display: none; }
+        .tilt-card { transition: none; }
+        .magnetic { transition: none; }
+      }
     }
   </style>
 </head>
 
 <body class="font-inter bg-dark text-light antialiased">
+  <!-- 交互特效层：全局噪点纹理 + 鼠标光斑 -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
   <!-- 导航栏 - 固定顶部并在滚动时变化 -->
   <header id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4">
     <div class="container mx-auto px-4 md:px-6">
@@ -666,10 +720,10 @@
             平时用 Python、Fortran 和 GMT 处理地震与月震数据，把这些工具慢慢做成了能用的软件。
           </p>
           <div class="hero-actions flex flex-wrap gap-3 pt-2">
-            <a href="#projects" class="px-6 py-3 btn-primary-grad text-white transition-all rounded-lg">
+            <a href="#projects" class="px-6 py-3 btn-primary-grad text-white transition-all rounded-lg magnetic">
               查看项目
             </a>
-            <a href="#contact" class="px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all backdrop-blur">
+            <a href="#contact" class="px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all backdrop-blur magnetic">
               联系我
             </a>
           </div>
@@ -782,7 +836,7 @@
             </div>
           </div>
           
-          <a href="mailto:yusp519@qq.com?subject=%E7%AE%80%E5%8E%86%E4%B8%8E%E5%90%88%E4%BD%9C%E6%B2%9F%E9%80%9A&body=%E4%BA%91%E5%87%87%EF%BC%8C%E4%BD%A0%E5%A5%BD%EF%BC%81%0A%0A%E6%88%91%E5%AF%B9%E4%BD%A0%E7%9A%84%E9%A1%B9%E7%9B%AE%E5%BE%88%E6%84%9F%E5%85%B4%E8%B6%A3%EF%BC%8C%E5%B8%8C%E6%9C%9B%E8%83%BD%E8%8E%B7%E5%8F%96%E4%BD%A0%E7%9A%84%E7%AE%80%E5%8E%86%E5%B9%B6%E4%BA%A4%E6%B5%81%E5%90%88%E4%BD%9C%E6%9C%BA%E4%BC%9A%E3%80%82%0A%0A%E6%AD%A4%E8%87%B4%EF%BC%81%0A%0A%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%0A%E5%90%8D%E7%A7%B0%EF%BC%9A%0A%E5%8D%95%E4%BD%8D%EF%BC%9A%0A%E8%81%8C%E4%BD%8D%EF%BC%9A%0A%E9%82%AE%E7%AE%B1%EF%BC%9A%0A%E7%94%B5%E8%AF%9D%EF%BC%9A" class="inline-block px-6 py-3 btn-primary-grad text-white rounded-lg mt-4">
+          <a href="mailto:yusp519@qq.com?subject=%E7%AE%80%E5%8E%86%E4%B8%8E%E5%90%88%E4%BD%9C%E6%B2%9F%E9%80%9A&body=%E4%BA%91%E5%87%87%EF%BC%8C%E4%BD%A0%E5%A5%BD%EF%BC%81%0A%0A%E6%88%91%E5%AF%B9%E4%BD%A0%E7%9A%84%E9%A1%B9%E7%9B%AE%E5%BE%88%E6%84%9F%E5%85%B4%E8%B6%A3%EF%BC%8C%E5%B8%8C%E6%9C%9B%E8%83%BD%E8%8E%B7%E5%8F%96%E4%BD%A0%E7%9A%84%E7%AE%80%E5%8E%86%E5%B9%B6%E4%BA%A4%E6%B5%81%E5%90%88%E4%BD%9C%E6%9C%BA%E4%BC%9A%E3%80%82%0A%0A%E6%AD%A4%E8%87%B4%EF%BC%81%0A%0A%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%0A%E5%90%8D%E7%A7%B0%EF%BC%9A%0A%E5%8D%95%E4%BD%8D%EF%BC%9A%0A%E8%81%8C%E4%BD%8D%EF%BC%9A%0A%E9%82%AE%E7%AE%B1%EF%BC%9A%0A%E7%94%B5%E8%AF%9D%EF%BC%9A" class="inline-block px-6 py-3 btn-primary-grad text-white rounded-lg mt-4 magnetic">
             获取简历 <i class="fa fa-envelope-o ml-2"></i>
           </a>
         </div>
@@ -927,7 +981,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- 项目卡片1 -->
-        <div class="project-card rounded-lg overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -962,7 +1016,7 @@
         </div>
         
         <!-- 项目卡片2 -->
-        <div class="project-card rounded-lg overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -997,7 +1051,7 @@
         </div>
         
         <!-- 项目卡片3 -->
-        <div class="project-card rounded-lg overflow-hidden hover-lift">
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
           <div class="project-media">
             <div class="project-shot">
               <div class="project-shot-bar">
@@ -1317,7 +1371,7 @@
                           <textarea id="message" rows="5" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all resize-none" placeholder="你的消息内容" required></textarea>
                       </div>
 
-                      <button type="submit" class="w-full md:w-auto px-8 py-3 btn-primary-grad text-white rounded-xl font-medium">
+                      <button type="submit" class="w-full md:w-auto px-8 py-3 btn-primary-grad text-white rounded-xl font-medium magnetic">
                           发送消息 <i class="fa fa-paper-plane ml-2"></i>
                       </button>
                   </form>
@@ -1547,6 +1601,59 @@
 
     const skillsSection = document.getElementById('skills');
     if (skillsSection) skillObserver.observe(skillsSection);
+
+    // ========== 交互特效（桌面端鼠标，参考优秀作品集实现） ==========
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (finePointer && !reduceMotion) {
+
+      // 1. 鼠标光斑跟随（lerp 平滑缓动）
+      const glow = document.getElementById('cursorGlow');
+      if (glow) {
+        let tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+        let cx = tx, cy = ty;
+        window.addEventListener('mousemove', (e) => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+        (function glowLoop() {
+          cx += (tx - cx) * 0.12;
+          cy += (ty - cy) * 0.12;
+          glow.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0)';
+          requestAnimationFrame(glowLoop);
+        })();
+      }
+
+      // 2. 项目卡片 3D 倾斜（跟随鼠标视角）
+      document.querySelectorAll('.tilt-card').forEach(card => {
+        let raf = null;
+        card.addEventListener('mousemove', (e) => {
+          if (raf) return;
+          raf = requestAnimationFrame(() => {
+            const rect = card.getBoundingClientRect();
+            const px = (e.clientX - rect.left) / rect.width;
+            const py = (e.clientY - rect.top) / rect.height;
+            const rotY = (px - 0.5) * 10;
+            const rotX = (0.5 - py) * 10;
+            card.style.transform = 'perspective(1000px) rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg) translateY(-4px)';
+            raf = null;
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+        });
+      });
+
+      // 3. 磁吸按钮（鼠标靠近时轻微吸附）
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const relX = e.clientX - (rect.left + rect.width / 2);
+          const relY = e.clientY - (rect.top + rect.height / 2);
+          btn.style.transform = 'translate(' + (relX * 0.22).toFixed(1) + 'px,' + (relY * 0.28).toFixed(1) + 'px)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = '';
+        });
+      });
+    }
    </script>
     <!-- </script> -->
 </body>
