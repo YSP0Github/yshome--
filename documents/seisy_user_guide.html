@@ -433,7 +433,7 @@
               </div>
             </div>
             <div class="hero-shot">
-              <img src="../static/images/SeisY/SeisY-main.png" alt="SeisY 主界面截图" />
+              <img src="../static/images/SeisY/SeisY-main_v0.1.8.png" alt="SeisY 主界面截图" data-zoom />
               <small>主界面：左侧资源管理与球体区，中部三块绘图区，右侧终端与事件列表。</small>
             </div>
           </div>
@@ -731,7 +731,7 @@
               </div>
               <div class="stats"><div class="stat"><strong>8</strong><span>Top-level menus</span></div><div class="stat"><strong>40+</strong><span>Toolbar buttons</span></div><div class="stat"><strong>20+</strong><span>Specialized tools</span></div><div class="stat"><strong>8</strong><span>Data formats</span></div></div>
             </div>
-            <div class="hero-shot"><img src="../static/images/SeisY/SeisY-main.png" alt="SeisY main window" /><small>Main window: resource manager and globe on the left, three plot panels in the center, terminal and event list on the right.</small></div>
+            <div class="hero-shot"><img src="../static/images/SeisY/SeisY-main_v0.1.8.png" alt="SeisY main window" data-zoom /><small>Main window: resource manager and globe on the left, three plot panels in the center, terminal and event list on the right.</small></div>
           </div>
         </section>
 
@@ -1017,7 +1017,7 @@
     .lb.open { display: flex; }
     .lb img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,.6); }
     .lb .lb-cap { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #e5e7eb; font-size: 14px; padding: 0 20px; }
-    #tool-matrix .card img { cursor: zoom-in; }
+    #tool-matrix .card img, [data-zoom] { cursor: zoom-in; }
   </style>
   <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="图片放大预览">
     <img id="lbImg" alt="" />
@@ -1045,7 +1045,7 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
       document.addEventListener('click', function (e) {
         var t = e.target;
-        if (t && t.tagName === 'IMG' && t.closest('#tool-matrix .card') && t.src && /static\/images\/SeisY\//.test(t.src)) {
+        if (t && t.tagName === 'IMG' && (t.closest('#tool-matrix .card') || t.hasAttribute('data-zoom')) && t.src && /static\/images\/SeisY\//.test(t.src)) {
           open(t.currentSrc || t.src, t.alt || '');
         }
       });

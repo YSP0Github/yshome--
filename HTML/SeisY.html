@@ -135,7 +135,7 @@
                             <span class="project-shot-dot" style="background:#febc2e;"></span>
                             <span class="project-shot-dot" style="background:#28c840;"></span>
                         </div>
-                        <img src="../static/images/SeisY/SeisY-main.png" alt="SeisY 主界面截图" class="w-full h-auto">
+                        <img src="../static/images/SeisY/SeisY-main_v0.1.8.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
                     </div>
                 </div>
             </div>
@@ -1019,7 +1019,7 @@
         .lb.open { display: flex; }
         .lb img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,.6); }
         .lb .lb-cap { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #e5e7eb; font-size: 14px; padding: 0 20px; }
-        #tools .card-hover img, #guide .card img { cursor: zoom-in; }
+        #tools .card-hover img, #guide .card img, [data-zoom] { cursor: zoom-in; }
     </style>
     <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="图片放大预览">
         <img id="lbImg" alt="" />
@@ -1047,7 +1047,7 @@
             document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
             document.addEventListener('click', function (e) {
                 var t = e.target;
-                if (t && t.tagName === 'IMG' && t.closest('#tools .card-hover') && t.src && /static\/images\/SeisY\//.test(t.src)) {
+                if (t && t.tagName === 'IMG' && (t.closest('#tools .card-hover') || t.hasAttribute('data-zoom')) && t.src && /static\/images\/SeisY\//.test(t.src)) {
                     open(t.currentSrc || t.src, t.alt || '');
                 }
             });
