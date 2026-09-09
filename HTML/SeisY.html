@@ -879,25 +879,131 @@
             const historyEl = document.getElementById('download-history');
             const releasePageEl = document.getElementById('download-release-page-link');
 
-            const buildArtifactMeta = (latest, artifact) => {
-                const version = latest?.version || '';
-                const tag = latest?.tag || (version ? `v${version}` : '');
-                const kind = artifact?.kind || '';
-
-                let filename = artifact?.filename || '';
-                if (!filename && version) {
-                    if (kind === 'setup') filename = `SeisY-${version}-Setup.exe`;
-                    else if (kind === 'portable') filename = `SeisY-${version}-Portable.zip`;
-                }
-
-                let url = artifact?.url || '';
-                if (!url && tag && filename) {
-                    url = `https://github.com/YSP0Github/SeisY-Releases/releases/download/${tag}/${filename}`;
-                }
-
-                return { filename, url };
+            const fmtSize = (bytes) => {
+                if (!bytes) return '--';
+                const mb = bytes / (1024 * 1024);
+                return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.round(mb)} MB`;
+            };
+            const fmtDate = (iso) => {
+                if (!iso) return '--';
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
             };
 
+            const bodyToNotes = (body, max) => {
+                if (!body) return [];
+                const out = [];
+                for (const line of body.split('\n')) {
+                    const t = line.replace(/^[#>*\-\s\d.]+/, '').trim();
+                    if (!t) continue;
+                    out.push(t);
+                    if (out.length >= max) break;
+                }
+                return out;
+            };
+            const setNotes = (arr) => {
+                if (!notesEl) return;
+                notesEl.innerHTML = '';
+                if (!arr || !arr.length) {
+                    notesEl.innerHTML = '<li class="text-dark/50">当前版本暂未填写额外说明。</li>';
+                    return;
+                }
+                arr.forEach((note) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start';
+                    const icon = document.createElement('i');
+                    icon.className = 'fa fa-check text-accent mr-3 mt-1';
+                    li.appendChild(icon);
+                    const span = document.createElement('span');
+                    span.textContent = note;
+                    li.appendChild(span);
+                    notesEl.appendChild(li);
+                });
+            };
+            const renderCards = (latest, artifacts) => {
+                if (!cardsEl) return;
+                cardsEl.innerHTML = '';
+                if (!artifacts.length) {
+                    cardsEl.innerHTML = '<div class="md:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-gray-100 text-dark/50">当前没有可展示的下载文件。</div>';
+                    return;
+                }
+                artifacts.forEach((artifact) => {
+                    const recommendBadge = artifact.recommend
+                        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold">推荐</span>'
+                        : '';
+                    const card = document.createElement('article');
+                    card.className = 'bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full';
+                    const head = document.createElement('div');
+                    head.className = 'flex items-start justify-between gap-4 mb-3';
+                    const left = document.createElement('div');
+                    const nameEl = document.createElement('h5');
+                    nameEl.className = 'text-lg font-semibold';
+                    nameEl.textContent = artifact.label || '下载文件';
+                    left.appendChild(nameEl);
+                    const fn = document.createElement('div');
+                    fn.className = 'text-xs text-dark/50 mt-1';
+                    fn.textContent = artifact.filename || '';
+                    left.appendChild(fn);
+                    head.appendChild(left);
+                    if (recommendBadge) head.insertAdjacentHTML('beforeend', recommendBadge);
+                    card.appendChild(head);
+                    const descEl = document.createElement('p');
+                    descEl.className = 'text-dark/60 text-sm leading-6 mb-4 flex-1';
+                    descEl.textContent = artifact.description || '下载说明待补充。';
+                    card.appendChild(descEl);
+                    const meta = document.createElement('div');
+                    meta.className = 'flex items-center justify-between text-xs text-dark/50 mb-4';
+                    const v = document.createElement('span');
+                    v.textContent = `版本 ${latest.version || '--'}`;
+                    const s = document.createElement('span');
+                    s.textContent = artifact.size || '--';
+                    meta.appendChild(v);
+                    meta.appendChild(s);
+                    card.appendChild(meta);
+                    const a = document.createElement('a');
+                    a.href = artifact.url || '#';
+                    a.download = '';
+                    a.className = 'inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-custom';
+                    const icon = document.createElement('i');
+                    icon.className = 'fa fa-download mr-2';
+                    a.appendChild(icon);
+                    a.appendChild(document.createTextNode('下载'));
+                    card.appendChild(a);
+                    cardsEl.appendChild(card);
+                });
+            };
+            const renderHistory = (rows) => {
+                if (!historyEl) return;
+                historyEl.innerHTML = '';
+                if (!rows || !rows.length) {
+                    historyEl.innerHTML = '<div class="text-dark/50">暂未记录历史版本。</div>';
+                    return;
+                }
+                rows.forEach((item) => {
+                    const row = document.createElement('div');
+                    row.className = 'rounded-xl border border-gray-100 bg-gray-50 p-4';
+                    const head = document.createElement('div');
+                    head.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2';
+                    const t = document.createElement('div');
+                    t.className = 'font-semibold text-dark';
+                    t.textContent = `SeisY ${item.version || '--'}`;
+                    const d = document.createElement('div');
+                    d.className = 'text-sm text-dark/50';
+                    d.textContent = item.published_at || '--';
+                    head.appendChild(t);
+                    head.appendChild(d);
+                    row.appendChild(head);
+                    const n = document.createElement('div');
+                    n.className = 'text-dark/70 text-sm leading-6';
+                    n.textContent = item.notes || '暂无说明。';
+                    row.appendChild(n);
+                    historyEl.appendChild(row);
+                });
+            };
             const setFallback = (message) => {
                 if (summaryEl) summaryEl.textContent = message;
                 if (notesEl) notesEl.innerHTML = '<li class="text-orange-500">当前未能读取下载清单，请稍后刷新页面或联系作者。</li>';
@@ -911,6 +1017,61 @@
                 if (historyEl) historyEl.innerHTML = '<div class="text-dark/50">暂无可读取的历史版本信息。</div>';
             };
 
+            const applyManifest = (latest, artifacts, notes, history, releasePage) => {
+                if (versionEl) versionEl.textContent = latest.version || '--';
+                if (dateEl) dateEl.textContent = latest.published_at || '--';
+                if (summaryEl) summaryEl.textContent = latest.summary || '当前版本信息暂未填写。';
+                if (releasePageEl) releasePageEl.href = releasePage || 'https://github.com/YSP0Github/SeisY-Releases/releases';
+                setNotes(notes);
+                renderCards(latest, artifacts);
+                renderHistory(history);
+            };
+
+            // 1) 首选：GitHub Releases 官方 API，自动获取最新版本与下载直链
+            try {
+                const ghResp = await fetch('https://api.github.com/repos/YSP0Github/SeisY-Releases/releases?per_page=5', { cache: 'no-store' });
+                if (ghResp.ok) {
+                    const releases = await ghResp.json();
+                    if (Array.isArray(releases) && releases.length) {
+                        const latest = {
+                            version: (releases[0].tag_name || '').replace(/^v/i, ''),
+                            tag: releases[0].tag_name || '',
+                            published_at: fmtDate(releases[0].published_at),
+                            summary: (releases[0].name || `SeisY ${releases[0].tag_name || ''}`).replace(/^SeisY\s*/i, 'SeisY '),
+                        };
+                        const artifacts = (releases[0].assets || [])
+                            .filter((a) => /\.(exe|zip)$/i.test(a.name || ''))
+                            .map((a) => {
+                                const isSetup = /\.exe$/i.test(a.name);
+                                return {
+                                    label: isSetup ? 'Windows 安装版' : 'Windows 便携版',
+                                    kind: isSetup ? 'setup' : 'portable',
+                                    filename: a.name,
+                                    url: a.browser_download_url,
+                                    size: fmtSize(a.size),
+                                    description: isSetup
+                                        ? '适合首次安装，包含桌面软件依赖与安装流程。'
+                                        : '免安装，解压后直接运行，适合临时体验与快速分发。',
+                                    recommend: isSetup,
+                                };
+                            });
+                        const notes = bodyToNotes(releases[0].body, 6);
+                        const shaAsset = (releases[0].assets || []).find((a) => /\.txt$/i.test(a.name || ''));
+                        if (shaAsset) notes.push(`校验文件：${shaAsset.name}`);
+                        const history = releases.slice(1).map((r) => ({
+                            version: (r.tag_name || '').replace(/^v/i, ''),
+                            published_at: fmtDate(r.published_at),
+                            notes: bodyToNotes(r.body, 1)[0] || '历史版本。',
+                        }));
+                        applyManifest(latest, artifacts, notes, history, 'https://github.com/YSP0Github/SeisY-Releases/releases');
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('GitHub releases API unavailable, falling back to local manifest:', err);
+            }
+
+            // 2) 兜底：本地 releases.json
             try {
                 const response = await fetch('../downloads/seisy/releases.json', { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -920,79 +1081,21 @@
                 const notes = Array.isArray(latest.notes) ? latest.notes : [];
                 const history = Array.isArray(manifest.history) ? manifest.history : [];
                 const releasePage = manifest.release_page || 'https://github.com/YSP0Github/SeisY-Releases/releases';
-
-                if (versionEl) versionEl.textContent = latest.version || '--';
-                if (dateEl) dateEl.textContent = latest.published_at || '--';
-                if (summaryEl) summaryEl.textContent = latest.summary || '当前版本信息暂未填写。';
-                if (releasePageEl) releasePageEl.href = releasePage;
-
-                if (notesEl) {
-                    notesEl.innerHTML = '';
-                    if (notes.length) {
-                        notes.forEach((note) => {
-                            const li = document.createElement('li');
-                            li.className = 'flex items-start';
-                            li.innerHTML = `<i class="fa fa-check text-accent mr-3 mt-1"></i><span>${note}</span>`;
-                            notesEl.appendChild(li);
-                        });
-                    } else {
-                        notesEl.innerHTML = '<li class="text-dark/50">当前版本暂未填写额外说明。</li>';
+                const withMeta = artifacts.map((artifact) => {
+                    const kind = artifact.kind || '';
+                    const version = latest.version || '';
+                    let filename = artifact.filename || '';
+                    if (!filename && version) {
+                        if (kind === 'setup') filename = `SeisY-${version}-Setup.exe`;
+                        else if (kind === 'portable') filename = `SeisY-${version}-Portable.zip`;
                     }
-                }
-
-                if (cardsEl) {
-                    cardsEl.innerHTML = '';
-                    if (!artifacts.length) {
-                        cardsEl.innerHTML = '<div class="md:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-gray-100 text-dark/50">当前没有可展示的下载文件。</div>';
-                    } else {
-                        artifacts.forEach((artifact) => {
-                            const meta = buildArtifactMeta(latest, artifact);
-                            const recommendBadge = artifact.recommend
-                                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold">推荐</span>'
-                                : '';
-                            const card = document.createElement('article');
-                            card.className = 'bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full';
-                            card.innerHTML = `
-                                <div class="flex items-start justify-between gap-4 mb-3">
-                                    <div>
-                                        <h5 class="text-lg font-semibold">${artifact.label || '下载文件'}</h5>
-                                        <div class="text-xs text-dark/50 mt-1">${meta.filename || ''}</div>
-                                    </div>
-                                    ${recommendBadge}
-                                </div>
-                                <p class="text-dark/60 text-sm leading-6 mb-4 flex-1">${artifact.description || '下载说明待补充。'}</p>
-                                <div class="flex items-center justify-between text-xs text-dark/50 mb-4">
-                                    <span>版本 ${latest.version || '--'}</span>
-                                    <span>${artifact.size || '--'}</span>
-                                </div>
-                                <a href="${meta.url || '#'}" download class="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-custom">
-                                    <i class="fa fa-download mr-2"></i>下载
-                                </a>
-                            `;
-                            cardsEl.appendChild(card);
-                        });
+                    let url = artifact.url || '';
+                    if (!url && latest.tag && filename) {
+                        url = `https://github.com/YSP0Github/SeisY-Releases/releases/download/${latest.tag}/${filename}`;
                     }
-                }
-
-                if (historyEl) {
-                    historyEl.innerHTML = '';
-                    if (!history.length) {
-                        historyEl.innerHTML = '<div class="text-dark/50">暂未记录历史版本。</div>';
-                    } else {
-                        history.forEach((item) => {
-                            const row = document.createElement('div');
-                            row.className = 'rounded-xl border border-gray-100 bg-gray-50 p-4';
-                            row.innerHTML = `
-                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                                    <div class="font-semibold text-dark">SeisY ${item.version || '--'}</div>
-                                    <div class="text-sm text-dark/50">${item.published_at || '--'}</div>
-                                </div>
-                                <div class="text-dark/70 text-sm leading-6">${item.notes || '暂无说明。'}</div>
-                            `;
-                            historyEl.appendChild(row);
-                        });
-                    }
-                }
+                    return Object.assign({}, artifact, { filename, url });
+                });
+                applyManifest(latest, withMeta, notes, history, releasePage);
             } catch (error) {
                 console.warn('Failed to load SeisY releases:', error);
                 setFallback('当前未能读取 SeisY 下载信息，请稍后重试。');
