@@ -879,6 +879,27 @@
             const historyEl = document.getElementById('download-history');
             const releasePageEl = document.getElementById('download-release-page-link');
 
+            const loadMarked = () => new Promise((resolve) => {
+                if (window.marked) return resolve(true);
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/marked@12/marked.min.js';
+                let done = false;
+                const finish = (ok) => { if (!done) { done = true; resolve(ok); } };
+                s.onload = () => finish(!!window.marked);
+                s.onerror = () => finish(false);
+                setTimeout(() => finish(!!window.marked), 8000);
+                document.head.appendChild(s);
+            });
+            const renderMarkdownSafe = (text) => {
+                const esc = String(text || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                return window.marked.parse(esc, { gfm: true, breaks: true });
+            };
+
             const fmtSize = (bytes) => {
                 if (!bytes) return '--';
                 const mb = bytes / (1024 * 1024);
@@ -898,15 +919,21 @@
                 if (!body) return [];
                 const out = [];
                 for (const line of body.split('\n')) {
-                    const t = line.replace(/^[#>*\-\s\d.]+/, '').trim();
+                    let t = line.replace(/^[#>*\-\s\d.]+/, '').trim();
+                    if (!t) continue;
+                    t = t.replace(/[*`|]/g, ' ').replace(/\s+/g, ' ').trim();
                     if (!t) continue;
                     out.push(t);
                     if (out.length >= max) break;
                 }
                 return out;
             };
-            const setNotes = (arr) => {
+            const setNotes = (arr, rawBody) => {
                 if (!notesEl) return;
+                if (rawBody && window.marked) {
+                    notesEl.innerHTML = `<div class="md-body">${renderMarkdownSafe(rawBody)}</div>`;
+                    return;
+                }
                 notesEl.innerHTML = '';
                 if (!arr || !arr.length) {
                     notesEl.innerHTML = '<li class="text-dark/50">当前版本暂未填写额外说明。</li>';
@@ -1017,17 +1044,18 @@
                 if (historyEl) historyEl.innerHTML = '<div class="text-dark/50">暂无可读取的历史版本信息。</div>';
             };
 
-            const applyManifest = (latest, artifacts, notes, history, releasePage) => {
+            const applyManifest = (latest, artifacts, notes, rawBody, history, releasePage) => {
                 if (versionEl) versionEl.textContent = latest.version || '--';
                 if (dateEl) dateEl.textContent = latest.published_at || '--';
                 if (summaryEl) summaryEl.textContent = latest.summary || '当前版本信息暂未填写。';
                 if (releasePageEl) releasePageEl.href = releasePage || 'https://github.com/YSP0Github/SeisY-Releases/releases';
-                setNotes(notes);
+                setNotes(notes, rawBody);
                 renderCards(latest, artifacts);
                 renderHistory(history);
             };
 
             // 1) 首选：GitHub Releases 官方 API，自动获取最新版本与下载直链
+            await loadMarked();
             try {
                 const ghResp = await fetch('https://api.github.com/repos/YSP0Github/SeisY-Releases/releases?per_page=5', { cache: 'no-store' });
                 if (ghResp.ok) {
@@ -1055,15 +1083,16 @@
                                     recommend: isSetup,
                                 };
                             });
-                        const notes = bodyToNotes(releases[0].body, 6);
                         const shaAsset = (releases[0].assets || []).find((a) => /\.txt$/i.test(a.name || ''));
+                        const rawBody = (releases[0].body || '') + (shaAsset ? `\n\n> 校验文件：${shaAsset.name}` : '');
+                        const notes = bodyToNotes(releases[0].body, 6);
                         if (shaAsset) notes.push(`校验文件：${shaAsset.name}`);
                         const history = releases.slice(1).map((r) => ({
                             version: (r.tag_name || '').replace(/^v/i, ''),
                             published_at: fmtDate(r.published_at),
                             notes: bodyToNotes(r.body, 1)[0] || '历史版本。',
                         }));
-                        applyManifest(latest, artifacts, notes, history, 'https://github.com/YSP0Github/SeisY-Releases/releases');
+                        applyManifest(latest, artifacts, notes, rawBody, history, 'https://github.com/YSP0Github/SeisY-Releases/releases');
                         return;
                     }
                 }
@@ -1095,7 +1124,7 @@
                     }
                     return Object.assign({}, artifact, { filename, url });
                 });
-                applyManifest(latest, withMeta, notes, history, releasePage);
+                applyManifest(latest, withMeta, notes, null, history, releasePage);
             } catch (error) {
                 console.warn('Failed to load SeisY releases:', error);
                 setFallback('当前未能读取 SeisY 下载信息，请稍后重试。');
@@ -1118,6 +1147,25 @@
 
     <!-- 截图点击放大 (lightbox) -->
     <style>
+        .md-body h1, .md-body h2, .md-body h3, .md-body h4 { font-weight: 700; margin: 1.05em 0 0.5em; color: #1f2937; }
+        .md-body h1 { font-size: 1.18em; }
+        .md-body h2 { font-size: 1.1em; }
+        .md-body h3 { font-size: 1.04em; }
+        .md-body p { margin: 0.55em 0; }
+        .md-body ul, .md-body ol { padding-left: 1.4em; list-style: disc; margin: 0.5em 0; }
+        .md-body ol { list-style: decimal; }
+        .md-body li { margin: 0.22em 0; }
+        .md-body code { background: #f3f4f6; border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.9em; color: #b91c1c; font-family: Consolas, Menlo, monospace; }
+        .md-body pre { background: #f3f4f6; border-radius: 8px; padding: 0.75em 1em; overflow-x: auto; margin: 0.6em 0; }
+        .md-body pre code { background: none; padding: 0; color: #1f2937; }
+        .md-body table { width: 100%; border-collapse: collapse; margin: 0.7em 0; font-size: 0.92em; }
+        .md-body th, .md-body td { border: 1px solid #e5e7eb; padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
+        .md-body th { background: #f9fafb; font-weight: 600; }
+        .md-body tr:nth-child(even) td { background: #fafafa; }
+        .md-body strong { font-weight: 700; }
+        .md-body a { color: #2563eb; text-decoration: underline; }
+        .md-body blockquote { border-left: 3px solid #e5e7eb; padding-left: 1em; color: #6b7280; margin: 0.6em 0; }
+        .md-body hr { border: 0; border-top: 1px solid #e5e7eb; margin: 1em 0; }
         .lb { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }
         .lb.open { display: flex; }
         .lb img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,.6); }
