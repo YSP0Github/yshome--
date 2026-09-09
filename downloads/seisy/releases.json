@@ -2,10 +2,10 @@
   "product": "SeisY",
   "release_page": "https://github.com/YSP0Github/SeisY-Releases/releases",
   "latest": {
-    "version": "0.1.7",
-    "tag": "v0.1.7",
-    "published_at": "2026-07-22",
-    "summary": "当前提供 Windows 安装版下载，后续版本可继续在本页更新。",
+    "version": "0.1.9",
+    "tag": "v0.1.9",
+    "published_at": "2026-09-10",
+    "summary": "自动同步 GitHub Releases 最新版本，如无法访问 GitHub 时显示本兜底信息。",
     "notes": [
       "首次安装建议下载安装版，会自动创建程序入口。",
       "如需查看历史版本与发布说明，可前往 SeisY-Releases 页面。"
@@ -14,13 +14,18 @@
       {
         "label": "Windows 安装版",
         "kind": "setup",
-        "size": "295 MB",
+        "size": "816 MB",
         "description": "适合首次安装，包含桌面软件依赖与安装流程。",
         "recommend": true
       }
     ]
   },
   "history": [
+    {
+      "version": "0.1.7",
+      "published_at": "2026-07-22",
+      "notes": "历史版本，可在 GitHub Releases 查看。"
+    },
     {
       "version": "0.1.6",
       "published_at": "2026-05-05",
