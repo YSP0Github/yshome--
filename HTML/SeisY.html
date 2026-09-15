@@ -676,10 +676,12 @@
                 </div>
 
                 <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
-                    <img src="../static/images/SeisY/SeisY-Lunar_geology_map_3D.png" alt="3D 月球地质图" class="w-full h-48 object-cover object-top">
+                    <div id="moon-geology-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
+                        <img src="../static/images/SeisY/moon_geology_web.jpg" alt="月球地质图" class="w-full h-full object-cover">
+                    </div>
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">3D 月球地质图</h3>
-                        <p class="text-dark/70 text-sm">OpenGL 月球球面渲染，叠加 USGS 月球统一地质图 GIS 数据与经纬网格，标注月海与地质单元。</p>
+                        <p class="text-dark/70 text-sm">USGS 月球统一地质图叠加经纬网格，三维球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，标注月海与地质单元。</p>
                     </div>
                 </div>
 
@@ -1412,6 +1414,67 @@
                     specular: 0x222222, shininess: 15
                 })
             );
+            scene.add(mesh);
+            scene.add(new THREE.AmbientLight(0x404060, 1.1));
+            var dir = new THREE.DirectionalLight(0xffffff, 1.2);
+            dir.position.set(2, 1.2, 3);
+            scene.add(dir);
+
+            var starsGeo = new THREE.BufferGeometry();
+            var pos = new Float32Array(320 * 3);
+            for (var i = 0; i < pos.length; i++) pos[i] = (Math.random() - 0.5) * 22;
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
+                color: 0xffffff, size: 0.035, transparent: true, opacity: 0.85
+            })));
+
+            var controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; controls.dampingFactor = 0.08;
+            controls.enableZoom = true; controls.enablePan = false;
+            controls.autoRotate = true; controls.autoRotateSpeed = 1.1;
+            controls.minDistance = 1.8; controls.maxDistance = 5;
+
+            (function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            })();
+
+            window.addEventListener('resize', function () {
+                var w2 = holder.clientWidth, h2 = holder.clientHeight;
+                if (!w2 || !h2) return;
+                camera.aspect = w2 / h2; camera.updateProjectionMatrix();
+                renderer.setSize(w2, h2);
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var holder = document.getElementById('moon-geology-globe');
+            if (!holder || typeof THREE === 'undefined') return;
+            holder.innerHTML = '';
+            var w = holder.clientWidth || 300, h = holder.clientHeight || 192;
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 3);
+            var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            holder.appendChild(renderer.domElement);
+
+            var mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(1.15, 64, 64),
+                new THREE.MeshPhongMaterial({
+                    map: new THREE.TextureLoader().load('../static/images/SeisY/moon_geology_web.jpg'),
+                    specular: 0x222222, shininess: 15
+                })
+            );
+            // 经纬网格线框（跟随球体旋转）
+            var wire = new THREE.Mesh(
+                new THREE.SphereGeometry(1.18, 36, 18),
+                new THREE.MeshBasicMaterial({ color: 0x88ccff, wireframe: true, transparent: true, opacity: 0.16 })
+            );
+            mesh.add(wire);
             scene.add(mesh);
             scene.add(new THREE.AmbientLight(0x404060, 1.1));
             var dir = new THREE.DirectionalLight(0xffffff, 1.2);
