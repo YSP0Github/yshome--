@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeisY - 地震数据处理与分析平台</title>
-    <script src="../static/js/tailwind-cdn.js"></script>
+    <link rel="stylesheet" href="../static/css/seisy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
     <script>
@@ -25,131 +25,7 @@
             }
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .transition-custom { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-            .card-hover { @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300; }
-            .section-padding { @apply py-16 md:py-24; }
-        }
-        html { scroll-behavior: smooth; }
-        .fade-in { animation: fadeIn 0.8s ease-in-out forwards; opacity: 0; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-        .project-shot {
-            position: relative; border-radius: 1rem; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(2,6,23,0.84);
-            box-shadow: 0 22px 54px rgba(0,0,0,0.32);
-        }
-        .project-shot-bar {
-            display: flex; align-items: center; gap: 0.5rem;
-            height: 2rem; padding: 0 0.875rem;
-            background: rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .project-shot-dot {
-            width: 10px; height: 10px; border-radius: 9999px;
-            background: rgba(255,255,255,0.18);
-        }
-        /* ---- 模拟操作光标动画（hero 截图） ---- */
-        /* ---- 菜单点击热区（点击弹出真实菜单截图） ---- */
-        .shot-hot { position: absolute; top: 2rem; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none; }
-        .shot-hot .hot {
-            position: absolute; pointer-events: auto; cursor: pointer;
-            background: transparent; border: 0; border-radius: 4px;
-        }
-        /* ---- hero 图片强制自适应宽度（不依赖 tailwind 类） ---- */
-        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; }
-        /* ---- 重制顶部栏：窗口控制按钮 + 菜单栏（图片顶部已裁掉原菜单栏） ---- */
-        .shot-mbar {
-            position: absolute; top: 2rem; left: 0; right: 0; z-index: 11;
-            height: 2.15%;
-            display: flex; align-items: stretch;
-            background: #1b2534;
-            font-size: 11.5px; user-select: none;
-        }
-        .shot-mbar .sm-dots { display: flex; align-items: center; flex: none; margin-left: 9px; gap: 5px; }
-        .shot-mbar .sm-dot { width: 8px; height: 8px; border-radius: 9999px; flex: none; }
-        .shot-mbar .sm-menus { display: flex; align-items: stretch; margin-left: 10px; height: 100%; }
-        .shot-mbar .sm-btn {
-            height: 100%; padding: 0 9px; border: 0; background: transparent;
-            color: #dbe2ea; font-size: 11.5px; line-height: 1; cursor: pointer;
-            white-space: nowrap; display: flex; align-items: center;
-        }
-        .shot-mbar .sm-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
-        .shot-mbar .sm-btn:active { background: rgba(255,255,255,0.2); }
-        .shot-mbar .sm-win { display: flex; margin-left: auto; height: 100%; flex: none; }
-        .shot-mbar .sm-wbtn {
-            width: 34px; height: 100%; border: 0; background: transparent; cursor: pointer;
-            color: #c3ccd6; display: flex; align-items: center; justify-content: center;
-            font-size: 11px; line-height: 1;
-        }
-        .shot-mbar .sm-wbtn svg { width: 11px; height: 11px; }
-        .shot-mbar .sm-wbtn:hover { background: rgba(255,255,255,0.16); color: #fff; }
-        .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
-        @media (prefers-color-scheme: light) {
-            .shot-mbar { background: #eef2f6; }
-            .shot-mbar .sm-btn { color: #3b4756; }
-            .shot-mbar .sm-btn:hover { background: rgba(15,23,42,0.09); color: #0f172a; }
-            .shot-mbar .sm-wbtn { color: #526071; }
-            .shot-mbar .sm-wbtn:hover { background: rgba(15,23,42,0.12); color: #0f172a; }
-            .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
-        }
-        /* ---- 模拟下拉菜单（CSS 渲染，文字来自软件真实菜单） ---- */
-        .shot-menu {
-            position: absolute; z-index: 12; min-width: 210px;
-            background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 8px; box-shadow: 0 14px 34px rgba(0,0,0,0.5);
-            padding: 5px; font-size: 12.5px; color: #e2e8f0;
-            animation: menu-pop .14s ease;
-        }
-        @keyframes menu-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        .shot-menu .mi {
-            display: flex; align-items: center; justify-content: space-between; gap: 18px;
-            padding: 5px 14px 5px 10px; border-radius: 5px; white-space: nowrap; cursor: default;
-        }
-        .shot-menu .mi:hover { background: rgba(59,130,246,0.9); color: #fff; }
-        .shot-menu .mi .acc { color: #8b98a9; font-size: 11.5px; margin-left: 18px; }
-        .shot-menu .mi:hover .acc { color: #dbeafe; }
-        .shot-menu .mi-sep { height: 1px; margin: 4px 8px; background: rgba(255,255,255,0.12); }
-        @media (prefers-color-scheme: light) {
-            .shot-menu { background: rgba(255,255,255,0.98); border-color: rgba(15,23,42,0.14); color: #1f2937; box-shadow: 0 14px 34px rgba(0,0,0,0.18); }
-            .shot-menu .mi:hover { background: rgba(37,99,235,0.9); color: #fff; }
-            .shot-menu .mi .acc { color: #6b7280; }
-            .shot-menu .mi:hover .acc { color: #dbeafe; }
-            .shot-menu .mi-sep { background: rgba(15,23,42,0.12); }
-        }
-        /* ---- 引导提示气泡 ---- */
-        .hero-tip {
-            position: absolute; right: 10px; bottom: 10px; z-index: 10;
-            display: flex; align-items: center; gap: 0.6rem;
-            max-width: 320px; padding: 0.55rem 0.85rem;
-            font-size: 0.82rem; line-height: 1.45; color: #e2e8f0;
-            background: rgba(15,23,42,0.92); border: 1px solid rgba(56,189,248,0.4);
-            border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            opacity: 0; transform: translateY(8px); pointer-events: none;
-            transition: opacity .4s ease, transform .4s ease;
-        }
-        .hero-tip.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .hero-tip .hero-tip-x {
-            flex: none; width: 20px; height: 20px; line-height: 18px; text-align: center;
-            color: #94a3b8; background: rgba(255,255,255,0.08); border: none; border-radius: 9999px;
-            cursor: pointer; font-size: 0.9rem; padding: 0;
-        }
-        .hero-tip .hero-tip-x:hover { color: #fff; background: rgba(255,255,255,0.18); }
-        /* ---- 菜单截图 overlay ---- */
-        #shot-overlay { transition: opacity .2s ease; }
 
-            #hero-shot .p-menu hr { border-top-color: #334155; }
-        }
-    </style>
 </head>
 <body class="font-sans bg-light text-dark antialiased">
     <!-- 导航栏 -->
@@ -1587,3 +1463,4 @@
 
 </body>
 </html>
+
