@@ -684,6 +684,16 @@
                 </div>
 
                 <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                    <div id="moon-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
+                        <img src="../static/images/SeisY/moon_1024.jpg" alt="月球" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold mb-2">天体地图</h3>
+                        <p class="text-dark/70 text-sm">三维月球球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，叠加台站分布与经纬网格（对应软件天体地图窗口）。</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Anomaly_repair.png" alt="异常修复引擎" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">异常修复引擎</h3>
@@ -1376,6 +1386,63 @@
                 if (t && t.tagName === 'IMG' && (t.closest('#tools .card-hover') || t.hasAttribute('data-zoom')) && t.src && /static\/images\/SeisY\//.test(t.src)) {
                     open(t.currentSrc || t.src, t.alt || '');
                 }
+            });
+        })();
+    </script>
+    <script src="../static/js/three.min.js"></script>
+    <script src="../static/js/OrbitControls.js"></script>
+    <script>
+        (function () {
+            var holder = document.getElementById('moon-globe');
+            if (!holder || typeof THREE === 'undefined') return;
+            holder.innerHTML = '';
+            var w = holder.clientWidth || 300, h = holder.clientHeight || 192;
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 3);
+            var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            holder.appendChild(renderer.domElement);
+
+            var mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(1.15, 64, 64),
+                new THREE.MeshPhongMaterial({
+                    map: new THREE.TextureLoader().load('../static/images/SeisY/moon_1024.jpg'),
+                    specular: 0x222222, shininess: 15
+                })
+            );
+            scene.add(mesh);
+            scene.add(new THREE.AmbientLight(0x404060, 1.1));
+            var dir = new THREE.DirectionalLight(0xffffff, 1.2);
+            dir.position.set(2, 1.2, 3);
+            scene.add(dir);
+
+            var starsGeo = new THREE.BufferGeometry();
+            var pos = new Float32Array(320 * 3);
+            for (var i = 0; i < pos.length; i++) pos[i] = (Math.random() - 0.5) * 22;
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
+                color: 0xffffff, size: 0.035, transparent: true, opacity: 0.85
+            })));
+
+            var controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; controls.dampingFactor = 0.08;
+            controls.enableZoom = true; controls.enablePan = false;
+            controls.autoRotate = true; controls.autoRotateSpeed = 1.1;
+            controls.minDistance = 1.8; controls.maxDistance = 5;
+
+            (function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            })();
+
+            window.addEventListener('resize', function () {
+                var w2 = holder.clientWidth, h2 = holder.clientHeight;
+                if (!w2 || !h2) return;
+                camera.aspect = w2 / h2; camera.updateProjectionMatrix();
+                renderer.setSize(w2, h2);
             });
         })();
     </script>
