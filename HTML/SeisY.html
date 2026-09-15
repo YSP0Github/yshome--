@@ -62,6 +62,18 @@
         #hero-shot .cursor-demo {
             position: absolute; inset: 0; pointer-events: none; z-index: 8;
         }
+        /* ---- 菜单点击热区（点击弹出真实菜单截图） ---- */
+        .shot-hot { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+        .shot-hot .hot {
+            position: absolute; pointer-events: auto; cursor: pointer;
+            background: transparent; border: 1px solid transparent; border-radius: 4px;
+            transition: background .18s ease, border-color .18s ease;
+        }
+        .shot-hot .hot:hover { background: rgba(56,189,248,0.20); border-color: rgba(56,189,248,0.55); }
+        .shot-hot .hot.hot-ctx:hover { background: rgba(236,72,153,0.16); border-color: rgba(236,72,153,0.5); }
+        /* ---- 菜单截图 overlay ---- */
+        #shot-overlay { transition: opacity .2s ease; }
+
         #hero-shot .cursor-arrow {
             position: absolute;
             width: 22px; height: 22px;
@@ -278,9 +290,22 @@
                             <span class="project-shot-dot" style="background:#febc2e;"></span>
                             <span class="project-shot-dot" style="background:#28c840;"></span>
                         </div>
-                        <picture>
+                        <picture style="position:relative;display:block">
                             <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark.png">
                             <img src="../static/images/SeisY/SeisY-main-0.1.9-white.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
+                            <!-- 菜单点击热区：点击弹出对应真实菜单截图 -->
+                            <div class="shot-hot" aria-hidden="true">
+                                <button class="hot" data-hot="hot-file" style="left:2%;top:0.3%;width:2.2%;height:2.4%" title="文件菜单"></button>
+                                <button class="hot" data-hot="hot-data" style="left:5%;top:0.3%;width:2%;height:2.4%" title="数据菜单"></button>
+                                <button class="hot" data-hot="hot-plot" style="left:7.9%;top:0.3%;width:2%;height:2.4%" title="绘图菜单"></button>
+                                <button class="hot" data-hot="hot-tool" style="left:10.7%;top:0.3%;width:2%;height:2.4%" title="工具菜单"></button>
+                                <button class="hot" data-hot="hot-sim" style="left:13.6%;top:0.3%;width:2%;height:2.4%" title="模拟菜单"></button>
+                                <button class="hot" data-hot="hot-set" style="left:16.4%;top:0.3%;width:2%;height:2.4%" title="设置菜单"></button>
+                                <button class="hot" data-hot="hot-net" style="left:19.2%;top:0.3%;width:3.2%;height:2.4%" title="网络资源菜单"></button>
+                                <button class="hot" data-hot="hot-help" style="left:23.3%;top:0.3%;width:2%;height:2.4%" title="帮助菜单"></button>
+                                <button class="hot hot-ctx" data-hot="hot-evctx" style="left:78%;top:36%;width:8%;height:7%" title="事件列表（右键菜单）"></button>
+                                <button class="hot hot-ctx" data-hot="hot-tree" style="left:1%;top:8%;width:10%;height:25%" title="文件树（右键菜单）"></button>
+                            </div>
                         </picture>
                         <!-- 模拟操作光标 + 交互反馈（CSS 动画，非真实录屏） -->
                         <div class="cursor-demo" aria-hidden="true">
@@ -1501,6 +1526,59 @@
                 camera.aspect = w2 / h2; camera.updateProjectionMatrix();
                 renderer.setSize(w2, h2);
             });
+        })();
+    </script>
+    <!-- 菜单截图查看 overlay -->
+    <div id="shot-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-6">
+        <div class="relative w-full max-w-4xl">
+            <div id="shot-overlay-title" class="text-center text-white/90 text-sm mb-3 tracking-wide"></div>
+            <img id="shot-overlay-img" src="" alt="" class="w-full rounded-xl shadow-2xl border border-white/15">
+            <button id="shot-overlay-close" class="absolute -top-11 right-0 text-white/70 hover:text-white text-3xl leading-none w-10 h-10 rounded-full hover:bg-white/10" title="关闭">&times;</button>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var map = {
+                'hot-file':  { img: '../static/images/SeisY/shortcuts/menu_file.png',  title: '文件菜单' },
+                'hot-data':  { img: '../static/images/SeisY/shortcuts/menu_data.png',  title: '数据菜单' },
+                'hot-plot':  { img: '../static/images/SeisY/shortcuts/menu_plot.png',  title: '绘图菜单' },
+                'hot-tool':  { img: '../static/images/SeisY/shortcuts/menu_tool.png',  title: '工具菜单' },
+                'hot-sim':   { img: '../static/images/SeisY/shortcuts/menu_sim.png',   title: '模拟菜单' },
+                'hot-set':   { img: '../static/images/SeisY/shortcuts/menu_set.png',   title: '设置菜单' },
+                'hot-net':   { img: '../static/images/SeisY/shortcuts/menu_net.png',   title: '网络资源菜单' },
+                'hot-help':  { img: '../static/images/SeisY/shortcuts/menu_help.png',  title: '帮助菜单' },
+                'hot-evctx': { img: '../static/images/SeisY/shortcuts/ctx_event.png',  title: '事件列表 · 右键菜单' },
+                'hot-tree':  { img: '../static/images/SeisY/shortcuts/ctx_tree.png',   title: '文件树 · 右键菜单' }
+            };
+            var ov = document.getElementById('shot-overlay');
+            var img = document.getElementById('shot-overlay-img');
+            var cap = document.getElementById('shot-overlay-title');
+            function open(key) {
+                var m = map[key];
+                if (!m || !ov || !img) return;
+                img.src = m.img; img.alt = m.title;
+                cap.textContent = m.title;
+                ov.classList.remove('hidden'); ov.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            }
+            function close() {
+                if (!ov || !img) return;
+                ov.classList.add('hidden'); ov.classList.remove('flex');
+                img.removeAttribute('src');
+                document.body.style.overflow = '';
+            }
+            document.querySelectorAll('.shot-hot .hot').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    open(el.dataset.hot);
+                });
+            });
+            if (ov) {
+                ov.addEventListener('click', function (e) {
+                    if (e.target === ov || e.target.id === 'shot-overlay-close') close();
+                });
+                document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+            }
         })();
     </script>
 </body>
