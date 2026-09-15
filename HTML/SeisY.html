@@ -65,6 +65,8 @@
             position: absolute; pointer-events: auto; cursor: pointer;
             background: transparent; border: 0; border-radius: 4px;
         }
+        /* ---- hero 图片强制自适应宽度（不依赖 tailwind 类） ---- */
+        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; }
         /* ---- 重制顶部栏：窗口控制按钮 + 菜单栏（图片顶部已裁掉原菜单栏） ---- */
         .shot-mbar {
             position: absolute; top: 0; left: 0; right: 0; z-index: 11;
@@ -225,14 +227,13 @@
                             <span class="project-shot-dot" style="background:#28c840;"></span>
                         </div>
                         <picture style="position:relative;display:block">
-                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark.png">
-                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
+                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v2.png">
+                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v2.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
                             <!-- 菜单点击热区：点击弹出对应真实菜单截图 -->
                             <div class="shot-hot" aria-hidden="true">
                                 <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
                                 <button class="hot hot-inv" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
                             </div>
-                        </picture>
                         <!-- 重制顶部栏（图片顶部已裁掉原菜单栏） -->
                         <div class="shot-mbar" id="shot-mbar">
                             <div class="sm-dots">
@@ -256,6 +257,7 @@
                                 <button class="sm-wbtn sm-wclose" title="关闭" aria-label="关闭"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l7 7M9 2l-7 7"/></svg></button>
                             </div>
                         </div>
+                        </picture>
 
                         <!-- 预留：真实操作录屏视频（后续替换静态图/hover 播放）
                         <video id="hero-video" class="w-full h-auto" src="../static/videos/seisy-demo.mp4" autoplay muted loop playsinline preload="none"></video>
