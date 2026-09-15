@@ -66,11 +66,30 @@
         .shot-hot { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
         .shot-hot .hot {
             position: absolute; pointer-events: auto; cursor: pointer;
-            background: transparent; border: 1px solid transparent; border-radius: 4px;
-            transition: background .18s ease, border-color .18s ease;
+            background: rgba(56,189,248,0.10); border: 1px dashed rgba(56,189,248,0.45); border-radius: 4px;
+            transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
         }
-        .shot-hot .hot:hover { background: rgba(56,189,248,0.20); border-color: rgba(56,189,248,0.55); }
-        .shot-hot .hot.hot-ctx:hover { background: rgba(236,72,153,0.16); border-color: rgba(236,72,153,0.5); }
+        .shot-hot .hot:hover { background: rgba(56,189,248,0.28); border-color: rgba(56,189,248,0.85); border-style: solid; box-shadow: 0 0 0 3px rgba(56,189,248,0.18); }
+        .shot-hot .hot.hot-ctx { background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.4); }
+        .shot-hot .hot.hot-ctx:hover { background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.8); border-style: solid; box-shadow: 0 0 0 3px rgba(236,72,153,0.15); }
+        /* ---- 引导提示气泡 ---- */
+        .hero-tip {
+            position: absolute; right: 10px; bottom: 10px; z-index: 10;
+            display: flex; align-items: center; gap: 0.6rem;
+            max-width: 320px; padding: 0.55rem 0.85rem;
+            font-size: 0.82rem; line-height: 1.45; color: #e2e8f0;
+            background: rgba(15,23,42,0.92); border: 1px solid rgba(56,189,248,0.4);
+            border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            opacity: 0; transform: translateY(8px); pointer-events: none;
+            transition: opacity .4s ease, transform .4s ease;
+        }
+        .hero-tip.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .hero-tip .hero-tip-x {
+            flex: none; width: 20px; height: 20px; line-height: 18px; text-align: center;
+            color: #94a3b8; background: rgba(255,255,255,0.08); border: none; border-radius: 9999px;
+            cursor: pointer; font-size: 0.9rem; padding: 0;
+        }
+        .hero-tip .hero-tip-x:hover { color: #fff; background: rgba(255,255,255,0.18); }
         /* ---- 菜单截图 overlay ---- */
         #shot-overlay { transition: opacity .2s ease; }
 
@@ -295,16 +314,16 @@
                             <img src="../static/images/SeisY/SeisY-main-0.1.9-white.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
                             <!-- 菜单点击热区：点击弹出对应真实菜单截图 -->
                             <div class="shot-hot" aria-hidden="true">
-                                <button class="hot" data-hot="hot-file" style="left:2%;top:0.3%;width:2.2%;height:2.4%" title="文件菜单"></button>
-                                <button class="hot" data-hot="hot-data" style="left:5%;top:0.3%;width:2%;height:2.4%" title="数据菜单"></button>
-                                <button class="hot" data-hot="hot-plot" style="left:7.9%;top:0.3%;width:2%;height:2.4%" title="绘图菜单"></button>
-                                <button class="hot" data-hot="hot-tool" style="left:10.7%;top:0.3%;width:2%;height:2.4%" title="工具菜单"></button>
-                                <button class="hot" data-hot="hot-sim" style="left:13.6%;top:0.3%;width:2%;height:2.4%" title="模拟菜单"></button>
-                                <button class="hot" data-hot="hot-set" style="left:16.4%;top:0.3%;width:2%;height:2.4%" title="设置菜单"></button>
-                                <button class="hot" data-hot="hot-net" style="left:19.2%;top:0.3%;width:3.2%;height:2.4%" title="网络资源菜单"></button>
-                                <button class="hot" data-hot="hot-help" style="left:23.3%;top:0.3%;width:2%;height:2.4%" title="帮助菜单"></button>
-                                <button class="hot hot-ctx" data-hot="hot-evctx" style="left:78%;top:36%;width:8%;height:7%" title="事件列表（右键菜单）"></button>
-                                <button class="hot hot-ctx" data-hot="hot-tree" style="left:1%;top:8%;width:10%;height:25%" title="文件树（右键菜单）"></button>
+                                <button class="hot" data-hot="hot-file" style="left:1.8%;top:0.2%;width:3.2%;height:4%" title="文件菜单"></button>
+                                <button class="hot" data-hot="hot-data" style="left:4.8%;top:0.2%;width:2.8%;height:4%" title="数据菜单"></button>
+                                <button class="hot" data-hot="hot-plot" style="left:7.7%;top:0.2%;width:2.8%;height:4%" title="绘图菜单"></button>
+                                <button class="hot" data-hot="hot-tool" style="left:10.5%;top:0.2%;width:2.8%;height:4%" title="工具菜单"></button>
+                                <button class="hot" data-hot="hot-sim" style="left:13.4%;top:0.2%;width:2.8%;height:4%" title="模拟菜单"></button>
+                                <button class="hot" data-hot="hot-set" style="left:16.2%;top:0.2%;width:2.8%;height:4%" title="设置菜单"></button>
+                                <button class="hot" data-hot="hot-net" style="left:19%;top:0.2%;width:4%;height:4%" title="网络资源菜单"></button>
+                                <button class="hot" data-hot="hot-help" style="left:23.1%;top:0.2%;width:2.8%;height:4%" title="帮助菜单"></button>
+                                <button class="hot hot-ctx" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
+                                <button class="hot hot-ctx" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
                             </div>
                         </picture>
                         <!-- 模拟操作光标 + 交互反馈（CSS 动画，非真实录屏） -->
@@ -336,6 +355,10 @@
                         <!-- 预留：真实操作录屏视频（后续替换静态图/hover 播放）
                         <video id="hero-video" class="w-full h-auto" src="../static/videos/seisy-demo.mp4" autoplay muted loop playsinline preload="none"></video>
                         -->
+                        <div class="hero-tip" id="hero-tip">
+                            <span>菜单都能点 — 试试顶部菜单栏、左侧文件树或右侧事件列表</span>
+                            <button class="hero-tip-x" title="关闭">&times;</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1536,6 +1559,19 @@
             <button id="shot-overlay-close" class="absolute -top-11 right-0 text-white/70 hover:text-white text-3xl leading-none w-10 h-10 rounded-full hover:bg-white/10" title="关闭">&times;</button>
         </div>
     </div>
+    <script>
+        (function () {
+            var tip = document.getElementById('hero-tip');
+            if (tip) {
+                var t1 = setTimeout(function () { tip.classList.add('show'); }, 1500);
+                var t2 = setTimeout(function () { tip.classList.remove('show'); }, 15000);
+                var x = tip.querySelector('.hero-tip-x');
+                if (x) x.addEventListener('click', function () {
+                    tip.classList.remove('show'); clearTimeout(t1); clearTimeout(t2);
+                });
+            }
+        })();
+    </script>
     <script>
         (function () {
             var map = {
