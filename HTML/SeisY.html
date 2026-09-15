@@ -681,7 +681,7 @@
                     </div>
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">3D 月球地质图</h3>
-                        <p class="text-dark/70 text-sm">USGS 月球统一地质图叠加经纬网格，三维球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，标注月海与地质单元。</p>
+                        <p class="text-dark/70 text-sm">USGS 月球统一地质图三维球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，标注月海与地质单元。</p>
                     </div>
                 </div>
 
@@ -1469,12 +1469,6 @@
                     specular: 0x222222, shininess: 15
                 })
             );
-            // 经纬网格线框（跟随球体旋转）
-            var wire = new THREE.Mesh(
-                new THREE.SphereGeometry(1.18, 36, 18),
-                new THREE.MeshBasicMaterial({ color: 0x88ccff, wireframe: true, transparent: true, opacity: 0.16 })
-            );
-            mesh.add(wire);
             scene.add(mesh);
             scene.add(new THREE.AmbientLight(0x404060, 1.1));
             var dir = new THREE.DirectionalLight(0xffffff, 1.2);
