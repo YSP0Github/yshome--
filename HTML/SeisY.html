@@ -59,21 +59,48 @@
             background: rgba(255,255,255,0.18);
         }
         /* ---- 模拟操作光标动画（hero 截图） ---- */
-        #hero-shot .cursor-demo {
-            position: absolute; inset: 0; pointer-events: none; z-index: 8;
-        }
         /* ---- 菜单点击热区（点击弹出真实菜单截图） ---- */
         .shot-hot { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
         .shot-hot .hot {
             position: absolute; pointer-events: auto; cursor: pointer;
-            background: rgba(56,189,248,0.10); border: 1px dashed rgba(56,189,248,0.45); border-radius: 4px;
-            transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+            background: transparent; border: 0; border-radius: 4px;
         }
-        .shot-hot .hot:hover { background: rgba(56,189,248,0.28); border-color: rgba(56,189,248,0.85); border-style: solid; box-shadow: 0 0 0 3px rgba(56,189,248,0.18); }
-        .shot-hot .hot.hot-ctx { background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.4); }
-        .shot-hot .hot.hot-ctx:hover { background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.8); border-style: solid; box-shadow: 0 0 0 3px rgba(236,72,153,0.15); }
+        /* ---- 重制顶部栏：窗口控制按钮 + 菜单栏（图片顶部已裁掉原菜单栏） ---- */
+        .shot-mbar {
+            position: absolute; top: 0; left: 0; right: 0; z-index: 11;
+            height: 2.15%; min-height: 15px;
+            display: flex; align-items: stretch;
+            background: #1b2534;
+            font-size: 11.5px; user-select: none;
+        }
+        .shot-mbar .sm-dots { display: flex; align-items: center; flex: none; margin-left: 9px; gap: 5px; }
+        .shot-mbar .sm-dot { width: 8px; height: 8px; border-radius: 9999px; flex: none; }
+        .shot-mbar .sm-menus { display: flex; align-items: stretch; margin-left: 10px; height: 100%; }
+        .shot-mbar .sm-btn {
+            height: 100%; padding: 0 9px; border: 0; background: transparent;
+            color: #dbe2ea; font-size: 11.5px; line-height: 1; cursor: pointer;
+            white-space: nowrap; display: flex; align-items: center;
+        }
+        .shot-mbar .sm-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+        .shot-mbar .sm-btn:active { background: rgba(255,255,255,0.2); }
+        .shot-mbar .sm-win { display: flex; margin-left: auto; height: 100%; flex: none; }
+        .shot-mbar .sm-wbtn {
+            width: 34px; height: 100%; border: 0; background: transparent; cursor: pointer;
+            color: #c3ccd6; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; line-height: 1;
+        }
+        .shot-mbar .sm-wbtn svg { width: 11px; height: 11px; }
+        .shot-mbar .sm-wbtn:hover { background: rgba(255,255,255,0.16); color: #fff; }
+        .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
+        @media (prefers-color-scheme: light) {
+            .shot-mbar { background: #eef2f6; }
+            .shot-mbar .sm-btn { color: #3b4756; }
+            .shot-mbar .sm-btn:hover { background: rgba(15,23,42,0.09); color: #0f172a; }
+            .shot-mbar .sm-wbtn { color: #526071; }
+            .shot-mbar .sm-wbtn:hover { background: rgba(15,23,42,0.12); color: #0f172a; }
+            .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
+        }
         /* ---- 模拟下拉菜单（CSS 渲染，文字来自软件真实菜单） ---- */
-        #hero-shot.menu-open .cursor-demo { display: none; }
         .shot-menu {
             position: absolute; z-index: 12; min-width: 210px;
             background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.14);
@@ -118,143 +145,6 @@
         /* ---- 菜单截图 overlay ---- */
         #shot-overlay { transition: opacity .2s ease; }
 
-        #hero-shot .cursor-arrow {
-            position: absolute;
-            width: 22px; height: 22px;
-            left: -3%; top: -4%; opacity: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l14 9-6 1.5L9 19z' fill='%231f2937' stroke='%23ffffff' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
-            background-size: contain; background-repeat: no-repeat;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
-            animation: hero-cursor 9s cubic-bezier(.4,.1,.5,1) infinite;
-        }
-        @keyframes hero-cursor {
-            0%   { left: -4%; top: -5%; opacity: 0; transform: scale(1); }
-            4%   { opacity: 1; }
-            7%   { left: 8%;  top: 13%; transform: scale(1); }        /* 移到菜单栏 */
-            11%  { left: 8%;  top: 13%; transform: scale(.8); }       /* 点击：文件菜单 */
-            15%  { left: 8%;  top: 13%; transform: scale(1); }
-            27%  { left: 5%;  top: 35%; transform: scale(1); }        /* 移到文件树 */
-            31%  { left: 5%;  top: 35%; transform: scale(.8); }       /* 点击：选中事件文件 */
-            35%  { left: 5%;  top: 35%; transform: scale(1); }
-            50%  { left: 32%; top: 32%; transform: scale(1); }        /* 移到波形区 */
-            66%  { left: 55%; top: 40%; transform: scale(1); }        /* 划过波形绘图 */
-            72%  { left: 70%; top: 18%; transform: scale(1); }        /* 移到右侧运行信息 */
-            84%  { left: 70%; top: 18%; transform: scale(.8); }       /* 点击：查看输出 */
-            88%  { left: 70%; top: 18%; transform: scale(1); }
-            96%  { opacity: 1; transform: scale(1); }
-            100% { left: -4%; top: -5%; opacity: 0; transform: scale(1); }
-        }
-        @media (prefers-color-scheme: dark) {
-            #hero-shot .cursor-arrow {
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l14 9-6 1.5L9 19z' fill='%23ffffff' stroke='%23000000' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
-                filter: drop-shadow(0 2px 4px rgba(0,0,0,.7));
-            }
-        }
-        /* ---- 交互反馈层（与光标轨迹时序同步，9s 循环） ---- */
-        #hero-shot .fx-ring, #hero-shot .fx-panel,
-        #hero-shot .fx-hilite, #hero-shot .fx-box {
-            position: absolute; pointer-events: none; opacity: 0;
-        }
-        /* 点击涟漪 */
-        #hero-shot .fx-ring {
-            width: 36px; height: 36px; margin: -18px 0 0 -18px;
-            border-radius: 50%;
-            border: 2.5px solid rgba(99,102,241,.85);
-            box-shadow: 0 0 0 4px rgba(99,102,241,.12);
-        }
-        #hero-shot .r1 { left: 8%;  top: 13%; animation: fxRing1 9s infinite; }
-        #hero-shot .r2 { left: 5%;  top: 35%; animation: fxRing2 9s infinite; }
-        #hero-shot .r3 { left: 70%; top: 18%; animation: fxRing3 9s infinite; }
-        @keyframes fxRing1 {
-            0%, 8%   { opacity: 0; transform: scale(.35); }
-            8.6%     { opacity: .95; }
-            13%      { opacity: 0; transform: scale(1.6); }
-            100%     { opacity: 0; transform: scale(1.6); }
-        }
-        @keyframes fxRing2 {
-            0%, 27%  { opacity: 0; transform: scale(.35); }
-            27.6%    { opacity: .95; }
-            33%      { opacity: 0; transform: scale(1.6); }
-            100%     { opacity: 0; transform: scale(1.6); }
-        }
-        @keyframes fxRing3 {
-            0%, 72%  { opacity: 0; transform: scale(.35); }
-            72.6%    { opacity: .95; }
-            85%      { opacity: 0; transform: scale(1.6); }
-            100%     { opacity: 0; transform: scale(1.6); }
-        }
-        /* 弹出面板 */
-        #hero-shot .fx-panel {
-            border-radius: .5rem;
-            font: 500 11px/1.85 system-ui, -apple-system, sans-serif;
-            color: #334155;
-            background: rgba(255,255,255,.97);
-            border: 1px solid rgba(15,23,42,.12);
-            box-shadow: 0 12px 28px rgba(2,6,23,.20);
-            padding: .5rem .8rem;
-            text-align: left; white-space: nowrap;
-        }
-        #hero-shot .p-menu { left: 8.5%; top: 17.5%; animation: fxMenu 9s infinite; }
-        #hero-shot .p-menu hr {
-            border: 0; border-top: 1px solid #e2e8f0; margin: .3rem 0;
-        }
-        @keyframes fxMenu {
-            0%, 7.5% { opacity: 0; transform: translateY(-6px); }
-            8.5%     { opacity: 1; transform: translateY(0); }
-            14.5%    { opacity: 1; transform: translateY(0); }
-            15.5%    { opacity: 0; transform: translateY(-3px); }
-            100%     { opacity: 0; transform: translateY(-3px); }
-        }
-        /* 文件选中高亮 */
-        #hero-shot .file-hl {
-            left: 3.2%; top: 33.8%; width: 11%; height: 4.4%;
-            background: rgba(99,102,241,.15);
-            border-left: 3px solid rgba(99,102,241,.95);
-            border-radius: .25rem;
-            animation: fxFileHl 9s infinite;
-        }
-        @keyframes fxFileHl {
-            0%, 26%  { opacity: 0; }
-            27%      { opacity: 1; }
-            34%      { opacity: 1; }
-            35%      { opacity: 0; }
-            100%     { opacity: 0; }
-        }
-        /* 波形选中框 */
-        #hero-shot .wave-box {
-            left: 27%; top: 26%; width: 27%; height: 17%;
-            border: 2px dashed rgba(99,102,241,.85);
-            border-radius: .5rem;
-            animation: fxWave 9s infinite;
-        }
-        @keyframes fxWave {
-            0%, 49% { opacity: 0; transform: scale(.98); }
-            50%     { opacity: 1; transform: scale(1); }
-            66%     { opacity: 1; }
-            67%     { opacity: 0; transform: scale(1.01); }
-            100%    { opacity: 0; transform: scale(1.01); }
-        }
-        /* 运行信息卡片 */
-        #hero-shot .p-log {
-            left: 62.5%; top: 21.5%;
-            font: 500 10.5px/1.7 ui-monospace, Consolas, monospace;
-            color: #1e293b;
-            animation: fxLog 9s infinite;
-        }
-        @keyframes fxLog {
-            0%, 72% { opacity: 0; transform: translateY(6px); }
-            73%     { opacity: 1; transform: translateY(0); }
-            86%     { opacity: 1; }
-            87%     { opacity: 0; transform: translateY(4px); }
-            100%    { opacity: 0; transform: translateY(4px); }
-        }
-        @media (prefers-color-scheme: dark) {
-            #hero-shot .fx-panel {
-                color: #e2e8f0;
-                background: rgba(30,41,59,.97);
-                border-color: rgba(148,163,184,.25);
-                box-shadow: 0 12px 28px rgba(0,0,0,.45);
-            }
             #hero-shot .p-menu hr { border-top-color: #334155; }
         }
     </style>
@@ -327,7 +217,7 @@
                 </div>
 
                 <!-- 软件截图预览 -->
-                <div class="mt-16 max-w-5xl mx-auto fade-in delay-400">
+                <div class="mt-16 max-w-7xl mx-auto fade-in delay-400">
                     <div class="project-shot" id="hero-shot">
                         <div class="project-shot-bar">
                             <span class="project-shot-dot" style="background:#ff5f57;"></span>
@@ -339,44 +229,34 @@
                             <img src="../static/images/SeisY/SeisY-main-0.1.9-white.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
                             <!-- 菜单点击热区：点击弹出对应真实菜单截图 -->
                             <div class="shot-hot" aria-hidden="true">
-                                <button class="hot" data-hot="hot-file" style="left:1.8%;top:0.2%;width:3.2%;height:4%" title="文件菜单"></button>
-                                <button class="hot" data-hot="hot-data" style="left:4.8%;top:0.2%;width:2.8%;height:4%" title="数据菜单"></button>
-                                <button class="hot" data-hot="hot-plot" style="left:7.7%;top:0.2%;width:2.8%;height:4%" title="绘图菜单"></button>
-                                <button class="hot" data-hot="hot-tool" style="left:10.5%;top:0.2%;width:2.8%;height:4%" title="工具菜单"></button>
-                                <button class="hot" data-hot="hot-sim" style="left:13.4%;top:0.2%;width:2.8%;height:4%" title="模拟菜单"></button>
-                                <button class="hot" data-hot="hot-set" style="left:16.2%;top:0.2%;width:2.8%;height:4%" title="设置菜单"></button>
-                                <button class="hot" data-hot="hot-net" style="left:19%;top:0.2%;width:4%;height:4%" title="网络资源菜单"></button>
-                                <button class="hot" data-hot="hot-help" style="left:23.1%;top:0.2%;width:2.8%;height:4%" title="帮助菜单"></button>
-                                <button class="hot hot-ctx" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
-                                <button class="hot hot-ctx" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
+                                <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
+                                <button class="hot hot-inv" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
                             </div>
                         </picture>
-                        <!-- 模拟操作光标 + 交互反馈（CSS 动画，非真实录屏） -->
-                        <div class="cursor-demo" aria-hidden="true">
-                            <div class="cursor-arrow"></div>
-                            <!-- 点击涟漪 -->
-                            <div class="fx-ring r1"></div>
-                            <div class="fx-ring r2"></div>
-                            <div class="fx-ring r3"></div>
-                            <!-- 弹出菜单面板（点击菜单栏） -->
-                            <div class="fx-panel p-menu">
-                                打开文件…<br>
-                                打开文件夹…<br>
-                                最近打开
-                                <hr>
-                                退出
+                        <!-- 重制顶部栏（图片顶部已裁掉原菜单栏） -->
+                        <div class="shot-mbar" id="shot-mbar">
+                            <div class="sm-dots">
+                                <span class="sm-dot" style="background:#ff5f57;"></span>
+                                <span class="sm-dot" style="background:#febc2e;"></span>
+                                <span class="sm-dot" style="background:#28c840;"></span>
                             </div>
-                            <!-- 文件选中高亮（点击文件树） -->
-                            <div class="fx-hilite file-hl"></div>
-                            <!-- 波形选中框（划过绘图区） -->
-                            <div class="fx-box wave-box"></div>
-                            <!-- 运行信息卡片（点击右侧面板） -->
-                            <div class="fx-panel p-log">
-                                Read File: XA.S12.01.MHZ,19760113<br>
-                                Loading Data ...<br>
-                                File read successed!
+                            <nav class="sm-menus">
+                                <button class="sm-btn" data-key="hot-file">文件</button>
+                                <button class="sm-btn" data-key="hot-data">数据</button>
+                                <button class="sm-btn" data-key="hot-plot">绘图</button>
+                                <button class="sm-btn" data-key="hot-tool">工具</button>
+                                <button class="sm-btn" data-key="hot-sim">模拟</button>
+                                <button class="sm-btn" data-key="hot-set">设置</button>
+                                <button class="sm-btn" data-key="hot-net">网络资源</button>
+                                <button class="sm-btn" data-key="hot-help">帮助</button>
+                            </nav>
+                            <div class="sm-win">
+                                <button class="sm-wbtn" title="最小化" aria-label="最小化"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 6.2h9"/></svg></button>
+                                <button class="sm-wbtn" title="最大化" aria-label="最大化"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.6" y="1.6" width="7.8" height="7.8" rx="1"/></svg></button>
+                                <button class="sm-wbtn sm-wclose" title="关闭" aria-label="关闭"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l7 7M9 2l-7 7"/></svg></button>
                             </div>
                         </div>
+
                         <!-- 预留：真实操作录屏视频（后续替换静态图/hover 播放）
                         <video id="hero-video" class="w-full h-auto" src="../static/videos/seisy-demo.mp4" autoplay muted loop playsinline preload="none"></video>
                         -->
@@ -1592,24 +1472,24 @@
     <script>
         (function () {
             var MENUS = {
-                'hot-file': { left: '1.5%', top: '2.9%', items: [
+                'hot-file': { left: '2.8%', top: '2.3%', items: [
                     { t: '导入文件' }, { t: '用编辑器打开文件' }, { t: '打开云记编辑器' },
                     { t: '配置文件' }, { t: '保存数据' }, { t: '保存项目' }, { t: '保存项目为' },
                     { t: '打开项目' }, { t: '导出' }, { t: '退出' }
                 ]},
-                'hot-data': { left: '4.5%', top: '2.9%', items: [
+                'hot-data': { left: '6.1%', top: '2.3%', items: [
                     { t: '下载地震数据' }, { t: '数据查看器' }, { t: '预处理' },
                     { t: '阿波罗数据缺失值插值' }, { t: '加窗' }, { t: '滤波' },
                     { t: '去脉冲并绘图' }, { t: 'GDCST 滤波' },
                     { t: '地震数据相关性分析' }, { t: '地震数据稀疏化' }
                 ]},
-                'hot-plot': { left: '7.4%', top: '2.9%', items: [
+                'hot-plot': { left: '9.4%', top: '2.3%', items: [
                     { t: '自定义采样绘图' }, { t: '绘制振幅谱' }, { t: '绘制多通道振幅谱' },
                     { t: '绘制时域与振幅谱' }, { t: '导出当前频谱到文件' },
                     { t: '发送频谱到简正模工作台' }, { t: '频谱分析查看器' },
                     { t: '切换频谱方法 (FFT/CZT)' }
                 ]},
-                'hot-tool': { left: '10.2%', top: '2.9%', items: [
+                'hot-tool': { left: '12.7%', top: '2.3%', items: [
                     { t: 'AI 助手' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器' },
                     { t: '行星台站地图' }, { t: '3D 月球地质图' }, { t: '地质图图例' },
                     { t: '射线追踪工作台' }, { t: '月震工作流' }, { t: '仪器响应管理器' },
@@ -1619,20 +1499,20 @@
                     { sep: true },
                     { t: '滑动相关分析器' }, { t: '批处理工作流' }
                 ]},
-                'hot-sim': { left: '13.1%', top: '2.9%', items: [
+                'hot-sim': { left: '15.9%', top: '2.3%', items: [
                     { t: '地震相位模拟' }, { t: '简正模工作台' }, { t: '模型设计器' }
                 ]},
-                'hot-set': { left: '15.9%', top: '2.9%', items: [
+                'hot-set': { left: '19.2%', top: '2.3%', items: [
                     { t: '首选项' }, { t: '修改配置' }, { t: '绘制频谱设置' },
                     { t: '添加标记到地图' }, { t: '修改地图标记' }, { t: '修改地图纹理' },
                     { t: '设置阿波罗数据库路径' }, { t: '主题' }, { t: '语言' },
                     { t: '显示内存使用情况' }
                 ]},
-                'hot-net': { left: '18.7%', top: '2.9%', items: [
+                'hot-net': { left: '22.5%', top: '2.3%', items: [
                     { t: '打开 Wilber 3' }, { t: '打开谷歌地图' }, { t: '打开 SAGE 工具' },
                     { t: '打开地震台网列表' }, { t: '打开地学网站列表' }
                 ]},
-                'hot-help': { left: '22.8%', top: '2.9%', items: [
+                'hot-help': { left: '25.8%', top: '2.3%', items: [
                     { t: '使用指南 / User Guide' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
                     { t: '检查更新' }, { t: '关于' }
                 ]},
@@ -1683,6 +1563,12 @@
                 el.addEventListener('click', function (e) {
                     e.stopPropagation();
                     openMenu(el.dataset.hot);
+                });
+            });
+            document.querySelectorAll('.shot-mbar .sm-btn').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    openMenu(el.dataset.key);
                 });
             });
             document.addEventListener('click', function (e) {
