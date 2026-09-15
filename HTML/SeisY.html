@@ -72,6 +72,31 @@
         .shot-hot .hot:hover { background: rgba(56,189,248,0.28); border-color: rgba(56,189,248,0.85); border-style: solid; box-shadow: 0 0 0 3px rgba(56,189,248,0.18); }
         .shot-hot .hot.hot-ctx { background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.4); }
         .shot-hot .hot.hot-ctx:hover { background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.8); border-style: solid; box-shadow: 0 0 0 3px rgba(236,72,153,0.15); }
+        /* ---- 模拟下拉菜单（CSS 渲染，文字来自软件真实菜单） ---- */
+        #hero-shot.menu-open .cursor-demo { display: none; }
+        .shot-menu {
+            position: absolute; z-index: 12; min-width: 210px;
+            background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 8px; box-shadow: 0 14px 34px rgba(0,0,0,0.5);
+            padding: 5px; font-size: 12.5px; color: #e2e8f0;
+            animation: menu-pop .14s ease;
+        }
+        @keyframes menu-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .shot-menu .mi {
+            display: flex; align-items: center; justify-content: space-between; gap: 18px;
+            padding: 5px 14px 5px 10px; border-radius: 5px; white-space: nowrap; cursor: default;
+        }
+        .shot-menu .mi:hover { background: rgba(59,130,246,0.9); color: #fff; }
+        .shot-menu .mi .acc { color: #8b98a9; font-size: 11.5px; margin-left: 18px; }
+        .shot-menu .mi:hover .acc { color: #dbeafe; }
+        .shot-menu .mi-sep { height: 1px; margin: 4px 8px; background: rgba(255,255,255,0.12); }
+        @media (prefers-color-scheme: light) {
+            .shot-menu { background: rgba(255,255,255,0.98); border-color: rgba(15,23,42,0.14); color: #1f2937; box-shadow: 0 14px 34px rgba(0,0,0,0.18); }
+            .shot-menu .mi:hover { background: rgba(37,99,235,0.9); color: #fff; }
+            .shot-menu .mi .acc { color: #6b7280; }
+            .shot-menu .mi:hover .acc { color: #dbeafe; }
+            .shot-menu .mi-sep { background: rgba(15,23,42,0.12); }
+        }
         /* ---- 引导提示气泡 ---- */
         .hero-tip {
             position: absolute; right: 10px; bottom: 10px; z-index: 10;
@@ -1551,14 +1576,6 @@
             });
         })();
     </script>
-    <!-- 菜单截图查看 overlay -->
-    <div id="shot-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-6">
-        <div class="relative w-full max-w-4xl">
-            <div id="shot-overlay-title" class="text-center text-white/90 text-sm mb-3 tracking-wide"></div>
-            <img id="shot-overlay-img" src="" alt="" class="w-full rounded-xl shadow-2xl border border-white/15">
-            <button id="shot-overlay-close" class="absolute -top-11 right-0 text-white/70 hover:text-white text-3xl leading-none w-10 h-10 rounded-full hover:bg-white/10" title="关闭">&times;</button>
-        </div>
-    </div>
     <script>
         (function () {
             var tip = document.getElementById('hero-tip');
@@ -1574,48 +1591,106 @@
     </script>
     <script>
         (function () {
-            var map = {
-                'hot-file':  { img: '../static/images/SeisY/shortcuts/menu_file.png',  title: '文件菜单' },
-                'hot-data':  { img: '../static/images/SeisY/shortcuts/menu_data.png',  title: '数据菜单' },
-                'hot-plot':  { img: '../static/images/SeisY/shortcuts/menu_plot.png',  title: '绘图菜单' },
-                'hot-tool':  { img: '../static/images/SeisY/shortcuts/menu_tool.png',  title: '工具菜单' },
-                'hot-sim':   { img: '../static/images/SeisY/shortcuts/menu_sim.png',   title: '模拟菜单' },
-                'hot-set':   { img: '../static/images/SeisY/shortcuts/menu_set.png',   title: '设置菜单' },
-                'hot-net':   { img: '../static/images/SeisY/shortcuts/menu_net.png',   title: '网络资源菜单' },
-                'hot-help':  { img: '../static/images/SeisY/shortcuts/menu_help.png',  title: '帮助菜单' },
-                'hot-evctx': { img: '../static/images/SeisY/shortcuts/ctx_event.png',  title: '事件列表 · 右键菜单' },
-                'hot-tree':  { img: '../static/images/SeisY/shortcuts/ctx_tree.png',   title: '文件树 · 右键菜单' }
+            var MENUS = {
+                'hot-file': { left: '1.5%', top: '2.9%', items: [
+                    { t: '导入文件' }, { t: '用编辑器打开文件' }, { t: '打开云记编辑器' },
+                    { t: '配置文件' }, { t: '保存数据' }, { t: '保存项目' }, { t: '保存项目为' },
+                    { t: '打开项目' }, { t: '导出' }, { t: '退出' }
+                ]},
+                'hot-data': { left: '4.5%', top: '2.9%', items: [
+                    { t: '下载地震数据' }, { t: '数据查看器' }, { t: '预处理' },
+                    { t: '阿波罗数据缺失值插值' }, { t: '加窗' }, { t: '滤波' },
+                    { t: '去脉冲并绘图' }, { t: 'GDCST 滤波' },
+                    { t: '地震数据相关性分析' }, { t: '地震数据稀疏化' }
+                ]},
+                'hot-plot': { left: '7.4%', top: '2.9%', items: [
+                    { t: '自定义采样绘图' }, { t: '绘制振幅谱' }, { t: '绘制多通道振幅谱' },
+                    { t: '绘制时域与振幅谱' }, { t: '导出当前频谱到文件' },
+                    { t: '发送频谱到简正模工作台' }, { t: '频谱分析查看器' },
+                    { t: '切换频谱方法 (FFT/CZT)' }
+                ]},
+                'hot-tool': { left: '10.2%', top: '2.9%', items: [
+                    { t: 'AI 助手' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器' },
+                    { t: '行星台站地图' }, { t: '3D 月球地质图' }, { t: '地质图图例' },
+                    { t: '射线追踪工作台' }, { t: '月震工作流' }, { t: '仪器响应管理器' },
+                    { t: '阿波罗系统' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器' },
+                    { t: '修复库对比查看器' }, { sep: true },
+                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器' }, { t: '波形合并工具' },
+                    { sep: true },
+                    { t: '滑动相关分析器' }, { t: '批处理工作流' }
+                ]},
+                'hot-sim': { left: '13.1%', top: '2.9%', items: [
+                    { t: '地震相位模拟' }, { t: '简正模工作台' }, { t: '模型设计器' }
+                ]},
+                'hot-set': { left: '15.9%', top: '2.9%', items: [
+                    { t: '首选项' }, { t: '修改配置' }, { t: '绘制频谱设置' },
+                    { t: '添加标记到地图' }, { t: '修改地图标记' }, { t: '修改地图纹理' },
+                    { t: '设置阿波罗数据库路径' }, { t: '主题' }, { t: '语言' },
+                    { t: '显示内存使用情况' }
+                ]},
+                'hot-net': { left: '18.7%', top: '2.9%', items: [
+                    { t: '打开 Wilber 3' }, { t: '打开谷歌地图' }, { t: '打开 SAGE 工具' },
+                    { t: '打开地震台网列表' }, { t: '打开地学网站列表' }
+                ]},
+                'hot-help': { left: '22.8%', top: '2.9%', items: [
+                    { t: '使用指南 / User Guide' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
+                    { t: '检查更新' }, { t: '关于' }
+                ]},
+                'hot-evctx': { left: '77%', top: '35%', items: [
+                    { t: '分组事件', a: 'Ctrl+G' }, { t: '计算工具' }, { t: '更多工具' },
+                    { t: '设置仪器响应文件' }, { t: '复制事件 ID', a: 'Ctrl+Shift+C' },
+                    { t: '复制事件', a: 'Ctrl+C' }, { t: '粘贴事件', a: 'Ctrl+V' },
+                    { t: '删除事件', a: 'Del' }, { t: '撤销事件', a: 'Ctrl+Z' }, { t: '重做事件', a: 'Ctrl+Y' }
+                ]},
+                'hot-tree': { left: '1.5%', top: '8%', items: [
+                    { t: '导入文件', a: 'Ctrl+I' }, { t: '打开', a: 'Ctrl+O' },
+                    { t: '重命名', a: 'Ctrl+R' }, { t: '删除', a: 'Del' },
+                    { t: '复制', a: 'Ctrl+C' }, { t: '粘贴', a: 'Ctrl+V' }, { t: '复制路径' },
+                    { sep: true },
+                    { t: '新建文件夹', a: 'Ctrl+Shift+N' }, { t: '新建文本文件', a: 'Ctrl+N' }
+                ]}
             };
-            var ov = document.getElementById('shot-overlay');
-            var img = document.getElementById('shot-overlay-img');
-            var cap = document.getElementById('shot-overlay-title');
-            function open(key) {
-                var m = map[key];
-                if (!m || !ov || !img) return;
-                img.src = m.img; img.alt = m.title;
-                cap.textContent = m.title;
-                ov.classList.remove('hidden'); ov.classList.add('flex');
-                document.body.style.overflow = 'hidden';
+            var shot = document.getElementById('hero-shot');
+            function closeMenu() {
+                var m = document.getElementById('shot-menu');
+                if (m) m.remove();
+                if (shot) shot.classList.remove('menu-open');
             }
-            function close() {
-                if (!ov || !img) return;
-                ov.classList.add('hidden'); ov.classList.remove('flex');
-                img.removeAttribute('src');
-                document.body.style.overflow = '';
+            function openMenu(key) {
+                closeMenu();
+                var cfg = MENUS[key];
+                if (!cfg || !shot) return;
+                var div = document.createElement('div');
+                div.id = 'shot-menu'; div.className = 'shot-menu';
+                div.style.left = cfg.left; div.style.top = cfg.top;
+                cfg.items.forEach(function (it) {
+                    var d = document.createElement('div');
+                    if (it.sep) { d.className = 'mi-sep'; }
+                    else {
+                        d.className = 'mi';
+                        var s = document.createElement('span'); s.textContent = it.t; d.appendChild(s);
+                        if (it.a) {
+                            var a = document.createElement('span'); a.className = 'acc'; a.textContent = it.a; d.appendChild(a);
+                        }
+                        d.addEventListener('click', function () { closeMenu(); });
+                    }
+                    div.appendChild(d);
+                });
+                shot.appendChild(div);
+                shot.classList.add('menu-open');
             }
             document.querySelectorAll('.shot-hot .hot').forEach(function (el) {
                 el.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    open(el.dataset.hot);
+                    openMenu(el.dataset.hot);
                 });
             });
-            if (ov) {
-                ov.addEventListener('click', function (e) {
-                    if (e.target === ov || e.target.id === 'shot-overlay-close') close();
-                });
-                document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-            }
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#shot-menu') && !e.target.closest('.shot-hot .hot')) closeMenu();
+            });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
         })();
     </script>
+
 </body>
 </html>
