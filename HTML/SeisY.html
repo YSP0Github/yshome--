@@ -60,7 +60,7 @@
         }
         /* ---- 模拟操作光标动画（hero 截图） ---- */
         /* ---- 菜单点击热区（点击弹出真实菜单截图） ---- */
-        .shot-hot { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+        .shot-hot { position: absolute; top: 2rem; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none; }
         .shot-hot .hot {
             position: absolute; pointer-events: auto; cursor: pointer;
             background: transparent; border: 0; border-radius: 4px;
@@ -69,7 +69,7 @@
         #hero-shot picture img { width: 100% !important; height: auto !important; display: block; }
         /* ---- 重制顶部栏：窗口控制按钮 + 菜单栏（图片顶部已裁掉原菜单栏） ---- */
         .shot-mbar {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 11;
+            position: absolute; top: 2rem; left: 0; right: 0; z-index: 11;
             height: 2.15%;
             display: flex; align-items: stretch;
             background: #1b2534;
@@ -228,13 +228,12 @@
                         </div>
                         <picture style="position:relative;display:block">
                             <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v2.png">
-                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v2.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
-                            <!-- 菜单点击热区：点击弹出对应真实菜单截图 -->
-                            <div class="shot-hot" aria-hidden="true">
-                                <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
-                                <button class="hot hot-inv" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
-                            </div>
-                        <!-- 重制顶部栏（图片顶部已裁掉原菜单栏） -->
+                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v2.png" alt="SeisY 主界面截图" style="width:100%;height:auto;display:block" data-zoom>
+                        </picture>
+                        <div class="shot-hot" aria-hidden="true">
+                            <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
+                            <button class="hot hot-inv" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
+                        </div>
                         <div class="shot-mbar" id="shot-mbar">
                             <div class="sm-dots">
                                 <span class="sm-dot" style="background:#ff5f57;"></span>
@@ -257,11 +256,6 @@
                                 <button class="sm-wbtn sm-wclose" title="关闭" aria-label="关闭"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l7 7M9 2l-7 7"/></svg></button>
                             </div>
                         </div>
-                        </picture>
-
-                        <!-- 预留：真实操作录屏视频（后续替换静态图/hover 播放）
-                        <video id="hero-video" class="w-full h-auto" src="../static/videos/seisy-demo.mp4" autoplay muted loop playsinline preload="none"></video>
-                        -->
                         <div class="hero-tip" id="hero-tip">
                             <span>菜单都能点 — 试试顶部菜单栏、左侧文件树或右侧事件列表</span>
                             <button class="hero-tip-x" title="关闭">&times;</button>
