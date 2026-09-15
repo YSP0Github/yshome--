@@ -58,6 +58,36 @@
             width: 10px; height: 10px; border-radius: 9999px;
             background: rgba(255,255,255,0.18);
         }
+        /* ---- 模拟操作光标动画（hero 截图） ---- */
+        #hero-shot .cursor-demo {
+            position: absolute; inset: 0; pointer-events: none; z-index: 8;
+        }
+        #hero-shot .cursor-arrow {
+            position: absolute;
+            width: 22px; height: 22px;
+            left: -3%; top: -4%; opacity: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l14 9-6 1.5L9 19z' fill='%23ffffff' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-size: contain; background-repeat: no-repeat;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.55));
+            animation: hero-cursor 9s cubic-bezier(.4,.1,.5,1) infinite;
+        }
+        @keyframes hero-cursor {
+            0%   { left: -4%; top: -5%; opacity: 0; transform: scale(1); }
+            4%   { opacity: 1; }
+            7%   { left: 8%;  top: 13%; transform: scale(1); }        /* 移到菜单栏 */
+            11%  { left: 8%;  top: 13%; transform: scale(.8); }       /* 点击：文件菜单 */
+            15%  { left: 8%;  top: 13%; transform: scale(1); }
+            27%  { left: 5%;  top: 35%; transform: scale(1); }        /* 移到文件树 */
+            31%  { left: 5%;  top: 35%; transform: scale(.8); }       /* 点击：选中事件文件 */
+            35%  { left: 5%;  top: 35%; transform: scale(1); }
+            50%  { left: 32%; top: 32%; transform: scale(1); }        /* 移到波形区 */
+            66%  { left: 55%; top: 40%; transform: scale(1); }        /* 划过波形绘图 */
+            72%  { left: 70%; top: 18%; transform: scale(1); }        /* 移到右侧运行信息 */
+            84%  { left: 70%; top: 18%; transform: scale(.8); }       /* 点击：查看输出 */
+            88%  { left: 70%; top: 18%; transform: scale(1); }
+            96%  { opacity: 1; transform: scale(1); }
+            100% { left: -4%; top: -5%; opacity: 0; transform: scale(1); }
+        }
     </style>
 </head>
 <body class="font-sans bg-light text-dark antialiased">
@@ -129,7 +159,7 @@
 
                 <!-- 软件截图预览 -->
                 <div class="mt-16 max-w-5xl mx-auto fade-in delay-400">
-                    <div class="project-shot">
+                    <div class="project-shot" id="hero-shot">
                         <div class="project-shot-bar">
                             <span class="project-shot-dot" style="background:#ff5f57;"></span>
                             <span class="project-shot-dot" style="background:#febc2e;"></span>
@@ -139,6 +169,13 @@
                             <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark.png">
                             <img src="../static/images/SeisY/SeisY-main-0.1.9-white.png" alt="SeisY 主界面截图" class="w-full h-auto" data-zoom>
                         </picture>
+                        <!-- 模拟操作光标（CSS 动画，非真实录屏） -->
+                        <div class="cursor-demo" aria-hidden="true">
+                            <div class="cursor-arrow"></div>
+                        </div>
+                        <!-- 预留：真实操作录屏视频（后续替换静态图/hover 播放）
+                        <video id="hero-video" class="w-full h-auto" src="../static/videos/seisy-demo.mp4" autoplay muted loop playsinline preload="none"></video>
+                        -->
                     </div>
                 </div>
             </div>
