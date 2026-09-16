@@ -624,6 +624,39 @@
         return out.slice(0, nsamples);
     }
 
+    /* ---------- 原始编码解码：3=INT16, 4=INT32, 5=FLOAT32, 6=FLOAT64 ---------- */
+    function decodeRaw(dv, dataStart, ns, enc) {
+        var size = (enc === 3) ? 2 : (enc === 4 ? 4 : (enc === 6 ? 8 : 4));
+        var out = [];
+        for (var i = 0; i < ns && dataStart + i * size + size <= dv.byteLength; i++) {
+            if (enc === 3) out.push(dv.getInt16(dataStart + i * 2, false));
+            else if (enc === 4) out.push(dv.getInt32(dataStart + i * 4, false));
+            else if (enc === 6) { var v6 = dv.getFloat64(dataStart + i * 8, false); if (!isFinite(v6)) return out; out.push(v6); }
+            else { var v5 = dv.getFloat32(dataStart + i * 4, false); if (!isFinite(v5)) return out; out.push(v5); }
+        }
+        return out;
+    }
+    /* encoding=0（无标准定义）：按常见原始格式依次尝试，取数值合理者 */
+    function decodeRawAuto(dv, dataStart, ns, recEnd) {
+        var avail = recEnd - dataStart;
+        var tries = [];
+        if (avail >= ns * 4) tries.push({ enc: 5, name: 'FLOAT32' });
+        if (avail >= ns * 4) tries.push({ enc: 4, name: 'INT32' });
+        if (avail >= ns * 2) tries.push({ enc: 3, name: 'INT16' });
+        for (var t = 0; t < tries.length; t++) {
+            var s = decodeRaw(dv, dataStart, ns, tries[t].enc);
+            if (s.length === ns) {
+                var ok = true, nz = 0;
+                for (var j = 0; j < s.length; j++) {
+                    if (!isFinite(s[j])) { ok = false; break; }
+                    if (s[j] !== 0) nz++;
+                }
+                if (ok && nz > s.length * 0.1) return s;
+            }
+        }
+        return null;
+    }
+
     /* ---------- 解析整个文件 → traces ---------- */
     function parseMSEED(buf) {
         var dv = new DataView(buf);
@@ -647,6 +680,10 @@
                 samples = decodeSteim2(dv, off, h.dataOffset, h.recLen, ns);
             } else if (h.encoding === 10) {
                 samples = decodeSteim1(dv, dataStart, off + h.recLen, ns);
+            } else if (h.encoding === 3 || h.encoding === 4 || h.encoding === 5 || h.encoding === 6) {
+                samples = decodeRaw(dv, dataStart, ns, h.encoding);
+            } else if (h.encoding === 0) {
+                samples = decodeRawAuto(dv, dataStart, ns, off + h.recLen);
             } else {
                 if (!firstSkippedEnc) firstSkippedEnc = 'encoding=' + h.encoding + ' ' + h.network + '.' + h.station + '.' + (h.location || '*') + '.' + h.channel + ' @' + off;
             }
@@ -806,6 +843,7 @@
                     $('viz-state').textContent = '未解析到有效数据';
                     $('viz-records').textContent = parsed.records;
                     $('viz-traces').textContent = '0';
+                    $('viz-samples').textContent = '0';
                     var trL = $('viz-trace-list');
                     trL.innerHTML = '';
                     if (parsed.diag) {
