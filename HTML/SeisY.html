@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeisY - 地震数据处理与分析平台</title>
-    <script src="../static/js/tailwind-cdn.js"></script>
+    <link rel="stylesheet" href="../static/css/seisy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
     <script>
@@ -25,69 +25,37 @@
             }
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .transition-custom { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-            .card-hover { @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300; }
-            .section-padding { @apply py-16 md:py-24; }
-        }
-        html { scroll-behavior: smooth; }
-        .fade-in { animation: fadeIn 0.8s ease-in-out forwards; opacity: 0; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-        .project-shot {
-            position: relative; border-radius: 1rem; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(2,6,23,0.84);
-            box-shadow: 0 22px 54px rgba(0,0,0,0.32);
-        }
-        .project-shot-bar {
-            display: flex; align-items: center; gap: 0.5rem;
-            height: 2rem; padding: 0 0.875rem;
-            background: rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .project-shot-dot {
-            width: 10px; height: 10px; border-radius: 9999px;
-            background: rgba(255,255,255,0.18);
-        }
-        /* ---- 模拟操作光标动画（hero 截图） ---- */
-        /* ---- 菜单点击热区（点击弹出真实菜单截图） ---- */
-        .shot-hot { position: absolute; top: 2rem; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none; }
-        .shot-hot .hot {
-            position: absolute; pointer-events: auto; cursor: pointer;
-            background: transparent; border: 0; border-radius: 4px;
-        }
-        /* ---- hero 图片强制自适应宽度（不依赖 tailwind 类） ---- */
-        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; }
-        /* ---- 重制顶部栏：窗口控制按钮 + 菜单栏（图片顶部已裁掉原菜单栏） ---- */
+
+    <style id="hero-rework-css">
+        /* ---- hero：无 mac bar，菜单栏直接浮在图片顶部黑边 ---- */
+        #hero-shot { position: relative; border-radius: 1rem; overflow: visible; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.84); box-shadow: 0 22px 54px rgba(0,0,0,0.32); }
+        #hero-shot picture { position: relative; display: block; }
+        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; border-radius: 0.85rem; }
+        .shot-hot { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none; }
+        .shot-hot .hot { position: absolute; pointer-events: auto; cursor: pointer; background: transparent; border: 0; border-radius: 4px; }
         .shot-mbar {
-            position: absolute; top: 2rem; left: 0; right: 0; z-index: 11;
-            height: 2.15%;
+            position: absolute; top: 0; left: 0; right: 0; z-index: 11;
+            height: 2.9%;
             display: flex; align-items: stretch;
-            background: #1b2534;
+            background: transparent;
             font-size: 11.5px; user-select: none;
         }
-        .shot-mbar .sm-dots { display: flex; align-items: center; flex: none; margin-left: 9px; gap: 5px; }
-        .shot-mbar .sm-dot { width: 8px; height: 8px; border-radius: 9999px; flex: none; }
-        .shot-mbar .sm-menus { display: flex; align-items: stretch; margin-left: 10px; height: 100%; }
+        .shot-mbar .sm-logo {
+            width: 15px; height: 15px; flex: none;
+            margin: auto 6px auto 7px;
+            border-radius: 3px; object-fit: contain;
+        }
+        .shot-mbar .sm-menus { display: flex; align-items: stretch; height: 100%; }
         .shot-mbar .sm-btn {
-            height: 100%; padding: 0 9px; border: 0; background: transparent;
-            color: #dbe2ea; font-size: 11.5px; line-height: 1; cursor: pointer;
+            height: 100%; padding: 0 5px; border: 0; background: transparent;
+            color: #dbe2ea; font-size: 11px; line-height: 1; cursor: pointer;
             white-space: nowrap; display: flex; align-items: center;
         }
         .shot-mbar .sm-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
         .shot-mbar .sm-btn:active { background: rgba(255,255,255,0.2); }
         .shot-mbar .sm-win { display: flex; margin-left: auto; height: 100%; flex: none; }
         .shot-mbar .sm-wbtn {
-            width: 34px; height: 100%; border: 0; background: transparent; cursor: pointer;
+            width: 28px; height: 100%; border: 0; background: transparent; cursor: pointer;
             color: #c3ccd6; display: flex; align-items: center; justify-content: center;
             font-size: 11px; line-height: 1;
         }
@@ -95,26 +63,22 @@
         .shot-mbar .sm-wbtn:hover { background: rgba(255,255,255,0.16); color: #fff; }
         .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
         @media (prefers-color-scheme: light) {
-            .shot-mbar { background: #eef2f6; }
-            .shot-mbar .sm-btn { color: #3b4756; }
+            .shot-mbar .sm-btn { color: #334155; }
             .shot-mbar .sm-btn:hover { background: rgba(15,23,42,0.09); color: #0f172a; }
             .shot-mbar .sm-wbtn { color: #526071; }
             .shot-mbar .sm-wbtn:hover { background: rgba(15,23,42,0.12); color: #0f172a; }
             .shot-mbar .sm-wbtn.sm-wclose:hover { background: #e81123; color: #fff; }
         }
-        /* ---- 模拟下拉菜单（CSS 渲染，文字来自软件真实菜单） ---- */
+        /* ---- 下拉菜单（CSS 渲染） ---- */
         .shot-menu {
-            position: absolute; z-index: 12; min-width: 210px;
+            position: absolute; z-index: 12; min-width: 210px; max-height: min(62vh, 620px); overflow-y: auto;
             background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.14);
             border-radius: 8px; box-shadow: 0 14px 34px rgba(0,0,0,0.5);
             padding: 5px; font-size: 12.5px; color: #e2e8f0;
             animation: menu-pop .14s ease;
         }
         @keyframes menu-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        .shot-menu .mi {
-            display: flex; align-items: center; justify-content: space-between; gap: 18px;
-            padding: 5px 14px 5px 10px; border-radius: 5px; white-space: nowrap; cursor: default;
-        }
+        .shot-menu .mi { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 5px 14px 5px 10px; border-radius: 5px; white-space: nowrap; cursor: default; }
         .shot-menu .mi:hover { background: rgba(59,130,246,0.9); color: #fff; }
         .shot-menu .mi .acc { color: #8b98a9; font-size: 11.5px; margin-left: 18px; }
         .shot-menu .mi:hover .acc { color: #dbeafe; }
@@ -126,28 +90,32 @@
             .shot-menu .mi:hover .acc { color: #dbeafe; }
             .shot-menu .mi-sep { background: rgba(15,23,42,0.12); }
         }
-        /* ---- 引导提示气泡 ---- */
-        .hero-tip {
-            position: absolute; right: 10px; bottom: 10px; z-index: 10;
-            display: flex; align-items: center; gap: 0.6rem;
-            max-width: 320px; padding: 0.55rem 0.85rem;
-            font-size: 0.82rem; line-height: 1.45; color: #e2e8f0;
-            background: rgba(15,23,42,0.92); border: 1px solid rgba(56,189,248,0.4);
-            border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            opacity: 0; transform: translateY(8px); pointer-events: none;
-            transition: opacity .4s ease, transform .4s ease;
-        }
+        .hero-tip { position: absolute; right: 10px; bottom: 10px; z-index: 10; display: flex; align-items: center; gap: 0.6rem; max-width: 320px; padding: 0.55rem 0.85rem; font-size: 0.82rem; line-height: 1.45; color: #e2e8f0; background: rgba(15,23,42,0.92); border: 1px solid rgba(56,189,248,0.4); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .4s ease, transform .4s ease; }
         .hero-tip.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .hero-tip .hero-tip-x {
-            flex: none; width: 20px; height: 20px; line-height: 18px; text-align: center;
-            color: #94a3b8; background: rgba(255,255,255,0.08); border: none; border-radius: 9999px;
-            cursor: pointer; font-size: 0.9rem; padding: 0;
-        }
+        .hero-tip .hero-tip-x { flex: none; width: 20px; height: 20px; line-height: 18px; text-align: center; color: #94a3b8; background: rgba(255,255,255,0.08); border: none; border-radius: 9999px; cursor: pointer; font-size: 0.9rem; padding: 0; }
         .hero-tip .hero-tip-x:hover { color: #fff; background: rgba(255,255,255,0.18); }
-        /* ---- 菜单截图 overlay ---- */
-        #shot-overlay { transition: opacity .2s ease; }
-
-            #hero-shot .p-menu hr { border-top-color: #334155; }
+    </style>
+    <style id="hero-mobile-css">
+        @media (max-width: 768px) {
+            #hero-shot .shot-mbar, #hero-shot .shot-hot { display: none !important; }
+        }
+    </style>
+    <style id="backtop-css">
+        #back-top {
+            position: fixed; right: 22px; bottom: 26px; z-index: 100;
+            width: 46px; height: 46px; border-radius: 14px;
+            background: rgba(15, 82, 186, 0.92); color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            font-size: 20px; line-height: 1; cursor: pointer;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+            opacity: 0; visibility: hidden; transform: translateY(12px);
+            transition: opacity .3s ease, transform .3s ease, visibility .3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #back-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #back-top:hover { background: #0a3d8f; }
+        @media (max-width: 768px) {
+            #back-top { right: 14px; bottom: 18px; width: 42px; height: 42px; border-radius: 12px; }
         }
     </style>
 </head>
@@ -221,25 +189,16 @@
                 <!-- 软件截图预览 -->
                 <div class="mt-16 max-w-7xl mx-auto fade-in delay-400">
                     <div class="project-shot" id="hero-shot">
-                        <div class="project-shot-bar">
-                            <span class="project-shot-dot" style="background:#ff5f57;"></span>
-                            <span class="project-shot-dot" style="background:#febc2e;"></span>
-                            <span class="project-shot-dot" style="background:#28c840;"></span>
-                        </div>
                         <picture style="position:relative;display:block">
-                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v2.png">
-                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v2.png" alt="SeisY 主界面截图" style="width:100%;height:auto;display:block" data-zoom>
+                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v4.png">
+                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v4.png" alt="SeisY 主界面截图" style="width:100%;height:auto;display:block" data-zoom>
                         </picture>
                         <div class="shot-hot" aria-hidden="true">
                             <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
                             <button class="hot hot-inv" data-hot="hot-tree" style="left:0.5%;top:7%;width:12%;height:30%" title="文件树（右键菜单）"></button>
                         </div>
                         <div class="shot-mbar" id="shot-mbar">
-                            <div class="sm-dots">
-                                <span class="sm-dot" style="background:#ff5f57;"></span>
-                                <span class="sm-dot" style="background:#febc2e;"></span>
-                                <span class="sm-dot" style="background:#28c840;"></span>
-                            </div>
+                            <img class="sm-logo" src="../static/images/SeisY/SeisY-3D-rad.ico" alt="SeisY">
                             <nav class="sm-menus">
                                 <button class="sm-btn" data-key="hot-file">文件</button>
                                 <button class="sm-btn" data-key="hot-data">数据</button>
@@ -256,10 +215,7 @@
                                 <button class="sm-wbtn sm-wclose" title="关闭" aria-label="关闭"><svg viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l7 7M9 2l-7 7"/></svg></button>
                             </div>
                         </div>
-                        <div class="hero-tip" id="hero-tip">
-                            <span>菜单都能点 — 试试顶部菜单栏、左侧文件树或右侧事件列表</span>
-                            <button class="hero-tip-x" title="关闭">&times;</button>
-                        </div>
+                        <div class="hero-tip" id="hero-tip"></div>
                     </div>
                 </div>
             </div>
@@ -335,6 +291,20 @@
                 <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版下载入口，后续版本可继续沿用同一页面更新。</p>
             </div>
 
+            <!-- 在线下载数据入口 -->
+            <div class="max-w-4xl mx-auto mb-10">
+                <a href="SeisY-download.html" class="block text-white rounded-2xl p-6 md:p-10 shadow-lg hover:shadow-xl" style="background:linear-gradient(90deg,#0F52BA,#10B981);text-decoration:none;">
+                    <div class="flex flex-col md:flex-row md:items-center" style="gap:16px;">
+                        <div class="flex-1">
+                            <div class="text-sm" style="opacity:.9;margin-bottom:4px;">不想安装软件？直接用网页版</div>
+                            <div class="text-2xl font-bold">在线下载地震数据（免安装）</div>
+                            <div class="text-sm" style="opacity:.8;margin-top:4px;">支持地球地震与 Apollo 月球地震数据（XA 网络），下载后自动预览波形</div>
+                        </div>
+                        <div class="shrink-0"><i class="fa fa-arrow-right text-2xl"></i></div>
+                    </div>
+                </a>
+            </div>
+
             <!-- 主下载卡片 -->
             <div class="max-w-4xl mx-auto mb-12">
                 <div class="bg-white rounded-2xl shadow-lg p-8 md:p-10">
@@ -405,6 +375,26 @@
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <a href="SeisY-download.html" target="_blank" rel="noopener" class="bg-white p-8 rounded-xl shadow-md card-hover block" style="grid-column:1/-1;text-decoration:none;">
+                    <div class="flex flex-col md:flex-row md:items-center" style="gap:24px;">
+                        <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl shrink-0" style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;">
+                            <i class="fa fa-cloud-arrow-down"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center" style="gap:12px;margin-bottom:12px;">
+                                <h3 class="text-xl font-semibold">数据下载</h3>
+                                <span class="rounded-full bg-accent/10 text-accent text-xs font-medium" style="padding:4px 10px;white-space:nowrap;">在线可用</span>
+                            </div>
+                            <p class="text-dark/70">通过 FDSN 数据中心在线下载地震波形数据，支持地球台网与 Apollo 月球数据（XA 网络），下载后自动预览波形。</p>
+                        </div>
+                        <div class="shrink-0 flex items-center text-dark/70 text-sm" style="display:flex;align-items:center;gap:24px;">
+                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> 地球 / Apollo 台站数据</span>
+                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> miniSEED 自动预览</span>
+                            <span class="font-medium text-primary" style="display:flex;align-items:center;"><i class="fa fa-arrow-right mr-2"></i> 打开网页版 →</span>
+                        </div>
+                    </div>
+                </a>
+
                 <div class="bg-white p-8 rounded-xl shadow-md card-hover">
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-wave-square"></i>
@@ -560,7 +550,18 @@
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <a id="tool-data-download" href="SeisY-download.html" target="_blank" rel="noopener" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover block">
+                    <img src="../static/images/SeisY/SeisY-Data_Download.png" alt="数据下载器" class="w-full h-48 object-cover object-top">
+                    <div class="p-5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-lg font-semibold">数据下载器</h3>
+                            <span class="rounded-full bg-accent/10 text-accent text-xs" style="padding:2px 8px;white-space:nowrap;">在线可用</span>
+                        </div>
+                        <p class="text-dark/70 text-sm">网络、台站、通道与时间范围批量下载，支持地球台网与 Apollo 月球数据，网页版免安装直接使用。</p>
+                    </div>
+                </a>
+
+                <div id="tool-hypocenter" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Hypocenter_locator.png" alt="震源定位器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">震源定位器 <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">优化开发中</span></h3>
@@ -568,7 +569,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-station-map" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Planetary_station_map.png" alt="行星台站地图" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">行星台站地图</h3>
@@ -576,7 +577,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-raytracer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-RayTracer.png" alt="射线追踪工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">射线追踪工作台</h3>
@@ -584,7 +585,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-normal-mode" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-normal_mode.png" alt="简正模工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">简正模工作台</h3>
@@ -592,7 +593,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-model-designer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-models_design.png" alt="模型设计器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">模型设计器</h3>
@@ -600,7 +601,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-apollo" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Apollo_data_management.png" alt="Apollo 系统" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">Apollo 月震系统</h3>
@@ -608,7 +609,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-ai" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-AI_assistant_v2.png" alt="AI 助手" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">AI 助手 <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">暂停服务</span></h3>
@@ -616,7 +617,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-instrument-response" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Instrument_response_manager.png" alt="仪器响应管理器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">仪器响应管理器</h3>
@@ -624,7 +625,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-moon-geology" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <div id="moon-geology-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
                         <img src="../static/images/SeisY/moon_geology_web.jpg" alt="月球地质图" class="w-full h-full object-cover">
                     </div>
@@ -634,7 +635,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-celestial" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <div id="moon-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
                         <img src="../static/images/SeisY/moon_1024.jpg" alt="月球" class="w-full h-full object-cover">
                     </div>
@@ -644,7 +645,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-repair" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Anomaly_repair.png" alt="异常修复引擎" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">异常修复引擎</h3>
@@ -652,7 +653,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-scanner" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Moonquake_scanner.png" alt="月震扫描器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">月震扫描器</h3>
@@ -660,7 +661,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-noise" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Noise_extractor.png" alt="噪声提取器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">噪声提取器</h3>
@@ -668,7 +669,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-overview" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Data_overview.png" alt="数据全览面板" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">数据全览面板</h3>
@@ -676,11 +677,19 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-sliding-corr" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Sliding_correlation.png" alt="滑动相关分析器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">滑动相关分析器</h3>
                         <p class="text-dark/70 text-sm">长时程与短时程波形的滑动相关分析，Step 步长 / Threshold 阈值 / 绝对值比较，自动定位最佳匹配片段并支持保存为事件。</p>
+                    </div>
+                </div>
+
+                <div id="tool-repair-db-viewer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                    <img src="../static/images/SeisY/Repair_DB_Viewer.png" alt="修复库对比查看器" class="w-full h-48 object-cover object-top">
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold mb-2">修复库对比查看器</h3>
+                        <p class="text-dark/70 text-sm">原始库与修复库波形对比查看，支持时域分 / 同画布、频域 PSD / 振幅与 2×2 综合视图，色块标注缺失段修复、DSSRR 重建等异常类型，底部明细表统计修复段、事件与修复方法。</p>
                     </div>
                 </div>
             </div>
@@ -1474,7 +1483,7 @@
                     { t: '打开项目' }, { t: '导出' }, { t: '退出' }
                 ]},
                 'hot-data': { left: '6.1%', top: '2.3%', items: [
-                    { t: '下载地震数据' }, { t: '数据查看器' }, { t: '预处理' },
+                    { t: '下载地震数据', link: 'SeisY-download.html' }, { t: '数据查看器' }, { t: '预处理' },
                     { t: '阿波罗数据缺失值插值' }, { t: '加窗' }, { t: '滤波' },
                     { t: '去脉冲并绘图' }, { t: 'GDCST 滤波' },
                     { t: '地震数据相关性分析' }, { t: '地震数据稀疏化' }
@@ -1486,17 +1495,17 @@
                     { t: '切换频谱方法 (FFT/CZT)' }
                 ]},
                 'hot-tool': { left: '12.7%', top: '2.3%', items: [
-                    { t: 'AI 助手' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器' },
-                    { t: '行星台站地图' }, { t: '3D 月球地质图' }, { t: '地质图图例' },
-                    { t: '射线追踪工作台' }, { t: '月震工作流' }, { t: '仪器响应管理器' },
-                    { t: '阿波罗系统' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器' },
-                    { t: '修复库对比查看器' }, { sep: true },
-                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器' }, { t: '波形合并工具' },
+                    { t: 'AI 助手', link: '#tool-ai' }, { t: 'SeisRT 在线工具', link: 'SeisRT.html' }, { t: '震源定位器', link: '#tool-hypocenter' },
+                    { t: '行星台站地图', link: '#tool-station-map' }, { t: '3D 月球地质图', link: '#tool-moon-geology' }, { t: '地质图图例', link: 'moon_geology_legend_zh.html' },
+                    { t: '射线追踪工作台', link: '#tool-raytracer' }, { t: '月震工作流' }, { t: '仪器响应管理器', link: '#tool-instrument-response' },
+                    { t: '阿波罗系统', link: '#tool-apollo' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器', link: '#tool-scanner' },
+                    { t: '修复库对比查看器', link: '#tool-repair-db-viewer' }, { sep: true },
+                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器', link: '#tool-noise' }, { t: '波形合并工具' },
                     { sep: true },
-                    { t: '滑动相关分析器' }, { t: '批处理工作流' }
+                    { t: '滑动相关分析器', link: '#tool-sliding-corr' }, { t: '批处理工作流' }
                 ]},
                 'hot-sim': { left: '15.9%', top: '2.3%', items: [
-                    { t: '地震相位模拟' }, { t: '简正模工作台' }, { t: '模型设计器' }
+                    { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '简正模工作台', link: '#tool-normal-mode' }, { t: '模型设计器', link: '#tool-model-designer' }
                 ]},
                 'hot-set': { left: '19.2%', top: '2.3%', items: [
                     { t: '首选项' }, { t: '修改配置' }, { t: '绘制频谱设置' },
@@ -1505,11 +1514,11 @@
                     { t: '显示内存使用情况' }
                 ]},
                 'hot-net': { left: '22.5%', top: '2.3%', items: [
-                    { t: '打开 Wilber 3' }, { t: '打开谷歌地图' }, { t: '打开 SAGE 工具' },
-                    { t: '打开地震台网列表' }, { t: '打开地学网站列表' }
+                    { t: '打开 Wilber 3', link: 'https://ds.iris.edu/wilber3/find_event' }, { t: '打开谷歌地图', link: 'https://ds.iris.edu/gmap/' }, { t: '打开 SAGE 工具', link: 'https://ds.iris.edu/ds/nodes/dmc/tools/' },
+                    { t: '打开地震台网列表', link: 'https://www.fdsn.org/networks/' }, { t: '打开地学网站列表', link: 'https://www.iris.edu/hq/' }
                 ]},
                 'hot-help': { left: '25.8%', top: '2.3%', items: [
-                    { t: '使用指南 / User Guide' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
+                    { t: '使用指南 / User Guide', link: '../documents/seisy_user_guide.html' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
                     { t: '检查更新' }, { t: '关于' }
                 ]},
                 'hot-evctx': { left: '77%', top: '35%', items: [
@@ -1559,12 +1568,25 @@
                         if (it.a) {
                             var a = document.createElement('span'); a.className = 'acc'; a.textContent = it.a; d.appendChild(a);
                         }
-                        d.addEventListener('click', function () { closeMenu(); });
+                        d.addEventListener('click', function () {
+                            closeMenu();
+                            if (it.link) {
+                                var _id = it.link.charAt(0) === '#' ? it.link.slice(1) : it.link;
+                                var el = document.getElementById(_id);
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                else window.open(it.link, '_blank', 'noopener');
+                            }
+                        });
                     }
                     div.appendChild(d);
                 });
                 shot.appendChild(div);
                 shot.classList.add('menu-open');
+                // 按视口剩余空间限制菜单高度，避免超出屏幕底部被裁切
+                var mr = div.getBoundingClientRect();
+                var avail = window.innerHeight - mr.top - 14;
+                if (avail < 160) avail = 160;
+                div.style.maxHeight = avail + 'px';
             }
             document.querySelectorAll('.shot-hot .hot').forEach(function (el) {
                 el.addEventListener('click', function (e) {
@@ -1582,8 +1604,30 @@
                 if (!e.target.closest('#shot-menu') && !e.target.closest('.shot-hot .hot')) closeMenu();
             });
             document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+
         })();
     </script>
+    <script>
+        (function () {
+            function init() {
+                var bt = document.getElementById('back-top');
+                if (!bt) return;
+                function onScroll() {
+                    if (window.scrollY > 500) bt.classList.add('show');
+                    else bt.classList.remove('show');
+                }
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll();
+                bt.addEventListener('click', function () {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
+        })();
+    </script>
+    <button id="back-top" type="button" aria-label="回到顶部">&#9650;</button>
 
 </body>
 </html>
+
