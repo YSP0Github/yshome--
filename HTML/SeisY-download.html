@@ -70,6 +70,12 @@
     }
     .btn:hover { background: var(--primary-dark); }
     .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-guide {
+        padding: 8px 18px; font-size: 13.5px; font-weight: 600; border-radius: 10px;
+        border: 1px solid var(--border); background: #fff; color: var(--text);
+        cursor: pointer; transition: all .2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-guide:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
     .status {
         min-height: 22px; font-size: 13px; display: flex; align-items: center; gap: 8px;
     }
@@ -245,26 +251,14 @@
         </div>
         <div class="actions">
             <button class="btn" id="btn-dl" type="button">&#11015; 下载数据</button>
+            <a class="btn-guide" href="#usage">&#128218; 使用说明</a>
             <div class="status" id="status"></div>
         </div>
         <div class="result-box" id="result"></div>
     </div>
 
     <div class="card">
-        <h2><span class="step">2</span>使用说明</h2>
-        <div class="tips">
-            <ul>
-                <li><strong>时间格式：</strong>使用 <strong>UTC</strong> 时间（世界协调时），北京时间 = UTC + 8 小时。建议单次下载不超过 1 天数据（大文件可能超时）。</li>
-                <li><strong>通配符：</strong>网络 / 位置支持 <code>*</code>（如 <code>loc=*</code> 匹配所有位置编码）。台站 / 通道支持逗号列表，将一次返回所有匹配组合。</li>
-                <li><strong>无数据：</strong>若返回 <code>204 / 404</code>，表示该台站在所选时间段无数据，请检查台站代码、时间范围或更换数据中心。</li>
-                <li><strong>结果文件：</strong>下载得到的是 <code>miniSEED</code> 波形文件，可直接在 SeisY 桌面版中「导入文件」打开，或使用 ObsPy 等工具读取。</li>
-                <li><strong>速率限制：</strong>数据中心通常限制单次请求的数据量（IRIS 约 500MB / 请求），超大时段请分段下载。</li>
-                <li><strong>台站元数据：</strong>如需仪器响应（StationXML），请使用 SeisY 桌面版「仪器响应管理器」。</li>
-            </ul>
-        </div>
-    </div>
-    <div class="card">
-        <h2><span class="step">3</span>数据可视化</h2>
+        <h2><span class="step">2</span>数据可视化</h2>
         <div class="viz-wrap">
             <div class="viz-side">
                 <div class="upload-box" id="upload-box">
@@ -289,7 +283,9 @@
                     <button class="viz-btn" id="viz-reset" type="button" disabled>恢复全览</button>
                     <button class="viz-btn" id="viz-zoom-in" type="button" disabled>&#10133; 放大</button>
                     <button class="viz-btn" id="viz-zoom-out" type="button" disabled>&#10134; 缩小</button>
-                    <span class="tip">Ctrl+滚轮缩放 · 拖拽平移 · 双击恢复全览</span>
+                    <button class="viz-btn" id="viz-yin" type="button" disabled>&#8593; 纵向放大</button>
+                    <button class="viz-btn" id="viz-yout" type="button" disabled>&#8595; 纵向缩小</button>
+                    <span class="tip">Ctrl+滚轮 横向缩放 · Alt+滚轮 纵向缩放 · 拖拽平移 · 双击恢复全览</span>
                 </div>
                 <div class="viz-canvas-box">
                     <canvas id="viz-canvas"></canvas>
@@ -300,6 +296,20 @@
                     <div class="viz-loading" id="viz-loading"><span id="viz-loading-text">解析中…</span><button id="viz-cancel" type="button" style="margin-left:14px;padding:5px 16px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">取消</button></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card" id="usage">
+        <h2><span class="step">3</span>使用说明</h2>
+        <div class="tips">
+            <ul>
+                <li><strong>时间格式：</strong>使用 <strong>UTC</strong> 时间（世界协调时），北京时间 = UTC + 8 小时。建议单次下载不超过 1 天数据（大文件可能超时）。</li>
+                <li><strong>通配符：</strong>网络 / 位置支持 <code>*</code>（如 <code>loc=*</code> 匹配所有位置编码）。台站 / 通道支持逗号列表，将一次返回所有匹配组合。</li>
+                <li><strong>无数据：</strong>若返回 <code>204 / 404</code>，表示该台站在所选时间段无数据，请检查台站代码、时间范围或更换数据中心。</li>
+                <li><strong>结果文件：</strong>下载得到的是 <code>miniSEED</code> 波形文件，可直接在 SeisY 桌面版中「导入文件」打开，或使用 ObsPy 等工具读取。</li>
+                <li><strong>速率限制：</strong>数据中心通常限制单次请求的数据量（IRIS 约 500MB / 请求），超大时段请分段下载。</li>
+                <li><strong>台站元数据：</strong>如需仪器响应（StationXML），请使用 SeisY 桌面版「仪器响应管理器」。</li>
+            </ul>
         </div>
     </div>
 </main>
@@ -556,7 +566,23 @@
         var b = off + h.blocketteOffset;
         h.encoding = dv.getUint8(b + 4);            // 11=Steim2, 10=Steim1, 3=32bit int, 4=float
         var recExp = dv.getUint8(b + 6);            // 记录长度指数（2^exp）
-        h.recLen = Math.pow(2, recExp > 0 ? recExp : 9);
+        h.recLen = (recExp > 0 && recExp < 20) ? Math.pow(2, recExp) : 0;
+        // blockette 缺失/无效（如 IRIS 阿波罗 XA 数据只在首条记录写 blockette）：自动检测记录长度，默认按 Steim2
+        var bOk = (b + 8 <= off + 64) && recExp > 0 && recExp < 20;
+        if (!bOk || h.recLen < 128 || h.recLen > (1 << 20)) {
+            var cand = [512, 1024, 2048, 4096, 8192, 16384];
+            h.recLen = 0;
+            for (var ci = 0; ci < cand.length; ci++) {
+                var cl = cand[ci];
+                if (off + cl + 48 <= dv.byteLength) {
+                    var ct = strOf(dv, off + cl + 6, 1);
+                    if (ct === 'D' || ct === 'M') { h.recLen = cl; break; }
+                }
+            }
+            if (!h.recLen) h.recLen = 4096;
+            if (!bOk) h.encoding = 11;
+        }
+        if (!(h.recLen > 0) || h.recLen > 1e7) h.recLen = 4096;
         return h;
     }
 
@@ -819,10 +845,12 @@
             allT1 = Math.max(allT1, t.endTime);
             if (t.maxAmp > maxAbs) maxAbs = t.maxAmp;   // maxAmp 由 Worker 解析时算好，避免主线程再全量扫描
         });
-        if (!view) view = { t0: allT0, t1: allT1 };
+        if (!view) view = { t0: allT0, t1: allT1, yZoom: 1 };
+        if (!view.yZoom) view.yZoom = 1;
         var span = (view.t1 - view.t0) || 1;
         var n = traces.length;
         var bandH = H / n;
+        var halfK = (n === 1) ? 0.47 : 0.42;   // 单 trace 时波形尽量铺满画布
         for (var i = 0; i < n; i++) {
             var t = traces[i];
             var top = i * bandH;
@@ -837,8 +865,11 @@
             // 零线
             ctx.strokeStyle = 'rgba(148,163,184,.25)';
             ctx.beginPath(); ctx.moveTo(0, top + bandH / 2); ctx.lineTo(W, top + bandH / 2); ctx.stroke();
-            // 波形
+            // 波形（clip 到本 band，纵向缩放时波形不越界）
             var amp = t.maxAmp || maxAbs || 1;
+            var yHalf = bandH * halfK * view.yZoom;
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, top, W, bandH); ctx.clip();
             ctx.strokeStyle = '#38bdf8';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -846,10 +877,11 @@
             for (var k = 0; k < t.data.length; k += step) {
                 var time = t.start + k / t.rate * 1000;
                 var x = (time - view.t0) / span * W;
-                var y = top + bandH / 2 - (t.data[k] / amp) * (bandH * 0.42);
+                var y = top + bandH / 2 - (t.data[k] / amp) * yHalf;
                 if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
+            ctx.restore();
         }
         // 时间轴
         ctx.fillStyle = '#64748b';
@@ -888,6 +920,8 @@
         $('viz-reset').disabled = false;
         $('viz-zoom-in').disabled = false;
         $('viz-zoom-out').disabled = false;
+        $('viz-yin').disabled = false;
+        $('viz-yout').disabled = false;
     }
 
     function visualize(buf, isAuto) {
@@ -961,13 +995,24 @@
     }
     $('viz-zoom-in').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 0.6); });
     $('viz-zoom-out').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 1.7); });
+    function yZoomAt(factor) {
+        if (!view || !traces.length) return;
+        view.yZoom = Math.min(40, Math.max(0.2, (view.yZoom || 1) * factor));
+        draw();
+    }
+    $('viz-yin').addEventListener('click', function () { yZoomAt(1.5); });
+    $('viz-yout').addEventListener('click', function () { yZoomAt(1 / 1.5); });
     $('viz-reset').addEventListener('click', function () { view = null; draw(); });
-    // 缩放只在 Ctrl+滚轮时触发，普通滚轮让页面正常滚动（避免滚动页面时被劫持成缩放）
+    // 缩放只在 Ctrl+滚轮（横向）或 Alt+滚轮（纵向）时触发，普通滚轮让页面正常滚动
     canvas.addEventListener('wheel', function (e) {
-        if (!e.ctrlKey) return;
+        if (!e.ctrlKey && !e.altKey) return;
         e.preventDefault();
-        var rect = canvas.getBoundingClientRect();
-        zoomAt(e.clientX - rect.left, e.deltaY > 0 ? 1.25 : 0.8);
+        if (e.ctrlKey) {
+            var rect = canvas.getBoundingClientRect();
+            zoomAt(e.clientX - rect.left, e.deltaY > 0 ? 1.25 : 0.8);
+        } else {
+            yZoomAt(e.deltaY > 0 ? 1 / 1.25 : 1.25);
+        }
     }, { passive: false });
     canvas.addEventListener('dblclick', function () { view = null; draw(); });
     canvas.addEventListener('mousedown', function (e) {
