@@ -215,17 +215,17 @@
                 <input type="datetime-local" id="end">
             </div>
             <div class="field full">
-                <label>数据源（FDSN 数据中心）</label>
+                <label>数据源（FDSN 数据中心）<span class="hint">台站数据存于其所属网络的主数据中心，一般场景选 IRIS 即可</span></label>
                 <select id="ds">
-                    <option value="https://service.iris.edu">IRIS（美国，推荐）</option>
-                    <option value="https://geofon.gfz-potsdam.de">GFZ / GEOFON（德国）</option>
-                    <option value="https://ws.resif.fr">RESIF（法国）</option>
-                    <option value="https://service.usgs.gov">USGS NEIC（美国）</option>
-                    <option value="https://service.scedc.caltech.edu">SCEDC（南加州）</option>
-                    <option value="https://webservices.ingv.it">INGV（意大利）</option>
-                    <option value="https://eida.bgr.de">BGR（德国）</option>
-                    <option value="https://eida.koeri.boun.edu.tr">KOERI（土耳其）</option>
-                    <option value="https://service.odc.earth">ODC（中国台湾）</option>
+                    <option value="https://service.iris.edu">IRIS（美国 · 全球综合，含阿波罗月震 · 推荐）</option>
+                    <option value="https://geofon.gfz-potsdam.de">GFZ / GEOFON（德国 · 全球/欧洲台网）</option>
+                    <option value="https://service.usgs.gov">USGS NEIC（美国 · 全球速报台网 + 美国本土）</option>
+                    <option value="https://ws.resif.fr">RESIF（法国 · 法国/欧洲台网）</option>
+                    <option value="https://webservices.ingv.it">INGV（意大利 · 意大利/地中海台网）</option>
+                    <option value="https://eida.bgr.de">BGR（德国 · 德国/欧洲台网）</option>
+                    <option value="https://eida.koeri.boun.edu.tr">KOERI（土耳其 · 土耳其/欧亚台网）</option>
+                    <option value="https://service.odc.earth">ODC（中国台湾 · 台湾区域台网）</option>
+                    <option value="https://service.scedc.caltech.edu">SCEDC（美国 · 南加州区域）</option>
                     <option value="custom">自定义...</option>
                 </select>
             </div>
