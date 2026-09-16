@@ -1527,6 +1527,11 @@
                 });
                 shot.appendChild(div);
                 shot.classList.add('menu-open');
+                // 按视口剩余空间限制菜单高度，避免超出屏幕底部被裁切
+                var mr = div.getBoundingClientRect();
+                var avail = window.innerHeight - mr.top - 14;
+                if (avail < 160) avail = 160;
+                div.style.maxHeight = avail + 'px';
             }
             document.querySelectorAll('.shot-hot .hot').forEach(function (el) {
                 el.addEventListener('click', function (e) {
