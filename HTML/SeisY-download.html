@@ -142,8 +142,33 @@
         background: #0b1020; border-radius: 12px; overflow: hidden; position: relative;
         height: 380px; border: 1px solid var(--border);
     }
-    .viz-canvas-box canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+    .viz-canvas-box canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
     .viz-canvas-box canvas.dragging { cursor: grabbing; }
+    /* ---- 全屏模式 ---- */
+    .viz-main.fs {
+        position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 9999;
+        background: #0b1020; padding: 14px 16px 16px;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .viz-main.fs .viz-canvas-box { flex: 1; height: auto; border-radius: 0; border: none; }
+    .viz-rotate-hint {
+        position: absolute; inset: 0; z-index: 10; display: none;
+        align-items: center; justify-content: center; text-align: center;
+        background: rgba(11,16,32,.9); color: #e2e8f0; flex-direction: column;
+    }
+    .viz-rotate-hint.show { display: flex; }
+    .viz-rotate-hint .rh-ico { font-size: 42px; margin-bottom: 12px; }
+    .viz-rotate-hint .rh-t { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .viz-rotate-hint .rh-s { font-size: 12.5px; color: #94a3b8; margin-bottom: 20px; }
+    .viz-rotate-hint button {
+        display: block; margin: 6px auto; padding: 9px 26px; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.1);
+        color: #e2e8f0; font-size: 13px; cursor: pointer; min-width: 150px;
+    }
+    .viz-rotate-hint button:hover { background: rgba(255,255,255,.18); }
+    @media (max-width: 700px) {
+        .viz-main.fs { padding: 8px 8px 12px; }
+    }
     .viz-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
     .viz-toolbar .tip { font-size: 12px; color: var(--text-2); }
     .viz-btn {
@@ -278,14 +303,15 @@
                     支持 Steim1 / Steim2 压缩的 miniSEED 记录。下载成功的数据会自动在此处预览，也可上传本地文件。
                 </div>
             </div>
-            <div class="viz-main">
+            <div class="viz-main" id="viz-main">
                 <div class="viz-toolbar">
                     <button class="viz-btn" id="viz-reset" type="button" disabled>恢复全览</button>
                     <button class="viz-btn" id="viz-zoom-in" type="button" disabled>&#10133; 放大</button>
                     <button class="viz-btn" id="viz-zoom-out" type="button" disabled>&#10134; 缩小</button>
                     <button class="viz-btn" id="viz-yin" type="button" disabled>&#8593; 纵向放大</button>
                     <button class="viz-btn" id="viz-yout" type="button" disabled>&#8595; 纵向缩小</button>
-                    <span class="tip">Ctrl+滚轮 横向缩放 · Alt+滚轮 纵向缩放 · 拖拽平移 · 双击恢复全览</span>
+                    <button class="viz-btn" id="viz-fs" type="button">&#9974; 全屏</button>
+                    <span class="tip">Ctrl+滚轮 横向缩放 · Alt+滚轮 纵向缩放 · 拖拽平移 · 双击恢复全览 · 触屏单指拖动 / 双指缩放</span>
                 </div>
                 <div class="viz-canvas-box">
                     <canvas id="viz-canvas"></canvas>
@@ -294,6 +320,13 @@
                         <div>下载数据或上传文件后，此处显示波形</div>
                     </div>
                     <div class="viz-loading" id="viz-loading"><span id="viz-loading-text">解析中…</span><button id="viz-cancel" type="button" style="margin-left:14px;padding:5px 16px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">取消</button></div>
+                    <div class="viz-rotate-hint" id="viz-rotate-hint">
+                        <div class="rh-ico">&#128241;&#65039;&#128257;</div>
+                        <div class="rh-t">建议横屏查看波形</div>
+                        <div class="rh-s">旋转设备以获得最佳体验</div>
+                        <button id="rh-close" type="button">仍以竖屏查看</button>
+                        <button id="rh-exit" type="button">退出全屏</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1033,6 +1066,80 @@
         if (dragging) { dragging = null; canvas.classList.remove('dragging'); }
     });
     window.addEventListener('resize', function () { if (traces.length) draw(); });
+
+    /* ---------- 全屏模式（自定义 fixed 遮罩，桌面/移动端一致） ---------- */
+    var vizMain = $('viz-main');
+    var fsBtn = $('viz-fs'), rotHint = $('viz-rotate-hint');
+    function isFs() { return vizMain.classList.contains('fs'); }
+    function updateRotHint() {
+        var mobile = window.innerWidth <= 700;
+        var portrait = window.innerHeight > window.innerWidth;
+        if (isFs() && mobile && portrait) rotHint.classList.add('show');
+        else rotHint.classList.remove('show');
+    }
+    function enterFs() {
+        vizMain.classList.add('fs');
+        fsBtn.textContent = '✕ 退出全屏';
+        document.body.style.overflow = 'hidden';
+        updateRotHint();
+        if (traces.length) draw();
+    }
+    function exitFs() {
+        vizMain.classList.remove('fs');
+        fsBtn.textContent = '⛶ 全屏';
+        document.body.style.overflow = '';
+        rotHint.classList.remove('show');
+        if (traces.length) draw();
+    }
+    fsBtn.addEventListener('click', function () { if (isFs()) exitFs(); else enterFs(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isFs()) exitFs(); });
+    $('rh-exit').addEventListener('click', exitFs);
+    $('rh-close').addEventListener('click', function () { rotHint.classList.remove('show'); });
+    window.addEventListener('resize', updateRotHint);
+    window.addEventListener('orientationchange', function () { setTimeout(updateRotHint, 250); });
+
+    /* ---------- 触摸：单指平移 / 双指缩放 ---------- */
+    var pinch = null;
+    canvas.addEventListener('touchstart', function (e) {
+        if (!view || !traces.length) return;
+        if (e.touches.length === 1) {
+            pinch = { mode: 'pan', x: e.touches[0].clientX, t0: view.t0, span: view.t1 - view.t0 };
+        } else if (e.touches.length >= 2) {
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinch = { mode: 'pinch', dist: Math.sqrt(dx * dx + dy * dy), t0: view.t0, span: view.t1 - view.t0 };
+        }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', function (e) {
+        if (!pinch) return;
+        e.preventDefault();
+        if (pinch.mode === 'pan' && e.touches.length === 1) {
+            var dx = e.touches[0].clientX - pinch.x;
+            var dt = dx / canvas.clientWidth * pinch.span;
+            view.t0 = pinch.t0 - dt;
+            view.t1 = view.t0 + pinch.span;
+            draw();
+        } else if (pinch.mode === 'pinch' && e.touches.length >= 2) {
+            var a = e.touches[0], b = e.touches[1];
+            var ddx = a.clientX - b.clientX, ddy = a.clientY - b.clientY;
+            var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+            if (pinch.dist > 0 && dist > 0) {
+                var rect = canvas.getBoundingClientRect();
+                var mx = (a.clientX + b.clientX) / 2 - rect.left;
+                zoomAt(mx, pinch.dist / dist);   // 手指张开 → 放大
+            }
+            pinch.dist = dist;
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchend', function (e) {
+        if (!pinch) return;
+        if (e.touches.length === 1) {
+            pinch = { mode: 'pan', x: e.touches[0].clientX, t0: view.t0, span: view.t1 - view.t0 };
+        } else if (e.touches.length === 0) {
+            pinch = null;
+        }
+    });
+    canvas.addEventListener('touchcancel', function () { pinch = null; });
 
     /* ---------- 文件上传 ---------- */
     var fileInput = $('file-input'), uploadBox = $('upload-box');
