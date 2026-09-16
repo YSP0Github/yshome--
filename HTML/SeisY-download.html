@@ -97,6 +97,50 @@
         background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
         border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 22px;
     }
+    /* ---- 数据可视化 ---- */
+    .viz-wrap { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    .viz-side .upload-box {
+        border: 2px dashed var(--border); border-radius: 12px; padding: 22px 16px;
+        text-align: center; cursor: pointer; transition: all .2s; background: #fafbfd;
+    }
+    .viz-side .upload-box:hover { border-color: var(--primary); background: #eff6ff; }
+    .viz-side .upload-box .ico { font-size: 30px; color: var(--primary); margin-bottom: 8px; }
+    .viz-side .upload-box .t { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .viz-side .upload-box .s { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+    .viz-info { margin-top: 14px; font-size: 12.5px; color: var(--text-2); }
+    .viz-info .kv { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+    .viz-info .kv b { color: var(--text); font-weight: 600; }
+    .viz-trace-list { margin-top: 12px; max-height: 180px; overflow: auto; font-size: 12px; }
+    .viz-trace-list .tr { padding: 5px 8px; border-radius: 6px; margin-bottom: 4px; background: #f1f5f9; cursor: pointer; }
+    .viz-trace-list .tr.active { background: #dbeafe; color: var(--primary-dark); }
+    .viz-trace-list .tr .id { font-weight: 600; }
+    .viz-trace-list .tr .meta { color: var(--text-2); font-size: 11px; }
+    .viz-main { position: relative; }
+    .viz-canvas-box {
+        background: #0b1020; border-radius: 12px; overflow: hidden; position: relative;
+        height: 380px; border: 1px solid var(--border);
+    }
+    .viz-canvas-box canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+    .viz-canvas-box canvas.dragging { cursor: grabbing; }
+    .viz-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .viz-toolbar .tip { font-size: 12px; color: var(--text-2); }
+    .viz-btn {
+        padding: 5px 14px; font-size: 12.5px; border: 1px solid var(--border); border-radius: 8px;
+        background: #fff; color: var(--text); cursor: pointer; transition: all .2s;
+    }
+    .viz-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .viz-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .viz-empty {
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #64748b; font-size: 13.5px; pointer-events: none;
+    }
+    .viz-empty .ico { font-size: 34px; margin-bottom: 10px; opacity: .5; }
+    .viz-loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(11,16,32,.7); color: #e2e8f0; font-size: 14px; z-index: 2; }
+    .viz-loading.show { display: flex; }
+    @media (max-width: 700px) {
+        .viz-wrap { grid-template-columns: 1fr; }
+        .viz-canvas-box { height: 300px; }
+    }
     footer { text-align: center; color: var(--text-2); font-size: 12.5px; padding: 22px 0 40px; }
     @media (max-width: 700px) {
         .form-grid { grid-template-columns: 1fr; }
@@ -199,6 +243,45 @@
                 <li><strong>速率限制：</strong>数据中心通常限制单次请求的数据量（IRIS 约 500MB / 请求），超大时段请分段下载。</li>
                 <li><strong>台站元数据：</strong>如需仪器响应（StationXML），请使用 SeisY 桌面版「仪器响应管理器」。</li>
             </ul>
+        </div>
+    </div>
+    <div class="card">
+        <h2><span class="step">3</span>数据可视化</h2>
+        <div class="viz-wrap">
+            <div class="viz-side">
+                <div class="upload-box" id="upload-box">
+                    <div class="ico">&#128228;</div>
+                    <div class="t">选择 miniSEED 文件</div>
+                    <div class="s">点击选择 .mseed / .msd 文件，或拖拽到此处</div>
+                    <input type="file" id="file-input" accept=".mseed,.msd,.miniseed,.m" style="display:none;">
+                </div>
+                <div class="viz-info" id="viz-info">
+                    <div class="kv"><span>解析状态</span><b id="viz-state">等待文件</b></div>
+                    <div class="kv"><span>记录数</span><b id="viz-records">-</b></div>
+                    <div class="kv"><span>合并 Trace 数</span><b id="viz-traces">-</b></div>
+                    <div class="kv"><span>总采样点</span><b id="viz-samples">-</b></div>
+                </div>
+                <div class="viz-trace-list" id="viz-trace-list"></div>
+                <div class="viz-info" style="font-size:11.5px;">
+                    支持 Steim1 / Steim2 压缩的 miniSEED 记录。下载成功的数据会自动在此处预览，也可上传本地文件。
+                </div>
+            </div>
+            <div class="viz-main">
+                <div class="viz-toolbar">
+                    <button class="viz-btn" id="viz-reset" type="button" disabled>恢复全览</button>
+                    <button class="viz-btn" id="viz-zoom-in" type="button" disabled>&#10133; 放大</button>
+                    <button class="viz-btn" id="viz-zoom-out" type="button" disabled>&#10134; 缩小</button>
+                    <span class="tip">滚轮缩放 · 拖拽平移 · 点击右侧 Trace 高亮</span>
+                </div>
+                <div class="viz-canvas-box">
+                    <canvas id="viz-canvas"></canvas>
+                    <div class="viz-empty" id="viz-empty">
+                        <div class="ico">&#128200;</div>
+                        <div>下载数据或上传文件后，此处显示波形</div>
+                    </div>
+                    <div class="viz-loading" id="viz-loading">解析中...</div>
+                </div>
+            </div>
         </div>
     </div>
 </main>
@@ -310,12 +393,360 @@
                 resultEl.innerHTML = '<div class="file"><span><a href="' + a.href + '" download="' + fname + '">' + fname + '</a></span><span class="meta">' + (blob.size / 1024).toFixed(1) + ' KB</span></div>';
                 resultEl.classList.add('show');
                 setStatus('下载成功 ✓', 'ok');
+                if (window.__viz) window.__viz.show(blob, true);
             })
             .catch(function (e) {
                 setStatus(e && e.msg ? e.msg : ('下载失败：' + (e && e.message ? e.message : e)), 'err');
             })
             .finally(function () { btn.disabled = false; });
     });
+})();
+</script>
+<script>
+/* ===== 数据可视化：miniSEED 解析（Steim1/2）+ Canvas 波形绘制 ===== */
+(function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var canvas = $('viz-canvas'), ctx = canvas.getContext('2d');
+    var traces = [];          // 解析出的 trace 列表
+    var view = null;          // 当前视图 {t0, t1}
+    var activeIdx = -1;
+    var dragging = null;
+
+    /* ---------- miniSEED 头解析 ---------- */
+    function strOf(dv, off, len) {
+        var s = '';
+        for (var i = 0; i < len; i++) {
+            var c = dv.getUint8(off + i);
+            if (c === 0) break;
+            s += String.fromCharCode(c);
+        }
+        return s.trim();
+    }
+    function parseHeader(dv) {
+        var h = {};
+        h.station = strOf(dv, 8, 8);
+        h.location = strOf(dv, 16, 4);
+        h.channel = strOf(dv, 20, 3);
+        h.network = strOf(dv, 24, 2);
+        var yr = parseInt(strOf(dv, 32, 4), 10);
+        var doy = parseInt(strOf(dv, 36, 3), 10);
+        var hh = parseInt(strOf(dv, 39, 2), 10);
+        var mm = parseInt(strOf(dv, 41, 2), 10);
+        var ss = parseInt(strOf(dv, 43, 2), 10);
+        if (!yr || !doy) { h.start = null; } else {
+            h.start = Date.UTC(yr, 0, doy, hh || 0, mm || 0, ss || 0);
+        }
+        h.nsamples = dv.getUint16(44, false);
+        var factor = dv.getInt16(46, false);
+        var mult = dv.getInt16(48, false);
+        // 采样率：factor*multiplier；负数/0 时兜底
+        h.rate = (factor > 0 && mult > 0) ? factor * mult :
+                 (factor > 0 && mult <= 0) ? -factor / mult :
+                 (factor <= 0 && mult > 0) ? -mult / factor : 1;
+        if (!(h.rate > 0) || h.rate > 1e7) h.rate = 1;
+        h.blockOffset = dv.getUint8(55) || 64;
+        return h;
+    }
+
+    /* ---------- Steim1 / Steim2 解码 ---------- */
+    function decodeSteim1(dv, dataStart, dataEnd, nsamples) {
+        var out = [], prev = 0, off = dataStart;
+        while (out.length < nsamples && off + 64 <= dataEnd) {
+            var w0 = dv.getInt32(off, false);
+            var dOff = off + 4, blockEnd = off + 64;
+            for (var i = 7; i >= 0; i--) {
+                var n = (w0 >>> (i * 4)) & 0xF;
+                if (n === 0 || out.length >= nsamples) continue;
+                var v;
+                switch (n) {
+                    case 1: v = dv.getInt8(dOff); dOff += 1; prev = v; break;
+                    case 2: v = dv.getInt16(dOff, false); dOff += 2; prev = v; break;
+                    case 3: v = dv.getInt32(dOff, false); dOff += 4; prev = v; break;
+                    case 4: v = dv.getInt32(dOff, false); dOff += 4; v += prev; prev = v; break;
+                    case 5: v = dv.getInt8(dOff); dOff += 1; v += prev; prev = v; break;
+                    case 6: v = dv.getInt16(dOff, false); dOff += 2; v += prev; prev = v; break;
+                    case 7: v = dv.getInt32(dOff, false); dOff += 4; v += prev; prev = v; break;
+                    default: continue;
+                }
+                out.push(v);
+            }
+            off = blockEnd;
+        }
+        return out.slice(0, nsamples);
+    }
+    function decodeSteim2(dv, dataStart, dataEnd, nsamples) {
+        var out = [], prev = 0, off = dataStart;
+        while (out.length < nsamples && off + 64 <= dataEnd) {
+            var w0 = dv.getInt32(off, false);
+            var dOff = off + 4, blockEnd = off + 64;
+            // 4 个 16-bit 编码字（从高到低）
+            for (var i = 3; i >= 0; i--) {
+                var code = (w0 >>> (i * 8)) & 0xFFFF;
+                var n = (code >>> 12) & 0xF;
+                if (n === 0 || out.length >= nsamples) continue;
+                var v;
+                switch (n) {
+                    case 1: v = dv.getInt8(dOff) >> 4; dOff += 1; v += prev; prev = v; break; // 4-bit diff（高半字节）
+                    case 2: v = dv.getInt8(dOff); dOff += 1; v += prev; prev = v; break;
+                    case 3: v = dv.getInt16(dOff, false); dOff += 2; v += prev; prev = v; break;
+                    case 4: v = dv.getInt32(dOff, false); dOff += 4; v += prev; prev = v; break;
+                    case 5: v = dv.getInt8(dOff) >> 4; dOff += 1; prev = v; break;
+                    case 6: v = dv.getInt8(dOff); dOff += 1; prev = v; break;
+                    case 7: v = dv.getInt16(dOff, false); dOff += 2; prev = v; break;
+                    default: continue;
+                }
+                out.push(v);
+            }
+            off = blockEnd;
+        }
+        return out.slice(0, nsamples);
+    }
+
+    /* ---------- 解析整个文件 → traces ---------- */
+    function parseMSEED(buf) {
+        var dv = new DataView(buf);
+        var recs = [];
+        var off = 0;
+        var L = dv.byteLength;
+        while (off + 64 <= L) {
+            var type = strOf(dv, 6, 2);
+            var ns = dv.getUint16(44, false);
+            if (type !== 'MS' || ns === 0) { off += 512; continue; }
+            var h = parseHeader(dv);
+            var recLen = h.blockOffset >= 48 ? 512 : 512;
+            // 尝试定位块体：blockOffset 通常 64；若无效尝试 48/512
+            var dataStart = (h.blockOffset > 0 && h.blockOffset + 64 <= L - off) ? off + h.blockOffset : off + 64;
+            var dataEnd = Math.min(off + 512, L);
+            var samples = null;
+            var tries = [
+                { name: 'steim2', fn: decodeSteim2 },
+                { name: 'steim1', fn: decodeSteim1 }
+            ];
+            // 先尝试 Steim2（月球/现代数据常见），样本数不符再试 Steim1
+            for (var t = 0; t < tries.length; t++) {
+                var cand = tries[t].fn(dv, dataStart, dataEnd, ns);
+                if (cand.length === ns && cand.length > 0) { samples = cand; break; }
+                if (cand.length > 0 && tries[t].name === 'steim2') { samples = cand; }
+            }
+            if (samples && samples.length) {
+                recs.push({ h: h, data: samples });
+            }
+            off += 512;
+        }
+        // 合并相同 net.sta.loc.cha 的连续记录
+        var merged = [];
+        recs.forEach(function (r) {
+            var key = [r.h.network, r.h.station, r.h.location, r.h.channel].join('.');
+            var last = merged[merged.length - 1];
+            if (last && last.key === key && last.endTime === r.h.start) {
+                last.data = last.data.concat(r.data);
+                last.endTime = r.h.start + r.data.length / r.h.rate * 1000;
+                last.npts += r.data.length;
+                last.recs += 1;
+            } else {
+                merged.push({
+                    key: key,
+                    net: r.h.network, sta: r.h.station, loc: r.h.location, cha: r.h.channel,
+                    start: r.h.start, endTime: r.h.start + r.data.length / r.h.rate * 1000,
+                    rate: r.h.rate, npts: r.data.length, recs: 1, data: r.data
+                });
+            }
+        });
+        return { records: recs.length, traces: merged };
+    }
+
+    /* ---------- 绘制 ---------- */
+    function fmtTime(ms) {
+        var d = new Date(ms);
+        function p(n) { return n < 10 ? '0' + n : '' + n; }
+        return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' +
+               p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+    }
+    function resizeCanvas() {
+        var box = canvas.parentElement;
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = box.clientWidth * dpr;
+        canvas.height = box.clientHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function draw() {
+        resizeCanvas();
+        var W = canvas.clientWidth, H = canvas.clientHeight;
+        ctx.clearRect(0, 0, W, H);
+        if (!traces.length) { $('viz-empty').style.display = 'flex'; return; }
+        $('viz-empty').style.display = 'none';
+        var allT0 = Infinity, allT1 = -Infinity, maxAbs = 0;
+        traces.forEach(function (t, i) {
+            allT0 = Math.min(allT0, t.start);
+            allT1 = Math.max(allT1, t.endTime);
+            for (var j = 0; j < t.data.length; j++) {
+                var a = Math.abs(t.data[j]);
+                if (a > maxAbs) maxAbs = a;
+                if (t.data[j] > t.max) t.max = t.data[j];
+                if (t.data[j] < t.min) t.min = t.data[j];
+            }
+        });
+        if (!view) view = { t0: allT0, t1: allT1 };
+        var span = (view.t1 - view.t0) || 1;
+        var n = traces.length;
+        var bandH = H / n;
+        for (var i = 0; i < n; i++) {
+            var t = traces[i];
+            var top = i * bandH;
+            // 背景
+            ctx.fillStyle = (i === activeIdx) ? 'rgba(37,99,235,.14)' : (i % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)');
+            ctx.fillRect(0, top, W, bandH);
+            // 标签
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '11px "Microsoft YaHei", sans-serif';
+            ctx.fillText(t.net + '.' + t.sta + '.' + (t.loc || '*') + '.' + t.cha + '  ' +
+                fmtTime(t.start) + '  ' + t.rate + ' Hz  ' + (t.npts / 1000).toFixed(1) + 'k pts', 8, top + 14);
+            // 零线
+            ctx.strokeStyle = 'rgba(148,163,184,.25)';
+            ctx.beginPath(); ctx.moveTo(0, top + bandH / 2); ctx.lineTo(W, top + bandH / 2); ctx.stroke();
+            // 波形
+            var amp = t.maxAmp || maxAbs || 1;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            var step = Math.max(1, Math.floor(t.data.length / 4000));
+            for (var k = 0; k < t.data.length; k += step) {
+                var time = t.start + k / t.rate * 1000;
+                var x = (time - view.t0) / span * W;
+                var y = top + bandH / 2 - (t.data[k] / amp) * (bandH * 0.42);
+                if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        // 时间轴
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10.5px sans-serif';
+        var ticks = 6;
+        for (var ti = 0; ti <= ticks; ti++) {
+            var tt = view.t0 + span * ti / ticks;
+            var tx = W * ti / ticks;
+            ctx.fillText(fmtTime(tt), tx + 3, H - 6);
+        }
+    }
+
+    function renderInfo(parsed) {
+        $('viz-state').textContent = '已解析';
+        $('viz-records').textContent = parsed.records;
+        $('viz-traces').textContent = parsed.traces.length;
+        var total = 0;
+        parsed.traces.forEach(function (t) { total += t.npts; });
+        $('viz-samples').textContent = (total / 1000).toFixed(1) + 'k';
+        var list = $('viz-trace-list');
+        list.innerHTML = '';
+        parsed.traces.forEach(function (t, i) {
+            t.maxAmp = 0; t.max = -Infinity; t.min = Infinity;
+            for (var j = 0; j < t.data.length; j++) {
+                var a = Math.abs(t.data[j]);
+                if (a > t.maxAmp) t.maxAmp = a;
+            }
+            var el = document.createElement('div');
+            el.className = 'tr' + (i === activeIdx ? ' active' : '');
+            el.innerHTML = '<div class="id">' + t.net + '.' + t.sta + '.' + (t.loc || '*') + '.' + t.cha + '</div>' +
+                '<div class="meta">' + fmtTime(t.start) + ' → ' + fmtTime(t.endTime) + ' · ' + t.rate + ' Hz · ' +
+                t.npts + ' 点 · ' + t.recs + ' 记录</div>';
+            el.addEventListener('click', function () {
+                activeIdx = (activeIdx === i) ? -1 : i;
+                renderInfo(parsed);
+                draw();
+            });
+            list.appendChild(el);
+        });
+        $('viz-reset').disabled = false;
+        $('viz-zoom-in').disabled = false;
+        $('viz-zoom-out').disabled = false;
+    }
+
+    function visualize(buf, isAuto) {
+        $('viz-loading').classList.add('show');
+        setTimeout(function () {
+            try {
+                var parsed = parseMSEED(buf);
+                if (!parsed.traces.length) {
+                    $('viz-loading').classList.remove('show');
+                    $('viz-state').textContent = '未解析到有效数据';
+                    $('viz-records').textContent = parsed.records;
+                    return;
+                }
+                traces = parsed.traces;
+                view = null; activeIdx = -1;
+                renderInfo(parsed);
+                draw();
+                $('viz-state').textContent = isAuto ? '下载数据自动预览' : '已解析';
+                $('viz-loading').classList.remove('show');
+            } catch (e) {
+                $('viz-loading').classList.remove('show');
+                $('viz-state').textContent = '解析失败：' + (e && e.message ? e.message : e);
+                console.error(e);
+            }
+        }, 30);
+    }
+
+    /* ---------- 交互：缩放 / 拖拽 ---------- */
+    function zoomAt(cx, factor) {
+        if (!view || !traces.length) return;
+        var span = view.t1 - view.t0;
+        var ratio = cx / canvas.clientWidth;
+        var tAt = view.t0 + span * ratio;
+        var newSpan = span * factor;
+        view.t0 = tAt - (tAt - view.t0) * (newSpan / span);
+        view.t1 = view.t0 + newSpan;
+        draw();
+    }
+    $('viz-zoom-in').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 0.6); });
+    $('viz-zoom-out').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 1.7); });
+    $('viz-reset').addEventListener('click', function () { view = null; draw(); });
+    canvas.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        var rect = canvas.getBoundingClientRect();
+        zoomAt(e.clientX - rect.left, e.deltaY > 0 ? 1.25 : 0.8);
+    }, { passive: false });
+    canvas.addEventListener('mousedown', function (e) {
+        if (!view || !traces.length) return;
+        dragging = { x: e.clientX, t0: view.t0, span: view.t1 - view.t0 };
+        canvas.classList.add('dragging');
+    });
+    window.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var dx = e.clientX - dragging.x;
+        var dt = dx / canvas.clientWidth * dragging.span;
+        view.t0 = dragging.t0 - dt;
+        view.t1 = view.t0 + dragging.span;
+        draw();
+    });
+    window.addEventListener('mouseup', function () {
+        if (dragging) { dragging = null; canvas.classList.remove('dragging'); }
+    });
+    window.addEventListener('resize', function () { if (traces.length) draw(); });
+
+    /* ---------- 文件上传 ---------- */
+    var fileInput = $('file-input'), uploadBox = $('upload-box');
+    uploadBox.addEventListener('click', function () { fileInput.click(); });
+    uploadBox.addEventListener('dragover', function (e) { e.preventDefault(); this.style.borderColor = 'var(--primary)'; });
+    uploadBox.addEventListener('dragleave', function () { this.style.borderColor = ''; });
+    uploadBox.addEventListener('drop', function (e) {
+        e.preventDefault(); this.style.borderColor = '';
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', function () {
+        if (this.files.length) handleFile(this.files[0]);
+    });
+    function handleFile(file) {
+        var reader = new FileReader();
+        reader.onload = function (ev) { visualize(ev.target.result, false); };
+        reader.readAsArrayBuffer(file);
+    }
+
+    /* ---------- 暴露给下载流程 ---------- */
+    window.__viz = {
+        show: function (blob, isAuto) {
+            blob.arrayBuffer().then(function (buf) { visualize(buf, isAuto); });
+        }
+    };
 })();
 </script>
 </body>
