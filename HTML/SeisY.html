@@ -28,9 +28,9 @@
 
     <style id="hero-rework-css">
         /* ---- hero：无 mac bar，菜单栏直接浮在图片顶部黑边 ---- */
-        #hero-shot { position: relative; border-radius: 1rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.84); box-shadow: 0 22px 54px rgba(0,0,0,0.32); }
+        #hero-shot { position: relative; border-radius: 1rem; overflow: visible; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.84); box-shadow: 0 22px 54px rgba(0,0,0,0.32); }
         #hero-shot picture { position: relative; display: block; }
-        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; }
+        #hero-shot picture img { width: 100% !important; height: auto !important; display: block; border-radius: 0.85rem; }
         .shot-hot { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none; }
         .shot-hot .hot { position: absolute; pointer-events: auto; cursor: pointer; background: transparent; border: 0; border-radius: 4px; }
         .shot-mbar {
@@ -71,7 +71,7 @@
         }
         /* ---- 下拉菜单（CSS 渲染） ---- */
         .shot-menu {
-            position: absolute; z-index: 12; min-width: 210px;
+            position: absolute; z-index: 12; min-width: 210px; max-height: min(62vh, 620px); overflow-y: auto;
             background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.14);
             border-radius: 8px; box-shadow: 0 14px 34px rgba(0,0,0,0.5);
             padding: 5px; font-size: 12.5px; color: #e2e8f0;
@@ -98,6 +98,24 @@
     <style id="hero-mobile-css">
         @media (max-width: 768px) {
             #hero-shot .shot-mbar, #hero-shot .shot-hot { display: none !important; }
+        }
+    </style>
+    <style id="backtop-css">
+        #back-top {
+            position: fixed; right: 22px; bottom: 26px; z-index: 100;
+            width: 46px; height: 46px; border-radius: 14px;
+            background: rgba(15, 82, 186, 0.92); color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            font-size: 20px; line-height: 1; cursor: pointer;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+            opacity: 0; visibility: hidden; transform: translateY(12px);
+            transition: opacity .3s ease, transform .3s ease, visibility .3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #back-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #back-top:hover { background: #0a3d8f; }
+        @media (max-width: 768px) {
+            #back-top { right: 14px; bottom: 18px; width: 42px; height: 42px; border-radius: 12px; }
         }
     </style>
 </head>
@@ -498,7 +516,7 @@
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-hypocenter" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Hypocenter_locator.png" alt="震源定位器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">震源定位器</h3>
@@ -506,7 +524,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-station-map" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Planetary_station_map.png" alt="行星台站地图" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">行星台站地图</h3>
@@ -514,7 +532,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-raytracer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-RayTracer.png" alt="射线追踪工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">射线追踪工作台</h3>
@@ -522,7 +540,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-normal-mode" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-normal_mode.png" alt="简正模工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">简正模工作台</h3>
@@ -530,7 +548,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-model-designer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-models_design.png" alt="模型设计器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">模型设计器</h3>
@@ -538,7 +556,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-apollo" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Apollo_data_management.png" alt="Apollo 系统" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">Apollo 月震系统</h3>
@@ -546,7 +564,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-ai" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-AI_assistant_v2.png" alt="AI 助手" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">AI 助手</h3>
@@ -554,7 +572,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-instrument-response" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Instrument_response_manager.png" alt="仪器响应管理器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">仪器响应管理器</h3>
@@ -562,7 +580,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-moon-geology" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <div id="moon-geology-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
                         <img src="../static/images/SeisY/moon_geology_web.jpg" alt="月球地质图" class="w-full h-full object-cover">
                     </div>
@@ -572,7 +590,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-celestial" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <div id="moon-globe" class="w-full h-48 bg-[#0b1020] relative overflow-hidden">
                         <img src="../static/images/SeisY/moon_1024.jpg" alt="月球" class="w-full h-full object-cover">
                     </div>
@@ -582,7 +600,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-repair" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Anomaly_repair.png" alt="异常修复引擎" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">异常修复引擎</h3>
@@ -590,7 +608,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-scanner" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Moonquake_scanner.png" alt="月震扫描器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">月震扫描器</h3>
@@ -598,7 +616,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-noise" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Noise_extractor.png" alt="噪声提取器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">噪声提取器</h3>
@@ -606,7 +624,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-overview" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Data_overview.png" alt="数据全览面板" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">数据全览面板</h3>
@@ -614,7 +632,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                <div id="tool-sliding-corr" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Sliding_correlation.png" alt="滑动相关分析器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <h3 class="text-lg font-semibold mb-2">滑动相关分析器</h3>
@@ -1424,17 +1442,17 @@
                     { t: '切换频谱方法 (FFT/CZT)' }
                 ]},
                 'hot-tool': { left: '12.7%', top: '2.3%', items: [
-                    { t: 'AI 助手' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器' },
-                    { t: '行星台站地图' }, { t: '3D 月球地质图' }, { t: '地质图图例' },
-                    { t: '射线追踪工作台' }, { t: '月震工作流' }, { t: '仪器响应管理器' },
-                    { t: '阿波罗系统' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器' },
+                    { t: 'AI 助手', link: 'tool-ai' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器', link: 'tool-hypocenter' },
+                    { t: '行星台站地图', link: 'tool-station-map' }, { t: '3D 月球地质图', link: 'tool-moon-geology' }, { t: '地质图图例' },
+                    { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '月震工作流' }, { t: '仪器响应管理器', link: 'tool-instrument-response' },
+                    { t: '阿波罗系统', link: 'tool-apollo' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器', link: 'tool-scanner' },
                     { t: '修复库对比查看器' }, { sep: true },
-                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器' }, { t: '波形合并工具' },
+                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器', link: 'tool-noise' }, { t: '波形合并工具' },
                     { sep: true },
-                    { t: '滑动相关分析器' }, { t: '批处理工作流' }
+                    { t: '滑动相关分析器', link: 'tool-sliding-corr' }, { t: '批处理工作流' }
                 ]},
                 'hot-sim': { left: '15.9%', top: '2.3%', items: [
-                    { t: '地震相位模拟' }, { t: '简正模工作台' }, { t: '模型设计器' }
+                    { t: '地震相位模拟' }, { t: '简正模工作台', link: 'tool-normal-mode' }, { t: '模型设计器', link: 'tool-model-designer' }
                 ]},
                 'hot-set': { left: '19.2%', top: '2.3%', items: [
                     { t: '首选项' }, { t: '修改配置' }, { t: '绘制频谱设置' },
@@ -1497,7 +1515,13 @@
                         if (it.a) {
                             var a = document.createElement('span'); a.className = 'acc'; a.textContent = it.a; d.appendChild(a);
                         }
-                        d.addEventListener('click', function () { closeMenu(); });
+                        d.addEventListener('click', function () {
+                            closeMenu();
+                            if (it.link) {
+                                var el = document.getElementById(it.link);
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
                     }
                     div.appendChild(d);
                 });
@@ -1523,6 +1547,22 @@
 
         })();
     </script>
+    <script>
+        (function () {
+            var bt = document.getElementById('back-top');
+            if (!bt) return;
+            function onScroll() {
+                if (window.scrollY > 500) bt.classList.add('show');
+                else bt.classList.remove('show');
+            }
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+            bt.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+    </script>
+    <button id="back-top" type="button" aria-label="回到顶部">&#9650;</button>
 
 </body>
 </html>
