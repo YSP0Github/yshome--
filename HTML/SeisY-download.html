@@ -297,7 +297,7 @@
                         <div class="ico">&#128200;</div>
                         <div>下载数据或上传文件后，此处显示波形</div>
                     </div>
-                    <div class="viz-loading" id="viz-loading">解析中...</div>
+                    <div class="viz-loading" id="viz-loading"><span id="viz-loading-text">解析中…</span><button id="viz-cancel" type="button" style="margin-left:14px;padding:5px 16px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#e2e8f0;border-radius:6px;cursor:pointer;font-size:13px;">取消</button></div>
                 </div>
             </div>
         </div>
@@ -727,6 +727,69 @@
         return { records: recs.length, traces: merged, diag: diag };
     }
 
+    /* ---------- 后台解析 Worker（大文件不阻塞主线程，可取消） ---------- */
+    var _vizWorkerSrc = [
+        'function strOf(dv,off,len){var s="";for(var i=0;i<len;i++){var c=dv.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}',
+        'function parseHeader(dv,off){var h={};h.station=strOf(dv,off+8,5);h.location=strOf(dv,off+13,2);h.channel=strOf(dv,off+15,3);h.network=strOf(dv,off+18,2);',
+        'var yr=dv.getUint16(off+20,false),doy=dv.getUint16(off+22,false),hh=dv.getUint8(off+24),mm=dv.getUint8(off+25),ss=dv.getUint8(off+26),frac=dv.getUint16(off+27,false);',
+        'h.start=Date.UTC(yr||0,0,doy||1,hh||0,mm||0,ss||0)+(frac*0.1);h.nsamples=dv.getUint16(off+30,false);',
+        'var fact=dv.getInt16(off+32,false),mult=dv.getInt16(off+34,false);h.rate=(fact>0&&mult>0)?fact*mult:(fact>0&&mult<0)?-fact/mult:(fact<0&&mult>0)?-mult/fact:1;if(!(h.rate>0)||h.rate>1e7)h.rate=1;',
+        'h.dataOffset=dv.getUint16(off+44,false)||64;h.blocketteOffset=dv.getUint16(off+46,false)||48;var b=off+h.blocketteOffset;h.encoding=dv.getUint8(b+4);var recExp=dv.getUint8(b+6);h.recLen=Math.pow(2,recExp>0?recExp:9);return h;}',
+        'function sgn(v,bits){var m=1<<(bits-1);return(v^m)-m;}',
+        'function decodeSteim2(dv,off,dataOffset,recLen,nsamples){var samples=[];var maxframes=Math.floor((recLen-dataOffset)/64);var X0=0,cur=0,first=true;',
+        'for(var fi=0;fi<maxframes&&samples.length<nsamples;fi++){var foff=off+dataOffset+64*fi;var w=[];for(var i=0;i<16;i++)w.push(dv.getInt32(foff+i*4,false));',
+        'var start=(fi===0)?3:1;if(fi===0){X0=w[1];}for(var wi=start;wi<16&&samples.length<nsamples;wi++){var nibble=(w[0]>>>(30-2*wi))&3;var W=w[wi],diffs=[];',
+        'if(nibble===1){diffs=[(W>>>24)<<24>>24,(W>>>16)<<24>>24,(W>>>8)<<24>>24,W<<24>>24];}else if(nibble===2){var dn=(W>>>30)&3;',
+        'if(dn===1)diffs=[sgn(W&0x3FFFFFFF,30)];else if(dn===2)diffs=[sgn((W>>>15)&0x7FFF,15),sgn(W&0x7FFF,15)];else if(dn===3)diffs=[sgn((W>>>20)&0x3FF,10),sgn((W>>>10)&0x3FF,10),sgn(W&0x3FF,10)];',
+        '}else if(nibble===3){var dn3=(W>>>30)&3;if(dn3===0){for(var k=0;k<5;k++)diffs.push(sgn((W>>>(24-k*6))&0x3F,6));}else if(dn3===1){for(var k2=0;k2<6;k2++)diffs.push(sgn((W>>>(25-k2*5))&0x1F,5));}',
+        'else if(dn3===2){for(var k3=0;k3<7;k3++)diffs.push(sgn((W>>>(24-k3*4))&0xF,4));}}',
+        'for(var di=0;di<diffs.length&&samples.length<nsamples;di++){if(first){samples.push(X0);cur=X0;first=false;}else{cur+=diffs[di];samples.push(cur);}}}}}return samples;}',
+        'function decodeSteim1(dv,dataStart,dataEnd,nsamples){var out=[],prev=0,off=dataStart;while(out.length<nsamples&&off+64<=dataEnd){var w0=dv.getInt32(off,false);var dOff=off+4,blockEnd=off+64;',
+        'for(var i=7;i>=0;i--){var n=(w0>>>(i*4))&0xF;if(n===0||out.length>=nsamples)continue;var v;switch(n){',
+        'case 1:v=dv.getInt8(dOff);dOff+=1;prev=v;break;case 2:v=dv.getInt16(dOff,false);dOff+=2;prev=v;break;case 3:v=dv.getInt32(dOff,false);dOff+=4;prev=v;break;',
+        'case 4:v=dv.getInt32(dOff,false);dOff+=4;v+=prev;prev=v;break;case 5:v=dv.getInt8(dOff);dOff+=1;v+=prev;prev=v;break;case 6:v=dv.getInt16(dOff,false);dOff+=2;v+=prev;prev=v;break;',
+        'case 7:v=dv.getInt32(dOff,false);dOff+=4;v+=prev;prev=v;break;default:continue;}out.push(v);}off=blockEnd;}return out.slice(0,nsamples);}',
+        'function decodeRaw(dv,dataStart,ns,enc){var size=(enc===3)?2:(enc===4?4:(enc===6?8:4));var out=[];for(var i=0;i<ns&&dataStart+i*size+size<=dv.byteLength;i++){',
+        'if(enc===3)out.push(dv.getInt16(dataStart+i*2,false));else if(enc===4)out.push(dv.getInt32(dataStart+i*4,false));else if(enc===6){var v6=dv.getFloat64(dataStart+i*8,false);if(!isFinite(v6))return out;out.push(v6);}',
+        'else{var v5=dv.getFloat32(dataStart+i*4,false);if(!isFinite(v5))return out;out.push(v5);}}return out;}',
+        'function decodeRawAuto(dv,dataStart,ns,recEnd){var avail=recEnd-dataStart;var tries=[];if(avail>=ns*4)tries.push({enc:5,name:"FLOAT32"});if(avail>=ns*4)tries.push({enc:4,name:"INT32"});if(avail>=ns*2)tries.push({enc:3,name:"INT16"});',
+        'for(var t=0;t<tries.length;t++){var s=decodeRaw(dv,dataStart,ns,tries[t].enc);if(s.length===ns){var ok=true,nz=0;for(var j=0;j<s.length;j++){if(!isFinite(s[j])){ok=false;break;}if(s[j]!==0)nz++;}if(ok&&nz>s.length*0.1)return s;}}return null;}',
+        'function parseMSEED(buf){var dv=new DataView(buf);var recs=[];var off=0;var L=dv.byteLength;var firstNonMD=-1,firstSkippedEnc=null,firstBadHdr=null,firstDecodeFail=null;',
+        'while(off+64<=L){var type=strOf(dv,off+6,1);if(type!=="D"&&type!=="M"){if(firstNonMD<0)firstNonMD=off;off+=512;continue;}',
+        'var h=parseHeader(dv,off);var ns=h.nsamples;if(ns===0||h.recLen<=0){if(!firstBadHdr)firstBadHdr="nsamples="+ns+" recLen="+h.recLen+" @"+off;off+=h.recLen||512;continue;}',
+        'var dataStart=off+h.dataOffset;var samples=null;if(h.encoding===11)samples=decodeSteim2(dv,off,h.dataOffset,h.recLen,ns);',
+        'else if(h.encoding===10)samples=decodeSteim1(dv,dataStart,off+h.recLen,ns);else if(h.encoding===3||h.encoding===4||h.encoding===5||h.encoding===6)samples=decodeRaw(dv,dataStart,ns,h.encoding);',
+        'else if(h.encoding===0)samples=decodeRawAuto(dv,dataStart,ns,off+h.recLen);else{if(!firstSkippedEnc)firstSkippedEnc="encoding="+h.encoding+" "+h.network+"."+h.station+"."+(h.location||"*")+"."+h.channel+" @"+off;}',
+        'if(samples&&samples.length)recs.push({h:h,data:samples});else if(samples!==null&&!firstDecodeFail)firstDecodeFail=h.network+"."+h.station+"."+(h.location||"*")+"."+h.channel+" nsamples="+ns+" @"+off;off+=h.recLen;}',
+        'var merged=[];recs.forEach(function(r){var key=[r.h.network,r.h.station,r.h.location,r.h.channel].join(".");var last=merged[merged.length-1];var tol=Math.max(2000/(r.h.rate||1),60000);',
+        'if(last&&last.key===key&&r.h.start-last.endTime<tol){last.parts.push(r.data);last.endTime=r.h.start+r.data.length/r.h.rate*1000;last.npts+=r.data.length;last.recs+=1;}',
+        'else{merged.push({key:key,net:r.h.network,sta:r.h.station,loc:r.h.location,cha:r.h.channel,start:r.h.start,endTime:r.h.start+r.data.length/r.h.rate*1000,rate:r.h.rate,npts:r.data.length,recs:1,parts:[r.data]});}});',
+        'merged.forEach(function(m){m.data=[].concat.apply([],m.parts);delete m.parts;});var diag=null;if(!recs.length){',
+        'if(L<64)diag="文件过小（"+L+" 字节），不是有效的 miniSEED";else if(firstBadHdr)diag="记录头异常："+firstBadHdr;else if(firstSkippedEnc)diag="不支持的编码："+firstSkippedEnc;',
+        'else if(firstDecodeFail)diag="解码失败："+firstDecodeFail;else if(firstNonMD>=0)diag="第 "+firstNonMD+" 字节处记录类型 ≠ D/M，文件可能不是 miniSEED（如 SAC/SEGY/文本），或记录头被截断";else diag="未找到含有效波形的记录";}',
+        'return{records:recs.length,traces:merged,diag:diag};}',
+        'self.onmessage=function(e){var id=e.data.id;try{var parsed=parseMSEED(e.data.buf);',
+        'parsed.traces.forEach(function(t){var m=0;for(var j=0;j<t.data.length;j++){var a=Math.abs(t.data[j]);if(a>m)m=a;}t.maxAmp=m;});',
+        'self.postMessage({id:id,ok:true,records:parsed.records,traces:parsed.traces,diag:parsed.diag});}catch(err){self.postMessage({id:id,ok:false,error:String((err&&err.message)||err)});}};'
+    ].join('\n');
+    var _vizWorkerUrl = (window.URL || window.webkitURL).createObjectURL(new Blob([_vizWorkerSrc], { type: 'text/javascript' }));
+    var curWorker = null;
+    function cancelViz() {
+        if (curWorker) { try { curWorker.terminate(); } catch (e) {} curWorker = null; }
+        $('viz-loading').classList.remove('show');
+    }
+    $('viz-cancel').addEventListener('click', function () {
+        cancelViz();
+        $('viz-state').textContent = '已取消';
+        $('viz-records').textContent = '0';
+        $('viz-traces').textContent = '0';
+        $('viz-samples').textContent = '0';
+        var trL = $('viz-trace-list');
+        trL.innerHTML = '';
+        traces = []; view = null; activeIdx = -1;
+        draw();
+    });
+
     /* ---------- 绘制 ---------- */
     function fmtTime(ms) {
         var d = new Date(ms);
@@ -751,12 +814,7 @@
         traces.forEach(function (t, i) {
             allT0 = Math.min(allT0, t.start);
             allT1 = Math.max(allT1, t.endTime);
-            for (var j = 0; j < t.data.length; j++) {
-                var a = Math.abs(t.data[j]);
-                if (a > maxAbs) maxAbs = a;
-                if (t.data[j] > t.max) t.max = t.data[j];
-                if (t.data[j] < t.min) t.min = t.data[j];
-            }
+            if (t.maxAmp > maxAbs) maxAbs = t.maxAmp;   // maxAmp 由 Worker 解析时算好，避免主线程再全量扫描
         });
         if (!view) view = { t0: allT0, t1: allT1 };
         var span = (view.t1 - view.t0) || 1;
@@ -811,11 +869,7 @@
         var list = $('viz-trace-list');
         list.innerHTML = '';
         parsed.traces.forEach(function (t, i) {
-            t.maxAmp = 0; t.max = -Infinity; t.min = Infinity;
-            for (var j = 0; j < t.data.length; j++) {
-                var a = Math.abs(t.data[j]);
-                if (a > t.maxAmp) t.maxAmp = a;
-            }
+            // maxAmp 已由 Worker 在解析时计算
             var el = document.createElement('div');
             el.className = 'tr' + (i === activeIdx ? ' active' : '');
             el.innerHTML = '<div class="id">' + t.net + '.' + t.sta + '.' + (t.loc || '*') + '.' + t.cha + '</div>' +
@@ -834,41 +888,61 @@
     }
 
     function visualize(buf, isAuto) {
+        cancelViz();
+        $('viz-state').textContent = '解析中…';
         $('viz-loading').classList.add('show');
-        setTimeout(function () {
-            try {
-                var parsed = parseMSEED(buf);
-                if (!parsed.traces.length) {
-                    $('viz-loading').classList.remove('show');
-                    $('viz-state').textContent = '未解析到有效数据';
-                    $('viz-records').textContent = parsed.records;
-                    $('viz-traces').textContent = '0';
-                    $('viz-samples').textContent = '0';
-                    var trL = $('viz-trace-list');
-                    trL.innerHTML = '';
-                    if (parsed.diag) {
-                        var d = document.createElement('div');
-                        d.style.cssText = 'margin-top:10px;padding:8px 10px;background:#fef2f2;color:#b91c1c;border-radius:8px;font-size:12px;line-height:1.6;word-break:break-all;';
-                        d.textContent = '诊断：' + parsed.diag;
-                        trL.appendChild(d);
-                    }
-                    // 解析失败时清空旧波形，避免残留上一次的数据造成误导
-                    traces = []; view = null; activeIdx = -1;
-                    draw();
-                    return;
-                }
-                traces = parsed.traces;
-                view = null; activeIdx = -1;
-                renderInfo(parsed);
+        var w = new Worker(_vizWorkerUrl);
+        curWorker = w;
+        w.onmessage = function (e) {
+            curWorker = null;
+            $('viz-loading').classList.remove('show');
+            var m = e.data;
+            if (!m.ok) {
+                $('viz-state').textContent = '解析失败';
+                $('viz-records').textContent = '0';
+                $('viz-traces').textContent = '0';
+                $('viz-samples').textContent = '0';
+                var trL = $('viz-trace-list');
+                trL.innerHTML = '';
+                var d = document.createElement('div');
+                d.style.cssText = 'margin-top:10px;padding:8px 10px;background:#fef2f2;color:#b91c1c;border-radius:8px;font-size:12px;line-height:1.6;word-break:break-all;';
+                d.textContent = '诊断：' + m.error;
+                trL.appendChild(d);
+                traces = []; view = null; activeIdx = -1;
                 draw();
-                $('viz-state').textContent = isAuto ? '下载数据自动预览' : '已解析';
-                $('viz-loading').classList.remove('show');
-            } catch (e) {
-                $('viz-loading').classList.remove('show');
-                $('viz-state').textContent = '解析失败：' + (e && e.message ? e.message : e);
-                console.error(e);
+                return;
             }
-        }, 30);
+            if (!m.traces.length) {
+                $('viz-state').textContent = '未解析到有效数据';
+                $('viz-records').textContent = m.records;
+                $('viz-traces').textContent = '0';
+                $('viz-samples').textContent = '0';
+                var trL2 = $('viz-trace-list');
+                trL2.innerHTML = '';
+                if (m.diag) {
+                    var d2 = document.createElement('div');
+                    d2.style.cssText = 'margin-top:10px;padding:8px 10px;background:#fef2f2;color:#b91c1c;border-radius:8px;font-size:12px;line-height:1.6;word-break:break-all;';
+                    d2.textContent = '诊断：' + m.diag;
+                    trL2.appendChild(d2);
+                }
+                traces = []; view = null; activeIdx = -1;
+                draw();
+                return;
+            }
+            traces = m.traces;
+            view = null; activeIdx = -1;
+            renderInfo(m);
+            draw();
+            $('viz-state').textContent = isAuto ? '下载数据自动预览' : '已解析';
+        };
+        w.onerror = function (ev) {
+            curWorker = null;
+            $('viz-loading').classList.remove('show');
+            $('viz-state').textContent = '解析失败：' + (ev && ev.message ? ev.message : 'Worker 错误');
+            console.error(ev);
+        };
+        // 转移 ArrayBuffer 所有权到 Worker，避免复制
+        w.postMessage({ id: Date.now(), buf: buf }, [buf]);
     }
 
     /* ---------- 交互：缩放 / 拖拽 ---------- */
