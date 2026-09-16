@@ -644,12 +644,13 @@
             }
             off += h.recLen;
         }
-        // 合并相同 net.sta.loc.cha 的连续记录
+        // 合并相同 net.sta.loc.cha 的连续记录（容差：2 个采样间隔）
         var merged = [];
         recs.forEach(function (r) {
             var key = [r.h.network, r.h.station, r.h.location, r.h.channel].join('.');
             var last = merged[merged.length - 1];
-            if (last && last.key === key && last.endTime === r.h.start) {
+            var tol = 2000 / (r.h.rate || 1);
+            if (last && last.key === key && Math.abs(last.endTime - r.h.start) < tol) {
                 last.data = last.data.concat(r.data);
                 last.endTime = r.h.start + r.data.length / r.h.rate * 1000;
                 last.npts += r.data.length;
