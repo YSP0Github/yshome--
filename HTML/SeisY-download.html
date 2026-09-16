@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SeisY · 在线下载地震数据</title>
+<style>
+    :root {
+        --primary: #0F52BA;
+        --primary-dark: #0a3d8f;
+        --bg: #f6f8fb;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --text-2: #64748b;
+        --ok: #16a34a;
+        --err: #dc2626;
+        --warn: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+        background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+    header {
+        background: linear-gradient(135deg, #0b1020 0%, #14203a 100%);
+        color: #fff; padding: 18px 0;
+    }
+    .nav-inner {
+        max-width: 960px; margin: 0 auto; padding: 0 20px;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; }
+    .nav-brand img { width: 26px; height: 26px; border-radius: 5px; }
+    .nav-back { color: #94a3b8; font-size: 13px; text-decoration: none; }
+    .nav-back:hover { color: #fff; }
+    main { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+    .page-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { color: var(--text-2); font-size: 14px; margin-bottom: 26px; }
+    .card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+        box-shadow: 0 4px 18px rgba(15,23,42,.06); padding: 26px 28px; margin-bottom: 22px;
+    }
+    .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .card h2 .step { 
+        width: 24px; height: 24px; border-radius: 8px; background: var(--primary);
+        color: #fff; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .field label .hint { font-weight: 400; color: var(--text-2); font-size: 12px; }
+    .field input, .field select {
+        width: 100%; padding: 9px 12px; font-size: 14px;
+        border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text);
+        font-family: inherit;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,82,186,.12); }
+    .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .preset-btn {
+        padding: 6px 14px; font-size: 12.5px; border: 1px solid var(--border); border-radius: 9999px;
+        background: #f1f5f9; color: var(--text-2); cursor: pointer; transition: all .2s;
+    }
+    .preset-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+    .actions { display: flex; align-items: center; gap: 14px; margin-top: 22px; }
+    .btn {
+        padding: 11px 26px; font-size: 15px; font-weight: 600; border: 0; border-radius: 10px;
+        background: var(--primary); color: #fff; cursor: pointer; transition: background .2s;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .status {
+        min-height: 22px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+    }
+    .status .spinner { display: none; width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
+    .status.loading .spinner { display: inline-block; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.warn { color: var(--warn); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-box {
+        display: none; margin-top: 16px; border: 1px solid var(--border); border-radius: 10px;
+        background: #f8fafc; padding: 14px 16px; font-size: 13px; max-height: 260px; overflow: auto;
+    }
+    .result-box.show { display: block; }
+    .result-box .file { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+    .result-box .file:last-child { border-bottom: 0; }
+    .result-box .file a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .result-box .file a:hover { text-decoration: underline; }
+    .result-box .meta { color: var(--text-2); font-size: 12px; }
+    .tips { font-size: 13px; color: var(--text-2); }
+    .tips ul { padding-left: 18px; }
+    .tips li { margin-bottom: 6px; }
+    .tips code { background: #eef2f7; padding: 1px 6px; border-radius: 5px; font-size: 12px; color: #0f172a; }
+    .warn-box {
+        background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+        border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 22px;
+    }
+    footer { text-align: center; color: var(--text-2); font-size: 12.5px; padding: 22px 0 40px; }
+    @media (max-width: 700px) {
+        .form-grid { grid-template-columns: 1fr; }
+        main { padding: 20px 14px 40px; }
+        .card { padding: 20px 18px; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="nav-inner">
+        <div class="nav-brand">
+            <img src="../static/images/SeisY/SeisY-3D-rad.ico" alt="SeisY">
+            <span>SeisY 数据下载</span>
+        </div>
+        <a class="nav-back" href="./SeisY.html">← 返回 SeisY 主页</a>
+    </div>
+</header>
+
+<main>
+    <h1 class="page-title">下载地震数据</h1>
+    <p class="page-sub">通过 FDSN 数据服务在线下载地震波形数据（miniSEED 格式），对应 SeisY 桌面版「数据 → 下载地震数据」功能。</p>
+
+    <div class="warn-box">
+        <strong>说明：</strong>本页面直接调用国际 FDSN 数据中心（IRIS 等）的公开数据服务，适用于<strong>地球</strong>地震数据。
+        Apollo 月球地震数据不在 FDSN 网络中，请使用 SeisY 桌面版配合本地数据库下载。数据版权归各数据中心所有。
+    </div>
+
+    <div class="card">
+        <h2><span class="step">1</span>下载参数</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label>网络（Network）<span class="hint"> 支持 * 通配</span></label>
+                <input type="text" id="net" value="IU" placeholder="如 IU / 2 / XB">
+            </div>
+            <div class="field">
+                <label>台站（Station）<span class="hint"> 多个用逗号或空格分隔</span></label>
+                <input type="text" id="sta" value="ANMO" placeholder="如 ANMO, ANTO">
+            </div>
+            <div class="field">
+                <label>位置（Location）</label>
+                <input type="text" id="loc" value="*" placeholder="如 00 / 01 / *">
+            </div>
+            <div class="field">
+                <label>通道（Channel）<span class="hint"> 多个用逗号分隔</span></label>
+                <input type="text" id="cha" value="BHZ" placeholder="如 BHZ, BHN, BHE">
+            </div>
+            <div class="field">
+                <label>起始时间（UTC）</label>
+                <input type="datetime-local" id="start">
+            </div>
+            <div class="field">
+                <label>结束时间（UTC）</label>
+                <input type="datetime-local" id="end">
+            </div>
+            <div class="field full">
+                <label>数据源（FDSN 数据中心）</label>
+                <select id="ds">
+                    <option value="https://service.iris.edu">IRIS（美国，推荐）</option>
+                    <option value="https://geofon.gfz-potsdam.de">GFZ / GEOFON（德国）</option>
+                    <option value="https://ws.resif.fr">RESIF（法国）</option>
+                    <option value="https://service.usgs.gov">USGS NEIC（美国）</option>
+                    <option value="https://service.scedc.caltech.edu">SCEDC（南加州）</option>
+                    <option value="https://webservices.ingv.it">INGV（意大利）</option>
+                    <option value="https://eida.bgr.de">BGR（德国）</option>
+                    <option value="https://eida.koeri.boun.edu.tr">KOERI（土耳其）</option>
+                    <option value="https://service.odc.earth">ODC（台湾）</option>
+                    <option value="custom">自定义...</option>
+                </select>
+            </div>
+            <div class="field full" id="custom-ds-wrap" style="display:none;">
+                <label>自定义数据源地址</label>
+                <input type="text" id="custom-ds" placeholder="https://example.org（不带 /fdsnws）">
+            </div>
+        </div>
+        <div class="preset-row">
+            <span style="font-size:12.5px;color:var(--text-2);align-self:center;">示例：</span>
+            <button class="preset-btn" type="button" data-net="IU" data-sta="ANMO" data-loc="00" data-cha="BHZ">IU.ANMO 宽频台</button>
+            <button class="preset-btn" type="button" data-net="II" data-sta="TARA" data-loc="00" data-cha="BHZ">II.TARA 全球台</button>
+            <button class="preset-btn" type="button" data-net="XB" data-sta="ELYSE" data-loc="02" data-cha="VBB">XB.ELYSE 火星 InSight</button>
+            <button class="preset-btn" type="button" data-net="G" data-sta="CAN" data-loc="00" data-cha="BHZ">G.CAN 地震台</button>
+            <button class="preset-btn" type="button" data-net="*" data-sta="ANMO" data-loc="*" data-cha="BHZ">跨网络搜索 ANMO</button>
+        </div>
+        <div class="actions">
+            <button class="btn" id="btn-dl" type="button">&#11015; 下载数据</button>
+            <div class="status" id="status"></div>
+        </div>
+        <div class="result-box" id="result"></div>
+    </div>
+
+    <div class="card">
+        <h2><span class="step">2</span>使用说明</h2>
+        <div class="tips">
+            <ul>
+                <li><strong>时间格式：</strong>使用 <strong>UTC</strong> 时间（世界协调时），北京时间 = UTC + 8 小时。建议单次下载不超过 1 天数据（大文件可能超时）。</li>
+                <li><strong>通配符：</strong>网络 / 位置支持 <code>*</code>（如 <code>loc=*</code> 匹配所有位置编码）。台站 / 通道支持逗号列表，将一次返回所有匹配组合。</li>
+                <li><strong>无数据：</strong>若返回 <code>204 / 404</code>，表示该台站在所选时间段无数据，请检查台站代码、时间范围或更换数据中心。</li>
+                <li><strong>结果文件：</strong>下载得到的是 <code>miniSEED</code> 波形文件，可直接在 SeisY 桌面版中「导入文件」打开，或使用 ObsPy 等工具读取。</li>
+                <li><strong>速率限制：</strong>数据中心通常限制单次请求的数据量（IRIS 约 500MB / 请求），超大时段请分段下载。</li>
+                <li><strong>台站元数据：</strong>如需仪器响应（StationXML），请使用 SeisY 桌面版「仪器响应管理器」。</li>
+            </ul>
+        </div>
+    </div>
+</main>
+
+<footer>
+    SeisY · 数据下载页 — 数据由各 FDSN 数据中心提供，仅供科研使用
+</footer>
+
+<script>
+(function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var statusEl = $('status'), resultEl = $('result');
+
+    function setStatus(msg, cls) {
+        statusEl.className = 'status' + (cls ? ' ' + cls : '');
+        statusEl.textContent = msg || '';
+    }
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    function fmtUTC(d) {
+        return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) +
+               'T' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds());
+    }
+    // 默认时间：过去 24 小时
+    (function initTime() {
+        var now = new Date();
+        var past = new Date(now.getTime() - 24 * 3600 * 1000);
+        $('start').value = fmtUTC(past).slice(0, 16);
+        $('end').value = fmtUTC(now).slice(0, 16);
+    })();
+
+    // 数据源切换
+    $('ds').addEventListener('change', function () {
+        $('custom-ds-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+
+    // 示例按钮
+    document.querySelectorAll('.preset-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            $('net').value = this.dataset.net;
+            $('sta').value = this.dataset.sta;
+            $('loc').value = this.dataset.loc;
+            $('cha').value = this.dataset.cha;
+            setStatus('', '');
+        });
+    });
+
+    function cleanMulti(v) {
+        return v.replace(/，/g, ',').split(/[,;\s]+/).map(function (s) { return s.trim(); }).filter(Boolean).join(',');
+    }
+
+    $('btn-dl').addEventListener('click', function () {
+        var btn = this;
+        var net = $('net').value.trim();
+        var sta = cleanMulti($('sta').value);
+        var loc = $('loc').value.trim() || '*';
+        var cha = cleanMulti($('cha').value);
+        var startRaw = $('start').value;
+        var endRaw = $('end').value;
+
+        // 校验
+        if (!net) return setStatus('请输入网络代码', 'err');
+        if (!sta) return setStatus('请输入台站代码', 'err');
+        if (!cha) return setStatus('请输入通道代码', 'err');
+        if (!startRaw || !endRaw) return setStatus('请选择起止时间', 'err');
+        if (startRaw >= endRaw) return setStatus('结束时间必须晚于起始时间', 'err');
+
+        var start = fmtUTC(new Date(startRaw));
+        var end = fmtUTC(new Date(endRaw));
+
+        var dsSel = $('ds');
+        var base = dsSel.value === 'custom' ? $('custom-ds').value.trim().replace(/\/+$/, '') : dsSel.value;
+        if (!base) return setStatus('请填写数据源地址', 'err');
+
+        var url = base + '/fdsnws/dataselect/1/query?' +
+            'net=' + encodeURIComponent(net) +
+            '&sta=' + encodeURIComponent(sta) +
+            '&loc=' + encodeURIComponent(loc) +
+            '&cha=' + encodeURIComponent(cha) +
+            '&start=' + encodeURIComponent(start) +
+            '&end=' + encodeURIComponent(end);
+
+        btn.disabled = true;
+        resultEl.classList.remove('show');
+        resultEl.innerHTML = '';
+        setStatus('正在请求数据中心...', 'loading');
+
+        fetch(url, { redirect: 'follow' })
+            .then(function (resp) {
+                if (resp.status === 204 || resp.status === 404) {
+                    throw { code: 'NO_DATA', msg: '数据中心返回无数据（' + resp.status + '）' };
+                }
+                if (!resp.ok) {
+                    return resp.text().then(function (t) {
+                        throw { code: 'HTTP_' + resp.status, msg: '请求失败（' + resp.status + '）：' + (t || '').slice(0, 400) };
+                    });
+                }
+                return resp.blob();
+            })
+            .then(function (blob) {
+                if (!blob || blob.size === 0) throw { code: 'EMPTY', msg: '返回了空文件' };
+                var fname = net + '.' + sta.replace(/,/g, '_') + '.' + (loc || '*') + '.' + cha.replace(/,/g, '_') +
+                            '.' + start.replace(/[:T]/g, '') + '.mseed';
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = fname;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+                resultEl.innerHTML = '<div class="file"><span><a href="' + a.href + '" download="' + fname + '">' + fname + '</a></span><span class="meta">' + (blob.size / 1024).toFixed(1) + ' KB</span></div>';
+                resultEl.classList.add('show');
+                setStatus('下载成功 ✓', 'ok');
+            })
+            .catch(function (e) {
+                setStatus(e && e.msg ? e.msg : ('下载失败：' + (e && e.message ? e.message : e)), 'err');
+            })
+            .finally(function () { btn.disabled = false; });
+    });
+})();
+</script>
+</body>
+</html>
