@@ -1554,17 +1554,21 @@
     </script>
     <script>
         (function () {
-            var bt = document.getElementById('back-top');
-            if (!bt) return;
-            function onScroll() {
-                if (window.scrollY > 500) bt.classList.add('show');
-                else bt.classList.remove('show');
+            function init() {
+                var bt = document.getElementById('back-top');
+                if (!bt) return;
+                function onScroll() {
+                    if (window.scrollY > 500) bt.classList.add('show');
+                    else bt.classList.remove('show');
+                }
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll();
+                bt.addEventListener('click', function () {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
             }
-            window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll();
-            bt.addEventListener('click', function () {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
         })();
     </script>
     <button id="back-top" type="button" aria-label="回到顶部">&#9650;</button>
