@@ -409,6 +409,7 @@
                 // 存入下载历史（IndexedDB 持久化，仅存浏览器本地，不上传任何服务器）
                 addToHistory({ name: fname, size: blob.size, blob: blob, time: Date.now() });
                 setStatus('下载成功 ✓ 已保存到本地下载目录', 'ok');
+                if (window.__viz) window.__viz.show(blob, true);
             })
             .catch(function (e) {
                 setStatus(e && e.msg ? e.msg : ('下载失败：' + (e && e.message ? e.message : e)), 'err');
