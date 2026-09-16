@@ -42,20 +42,20 @@
         }
         .shot-mbar .sm-logo {
             width: 15px; height: 15px; flex: none;
-            margin: auto 9px auto 11px;
+            margin: auto 6px auto 7px;
             border-radius: 3px; object-fit: contain;
         }
         .shot-mbar .sm-menus { display: flex; align-items: stretch; height: 100%; }
         .shot-mbar .sm-btn {
-            height: 100%; padding: 0 9px; border: 0; background: transparent;
-            color: #dbe2ea; font-size: 11.5px; line-height: 1; cursor: pointer;
+            height: 100%; padding: 0 5px; border: 0; background: transparent;
+            color: #dbe2ea; font-size: 11px; line-height: 1; cursor: pointer;
             white-space: nowrap; display: flex; align-items: center;
         }
         .shot-mbar .sm-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
         .shot-mbar .sm-btn:active { background: rgba(255,255,255,0.2); }
         .shot-mbar .sm-win { display: flex; margin-left: auto; height: 100%; flex: none; }
         .shot-mbar .sm-wbtn {
-            width: 34px; height: 100%; border: 0; background: transparent; cursor: pointer;
+            width: 28px; height: 100%; border: 0; background: transparent; cursor: pointer;
             color: #c3ccd6; display: flex; align-items: center; justify-content: center;
             font-size: 11px; line-height: 1;
         }
@@ -167,8 +167,8 @@
                 <div class="mt-16 max-w-7xl mx-auto fade-in delay-400">
                     <div class="project-shot" id="hero-shot">
                         <picture style="position:relative;display:block">
-                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v3.png">
-                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v3.png" alt="SeisY 主界面截图" style="width:100%;height:auto;display:block" data-zoom>
+                            <source media="(prefers-color-scheme: dark)" srcset="../static/images/SeisY/SeisY-main-0.1.9-dark-v4.png">
+                            <img src="../static/images/SeisY/SeisY-main-0.1.9-white-v4.png" alt="SeisY 主界面截图" style="width:100%;height:auto;display:block" data-zoom>
                         </picture>
                         <div class="shot-hot" aria-hidden="true">
                             <button class="hot hot-inv" data-hot="hot-evctx" style="left:77%;top:35%;width:10%;height:9%" title="事件列表（右键菜单）"></button>
@@ -1464,7 +1464,7 @@
             var heroImg = shot ? shot.querySelector('img') : null;
             function fitMbar() {
                 if (mbar && heroImg && heroImg.clientHeight) {
-                    mbar.style.height = Math.round(heroImg.clientHeight * 40 / 1369) + 'px';
+                    mbar.style.height = Math.round(heroImg.clientHeight * 30 / 1402) + 'px';
                 }
             }
             if (heroImg) {
