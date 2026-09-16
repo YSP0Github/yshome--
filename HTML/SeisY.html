@@ -1450,17 +1450,17 @@
                     { t: '切换频谱方法 (FFT/CZT)' }
                 ]},
                 'hot-tool': { left: '12.7%', top: '2.3%', items: [
-                    { t: 'AI 助手', link: 'tool-ai' }, { t: 'SeisRT 在线工具', link: 'SeisRT.html' }, { t: '震源定位器', link: 'tool-hypocenter' },
-                    { t: '行星台站地图', link: 'tool-station-map' }, { t: '3D 月球地质图', link: 'tool-moon-geology' }, { t: '地质图图例', link: 'moon_geology_legend_zh.html' },
-                    { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '月震工作流' }, { t: '仪器响应管理器', link: 'tool-instrument-response' },
-                    { t: '阿波罗系统', link: 'tool-apollo' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器', link: 'tool-scanner' },
-                    { t: '修复库对比查看器', link: 'tool-repair-db-viewer' }, { sep: true },
-                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器', link: 'tool-noise' }, { t: '波形合并工具' },
+                    { t: 'AI 助手', link: '#tool-ai' }, { t: 'SeisRT 在线工具', link: 'SeisRT.html' }, { t: '震源定位器', link: '#tool-hypocenter' },
+                    { t: '行星台站地图', link: '#tool-station-map' }, { t: '3D 月球地质图', link: '#tool-moon-geology' }, { t: '地质图图例', link: 'moon_geology_legend_zh.html' },
+                    { t: '射线追踪工作台', link: '#tool-raytracer' }, { t: '月震工作流' }, { t: '仪器响应管理器', link: '#tool-instrument-response' },
+                    { t: '阿波罗系统', link: '#tool-apollo' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器', link: '#tool-scanner' },
+                    { t: '修复库对比查看器', link: '#tool-repair-db-viewer' }, { sep: true },
+                    { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器', link: '#tool-noise' }, { t: '波形合并工具' },
                     { sep: true },
-                    { t: '滑动相关分析器', link: 'tool-sliding-corr' }, { t: '批处理工作流' }
+                    { t: '滑动相关分析器', link: '#tool-sliding-corr' }, { t: '批处理工作流' }
                 ]},
                 'hot-sim': { left: '15.9%', top: '2.3%', items: [
-                    { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '简正模工作台', link: 'tool-normal-mode' }, { t: '模型设计器', link: 'tool-model-designer' }
+                    { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '简正模工作台', link: '#tool-normal-mode' }, { t: '模型设计器', link: '#tool-model-designer' }
                 ]},
                 'hot-set': { left: '19.2%', top: '2.3%', items: [
                     { t: '首选项' }, { t: '修改配置' }, { t: '绘制频谱设置' },
@@ -1526,12 +1526,10 @@
                         d.addEventListener('click', function () {
                             closeMenu();
                             if (it.link) {
-                                if (it.link.charAt(0) === '#') {
-                                    var el = document.getElementById(it.link.slice(1));
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                } else {
-                                    window.open(it.link, '_blank', 'noopener');
-                                }
+                                var _id = it.link.charAt(0) === '#' ? it.link.slice(1) : it.link;
+                                var el = document.getElementById(_id);
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                else window.open(it.link, '_blank', 'noopener');
                             }
                         });
                     }
