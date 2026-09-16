@@ -291,6 +291,20 @@
                 <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版下载入口，后续版本可继续沿用同一页面更新。</p>
             </div>
 
+            <!-- 在线下载数据入口 -->
+            <div class="max-w-4xl mx-auto mb-10">
+                <a href="SeisY-download.html" class="block bg-gradient-to-r from-primary to-accent text-white rounded-2xl p-6 md:p-7 shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="flex flex-col md:flex-row md:items-center gap-4">
+                        <div class="flex-1">
+                            <div class="text-sm opacity-90 mb-1">不想安装软件？直接用网页版</div>
+                            <div class="text-xl md:text-2xl font-bold">在线下载地震数据（免安装）</div>
+                            <div class="text-sm opacity-80 mt-1">支持地球地震与 Apollo 月球地震数据（XA 网络），下载后自动预览波形</div>
+                        </div>
+                        <div class="shrink-0"><i class="fa fa-arrow-right text-2xl"></i></div>
+                    </div>
+                </a>
+            </div>
+
             <!-- 主下载卡片 -->
             <div class="max-w-4xl mx-auto mb-12">
                 <div class="bg-white rounded-2xl shadow-lg p-8 md:p-10">
@@ -1438,7 +1452,7 @@
                     { t: '打开项目' }, { t: '导出' }, { t: '退出' }
                 ]},
                 'hot-data': { left: '6.1%', top: '2.3%', items: [
-                    { t: '下载地震数据' }, { t: '数据查看器' }, { t: '预处理' },
+                    { t: '下载地震数据', link: 'SeisY-download.html' }, { t: '数据查看器' }, { t: '预处理' },
                     { t: '阿波罗数据缺失值插值' }, { t: '加窗' }, { t: '滤波' },
                     { t: '去脉冲并绘图' }, { t: 'GDCST 滤波' },
                     { t: '地震数据相关性分析' }, { t: '地震数据稀疏化' }
