@@ -89,6 +89,22 @@
     .result-box .file a { color: var(--primary); text-decoration: none; font-weight: 600; }
     .result-box .file a:hover { text-decoration: underline; }
     .result-box .meta { color: var(--text-2); font-size: 12px; }
+    /* 下载历史列表 */
+    .dl-list .dl-head { font-size: 12px; color: var(--text-2); padding: 4px 0 8px; display: flex; justify-content: space-between; }
+    .dl-item {
+        display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px;
+        border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all .15s;
+        background: #fff;
+    }
+    .dl-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,235,.08); }
+    .dl-item.active { border-color: var(--primary); background: #eff6ff; }
+    .dl-item .fn { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dl-item .fs { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+    .dl-item .ft { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+    .dl-item .eye { font-size: 13px; color: var(--primary); flex-shrink: 0; }
+    .dl-empty { font-size: 12.5px; color: var(--text-2); padding: 10px 0; }
+    .dl-del { margin-left: 6px; font-size: 12px; color: var(--text-2); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
+    .dl-del:hover { background: #fee2e2; color: var(--err); }
     .tips { font-size: 13px; color: var(--text-2); }
     .tips ul { padding-left: 18px; }
     .tips li { margin-bottom: 6px; }
@@ -390,16 +406,104 @@
                 document.body.appendChild(a);
                 a.click();
                 setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-                resultEl.innerHTML = '<div class="file"><span><a href="' + a.href + '" download="' + fname + '">' + fname + '</a></span><span class="meta">' + (blob.size / 1024).toFixed(1) + ' KB</span></div>';
-                resultEl.classList.add('show');
-                setStatus('下载成功 ✓', 'ok');
-                if (window.__viz) window.__viz.show(blob, true);
+                // 存入下载历史（IndexedDB 持久化，仅存浏览器本地，不上传任何服务器）
+                addToHistory({ name: fname, size: blob.size, blob: blob, time: Date.now() });
+                setStatus('下载成功 ✓ 已保存到本地下载目录', 'ok');
             })
             .catch(function (e) {
                 setStatus(e && e.msg ? e.msg : ('下载失败：' + (e && e.message ? e.message : e)), 'err');
             })
             .finally(function () { btn.disabled = false; });
     });
+
+    /* ---- 下载历史列表（IndexedDB 持久化到浏览器本地，不上云服务器） ---- */
+    var db = null;
+    function openDB() {
+        return new Promise(function (resolve) {
+            if (db) return resolve(db);
+            var req = indexedDB.open('SeisY_downloads', 1);
+            req.onupgradeneeded = function () {
+                req.result.createObjectStore('files', { keyPath: 'id' });
+            };
+            req.onsuccess = function () { db = req.result; resolve(db); };
+            req.onerror = function () { resolve(null); };
+        });
+    }
+    function addToHistory(item) {
+        openDB().then(function (d) {
+            if (!d) return;
+            var tx = d.transaction('files', 'readwrite');
+            tx.objectStore('files').put({ id: item.time, name: item.name, size: item.size, blob: item.blob, time: item.time });
+        }).then(renderHistory);
+    }
+    function loadHistory() {
+        return openDB().then(function (d) {
+            if (!d) return [];
+            return new Promise(function (resolve) {
+                var tx = d.transaction('files', 'readonly');
+                var req = tx.objectStore('files').getAll();
+                req.onsuccess = function () { resolve(req.result || []); };
+                req.onerror = function () { resolve([]); };
+            });
+        });
+    }
+    function fmtSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1024).toFixed(1) + ' KB'; }
+    function fmtTime(t) {
+        var d = new Date(t);
+        function p(n) { return n < 10 ? '0' + n : '' + n; }
+        return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    var activeDl = null;
+    function renderHistory() {
+        loadHistory().then(function (items) {
+            items.sort(function (x, y) { return y.time - x.time; });
+            var html = '<div class="dl-head"><span>下载历史（保存在本机浏览器，点击文件在下方查看波形）</span><span>' + items.length + ' 个文件</span></div>';
+            if (!items.length) {
+                html += '<div class="dl-empty">暂无下载记录。下载的数据将保存在您电脑的「下载」目录，同时在此保留可随时查看的副本。</div>';
+            }
+            items.forEach(function (it) {
+                var isActive = activeDl === it.id;
+                html += '<div class="dl-item' + (isActive ? ' active' : '') + '" data-id="' + it.id + '">' +
+                    '<span class="eye">&#128065;</span>' +
+                    '<span class="fn" title="' + it.name + '">' + it.name + '</span>' +
+                    '<span class="fs">' + fmtSize(it.size) + '</span>' +
+                    '<span class="ft">' + fmtTime(it.time) + '</span>' +
+                    '<button class="dl-del" data-del="' + it.id + '" title="删除">&#10005;</button>' +
+                    '</div>';
+            });
+            resultEl.innerHTML = html;
+            resultEl.classList.add('show');
+            // 点击文件 → 下方可视化
+            Array.prototype.forEach.call(resultEl.querySelectorAll('.dl-item'), function (el) {
+                el.addEventListener('click', function (ev) {
+                    if (ev.target.dataset && ev.target.dataset.del) return;
+                    var id = parseInt(el.dataset.id, 10);
+                    loadHistory().then(function (items) {
+                        var it = items.filter(function (x) { return x.id === id; })[0];
+                        if (it) {
+                            activeDl = id;
+                            renderHistory();
+                            if (window.__viz) window.__viz.show(it.blob, false);
+                            else alert('可视化模块未加载');
+                        }
+                    });
+                });
+            });
+            Array.prototype.forEach.call(resultEl.querySelectorAll('.dl-del'), function (btn) {
+                btn.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    var id = parseInt(btn.dataset.del, 10);
+                    openDB().then(function (d) {
+                        if (!d) return;
+                        d.transaction('files', 'readwrite').objectStore('files').delete(id);
+                        if (activeDl === id) activeDl = null;
+                        renderHistory();
+                    });
+                });
+            });
+        });
+    }
+    renderHistory();
 })();
 </script>
 <script>
