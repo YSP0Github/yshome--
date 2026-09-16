@@ -743,7 +743,7 @@
         'if(dn===1)diffs=[sgn(W&0x3FFFFFFF,30)];else if(dn===2)diffs=[sgn((W>>>15)&0x7FFF,15),sgn(W&0x7FFF,15)];else if(dn===3)diffs=[sgn((W>>>20)&0x3FF,10),sgn((W>>>10)&0x3FF,10),sgn(W&0x3FF,10)];',
         '}else if(nibble===3){var dn3=(W>>>30)&3;if(dn3===0){for(var k=0;k<5;k++)diffs.push(sgn((W>>>(24-k*6))&0x3F,6));}else if(dn3===1){for(var k2=0;k2<6;k2++)diffs.push(sgn((W>>>(25-k2*5))&0x1F,5));}',
         'else if(dn3===2){for(var k3=0;k3<7;k3++)diffs.push(sgn((W>>>(24-k3*4))&0xF,4));}}',
-        'for(var di=0;di<diffs.length&&samples.length<nsamples;di++){if(first){samples.push(X0);cur=X0;first=false;}else{cur+=diffs[di];samples.push(cur);}}}}}return samples;}',
+        'for(var di=0;di<diffs.length&&samples.length<nsamples;di++){if(first){samples.push(X0);cur=X0;first=false;}else{cur+=diffs[di];samples.push(cur);}}}}return samples;}',
         'function decodeSteim1(dv,dataStart,dataEnd,nsamples){var out=[],prev=0,off=dataStart;while(out.length<nsamples&&off+64<=dataEnd){var w0=dv.getInt32(off,false);var dOff=off+4,blockEnd=off+64;',
         'for(var i=7;i>=0;i--){var n=(w0>>>(i*4))&0xF;if(n===0||out.length>=nsamples)continue;var v;switch(n){',
         'case 1:v=dv.getInt8(dOff);dOff+=1;prev=v;break;case 2:v=dv.getInt16(dOff,false);dOff+=2;prev=v;break;case 3:v=dv.getInt32(dOff,false);dOff+=4;prev=v;break;',
