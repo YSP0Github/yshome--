@@ -1092,7 +1092,7 @@
         if (traces.length) draw();
     }
     fsBtn.addEventListener('click', function () { if (isFs()) exitFs(); else enterFs(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isFs()) exitFs(); });
+    document.addEventListener('keydown', function (e) { if ((e.key === 'Escape' || e.keyCode === 27) && isFs()) exitFs(); });
     $('rh-exit').addEventListener('click', exitFs);
     $('rh-close').addEventListener('click', function () { rotHint.classList.remove('show'); });
     window.addEventListener('resize', updateRotHint);
