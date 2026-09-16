@@ -639,6 +639,14 @@
                         <p class="text-dark/70 text-sm">长时程与短时程波形的滑动相关分析，Step 步长 / Threshold 阈值 / 绝对值比较，自动定位最佳匹配片段并支持保存为事件。</p>
                     </div>
                 </div>
+
+                <div id="tool-repair-db-viewer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
+                    <img src="../static/images/SeisY/Repair_DB_Viewer.png" alt="修复库对比查看器" class="w-full h-48 object-cover object-top">
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold mb-2">修复库对比查看器</h3>
+                        <p class="text-dark/70 text-sm">原始库与修复库波形对比查看，支持时域分 / 同画布、频域 PSD / 振幅与 2×2 综合视图，色块标注缺失段修复、DSSRR 重建等异常类型，底部明细表统计修复段、事件与修复方法。</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1442,11 +1450,11 @@
                     { t: '切换频谱方法 (FFT/CZT)' }
                 ]},
                 'hot-tool': { left: '12.7%', top: '2.3%', items: [
-                    { t: 'AI 助手', link: 'tool-ai' }, { t: 'SeisRT 在线工具' }, { t: '震源定位器', link: 'tool-hypocenter' },
-                    { t: '行星台站地图', link: 'tool-station-map' }, { t: '3D 月球地质图', link: 'tool-moon-geology' }, { t: '地质图图例' },
+                    { t: 'AI 助手', link: 'tool-ai' }, { t: 'SeisRT 在线工具', link: 'SeisRT.html' }, { t: '震源定位器', link: 'tool-hypocenter' },
+                    { t: '行星台站地图', link: 'tool-station-map' }, { t: '3D 月球地质图', link: 'tool-moon-geology' }, { t: '地质图图例', link: 'moon_geology_legend_zh.html' },
                     { t: '射线追踪工作台', link: 'tool-raytracer' }, { t: '月震工作流' }, { t: '仪器响应管理器', link: 'tool-instrument-response' },
                     { t: '阿波罗系统', link: 'tool-apollo' }, { t: 'Apollo 数据质量浏览器' }, { t: '月震扫描器', link: 'tool-scanner' },
-                    { t: '修复库对比查看器' }, { sep: true },
+                    { t: '修复库对比查看器', link: 'tool-repair-db-viewer' }, { sep: true },
                     { t: 'ULF-VLSNR-SE 重构器' }, { t: '噪声提取器', link: 'tool-noise' }, { t: '波形合并工具' },
                     { sep: true },
                     { t: '滑动相关分析器', link: 'tool-sliding-corr' }, { t: '批处理工作流' }
@@ -1461,11 +1469,11 @@
                     { t: '显示内存使用情况' }
                 ]},
                 'hot-net': { left: '22.5%', top: '2.3%', items: [
-                    { t: '打开 Wilber 3' }, { t: '打开谷歌地图' }, { t: '打开 SAGE 工具' },
-                    { t: '打开地震台网列表' }, { t: '打开地学网站列表' }
+                    { t: '打开 Wilber 3', link: 'https://ds.iris.edu/wilber3/find_event' }, { t: '打开谷歌地图', link: 'https://ds.iris.edu/gmap/' }, { t: '打开 SAGE 工具', link: 'https://ds.iris.edu/ds/nodes/dmc/tools/' },
+                    { t: '打开地震台网列表', link: 'https://www.fdsn.org/networks/' }, { t: '打开地学网站列表', link: 'https://www.iris.edu/hq/' }
                 ]},
                 'hot-help': { left: '25.8%', top: '2.3%', items: [
-                    { t: '使用指南 / User Guide' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
+                    { t: '使用指南 / User Guide', link: '../documents/seisy_user_guide.html' }, { t: '去脉冲帮助' }, { t: '插值帮助' },
                     { t: '检查更新' }, { t: '关于' }
                 ]},
                 'hot-evctx': { left: '77%', top: '35%', items: [
@@ -1518,8 +1526,12 @@
                         d.addEventListener('click', function () {
                             closeMenu();
                             if (it.link) {
-                                var el = document.getElementById(it.link);
-                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                if (it.link.charAt(0) === '#') {
+                                    var el = document.getElementById(it.link.slice(1));
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                } else {
+                                    window.open(it.link, '_blank', 'noopener');
+                                }
                             }
                         });
                     }

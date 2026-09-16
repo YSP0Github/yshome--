@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月球地质图图例</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .columns {
+            display: flex;
+            gap: 40px;
+        }
+        .column {
+            flex: 1;
+        }
+        .unit {
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            border-left: 20px solid #ccc;
+            background-color: #fafafa;
+        }
+        .unit-code {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .unit-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .unit-desc {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+        }
+        .symbols {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .symbols h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .symbol-row {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .symbol-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            min-width: 300px;
+        }
+        .symbol-icon {
+            width: 120px;
+            height: 20px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .symbol-name {
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>地图单元简要说明和地图符号解释</h1>
+
+        <div class="columns">
+            <div class="column">
+                <!-- 哥白尼撞击坑 -->
+                <div class="unit" style="border-left-color: #4472c4;">
+                    <div class="unit-code">Cc, Ccc</div>
+                    <div class="unit-name">哥白尼撞击坑 (Copernican Crater)</div>
+                    <div class="unit-desc">撞击坑的坑缘、坑壁和坑底沉积物，具有突出的尖锐坑缘、圆形或多边形轮廓。相对亮度高，有辐射纹。<strong>撞击坑、链坑</strong> - 重叠的圆形到半圆形的拉长线性簇。</div>
+                </div>
+
+                <!-- 哥白尼次生撞击坑 -->
+                <div class="unit" style="border-left-color: #7030a0;">
+                    <div class="unit-code">Csc</div>
+                    <div class="unit-name">哥白尼次生撞击坑 (Copernican Crater, Secondary)</div>
+                    <div class="unit-desc">小到极小直径的撞击坑，密集分布在主撞击坑的溅射物毯上或附近。<strong>解释：</strong>由主撞击抛射的块状物质形成的撞击坑。</div>
+                </div>
+
+                <!-- 埃拉托斯特尼撞击坑 -->
+                <div class="unit" style="border-left-color: #548235;">
+                    <div class="unit-code">Ec</div>
+                    <div class="unit-name">埃拉托斯特尼撞击坑 (Eratosthenian Crater)</div>
+                    <div class="unit-desc">无辐射纹的圆形撞击坑，坑缘尖锐或部分磨圆，有部分环形溅射物，反照率低于Cc单元。<strong>解释：</strong>主要撞击事件的形态和物质。</div>
+                </div>
+
+                <!-- 埃拉托斯特尼链坑 -->
+                <div class="unit" style="border-left-color: #70ad47;">
+                    <div class="unit-code">Ecc</div>
+                    <div class="unit-name">埃拉托斯特尼链坑 (Eratosthenian Crater, Catena)</div>
+                    <div class="unit-desc">拉长的线性到椭圆形圆形或半圆形凹陷群，常相互重叠。<strong>解释：</strong>大型盆地撞击产生的溅射物形成的撞击坑群。可能是主要撞击。</div>
+                </div>
+
+                <!-- 埃拉托斯特尼次生撞击坑 -->
+                <div class="unit" style="border-left-color: #a9d18e;">
+                    <div class="unit-code">Esc</div>
+                    <div class="unit-name">埃拉托斯特尼次生撞击坑 (Eratosthenian Secondary Crater)</div>
+                    <div class="unit-desc">小到极小直径的撞击坑，密集分布在主撞击坑的溅射物毯上或附近。<strong>解释：</strong>由主撞击抛射的块状物质形成的撞击坑。</div>
+                </div>
+
+                <!-- 埃拉托斯特尼月海 -->
+                <div class="unit" style="border-left-color: #ffc000;">
+                    <div class="unit-code">Em</div>
+                    <div class="unit-name">埃拉托斯特尼月海 (Eratosthenian Mare)</div>
+                    <div class="unit-desc">相对亮度较低的平原，大型撞击坑较少，有小穹丘、尖锐山脊、可观察到的流前缘。<strong>解释：</strong>相对较薄、年轻的火山熔岩流或火山碎屑物质。</div>
+                </div>
+
+                <!-- 埃拉托斯特尼雨海高原 -->
+                <div class="unit" style="border-left-color: #ed7d31;">
+                    <div class="unit-code">Elp</div>
+                    <div class="unit-name">埃拉托斯特尼雨海高原 (Eratosthenian Imbrian Plateau)</div>
+                    <div class="unit-desc">形成高地高原（相对于风暴洋月海表面），有穹丘、锥丘和深色覆盖物质。<strong>解释：</strong>火山构造、熔岩流和火山碎屑物质。</div>
+                </div>
+
+                <!-- 雨海撞击坑 -->
+                <div class="unit" style="border-left-color: #2f5496;">
+                    <div class="unit-code">Ic</div>
+                    <div class="unit-name">雨海撞击坑 (Imbrian Crater, Undivided)</div>
+                    <div class="unit-desc">地形起伏较年轻撞击坑缓和，直径通常小于40公里，坑底宽平，溅射物很少或没有。<strong>解释：</strong>主要撞击事件的缓和形态和物质。</div>
+                </div>
+
+                <!-- 雨海下部撞击坑 -->
+                <div class="unit" style="border-left-color: #4472c4;">
+                    <div class="unit-code">Ic1</div>
+                    <div class="unit-name">雨海下部撞击坑 (Imbrian Crater, Lower)</div>
+                    <div class="unit-desc">与Ic单元类似，被东方海群物质覆盖的撞击坑。<strong>解释：</strong>主要撞击事件的缓和形态和物质，比雨海群物质年轻但比东方海群物质古老。</div>
+                </div>
+
+                <!-- 雨海上部撞击坑 -->
+                <div class="unit" style="border-left-color: #9dc3e6;">
+                    <div class="unit-code">Ic2</div>
+                    <div class="unit-name">雨海上部撞击坑 (Imbrian Crater, Upper)</div>
+                    <div class="unit-desc">与Ic单元类似，被东方海群物质叠加的撞击坑。<strong>解释：</strong>主要撞击事件的缓和形态和物质，比东方海群物质年轻但比Im2单元古老。</div>
+                </div>
+
+                <!-- 雨海链坑 -->
+                <div class="unit" style="border-left-color: #00b0f0;">
+                    <div class="unit-code">Icc</div>
+                    <div class="unit-name">雨海链坑 (Imbrian Crater, Catena)</div>
+                    <div class="unit-desc">缓和且被覆盖的拉长线性到椭圆形圆形或半圆形凹陷群，常相互重叠。<strong>解释：</strong>大型盆地撞击产生的溅射物形成的撞击坑群。可能是主要撞击。</div>
+                </div>
+
+                <!-- 雨海次生撞击坑 -->
+                <div class="unit" style="border-left-color: #00b050;">
+                    <div class="unit-code">Isc</div>
+                    <div class="unit-name">雨海次生撞击坑 (Imbrian Crater, Secondary)</div>
+                    <div class="unit-desc">小直径撞击坑，密集分布在主撞击坑的溅射物毯上或附近。<strong>解释：</strong>由主撞击抛射的块状物质形成的撞击坑。</div>
+                </div>
+
+                <!-- 雨海断裂坑底 -->
+                <div class="unit" style="border-left-color: #00a19a;">
+                    <div class="unit-code">Icf</div>
+                    <div class="unit-name">雨海断裂坑底 (Imbrian Crater, Fracture Floor)</div>
+                    <div class="unit-desc">坑底通常呈穹状，有沟槽和/或线性到曲线断裂，宽度和深度各异。断裂间的块状物质有时被重新定位。<strong>解释：</strong>脆性物质被抬升和拉伸。</div>
+                </div>
+
+                <!-- 雨海盆地 -->
+                <div class="unit" style="border-left-color: #7030a0;">
+                    <div class="unit-code">Ib</div>
+                    <div class="unit-name">雨海盆地 (Imbrian Basin, Undivided)</div>
+                    <div class="unit-desc">平缓起伏的丘陵地形，包含缓和不规则到圆形撞击坑的集合。也形成薛定谔撞击坑的外盆地和溅射物。<strong>解释：</strong>多环撞击盆地形成过程中 emplaced 的物质。</div>
+                </div>
+
+                <!-- 雨海盆地山体 -->
+                <div class="unit" style="border-left-color: #c55a11;">
+                    <div class="unit-code">Ibm</div>
+                    <div class="unit-name">雨海盆地山体 (Imbrian Basin, Massif)</div>
+                    <div class="unit-desc">崎岖的块状体，在薛定谔撞击坑内形成弧形抬升山脊。<strong>解释：</strong>盆地形成过程中抬升的物质，代表多环撞击盆地的内环。</div>
+                </div>
+
+                <!-- 雨海暗色覆盖物 -->
+                <div class="unit" style="border-left-color: #002060;">
+                    <div class="unit-code">Id</div>
+                    <div class="unit-name">雨海暗色覆盖物 (Imbrian Dark Mantle)</div>
+                    <div class="unit-desc">地图中反照率最低的物质之一，通常出现在大型盆地的外缘附近。有凹陷纹理和小型撞击坑。<strong>解释：</strong>火山碎屑物质。</div>
+                </div>
+
+                <!-- 雨海沟纹地形 -->
+                <div class="unit" style="border-left-color: #d9e2f3;">
+                    <div class="unit-code">Ig</div>
+                    <div class="unit-name">雨海沟纹地形 (Imbrian Grooved)</div>
+                    <div class="unit-desc">覆盖前酒海纪到雨海纪的各种地形。撞击坑的坑缘和坑壁有辐射状沟纹和丘陵。<strong>解释：</strong>起源不确定，可能是雨海溅射物或地震震动的结果。</div>
+                </div>
+
+                <!-- 雨海阿尔卑斯构造 -->
+                <div class="unit" style="border-left-color: #375623;">
+                    <div class="unit-code">Iia</div>
+                    <div class="unit-name">雨海阿尔卑斯构造 (Imbrian Imbrium Alpes Formation)</div>
+                    <div class="unit-desc">角状块状和瘤状地形，表面平滑、被覆盖。密集分布的丘陵和土丘，直径约2-5公里。<strong>解释：</strong>可能是被侵蚀的溅射物、构造变形的基岩或两者兼有。</div>
+                </div>
+
+                <!-- 雨海亚平宁构造 -->
+                <div class="unit" style="border-left-color: #fff2cc;">
+                    <div class="unit-code">Iiap</div>
+                    <div class="unit-name">雨海亚平宁构造 (Imbrian Imbrium Apenninus Formation)</div>
+                    <div class="unit-desc">与雨海盆地边缘平行的粗大块状物质。平滑到起伏的块间物质。<strong>解释：</strong>强烈断裂的基岩，含有雨海溅射物。</div>
+                </div>
+
+                <!-- 雨海撞击坑构造 -->
+                <div class="unit" style="border-left-color: #c5e0b4;">
+                    <div class="unit-code">Iic</div>
+                    <div class="unit-name">雨海撞击坑构造 (Imbrian Imbrium Crater)</div>
+                    <div class="unit-desc">直径小于25公里的单个撞击坑，直径小于10公里的撞击坑群和链坑，与雨海盆地呈辐射状分布。地形特征中等缓和。<strong>解释：</strong>雨海盆地形成过程中 emplaced 的次生撞击坑和撞击坑链。</div>
+                </div>
+
+                <!-- 雨海弗拉·毛罗构造 -->
+                <div class="unit" style="border-left-color: #ffe699;">
+                    <div class="unit-code">Iif</div>
+                    <div class="unit-name">雨海弗拉·毛罗构造 (Imbrian Imbrium Fra Mauro Formation)</div>
+                    <div class="unit-desc">蜿蜒、曲线和直线山脊覆盖在表面上。表面纹理局部呈丘陵状。<strong>解释：</strong>来自雨海盆地和基底物质的溅射物。</div>
+                </div>
+
+                <!-- 雨海下部月海 -->
+                <div class="unit" style="border-left-color: #b4c6e7;">
+                    <div class="unit-code">Im1</div>
+                    <div class="unit-name">雨海下部月海 (Imbrian Mare, Lower)</div>
+                    <div class="unit-desc">形成平坦、光滑的表面。相对于Im2单元反照率较高，但低于Ip单元。叠加撞击坑密度高。<strong>解释：</strong>古老的玄武岩熔岩，可能与东方海盆地一样古老。</div>
+                </div>
+
+                <!-- 雨海上部月海 -->
+                <div class="unit" style="border-left-color: #8db4e2;">
+                    <div class="unit-code">Im2</div>
+                    <div class="unit-name">雨海上部月海 (Imbrian Mare, Upper)</div>
+                    <div class="unit-desc">形成平坦、光滑的表面。反照率和撞击坑密度低于Im1单元。有许多山脊，难以与Id单元区分。<strong>解释：</strong>玄武岩熔岩流。</div>
+                </div>
+
+                <!-- 雨海月海穹丘 -->
+                <div class="unit" style="border-left-color: #5b9bd5;">
+                    <div class="unit-code">Imd</div>
+                    <div class="unit-name">雨海月海穹丘 (Imbrian Mare, Dome)</div>
+                    <div class="unit-desc">陡峭倾斜、高起伏、粗糙的穹丘状或锥状构造，有时有坑状山顶。<strong>解释：</strong>火山构造或岩盖。</div>
+                </div>
+            </div>
+
+            <div class="column">
+                <!-- 东方海赫维留斯构造（内相） -->
+                <div class="unit" style="border-left-color: #a9d18e;">
+                    <div class="unit-code">Iohi</div>
+                    <div class="unit-name">东方海赫维留斯构造（内相） (Imbrian Orientale Hevelius Formation, Inner Facies)</div>
+                    <div class="unit-desc">曲线到漩涡状山脊和沟槽，主要与东方海盆地呈辐射状和亚辐射状分布。<strong>解释：</strong>连续的溅射物毯，由热的、湍流的、易流动物质的外流形成。</div>
+                </div>
+
+                <!-- 东方海赫维留斯构造（外相） -->
+                <div class="unit" style="border-left-color: #70ad47;">
+                    <div class="unit-code">Ioho</div>
+                    <div class="unit-name">东方海赫维留斯构造（外相） (Imbrian Orientale Hevelius Formation, Outer Facies)</div>
+                    <div class="unit-desc">漩涡状、线状、丘陵状和平滑物质，形成不连续和不规则的边界。<strong>解释：</strong>东方海盆地溅射物的远端边缘变薄。</div>
+                </div>
+
+                <!-- 东方海赫维留斯构造（次生撞击坑相） -->
+                <div class="unit" style="border-left-color: #c6efce;">
+                    <div class="unit-code">Ios</div>
+                    <div class="unit-name">东方海赫维留斯构造（次生撞击坑相） (Imbrian Orientale Hevelius Formation, Secondary Crater Facies)</div>
+                    <div class="unit-desc">重叠的撞击坑链和群，与盆地呈辐射状和外围分布。<strong>解释：</strong>由抛射块形成的次生撞击坑。</div>
+                </div>
+
+                <!-- 东方海芒德构造 -->
+                <div class="unit" style="border-left-color: #ffc000;">
+                    <div class="unit-code">Iom</div>
+                    <div class="unit-name">东方海芒德构造 (Imbrian Orientale Maunder Formation)</div>
+                    <div class="unit-desc">平滑到起伏、强烈断裂的平原，有宽线性山脊和平滑穹丘。<strong>解释：</strong>主要是撞击熔岩。山脊和穹丘可能是原始坑底物质经压缩变形形成。</div>
+                </div>
+
+                <!-- 东方海蒙特·鲁克构造（瘤状相） -->
+                <div class="unit" style="border-left-color: #548235;">
+                    <div class="unit-code">Iork</div>
+                    <div class="unit-name">东方海蒙特·鲁克构造（瘤状相） (Imbrian Orientale Montes Rook Formation, Knobby Facies)</div>
+                    <div class="unit-desc">瘤状、丘陵状、起伏和混沌物质，有不规则的沟槽和凹陷。<strong>解释：</strong>东方海盆地溅射物序列的翻转瓣的最上部。</div>
+                </div>
+
+                <!-- 东方海蒙特·鲁克构造（山体相） -->
+                <div class="unit" style="border-left-color: #fff2cc;">
+                    <div class="unit-code">Iorm</div>
+                    <div class="unit-name">东方海蒙特·鲁克构造（山体相） (Imbrian Orientale Montes Rook Formation, Massif Facies)</div>
+                    <div class="unit-desc">高起伏、平滑的块状体，标记盆地的第二和第三环。<strong>解释：</strong>构造抬升的基岩，被后期到达的溅射物厚厚覆盖。</div>
+                </div>
+
+                <!-- 雨海平原 -->
+                <div class="unit" style="border-left-color: #4472c4;">
+                    <div class="unit-code">Ip</div>
+                    <div class="unit-name">雨海平原 (Imbrian Plains)</div>
+                    <div class="unit-desc">平滑、平坦到起伏的地形，中等反照率，主要出现在雨海和更古老撞击坑的地貌低洼处和坑底。<strong>解释：</strong>起源不明确，可能是东方海和其他大型撞击坑的溅射物。</div>
+                </div>
+
+                <!-- 雨海地形 -->
+                <div class="unit" style="border-left-color: #7030a0;">
+                    <div class="unit-code">It</div>
+                    <div class="unit-name">雨海地形 (Imbrian Terra)</div>
+                    <div class="unit-desc">低起伏、低撞击坑密度、中等到高反照率、中等光滑表面。<strong>解释：</strong>局部侵蚀碎屑和撞击坑及盆地溅射物的复杂混合物；角砾岩。</div>
+                </div>
+
+                <!-- 雨海穹丘地形 -->
+                <div class="unit" style="border-left-color: #9dc3e6;">
+                    <div class="unit-code">Itd</div>
+                    <div class="unit-name">雨海穹丘地形 (Imbrian Terra, Dome)</div>
+                    <div class="unit-desc">轮廓和特征与主序列撞击坑相似，内侧平滑，溅射物稀少，有内台阶、次生撞击坑。<strong>解释：</strong>可能是目标物质差异或火山口塌陷。</div>
+                </div>
+
+                <!-- 雨海-酒海平原 -->
+                <div class="unit" style="border-left-color: #bdd7ee;">
+                    <div class="unit-code">INp</div>
+                    <div class="unit-name">雨海-酒海平原 (Imbrian Nectarian Plains)</div>
+                    <div class="unit-desc">平滑、平坦到起伏的表面，叠加撞击坑密度中等到高。<strong>解释：</strong>可能是雨海和酒海盆地形成过程中 emplaced 的物质。</div>
+                </div>
+
+                <!-- 雨海-酒海地形 -->
+                <div class="unit" style="border-left-color: #d6dce4;">
+                    <div class="unit-code">INt</div>
+                    <div class="unit-name">雨海-酒海地形 (Imbrian Nectarian Terra)</div>
+                    <div class="unit-desc">平缓起伏的地形，撞击坑密度中等到高。<strong>解释：</strong>局部侵蚀碎屑和撞击坑及盆地溅射物的复杂混合物；角砾岩。</div>
+                </div>
+
+                <!-- 酒海撞击坑 -->
+                <div class="unit" style="border-left-color: #ff0000;">
+                    <div class="unit-code">Nc</div>
+                    <div class="unit-name">酒海撞击坑 (Nectarian Crater)</div>
+                    <div class="unit-desc">与年轻撞击坑相比，地形起伏明显减弱，坑底通常宽平，溅射物很少或没有。<strong>解释：</strong>主要撞击事件的减弱形态和物质。</div>
+                </div>
+
+                <!-- 酒海盆地（未分） -->
+                <div class="unit" style="border-left-color: #ed7d31;">
+                    <div class="unit-code">Nb</div>
+                    <div class="unit-name">酒海盆地（未分） (Nectarian Basin, Undivided)</div>
+                    <div class="unit-desc">被侵蚀的坑壁和滑落块体的物质，以及密集分布的缓和丘陵和山脊的集合。<strong>解释：</strong>撞击相关结构和溅射物物质。</div>
+                </div>
+
+                <!-- 酒海盆地（线状） -->
+                <div class="unit" style="border-left-color: #ffc000;">
+                    <div class="unit-code">Nbl</div>
+                    <div class="unit-name">酒海盆地（线状） (Nectarian Basin, Lineated)</div>
+                    <div class="unit-desc">尖锐、抬升的山脊，间有平坦区域或深沟槽，以及光滑的鲸背状丘陵和狭窄沟槽。<strong>解释：</strong>被雨海撞击普遍断裂的基岩。</div>
+                </div>
+
+                <!-- 酒海盆地山体 -->
+                <div class="unit" style="border-left-color: #70ad47;">
+                    <div class="unit-code">Nbm</div>
+                    <div class="unit-name">酒海盆地山体 (Nectarian Basin, Massif)</div>
+                    <div class="unit-desc">崎岖的块状体，通常10-30公里宽，形成弧形抬升山脊的最高和最崎岖部分。<strong>解释：</strong>酒海盆地形成过程中抬升的基岩。</div>
+                </div>
+
+                <!-- 酒海次生撞击坑 -->
+                <div class="unit" style="border-left-color: #f4b183;">
+                    <div class="unit-code">Nbsc</div>
+                    <div class="unit-name">酒海次生撞击坑 (Nectarian Basin, Secondary Crater)</div>
+                    <div class="unit-desc">成群、成链和沟槽状链分布，主要在外围，与酒海盆地呈近似辐射状。<strong>解释：</strong>酒海盆地的次生撞击坑。</div>
+                </div>
+
+                <!-- 酒海-纳斯里斯·詹森构造 -->
+                <div class="unit" style="border-left-color: #b4c6e7;">
+                    <div class="unit-code">Nnj</div>
+                    <div class="unit-name">酒海-纳斯里斯·詹森构造 (Nectarian Nectaris Janssen Formation)</div>
+                    <div class="unit-desc">起伏的缓和地形，有许多线性特征，包括与纳斯里斯盆地呈辐射状的山脊、陡崖和沟槽。<strong>解释：</strong>纳斯里斯盆地溅射物，但比Iif、Iohi和Ioho单元更退化。</div>
+                </div>
+
+                <!-- 酒海平原 -->
+                <div class="unit" style="border-left-color: #8db4e2;">
+                    <div class="unit-code">Np</div>
+                    <div class="unit-name">酒海平原 (Nectarian Plains)</div>
+                    <div class="unit-desc">通常平坦、中等反照率的地形，有大量大型、古老的撞击坑。<strong>解释：</strong>起源不明确，可能是大型撞击和盆地形成事件的溅射物。</div>
+                </div>
+
+                <!-- 酒海地形 -->
+                <div class="unit" style="border-left-color: #5b9bd5;">
+                    <div class="unit-code">Nt</div>
+                    <div class="unit-name">酒海地形 (Nectarian Terra)</div>
+                    <div class="unit-desc">中等粗糙的表面，起伏到中等崎岖的穹丘状地形，有各种年龄的叠加和埋藏撞击坑。<strong>解释：</strong>局部侵蚀碎屑和撞击坑及盆地溅射物的复杂混合物；角砾岩。</div>
+                </div>
+
+                <!-- 酒海覆盖地形和平原 -->
+                <div class="unit" style="border-left-color: #9dc3e6;">
+                    <div class="unit-code">Ntp</div>
+                    <div class="unit-name">酒海覆盖地形和平原 (Nectarian Terra-Mantling and Plains)</div>
+                    <div class="unit-desc">浅色、波状或起伏的表面，比Ip单元有更多撞击坑。<strong>解释：</strong>酒海盆地的主撞击坑和次生撞击坑溅射物，以及与Ioho和Ip单元相当的大型撞击坑，但有更多侵蚀退化。</div>
+                </div>
+
+                <!-- 前酒海盆地 -->
+                <div class="unit" style="border-left-color: #a5a5a5;">
+                    <div class="unit-code">pNb</div>
+                    <div class="unit-name">前酒海盆地 (pre-Nectarian Basin)</div>
+                    <div class="unit-desc">被侵蚀、退化的山环和山环的尖锐段，坑缘、坑壁和内环物质。<strong>解释：</strong>侵蚀退化的撞击相关结构和溅射物物质。</div>
+                </div>
+
+                <!-- 前酒海盆地山体 -->
+                <div class="unit" style="border-left-color: #404040;">
+                    <div class="unit-code">pNbm</div>
+                    <div class="unit-name">前酒海盆地山体 (pre-Nectarian Basin Massif)</div>
+                    <div class="unit-desc">大型山脉状地貌，通常沿弧形分布，连续和不连续，具有通常更精细尺度地形的渐变特征。<strong>解释：</strong>盆地形成过程中抬升的基岩。</div>
+                </div>
+
+                <!-- 前酒海撞击坑 -->
+                <div class="unit" style="border-left-color: #d9d9d9;">
+                    <div class="unit-code">pNc</div>
+                    <div class="unit-name">前酒海撞击坑 (pre-Nectarian Crater)</div>
+                    <div class="unit-desc">不连续、退化的坑缘顶部和圆形、弯曲或直线形的坑缘残余。<strong>解释：</strong>侵蚀退化的形态和主要撞击事件的物质。</div>
+                </div>
+
+                <!-- 前酒海地形 -->
+                <div class="unit" style="border-left-color: #bfbfbf;">
+                    <div class="unit-code">pNt</div>
+                    <div class="unit-name">前酒海地形 (pre-Nectarian Terra)</div>
+                    <div class="unit-desc">崎岖、多样的地形，退化的部分坑缘，与更光滑的Nt单元和更粗糙的pNbm和pNc单元渐变过渡。<strong>解释：</strong>局部侵蚀碎屑和撞击坑及盆地溅射物的复杂混合物；角砾岩。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 地图符号 -->
+        <div class="symbols">
+            <h2>地图符号说明</h2>
+            <div class="symbol-row">
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="red" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">火山通道（月溪）</div>
+                </div>
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="black" stroke-width="2"/>
+                            <line x1="10" y1="10" x2="15" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="20" y1="10" x2="25" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="30" y1="10" x2="35" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="40" y1="10" x2="45" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="50" y1="10" x2="55" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="60" y1="10" x2="65" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="70" y1="10" x2="75" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="80" y1="10" x2="85" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="90" y1="10" x2="95" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="100" y1="10" x2="105" y2="15" stroke="black" stroke-width="1.5"/>
+                            <line x1="110" y1="10" x2="115" y2="15" stroke="black" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">撞击坑坑缘顶部（示坡线指向坑内）</div>
+                </div>
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="black" stroke-width="2" stroke-dasharray="8,4"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">线状构造（起源不明确）</div>
+                </div>
+            </div>
+            <div class="symbol-row">
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="black" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">埋藏撞击坑坑缘顶部</div>
+                </div>
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="black" stroke-width="2" stroke-dasharray="8,4"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">地堑轴（近似处用虚线）</div>
+                </div>
+                <div class="symbol-item">
+                    <div class="symbol-icon">
+                        <svg width="120" height="20">
+                            <line x1="0" y1="10" x2="120" y2="10" stroke="black" stroke-width="2" stroke-dasharray="2,6"/>
+                        </svg>
+                    </div>
+                    <div class="symbol-name">褶皱山脊顶部（近似处用虚线）</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center; color: #666; font-size: 11px;">
+            <p>基于USGS Unified Geologic Map of the Moon (1:5M) 翻译整理</p>
+        </div>
+    </div>
+</body>
+</html>
