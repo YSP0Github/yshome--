@@ -630,10 +630,11 @@
         var recs = [];
         var off = 0;
         var L = dv.byteLength;
-        var firstNonM = -1, firstSkippedEnc = null, firstBadHdr = null, firstDecodeFail = null;
+        var firstNonMD = -1, firstSkippedEnc = null, firstBadHdr = null, firstDecodeFail = null;
         while (off + 64 <= L) {
             var type = strOf(dv, off + 6, 1);
-            if (type !== 'M') { if (firstNonM < 0) firstNonM = off; off += 512; continue; }
+            // miniSEED 记录类型：D=数据记录（最常见），M=元数据/头段记录；其他类型（如 Q/R/T）跳过
+            if (type !== 'D' && type !== 'M') { if (firstNonMD < 0) firstNonMD = off; off += 512; continue; }
             var h = parseHeader(dv, off);
             var ns = h.nsamples;
             if (ns === 0 || h.recLen <= 0) {
@@ -676,14 +677,14 @@
                 });
             }
         });
-        // 失败诊断：没有任何有效记录时给出原因
+        // 失败诊断：没有任何有效记录时给出原因（优先报第一条有效记录的失败原因）
         var diag = null;
         if (!recs.length) {
             if (L < 64) diag = '文件过小（' + L + ' 字节），不是有效的 miniSEED';
-            else if (firstNonM >= 0) diag = '第 ' + firstNonM + ' 字节处记录类型 ≠ M，文件可能不是 miniSEED（如 SAC/SEGY/文本），或记录头被截断';
-            else if (firstSkippedEnc) diag = '不支持的编码：' + firstSkippedEnc + '（当前仅支持 Steim1/Steim2 压缩）';
             else if (firstBadHdr) diag = '记录头异常：' + firstBadHdr;
+            else if (firstSkippedEnc) diag = '不支持的编码：' + firstSkippedEnc + '（当前仅支持 Steim1/Steim2 压缩）';
             else if (firstDecodeFail) diag = 'Steim 解码失败：' + firstDecodeFail;
+            else if (firstNonMD >= 0) diag = '第 ' + firstNonMD + ' 字节处记录类型 ≠ D/M，文件可能不是 miniSEED（如 SAC/SEGY/文本），或记录头被截断';
             else diag = '未找到含有效波形的记录';
         }
         return { records: recs.length, traces: merged, diag: diag };
@@ -813,6 +814,9 @@
                         d.textContent = '诊断：' + parsed.diag;
                         trL.appendChild(d);
                     }
+                    // 解析失败时清空旧波形，避免残留上一次的数据造成误导
+                    traces = []; view = null; activeIdx = -1;
+                    draw();
                     return;
                 }
                 traces = parsed.traces;
