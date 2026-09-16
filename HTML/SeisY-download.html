@@ -289,7 +289,7 @@
                     <button class="viz-btn" id="viz-reset" type="button" disabled>恢复全览</button>
                     <button class="viz-btn" id="viz-zoom-in" type="button" disabled>&#10133; 放大</button>
                     <button class="viz-btn" id="viz-zoom-out" type="button" disabled>&#10134; 缩小</button>
-                    <span class="tip">滚轮缩放 · 拖拽平移 · 点击右侧 Trace 高亮</span>
+                    <span class="tip">Ctrl+滚轮缩放 · 拖拽平移 · 双击恢复全览</span>
                 </div>
                 <div class="viz-canvas-box">
                     <canvas id="viz-canvas"></canvas>
@@ -816,11 +816,14 @@
     $('viz-zoom-in').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 0.6); });
     $('viz-zoom-out').addEventListener('click', function () { zoomAt(canvas.clientWidth / 2, 1.7); });
     $('viz-reset').addEventListener('click', function () { view = null; draw(); });
+    // 缩放只在 Ctrl+滚轮时触发，普通滚轮让页面正常滚动（避免滚动页面时被劫持成缩放）
     canvas.addEventListener('wheel', function (e) {
+        if (!e.ctrlKey) return;
         e.preventDefault();
         var rect = canvas.getBoundingClientRect();
         zoomAt(e.clientX - rect.left, e.deltaY > 0 ? 1.25 : 0.8);
     }, { passive: false });
+    canvas.addEventListener('dblclick', function () { view = null; draw(); });
     canvas.addEventListener('mousedown', function (e) {
         if (!view || !traces.length) return;
         dragging = { x: e.clientX, t0: view.t0, span: view.t1 - view.t0 };
