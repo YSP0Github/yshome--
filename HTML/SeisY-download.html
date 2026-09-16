@@ -265,8 +265,8 @@
         if (!startRaw || !endRaw) return setStatus('请选择起止时间', 'err');
         if (startRaw >= endRaw) return setStatus('结束时间必须晚于起始时间', 'err');
 
-        var start = fmtUTC(new Date(startRaw));
-        var end = fmtUTC(new Date(endRaw));
+        var start = startRaw.length === 16 ? startRaw + ':00' : startRaw;
+        var end = endRaw.length === 16 ? endRaw + ':00' : endRaw;
 
         var dsSel = $('ds');
         var base = dsSel.value === 'custom' ? $('custom-ds').value.trim().replace(/\/+$/, '') : dsSel.value;
