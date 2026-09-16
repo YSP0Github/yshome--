@@ -182,8 +182,9 @@
     <p class="page-sub">通过 FDSN 数据服务在线下载地震波形数据（miniSEED 格式），对应 SeisY 桌面版「数据 → 下载地震数据」功能。</p>
 
     <div class="warn-box">
-        <strong>说明：</strong>本页面直接调用国际 FDSN 数据中心（IRIS 等）的公开数据服务，适用于<strong>地球</strong>地震数据。
-        Apollo 月球地震数据不在 FDSN 网络中，请使用 SeisY 桌面版配合本地数据库下载。数据版权归各数据中心所有。
+        <strong>说明：</strong>本页面直接调用国际 FDSN 数据中心（IRIS / EarthScope 等）的公开数据服务。
+        地球地震数据与 <strong>Apollo 月球地震数据</strong>（网络 <code>XA</code>，台站 <code>S12</code>/<code>S15</code>/<code>S16</code> 等，1969–1977 年阿波罗月震实验）均可直接下载。
+        数据版权归各数据中心所有。
     </div>
 
     <div class="card">
@@ -238,6 +239,7 @@
             <button class="preset-btn" type="button" data-net="IU" data-sta="ANMO" data-loc="00" data-cha="BHZ">IU.ANMO 宽频台</button>
             <button class="preset-btn" type="button" data-net="II" data-sta="TARA" data-loc="00" data-cha="BHZ">II.TARA 全球台</button>
             <button class="preset-btn" type="button" data-net="XB" data-sta="ELYSE" data-loc="02" data-cha="VBB">XB.ELYSE 火星 InSight</button>
+            <button class="preset-btn" type="button" data-net="XA" data-sta="S12" data-loc="00" data-cha="MHZ" data-start="1969-11-19T14:23" data-end="1969-11-20T23:59">XA.S12 阿波罗 12 号月震</button>
             <button class="preset-btn" type="button" data-net="G" data-sta="CAN" data-loc="00" data-cha="BHZ">G.CAN 地震台</button>
             <button class="preset-btn" type="button" data-net="*" data-sta="ANMO" data-loc="*" data-cha="BHZ">跨网络搜索 ANMO</button>
         </div>
@@ -340,6 +342,8 @@
             $('sta').value = this.dataset.sta;
             $('loc').value = this.dataset.loc;
             $('cha').value = this.dataset.cha;
+            if (this.dataset.start) $('start').value = this.dataset.start;
+            if (this.dataset.end) $('end').value = this.dataset.end;
             setStatus('', '');
         });
     });
