@@ -630,21 +630,29 @@
         var recs = [];
         var off = 0;
         var L = dv.byteLength;
+        var firstNonM = -1, firstSkippedEnc = null, firstBadHdr = null, firstDecodeFail = null;
         while (off + 64 <= L) {
             var type = strOf(dv, off + 6, 1);
-            if (type !== 'M') { off += 512; continue; }
+            if (type !== 'M') { if (firstNonM < 0) firstNonM = off; off += 512; continue; }
             var h = parseHeader(dv, off);
             var ns = h.nsamples;
-            if (ns === 0 || h.recLen <= 0) { off += h.recLen || 512; continue; }
+            if (ns === 0 || h.recLen <= 0) {
+                if (!firstBadHdr) firstBadHdr = 'nsamples=' + ns + ' recLen=' + h.recLen + ' @' + off;
+                off += h.recLen || 512; continue;
+            }
             var dataStart = off + h.dataOffset;
             var samples = null;
             if (h.encoding === 11) {
                 samples = decodeSteim2(dv, off, h.dataOffset, h.recLen, ns);
             } else if (h.encoding === 10) {
                 samples = decodeSteim1(dv, dataStart, off + h.recLen, ns);
+            } else {
+                if (!firstSkippedEnc) firstSkippedEnc = 'encoding=' + h.encoding + ' ' + h.network + '.' + h.station + '.' + (h.location || '*') + '.' + h.channel + ' @' + off;
             }
             if (samples && samples.length) {
                 recs.push({ h: h, data: samples });
+            } else if (samples !== null && !firstDecodeFail) {
+                firstDecodeFail = h.network + '.' + h.station + '.' + (h.location || '*') + '.' + h.channel + ' nsamples=' + ns + ' @' + off;
             }
             off += h.recLen;
         }
@@ -668,7 +676,17 @@
                 });
             }
         });
-        return { records: recs.length, traces: merged };
+        // 失败诊断：没有任何有效记录时给出原因
+        var diag = null;
+        if (!recs.length) {
+            if (L < 64) diag = '文件过小（' + L + ' 字节），不是有效的 miniSEED';
+            else if (firstNonM >= 0) diag = '第 ' + firstNonM + ' 字节处记录类型 ≠ M，文件可能不是 miniSEED（如 SAC/SEGY/文本），或记录头被截断';
+            else if (firstSkippedEnc) diag = '不支持的编码：' + firstSkippedEnc + '（当前仅支持 Steim1/Steim2 压缩）';
+            else if (firstBadHdr) diag = '记录头异常：' + firstBadHdr;
+            else if (firstDecodeFail) diag = 'Steim 解码失败：' + firstDecodeFail;
+            else diag = '未找到含有效波形的记录';
+        }
+        return { records: recs.length, traces: merged, diag: diag };
     }
 
     /* ---------- 绘制 ---------- */
@@ -786,6 +804,15 @@
                     $('viz-loading').classList.remove('show');
                     $('viz-state').textContent = '未解析到有效数据';
                     $('viz-records').textContent = parsed.records;
+                    $('viz-traces').textContent = '0';
+                    var trL = $('viz-trace-list');
+                    trL.innerHTML = '';
+                    if (parsed.diag) {
+                        var d = document.createElement('div');
+                        d.style.cssText = 'margin-top:10px;padding:8px 10px;background:#fef2f2;color:#b91c1c;border-radius:8px;font-size:12px;line-height:1.6;word-break:break-all;';
+                        d.textContent = '诊断：' + parsed.diag;
+                        trL.appendChild(d);
+                    }
                     return;
                 }
                 traces = parsed.traces;
