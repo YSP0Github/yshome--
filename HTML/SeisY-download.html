@@ -516,7 +516,7 @@
     var activeIdx = -1;
     var dragging = null;
 
-    /* ---------- miniSEED 头解析 ---------- */
+    /* ---------- miniSEED 头解析（libmseed 布局） ---------- */
     function strOf(dv, off, len) {
         var s = '';
         for (var i = 0; i < len; i++) {
@@ -526,33 +526,73 @@
         }
         return s.trim();
     }
-    function parseHeader(dv) {
+    function parseHeader(dv, off) {
         var h = {};
-        h.station = strOf(dv, 8, 8);
-        h.location = strOf(dv, 16, 4);
-        h.channel = strOf(dv, 20, 3);
-        h.network = strOf(dv, 24, 2);
-        var yr = parseInt(strOf(dv, 32, 4), 10);
-        var doy = parseInt(strOf(dv, 36, 3), 10);
-        var hh = parseInt(strOf(dv, 39, 2), 10);
-        var mm = parseInt(strOf(dv, 41, 2), 10);
-        var ss = parseInt(strOf(dv, 43, 2), 10);
-        if (!yr || !doy) { h.start = null; } else {
-            h.start = Date.UTC(yr, 0, doy, hh || 0, mm || 0, ss || 0);
-        }
-        h.nsamples = dv.getUint16(44, false);
-        var factor = dv.getInt16(46, false);
-        var mult = dv.getInt16(48, false);
-        // 采样率：factor*multiplier；负数/0 时兜底
-        h.rate = (factor > 0 && mult > 0) ? factor * mult :
-                 (factor > 0 && mult <= 0) ? -factor / mult :
-                 (factor <= 0 && mult > 0) ? -mult / factor : 1;
+        h.station = strOf(dv, off + 8, 5);
+        h.location = strOf(dv, off + 13, 2);
+        h.channel = strOf(dv, off + 15, 3);
+        h.network = strOf(dv, off + 18, 2);
+        var yr = dv.getUint16(off + 20, false);
+        var doy = dv.getUint16(off + 22, false);
+        var hh = dv.getUint8(off + 24);
+        var mm = dv.getUint8(off + 25);
+        var ss = dv.getUint8(off + 26);
+        var frac = dv.getUint16(off + 27, false); // 0.0001 秒
+        h.start = Date.UTC(yr || 0, 0, doy || 1, hh || 0, mm || 0, ss || 0) + (frac * 0.1);
+        h.nsamples = dv.getUint16(off + 30, false);
+        var fact = dv.getInt16(off + 32, false);
+        var mult = dv.getInt16(off + 34, false);
+        h.rate = (fact > 0 && mult > 0) ? fact * mult :
+                 (fact > 0 && mult < 0) ? -fact / mult :
+                 (fact < 0 && mult > 0) ? -mult / fact : 1;
         if (!(h.rate > 0) || h.rate > 1e7) h.rate = 1;
-        h.blockOffset = dv.getUint8(55) || 64;
+        h.dataOffset = dv.getUint16(off + 44, false) || 64;
+        h.blocketteOffset = dv.getUint16(off + 46, false) || 48;
+        var b = off + h.blocketteOffset;
+        h.encoding = dv.getUint8(b + 4);            // 11=Steim2, 10=Steim1, 3=32bit int, 4=float
+        var recExp = dv.getUint8(b + 6);            // 记录长度指数（2^exp）
+        h.recLen = Math.pow(2, recExp > 0 ? recExp : 9);
         return h;
     }
 
-    /* ---------- Steim1 / Steim2 解码 ---------- */
+    /* ---------- Steim1 / Steim2 解码（对照 libmseed unpackdata.c） ---------- */
+    function sgn(v, bits) { var m = 1 << (bits - 1); return (v ^ m) - m; }
+
+    function decodeSteim2(dv, off, dataOffset, recLen, nsamples) {
+        var samples = [];
+        var maxframes = Math.floor((recLen - dataOffset) / 64);
+        var X0 = 0, cur = 0, first = true;
+        for (var fi = 0; fi < maxframes && samples.length < nsamples; fi++) {
+            var foff = off + dataOffset + 64 * fi;
+            var w = [];
+            for (var i = 0; i < 16; i++) w.push(dv.getInt32(foff + i * 4, false));
+            var start = (fi === 0) ? 3 : 1;
+            if (fi === 0) { X0 = w[1]; }
+            for (var wi = start; wi < 16 && samples.length < nsamples; wi++) {
+                var nibble = (w[0] >>> (30 - 2 * wi)) & 3;
+                var W = w[wi], diffs = [];
+                if (nibble === 1) {
+                    diffs = [(W >>> 24) << 24 >> 24, (W >>> 16) << 24 >> 24, (W >>> 8) << 24 >> 24, W << 24 >> 24];
+                } else if (nibble === 2) {
+                    var dn = (W >>> 30) & 3;
+                    if (dn === 1) diffs = [sgn(W & 0x3FFFFFFF, 30)];
+                    else if (dn === 2) diffs = [sgn((W >>> 15) & 0x7FFF, 15), sgn(W & 0x7FFF, 15)];
+                    else if (dn === 3) diffs = [sgn((W >>> 20) & 0x3FF, 10), sgn((W >>> 10) & 0x3FF, 10), sgn(W & 0x3FF, 10)];
+                } else if (nibble === 3) {
+                    var dn3 = (W >>> 30) & 3;
+                    if (dn3 === 0) { for (var k = 0; k < 5; k++) diffs.push(sgn((W >>> (24 - k * 6)) & 0x3F, 6)); }
+                    else if (dn3 === 1) { for (var k2 = 0; k2 < 6; k2++) diffs.push(sgn((W >>> (25 - k2 * 5)) & 0x1F, 5)); }
+                    else if (dn3 === 2) { for (var k3 = 0; k3 < 7; k3++) diffs.push(sgn((W >>> (24 - k3 * 4)) & 0xF, 4)); }
+                }
+                for (var di = 0; di < diffs.length && samples.length < nsamples; di++) {
+                    if (first) { samples.push(X0); cur = X0; first = false; }
+                    else { cur += diffs[di]; samples.push(cur); }
+                }
+            }
+        }
+        return samples;
+    }
+
     function decodeSteim1(dv, dataStart, dataEnd, nsamples) {
         var out = [], prev = 0, off = dataStart;
         while (out.length < nsamples && off + 64 <= dataEnd) {
@@ -578,33 +618,6 @@
         }
         return out.slice(0, nsamples);
     }
-    function decodeSteim2(dv, dataStart, dataEnd, nsamples) {
-        var out = [], prev = 0, off = dataStart;
-        while (out.length < nsamples && off + 64 <= dataEnd) {
-            var w0 = dv.getInt32(off, false);
-            var dOff = off + 4, blockEnd = off + 64;
-            // 4 个 16-bit 编码字（从高到低）
-            for (var i = 3; i >= 0; i--) {
-                var code = (w0 >>> (i * 8)) & 0xFFFF;
-                var n = (code >>> 12) & 0xF;
-                if (n === 0 || out.length >= nsamples) continue;
-                var v;
-                switch (n) {
-                    case 1: v = dv.getInt8(dOff) >> 4; dOff += 1; v += prev; prev = v; break; // 4-bit diff（高半字节）
-                    case 2: v = dv.getInt8(dOff); dOff += 1; v += prev; prev = v; break;
-                    case 3: v = dv.getInt16(dOff, false); dOff += 2; v += prev; prev = v; break;
-                    case 4: v = dv.getInt32(dOff, false); dOff += 4; v += prev; prev = v; break;
-                    case 5: v = dv.getInt8(dOff) >> 4; dOff += 1; prev = v; break;
-                    case 6: v = dv.getInt8(dOff); dOff += 1; prev = v; break;
-                    case 7: v = dv.getInt16(dOff, false); dOff += 2; prev = v; break;
-                    default: continue;
-                }
-                out.push(v);
-            }
-            off = blockEnd;
-        }
-        return out.slice(0, nsamples);
-    }
 
     /* ---------- 解析整个文件 → traces ---------- */
     function parseMSEED(buf) {
@@ -613,29 +626,22 @@
         var off = 0;
         var L = dv.byteLength;
         while (off + 64 <= L) {
-            var type = strOf(dv, 6, 2);
-            var ns = dv.getUint16(44, false);
-            if (type !== 'MS' || ns === 0) { off += 512; continue; }
-            var h = parseHeader(dv);
-            var recLen = h.blockOffset >= 48 ? 512 : 512;
-            // 尝试定位块体：blockOffset 通常 64；若无效尝试 48/512
-            var dataStart = (h.blockOffset > 0 && h.blockOffset + 64 <= L - off) ? off + h.blockOffset : off + 64;
-            var dataEnd = Math.min(off + 512, L);
+            var type = strOf(dv, off + 6, 1);
+            if (type !== 'M') { off += 512; continue; }
+            var h = parseHeader(dv, off);
+            var ns = h.nsamples;
+            if (ns === 0 || h.recLen <= 0) { off += h.recLen || 512; continue; }
+            var dataStart = off + h.dataOffset;
             var samples = null;
-            var tries = [
-                { name: 'steim2', fn: decodeSteim2 },
-                { name: 'steim1', fn: decodeSteim1 }
-            ];
-            // 先尝试 Steim2（月球/现代数据常见），样本数不符再试 Steim1
-            for (var t = 0; t < tries.length; t++) {
-                var cand = tries[t].fn(dv, dataStart, dataEnd, ns);
-                if (cand.length === ns && cand.length > 0) { samples = cand; break; }
-                if (cand.length > 0 && tries[t].name === 'steim2') { samples = cand; }
+            if (h.encoding === 11) {
+                samples = decodeSteim2(dv, off, h.dataOffset, h.recLen, ns);
+            } else if (h.encoding === 10) {
+                samples = decodeSteim1(dv, dataStart, off + h.recLen, ns);
             }
             if (samples && samples.length) {
                 recs.push({ h: h, data: samples });
             }
-            off += 512;
+            off += h.recLen;
         }
         // 合并相同 net.sta.loc.cha 的连续记录
         var merged = [];
