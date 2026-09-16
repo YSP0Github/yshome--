@@ -644,12 +644,12 @@
             }
             off += h.recLen;
         }
-        // 合并相同 net.sta.loc.cha 的连续/重叠记录（容差：2 个采样间隔）
+        // 合并相同 net.sta.loc.cha 的连续/重叠/小 gap 记录（容差 60s，同 obspy 行为）
         var merged = [];
         recs.forEach(function (r) {
             var key = [r.h.network, r.h.station, r.h.location, r.h.channel].join('.');
             var last = merged[merged.length - 1];
-            var tol = 2000 / (r.h.rate || 1);
+            var tol = Math.max(2000 / (r.h.rate || 1), 60000);
             if (last && last.key === key && r.h.start - last.endTime < tol) {
                 last.data = last.data.concat(r.data);
                 last.endTime = r.h.start + r.data.length / r.h.rate * 1000;
