@@ -798,7 +798,7 @@
         'else if(firstDecodeFail)diag="解码失败："+firstDecodeFail;else if(firstNonMD>=0)diag="第 "+firstNonMD+" 字节处记录类型 ≠ D/M，文件可能不是 miniSEED（如 SAC/SEGY/文本），或记录头被截断";else diag="未找到含有效波形的记录";}',
         'return{records:recs.length,traces:merged,diag:diag};}',
         'self.onmessage=function(e){var id=e.data.id;try{var parsed=parseMSEED(e.data.buf);',
-        'parsed.traces.forEach(function(t){var m=0;for(var j=0;j<t.data.length;j++){var a=Math.abs(t.data[j]);if(a>m)m=a;}t.maxAmp=m;});',
+        'parsed.traces.forEach(function(t){var s=0;for(var j=0;j<t.data.length;j++)s+=t.data[j];t.dc=s/t.data.length;var m=0;for(var j2=0;j2<t.data.length;j2++){var a=Math.abs(t.data[j2]-t.dc);if(a>m)m=a;}t.maxAmp=m;});',
         'self.postMessage({id:id,ok:true,records:parsed.records,traces:parsed.traces,diag:parsed.diag});}catch(err){self.postMessage({id:id,ok:false,error:String((err&&err.message)||err)});}};'
     ].join('\n');
     var _vizWorkerUrl = (window.URL || window.webkitURL).createObjectURL(new Blob([_vizWorkerSrc], { type: 'text/javascript' }));
@@ -865,8 +865,9 @@
             // 零线
             ctx.strokeStyle = 'rgba(148,163,184,.25)';
             ctx.beginPath(); ctx.moveTo(0, top + bandH / 2); ctx.lineTo(W, top + bandH / 2); ctx.stroke();
-            // 波形（clip 到本 band，纵向缩放时波形不越界）
+            // 波形（clip 到本 band，纵向缩放时波形不越界）；先减去直流分量（如 XA 月震数据 ~511 偏置），让波形围绕零线居中
             var amp = t.maxAmp || maxAbs || 1;
+            var dc = t.dc || 0;
             var yHalf = bandH * halfK * view.yZoom;
             ctx.save();
             ctx.beginPath(); ctx.rect(0, top, W, bandH); ctx.clip();
@@ -877,7 +878,7 @@
             for (var k = 0; k < t.data.length; k += step) {
                 var time = t.start + k / t.rate * 1000;
                 var x = (time - view.t0) / span * W;
-                var y = top + bandH / 2 - (t.data[k] / amp) * yHalf;
+                var y = top + bandH / 2 - ((t.data[k] - dc) / amp) * yHalf;
                 if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
