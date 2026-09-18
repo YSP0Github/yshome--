@@ -24,3 +24,6 @@ backups/
 *.pub
 downloads/seisy/releases/*
 !downloads/seisy/releases/.gitkeep
+
+# 备份文件不入库
+*.bak_*
