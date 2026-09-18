@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DC-GDCST 数据包查看器</title>
+<script src="./static/plotly.min.js"></script>
+<script src="./static/fflate.min.js"></script>
+<style>
+  :root { --bg:#0f1117; --panel:#16213e; --line:#2a2a4a; --text:#e0e6ef;
+          --dim:#90a4ae; --accent:#4fc3f7; --good:#66bb6a; --err:#ef5350; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; }
+  .top { padding:18px 26px; background:var(--panel); border-bottom:1px solid var(--line);
+         display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .top h2 { font-size:18px; font-weight:600; color:var(--accent); }
+  .top input[type=file] { color:var(--dim); font-size:13px; }
+  .top input[type=file]::file-selector-button {
+    background:linear-gradient(135deg,#1565c0,#0d47a1); color:#fff; border:none;
+    padding:8px 18px; border-radius:6px; cursor:pointer; font-weight:600; margin-right:10px; }
+  #status { font-size:13px; color:var(--dim); }
+  #status.ok { color:var(--good); } #status.err { color:var(--err); }
+  #cards { display:flex; gap:12px; padding:14px 26px; flex-wrap:wrap; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+          padding:12px 16px; min-width:130px; }
+  .card .k { font-size:11px; color:var(--dim); }
+  .card .v { font-size:19px; font-weight:600; margin-top:4px; }
+  .card .v small { font-size:11px; color:var(--dim); font-weight:400; }
+  .tabs { display:flex; gap:6px; padding:0 26px 12px; flex-wrap:wrap; }
+  .tab { background:var(--panel); color:var(--dim); border:1px solid var(--line);
+         padding:7px 16px; border-radius:6px 6px 0 0; cursor:pointer; font-size:13px; }
+  .tab.on { color:var(--accent); border-bottom-color:var(--bg); font-weight:600; }
+  #content { padding:0 26px 40px; }
+  .plotbox { width:100%; min-height:520px; background:var(--bg); border-radius:8px; }
+  .imgbox { display:flex; flex-direction:column; gap:16px; }
+  .imgbox img { width:100%; max-width:1400px; border:1px solid var(--line); border-radius:8px;
+                background:#fff; }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin-bottom:22px;
+          background:var(--panel); }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; }
+  th { background:#1c2a4a; color:var(--accent); font-weight:600; white-space:nowrap; }
+  td { color:var(--text); }
+  .stage-title { font-size:15px; font-weight:600; color:var(--accent); margin:14px 0 8px; }
+  .stage-note { font-size:12px; color:var(--dim); margin-bottom:8px; }
+  .empty { color:var(--dim); font-size:14px; padding:40px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h2>DC-GDCST + DT-FSBL · 数据包查看器</h2>
+  <input type="file" id="file" accept=".tar.gz,.gz">
+  <span id="status">请选择数据包（dashboard_package.tar.gz）——文件在本地解析，不上传任何数据</span>
+</div>
+<div id="cards"></div>
+<div class="tabs" id="tabs"></div>
+<div id="content"><div class="empty">选择数据包后，全部交互图 / 图集 / 参数表将在此显示。</div></div>
+
+<script>
+(function () {
+  var fileInput = document.getElementById('file');
+  var status = document.getElementById('status');
+  var cardsEl = document.getElementById('cards');
+  var tabsEl = document.getElementById('tabs');
+  var contentEl = document.getElementById('content');
+  var PACK = null;      // { name: Uint8Array }
+  var META = null;
+  var PARAMS = null;
+  var currentTab = null;
+
+  function setStatus(msg, cls) {
+    status.textContent = msg;
+    status.className = cls || '';
+  }
+
+  // ---------- 轻量 tar 解析（tar 格式：512B 头 + 数据；跳过 PAX/GNU 扩展头） ----------
+  function untarSimple(u8) {
+    var out = [];
+    var off = 0, n = u8.length;
+    while (off + 512 <= n) {
+      // name (0-99)
+      var name = '';
+      for (var i = 0; i < 100; i++) {
+        var b = u8[off + i];
+        if (b === 0) break;
+        name += String.fromCharCode(b);
+      }
+      if (!name) { off += 512; continue; }
+      // size (124-135, 八进制)
+      var sizeStr = '';
+      for (var j = 124; j < 136; j++) {
+        var c = String.fromCharCode(u8[off + j]);
+        if (c === '\0' || c === ' ') break;
+        sizeStr += c;
+      }
+      var size = parseInt(sizeStr, 8) || 0;
+      var type = String.fromCharCode(u8[off + 156]);
+      // 跳过扩展头（PAX x/g、GNU 长名 L/K）与目录
+      if (type === 'x' || type === 'g' || type === 'L' || type === 'K' || type === '5') {
+        off += 512 + Math.ceil(size / 512) * 512;
+        continue;
+      }
+      out.push({ name: name, data: u8.slice(off + 512, off + 512 + size) });
+      off += 512 + Math.ceil(size / 512) * 512;
+    }
+    return out;
+  }
+
+  // ---------- 读取并解包 ----------
+  async function loadPackage(file) {
+    setStatus('正在读取并解压数据包（约 ' + (file.size / 1048576).toFixed(1) + ' MB）...');
+    try {
+      var buf = new Uint8Array(await file.arrayBuffer());
+      var tar = fflate.gunzipSync(buf);
+      var entries = untarSimple(tar);
+      PACK = {};
+      for (var i = 0; i < entries.length; i++) {
+        var name = entries[i].name.replace(/^\.\//, '');
+        PACK[name] = entries[i].data;
+      }
+      if (!PACK['metadata.json']) throw new Error('包内缺少 metadata.json');
+      META = JSON.parse(new TextDecoder().decode(PACK['metadata.json']));
+      try {
+        if (PACK['params.json']) PARAMS = JSON.parse(new TextDecoder().decode(PACK['params.json']));
+      } catch (e) { PARAMS = null; }
+      renderCards();
+      buildTabs();
+      switchTab('figs_json/01.json');
+      setStatus('已加载数据包：' + file.name + '（交互图 ' +
+        countKeys('figs_json/') + ' 张，图集 ' + countKeys('figs/') + ' 张）', 'ok');
+    } catch (e) {
+      setStatus('读取失败：' + e.message, 'err');
+    }
+  }
+
+  function countKeys(prefix) {
+    var n = 0;
+    for (var k in PACK) if (k.indexOf(prefix) === 0) n++;
+    return n;
+  }
+
+  // ---------- 指标卡 ----------
+  function renderCards() {
+    var m = (META.metrics_common || {});
+    var cards = [
+      ['输入 SNR', fmt(m.snr_input_db), 'dB'],
+      ['输出 SNR', fmt(m.snr_output_db), 'dB'],
+      ['带通 corr', fmt(m.correlation), ''],
+      ['迭代次数', META.fsbl_info ? META.fsbl_info.n_iterations : 'N/A', ''],
+      ['活跃原子', META.fsbl_info ? META.fsbl_info.n_active_atoms : 'N/A', ''],
+      ['采样率', fmt(META.fs_hz), 'Hz'],
+      ['频带', META.freq_band ? META.freq_band.join('–') : '0.001–0.012', 'Hz'],
+    ];
+    var h = '';
+    for (var i = 0; i < cards.length; i++) {
+      h += '<div class="card"><div class="k">' + cards[i][0] + '</div>' +
+           '<div class="v">' + cards[i][1] + ' <small>' + cards[i][2] + '</small></div></div>';
+    }
+    cardsEl.innerHTML = h;
+  }
+  function fmt(v) { return (v === null || v === undefined || isNaN(v)) ? 'N/A' : Number(v).toFixed(2); }
+
+  // ---------- 页签 ----------
+  function buildTabs() {
+    var figKeys = Object.keys(PACK).filter(function (k) {
+      return k.indexOf('figs_json/') === 0 && k.endsWith('.json');
+    }).sort();
+    var pngKeys = Object.keys(PACK).filter(function (k) {
+      return k.indexOf('figs/') === 0 && k.endsWith('.png');
+    }).sort();
+    var h = '';
+    h += '<div class="tab" data-t="figs_json/01.json" data-g="figs_json">交互图 (' + figKeys.length + ')</div>';
+    h += '<div class="tab" data-t="figs/0" data-g="figs">图集 (' + pngKeys.length + ')</div>';
+    if (PARAMS) h += '<div class="tab" data-t="params" data-g="params">中间参数表</div>';
+    tabsEl.innerHTML = h;
+    var tabs = tabsEl.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function () {
+        switchTab(this.getAttribute('data-t'), this.getAttribute('data-g'));
+      });
+    }
+  }
+
+  function switchTab(tabKey, group) {
+    currentTab = tabKey;
+    var tabs = tabsEl.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].className = 'tab' + (tabs[i].getAttribute('data-t') === tabKey ? ' on' : '');
+    }
+    if (tabKey === 'params') { renderParams(); return; }
+    if (group === 'figs/') { renderGallery(); return; }
+    renderFig(tabKey);
+  }
+
+  // ---------- 交互图（plotly JSON） ----------
+  function renderFig(key) {
+    var figKey = key.indexOf('figs_json/') === 0 ? key
+      : Object.keys(PACK).filter(function (k) { return k.indexOf('figs_json/') === 0 && k.endsWith('.json'); }).sort()[0];
+    var figKeyList = Object.keys(PACK).filter(function (k) {
+      return k.indexOf('figs_json/') === 0 && k.endsWith('.json');
+    }).sort();
+    contentEl.innerHTML = '<div class="plotbox" id="plotbox"></div>';
+    try {
+      var fig = JSON.parse(new TextDecoder().decode(PACK[figKey]));
+      Plotly.newPlot('plotbox', fig.data || [], fig.layout || {},
+        { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
+    } catch (e) {
+      contentEl.innerHTML = '<div class="empty">该图渲染失败：' + e.message + '</div>';
+      return;
+    }
+    // 图导航：上一张/下一张
+    var idx = figKeyList.indexOf(figKey);
+    if (idx >= 0) {
+      var nav = document.createElement('div');
+      nav.style.cssText = 'display:flex;gap:10px;margin-top:10px;align-items:center;';
+      nav.innerHTML = '<button class="tab" id="prevFig">&#8592; 上一张</button>' +
+        '<span style="font-size:13px;color:var(--dim)">' + (idx + 1) + ' / ' + figKeyList.length + '</span>' +
+        '<button class="tab" id="nextFig">下一张 &#8594;</button>';
+      contentEl.appendChild(nav);
+      document.getElementById('prevFig').addEventListener('click', function () {
+        if (idx > 0) switchTab(figKeyList[idx - 1], 'figs_json');
+      });
+      document.getElementById('nextFig').addEventListener('click', function () {
+        if (idx < figKeyList.length - 1) switchTab(figKeyList[idx + 1], 'figs_json');
+      });
+    }
+  }
+
+  // ---------- 图集 PNG ----------
+  function renderGallery() {
+    var pngKeys = Object.keys(PACK).filter(function (k) {
+      return k.indexOf('figs/') === 0 && k.endsWith('.png');
+    }).sort();
+    if (!pngKeys.length) { contentEl.innerHTML = '<div class="empty">包内无图集 PNG</div>'; return; }
+    var h = '<div class="imgbox">';
+    for (var i = 0; i < pngKeys.length; i++) {
+      var blob = new Blob([PACK[pngKeys[i]]], { type: 'image/png' });
+      var url = URL.createObjectURL(blob);
+      h += '<img src="' + url + '" alt="' + pngKeys[i] + '">';
+    }
+    h += '</div>';
+    contentEl.innerHTML = h;
+  }
+
+  // ---------- 中间参数表 ----------
+  function renderParams() {
+    if (!PARAMS || !PARAMS.stages) {
+      contentEl.innerHTML = '<div class="empty">包内无参数表</div>';
+      return;
+    }
+    var h = '';
+    for (var stageName in PARAMS.stages) {
+      var rows = PARAMS.stages[stageName];
+      if (!Array.isArray(rows) || !rows.length) continue;
+      var cols = Object.keys(rows[0]);
+      h += '<div class="stage-title">' + stageName + '</div>';
+      h += '<table><thead><tr>';
+      for (var c = 0; c < cols.length; c++) h += '<th>' + cols[c] + '</th>';
+      h += '</tr></thead><tbody>';
+      for (var r = 0; r < rows.length; r++) {
+        h += '<tr>';
+        for (var c2 = 0; c2 < cols.length; c2++) h += '<td>' + rows[r][cols[c2]] + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table>';
+    }
+    contentEl.innerHTML = h || '<div class="empty">参数表为空</div>';
+  }
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) loadPackage(fileInput.files[0]);
+  });
+
+  // 支持 URL 参数 ?pkg=xxx.tar.gz 直接加载（同源部署/自动化测试用）
+  var q = new URLSearchParams(location.search).get('pkg');
+  if (q) {
+    setStatus('正在从 ' + q + ' 加载...');
+    fetch(q).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    }).then(function (blob) {
+      return loadPackage(new File([blob], q.split('/').pop()));
+    }).catch(function (e) {
+      setStatus('加载失败：' + e.message, 'err');
+    });
+  }
+})();
+</script>
+</body>
+</html>
