@@ -803,10 +803,11 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
     <span id="plotHVal">430 px</span>
   </span>
   <button class="runbtn" style="margin-left:auto;" onclick="document.getElementById('pkgFile').click()"
-          title="读取 dashboard_package.tar.gz（浏览器本地解析，不上传网络），切换显示全部实验数据">&#128194; 选择数据包</button>
+          title="读取本地 dashboard_package.tar.gz（浏览器本地解析，不上传网络），切换显示全部实验数据">&#128194; 选择本地数据包</button>
   <input type="file" id="pkgFile" accept=".tar.gz,.gz" style="display:none;">
   <span class="hslider-wrap" style="margin-left:12px;">
-    <label for="pkgSelect" title="服务器上已上传的数据包列表，选择后直接查看（云端/本地通用）">数据包列表</label>
+    <button class="runbtn" style="padding:6px 10px;font-size:12px;margin-right:6px;"
+            onclick="refreshPkgSelect()" title="刷新服务器数据包列表（只刷新列表，不刷新页面）">&#128260; 刷新列表</button>
     <select id="pkgSelect" onchange="onPkgSelect(this.value)"
             style="background:#0f1117;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:4px;padding:6px 8px;font-size:12px;max-width:220px;">
       <option value="">（加载中…）</option>
