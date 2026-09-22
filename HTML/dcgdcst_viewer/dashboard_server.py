@@ -1284,7 +1284,7 @@ function openPkgList() {{
     h += '</tr></thead><tbody>';
     d.packages.forEach(function (p) {{
       const isCur = (p.dir === cur);
-      h += '<tr onclick="onPkgSelect(\'' + p.dir.replace(/'/g, "\\'") + '\')'>';
+      h += '<tr data-dir="' + esc(p.dir) + '">';
       h += '<td><b>' + esc(p.name) + '</b></td>';
       h += '<td>' + esc(p.event_date || '—') + '</td>';
       h += '<td>' + esc(p.stations || '—') + '</td>';
@@ -1299,6 +1299,13 @@ function openPkgList() {{
     h += '</tbody></table>';
     if (d.packages.length === 0) h = '<div style="color:#90a4ae;">暂无已上传数据包</div>';
     body.innerHTML = h;
+    // 事件委托：data-dir 属性 → 点击加载对应数据包
+    // （2026-09-22 修复：不用 onclick 内联，规避 f-string 单引号转义问题）
+    body.querySelectorAll('tr[data-dir]').forEach(function (tr) {{
+      tr.addEventListener('click', function () {{
+        onPkgSelect(tr.getAttribute('data-dir'));
+      }});
+    }});
   }}).catch(function () {{
     body.innerHTML = '<div style="color:#ef5350;">加载列表失败</div>';
   }});
