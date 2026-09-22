@@ -262,6 +262,35 @@ def _fig_json(key: str) -> str:
     """生成交互图 JSON（带缓存，numpy 类型由 plotly to_json 处理）"""
     return get_figure(key).to_json()
 
+@lru_cache(maxsize=64)
+def _fig_json_for_dir(data_dir: str, key: str) -> str:
+    """[2026-09-22 预取] 为指定数据包目录生成交互图 JSON（不改变当前状态）。
+
+    用于前端"后台预取其他数据包的图到浏览器缓存"：
+      1. 临时 set_npz_path(该包 npz) → 生成图
+      2. 立即恢复当前 npz 路径
+    带独立 lru_cache（key = data_dir|key），不会污染主 _fig_json 缓存。
+    """
+    from plotly_figs import set_npz_path
+    # 记录当前 npz 路径，生成后恢复
+    cur_path = None
+    try:
+        # 通过 get_figure 的内部 NPZ_PATH 恢复：用 try 包住，失败也恢复
+        import plotly_figs as _pf
+        cur_path = _pf.NPZ_PATH
+        dd = Path(data_dir)
+        npz = dd / "all_intermediate_results.npz"
+        if not npz.exists():
+            raise FileNotFoundError(f"npz 不存在: {npz}")
+        set_npz_path(npz)
+        return get_figure(key).to_json()
+    finally:
+        if cur_path is not None:
+            try:
+                set_npz_path(cur_path)
+            except Exception:
+                pass
+
 @lru_cache(maxsize=4)
 def _params_for_display() -> dict:
     """把中间参数整理成前端表格友好的结构（列定义 + 行数据）"""
@@ -358,9 +387,21 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         elif self.path.startswith("/api/plot/"):
             # 交互图 JSON：/api/plot/01 → 返回 plotly figure spec
-            key = self.path[len("/api/plot/"):].split("?")[0]
+            # [2026-09-22 预取] 支持 ?dir=<数据包目录>：为指定数据包生成图
+            # （前端后台预取其他数据包的图到浏览器缓存，切包时秒开）
+            path_q = self.path[len("/api/plot/"):]
+            key = path_q.split("?")[0]
+            qdir = None
+            if "?" in path_q:
+                import urllib.parse as _up
+                q = _up.parse_qs(path_q.split("?", 1)[1])
+                if q.get("dir"):
+                    qdir = q["dir"][0]
             if key in PLOT_FACTORIES:
-                self._send_raw_json(_fig_json(key))
+                if qdir:
+                    self._send_raw_json(_fig_json_for_dir(qdir, key))
+                else:
+                    self._send_raw_json(_fig_json(key))
                 return
             self.send_error(404, f"未知绘图 key: {key}")
             return
@@ -631,6 +672,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             metric_cards += (
                 f'<div class="note" style="width:100%;margin:2px 0 0;">'
                 f'SNR 口径：{"；".join(_snr_note_parts)}。</div>')
+        # [2026-09-22 预取] 注入全部交互图 key 列表
+        plot_keys_js = "[" + ",".join(f'"{k}"' for k in PLOT_FACTORIES) + "]"
         return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1035,20 +1078,144 @@ function renderPkgParams(c) {{
 let pollTimer = null;
 const PLOT_GROUPS = {plot_groups_js};
 const loadedPlots = {{}};
+// ===== 数据包图缓存（IndexedDB，2026-09-22 新增）=====
+const PKG_CACHE_DB = 'dcgdcst_plot_cache';
+const PKG_CACHE_STORE = 'figures';
+const PKG_CACHE_MAX = 200;
+let _pkgCacheDB = null;
+function pkgCacheOpen() {{
+  return new Promise(function (resolve, reject) {{
+    if (_pkgCacheDB) {{ resolve(_pkgCacheDB); return; }}
+    try {{
+      const req = indexedDB.open(PKG_CACHE_DB, 1);
+      req.onupgradeneeded = function (e) {{
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(PKG_CACHE_STORE)) {{
+          db.createObjectStore(PKG_CACHE_STORE);
+        }}
+      }};
+      req.onsuccess = function (e) {{ _pkgCacheDB = e.target.result; resolve(_pkgCacheDB); }};
+      req.onerror = function () {{ reject(new Error('IndexedDB 打开失败')); }};
+    }} catch (e) {{ reject(e); }}
+  }});
+}}
+function pkgCacheGet(key) {{
+  return pkgCacheOpen().then(function (db) {{
+    return new Promise(function (resolve, reject) {{
+      try {{
+        const tx = db.transaction(PKG_CACHE_STORE, 'readonly');
+        const rq = tx.objectStore(PKG_CACHE_STORE).get(key);
+        rq.onsuccess = function () {{ resolve(rq.result || null); }};
+        rq.onerror = function () {{ reject(new Error('读取缓存失败')); }};
+      }} catch (e) {{ reject(e); }}
+    }});
+  }});
+}}
+function pkgCacheSet(key, fig) {{
+  return pkgCacheOpen().then(function (db) {{
+    return new Promise(function (resolve, reject) {{
+      try {{
+        const tx = db.transaction(PKG_CACHE_STORE, 'readwrite');
+        const store = tx.objectStore(PKG_CACHE_STORE);
+        store.put({{ts: Date.now(), fig: fig}}, key);
+        // 容量控制：超过上限删最旧
+        const cnt = store.count();
+        cnt.onsuccess = function () {{
+          if (cnt.result > PKG_CACHE_MAX) {{
+            const cur = store.openCursor();
+            const oldest = [];
+            cur.onsuccess = function () {{
+              const c = cur.result;
+              if (c) {{ oldest.push({{k: c.key, t: c.value.ts}}); c.continue(); }}
+              else {{
+                oldest.sort(function (a, b) {{ return a.t - b.t; }});
+                for (let i = 0; i < Math.min(20, oldest.length); i++) {{
+                  store.delete(oldest[i].k);
+                }}
+              }}
+            }};
+          }}
+        }};
+        tx.oncomplete = function () {{ resolve(true); }};
+        tx.onerror = function () {{ reject(new Error('写缓存失败')); }};
+      }} catch (e) {{ reject(e); }}
+    }});
+  }});
+}}
+function currentCacheKey(key) {{
+  const dir = (window.PKG_DATA_DIR || '');
+  return dir + '|' + key;
+}}
 async function loadPlot(key) {{
   if (loadedPlots[key]) return;
   const div = document.getElementById('plot-' + key);
   if (!div) return;
   loadedPlots[key] = true;
+  const ckey = currentCacheKey(key);
   try {{
-    const r = await fetch('api/plot/' + key);
-    const fig = fixFigLayout(await r.json());
+    let fig = null;
+    // 1) 先查浏览器本地缓存（同一数据包二次查看秒开）
+    try {{
+      const hit = await pkgCacheGet(ckey);
+      if (hit && hit.fig) fig = hit.fig;
+    }} catch (e) {{ /* 缓存不可用则走网络 */ }}
+    if (!fig) {{
+      const r = await fetch('api/plot/' + key);
+      fig = await r.json();
+      // 写入缓存（不阻塞渲染）
+      pkgCacheSet(ckey, fig).catch(function () {{}});
+    }}
+    fig = fixFigLayout(fig);
     await Plotly.newPlot(div, fig.data, fig.layout,
                          {{responsive: true, displaylogo: false}});
     addHtmlLegend(div.id, fig);
   }} catch(e) {{
     div.innerHTML = '<div style="padding:24px;color:#ef5350;font-size:13px;">'
       + '交互图加载失败（' + e + '）</div>';
+  }}
+}}
+// ===== 后台预取其他数据包（2026-09-22 新增）=====
+let _prefetchBusy = false;
+async function prefetchAllPackages() {{
+  if (_prefetchBusy) return;
+  _prefetchBusy = true;
+  try {{
+    const r = await fetch('api/packages');
+    const d = await r.json();
+    if (!d.ok || !d.packages) return;
+    const curDir = (window.PKG_DATA_DIR || '');
+    const others = d.packages.filter(function (p) {{ return p.dir !== curDir; }});
+    if (others.length === 0) return;
+    // 串行预取：每包每图，从 /api/plot/<key>?dir=<包目录> 取并写缓存
+    const keys = Object.keys(PLOT_FACTORIES_KEYS || {{}});
+    const statusEl = document.getElementById('runStatus');
+    let done = 0, total = 0;
+    others.forEach(function (p) {{ total += keys.length; }});
+    for (const p of others) {{
+      for (const k of keys) {{
+        const ckey = p.dir + '|' + k;
+        try {{
+          const hit = await pkgCacheGet(ckey);
+          if (hit && hit.fig) {{ done++; continue; }}
+          const rr = await fetch('api/plot/' + k + '?dir=' + encodeURIComponent(p.dir));
+          if (rr.ok) {{
+            const fig = await rr.json();
+            await pkgCacheSet(ckey, fig);
+          }}
+        }} catch (e) {{ /* 单个图失败不中断 */ }}
+        done++;
+        if (statusEl && total > 0) {{
+          statusEl.className = 'status';
+          statusEl.textContent = '后台预取数据包 ' + p.name + '（' + done + '/' + total + '）';
+        }}
+      }}
+    }}
+    if (statusEl) {{
+      statusEl.className = 'status';
+      statusEl.textContent = '';
+    }}
+  }} finally {{
+    _prefetchBusy = false;
   }}
 }}
 function showTab(i) {{
@@ -1231,6 +1398,7 @@ async function refreshPkgSelect() {{
   try {{
     const r = await fetch('api/packages');
     const d = await r.json();
+    window.PKG_DATA_DIR = (d && d.current) || '';
     const sel = document.getElementById('pkgSelect');
     if (!d.ok || !d.packages) {{
       sel.innerHTML = '<option value="">（接口不可用）</option>';
@@ -1313,6 +1481,16 @@ function openPkgList() {{
 function closePkgList() {{
   document.getElementById('pkgListModal').style.display = 'none';
 }}
+// 全部交互图 key（供后台预取遍历）
+const PLOT_FACTORIES_KEYS = {plot_keys_js};
+// 页面加载完成后空闲预取其他数据包（延迟 2.5s，避免影响首屏）
+setTimeout(function () {{
+  if (window.requestIdleCallback) {{
+    requestIdleCallback(function () {{ prefetchAllPackages(); }}, {{timeout: 8000}});
+  }} else {{
+    setTimeout(prefetchAllPackages, 5000);
+  }}
+}}, 2500);
 refreshPkgSelect();
 </script>
 </body>
