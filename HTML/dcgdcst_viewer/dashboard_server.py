@@ -1427,6 +1427,8 @@ async function refreshPkgSelect() {{
 }}
 function onPkgSelect(dir) {{
   if (!dir) return;
+  // [2026-09-22 秒开] 防止上次切换的静默 reload 与本次冲突
+  if (window._pkgReloadTimer) {{ clearTimeout(window._pkgReloadTimer); window._pkgReloadTimer = null; }}
   const status = document.getElementById('runStatus');
   if (status) {{ status.className = 'status running'; status.textContent = '正在加载数据包 ' + dir + ' ...'; }}
   fetch('api/load_package', {{
@@ -1434,12 +1436,34 @@ function onPkgSelect(dir) {{
     headers: {{'Content-Type': 'application/json'}},
     body: JSON.stringify({{package: dir}})
   }}).then(function (r) {{ return r.json(); }}).then(function (data) {{
-    if (data.ok) {{
-      if (status) {{ status.className = 'status good'; status.textContent = '已加载: ' + data.data_dir; }}
-      setTimeout(function () {{ location.reload(); }}, 1000);
-    }} else {{
+    if (!data.ok) {{
       if (status) {{ status.className = 'status error'; status.textContent = '加载失败: ' + (data.error || ''); }}
+      return;
     }}
+    // [2026-09-22 秒开] 立即前端直切，不再等整页 reload：
+    // 1) 更新缓存 key 的数据包目录（图缓存立即可命中）
+    window.PKG_DATA_DIR = dir;
+    // 2) 重置已加载标记，重新渲染当前 tab 的图（缓存命中 → 本地秒出）
+    for (const k in loadedPlots) delete loadedPlots[k];
+    const active = document.querySelector('.navbtn.active');
+    const idx = active ? Array.prototype.indexOf.call(
+      document.querySelectorAll('.navbtn'), active) : 0;
+    const grp = PLOT_GROUPS[idx] || [];
+    grp.forEach(loadPlot);
+    // 3) 刷新下拉框选中态
+    refreshPkgSelect();
+    // 4) 更新输出目录卡片（若存在）
+    fetch('api/status').then(function (r) {{ return r.json(); }}).then(function (s) {{
+      const cd = document.getElementById('curDataDir');
+      if (cd && s.data_dir) {{ cd.textContent = s.data_dir; cd.title = s.data_dir; }}
+    }}).catch(function () {{}});
+    // 5) 状态提示：图已切换；指标（SNR/corr 静态卡片）3 秒后随静默刷新更新
+    if (status) {{
+      status.className = 'status good';
+      status.textContent = '已切换: ' + data.data_dir + '（图已本地渲染，3秒后刷新指标）';
+    }}
+    // 6) 静默 reload：刷新服务端渲染的指标卡（此时图全在缓存，秒出）
+    window._pkgReloadTimer = setTimeout(function () {{ location.reload(); }}, 3000);
   }}).catch(function () {{
     if (status) {{ status.className = 'status error'; status.textContent = '加载失败: 无法连接服务器'; }}
   }});
