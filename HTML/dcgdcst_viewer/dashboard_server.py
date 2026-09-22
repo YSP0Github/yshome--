@@ -771,13 +771,13 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
 .pkg-modal {{ position:fixed; inset:0; background:rgba(0,0,0,0.55);
               z-index:999; display:flex; align-items:center; justify-content:center; }}
 .pkg-modal-box {{ background:#16213e; border:1px solid #2a2a4a; border-radius:10px;
-                  width:min(960px,94vw); padding:16px 18px; }}
+                  width:min(1100px,96vw); padding:16px 18px; }}
 .pkg-modal-head {{ display:flex; justify-content:space-between; align-items:center;
                    margin-bottom:12px; }}
-.pkg-table {{ width:100%; border-collapse:collapse; font-size:12px; }}
+.pkg-table {{ width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }}
 .pkg-table th {{ background:#0f1117; color:#90a4ae; text-align:left; padding:7px 10px;
-                 position:sticky; top:0; border-bottom:1px solid #2a2a4a; }}
-.pkg-table td {{ padding:7px 10px; border-bottom:1px solid #1f2340; color:#e0e0e0; }}
+                 position:sticky; top:0; border-bottom:1px solid #2a2a4a; white-space:nowrap; }}
+.pkg-table td {{ padding:7px 10px; border-bottom:1px solid #1f2340; color:#e0e0e0; white-space:nowrap; }}
 .pkg-table tr {{ cursor:pointer; }}
 .pkg-table tr:hover td {{ background:#1f2a44; }}
 .pkg-cur {{ color:#52c41a; font-weight:600; }}
@@ -1434,7 +1434,7 @@ async function refreshPkgSelect() {{
       const tag = (p.dir === cur) ? ' ✓当前' : '';
       h += '<option value="' + esc(p.dir) + '"' +
            (p.dir === cur ? ' selected' : '') + '>' +
-           esc(p.name + ' [' + p.kind + '] SNR入' + p.snr_in + '/' +
+           esc(p.name + ' [' + p.kind + '] 目标SNR入' + p.snr_in +
                '出' + p.snr_out + 'dB corr' + p.corr + tag) + '</option>';
     }});
     sel.innerHTML = h;
@@ -1527,7 +1527,7 @@ function openPkgList() {{
   fetch('api/packages').then(function (r) {{ return r.json(); }}).then(function (d) {{
     if (!d.ok || !d.packages) {{ body.innerHTML = '<div style="color:#ef5350;">接口返回异常</div>'; return; }}
     const cur = d.current || '';
-    const cols = ['包名', '事件日期', '台站', '类型', 'SNR入(dB)', 'SNR出(dB)', 'corr', '时长(h)', '状态'];
+    const cols = ['包名', '事件日期', '台站', '类型', '目标SNR入(dB)', '公共SNR入(dB)', 'SNR出(dB)', 'corr', '时长(h)', '状态'];
     let h = '<table class="pkg-table"><thead><tr>';
     cols.forEach(function (c) {{ h += '<th>' + c + '</th>'; }});
     h += '</tr></thead><tbody>';
@@ -1539,6 +1539,7 @@ function openPkgList() {{
       h += '<td>' + esc(p.stations || '—') + '</td>';
       h += '<td><span class="pkg-badge ' + (p.kind === '合成' ? 'syn' : 'real') + '">' + esc(p.kind) + '</span></td>';
       h += '<td>' + esc(p.snr_in) + '</td>';
+      h += '<td>' + esc(p.snr_in_common || '—') + '</td>';
       h += '<td>' + esc(p.snr_out) + '</td>';
       h += '<td>' + esc(p.corr) + '</td>';
       h += '<td>' + esc(p.duration_h) + '</td>';
@@ -1632,6 +1633,7 @@ def list_packages():
       data/<包名>/event_001/metadata.json  （旧 exp014 布局）
     """
     out = []
+    _name_seen = {}  # [2026-09-22 统一包名] 去重用
     if not DATA_ROOT.exists():
         return {"ok": True, "packages": [], "current": "", "root": str(DATA_ROOT)}
     cur_dir = str(CURRENT_DATA_DIR)
@@ -1654,9 +1656,14 @@ def list_packages():
         pkg_dir = meta_file.parent if (meta_file.parent.name.startswith("event_") or
                                        meta_file.parent.name.lower().startswith("exp")) else d
         mc = m.get("metrics_common", {}) or {}
-        snr_in = mc.get("snr_input_db")
+        snr_in_common = mc.get("snr_input_db")
         snr_out = mc.get("snr_output_db")
         corr = mc.get("correlation")
+        # [2026-09-22 统一] 列表 SNR 入优先用目标 SNR（和目录名一致），无则回退公共
+        _ctrl = m.get("input_snr_control", {}) or {}
+        snr_in = _ctrl.get("target_snr_db")
+        if snr_in is None:
+            snr_in = snr_in_common
         # 事件日期：event_token（合成时间戳）或 event
         et = m.get("event_token") or ""
         if len(et) >= 15:
@@ -1676,13 +1683,32 @@ def list_packages():
         n = m.get("n_samples", 0)
         duration_h = round(n / fs / 3600, 1) if (n and fs) else "—"
         stations = "/".join(m.get("stations", [])) or "—"
+        # [2026-09-22 统一包名] 优先用 metadata 构造显示名（和本地一致），
+        # 无 target_snr 则回退目录名；重复名追加日期后缀
+        if snr_in is not None and snr_in != snr_in_common:
+            _tgt_str = f"{float(snr_in):g}"
+            _disp = f"exp014_full_pipeline_snr{_tgt_str}"
+        else:
+            _disp = d.name
+        # 去重：同名包追加原目录名中的日期后缀（如 001-260918 → _260918）
+        if _disp in _name_seen:
+            _name_seen[_disp] += 1
+            _date_suf = ""
+            for _part in d.name.split("-"):
+                if len(_part) == 6 and _part.isdigit():
+                    _date_suf = _part
+                    break
+            _disp = _disp + (f"_{_date_suf}" if _date_suf else f"_v{_name_seen[_disp]}")
+        else:
+            _name_seen[_disp] = 1
         out.append({
-            "name": d.name,
+            "name": _disp,
             "dir": str(pkg_dir),
             "stations": stations,
             "event_date": ev,
             "kind": kind,
             "snr_in": "-" if snr_in is None else f"{float(snr_in):.2f}",
+            "snr_in_common": "-" if snr_in_common is None else f"{float(snr_in_common):.2f}",
             "snr_out": "-" if snr_out is None else f"{float(snr_out):.2f}",
             "corr": "-" if corr is None else f"{float(corr):.4f}",
             "duration_h": str(duration_h),
