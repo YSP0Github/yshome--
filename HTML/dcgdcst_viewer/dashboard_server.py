@@ -674,6 +674,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 f'SNR 口径：{"；".join(_snr_note_parts)}。</div>')
         # [2026-09-22 预取] 注入全部交互图 key 列表
         plot_keys_js = "[" + ",".join(f'"{k}"' for k in PLOT_FACTORIES) + "]"
+        # [2026-09-22 修复] 同步注入当前数据包目录（缓存 key 依赖它；
+        #   不能只靠 refreshPkgSelect 异步设置，否则 loadPlot 先执行时 key=undefined）
+        pkg_dir_js = str(CURRENT_DATA_DIR).replace("\\", "\\\\").replace('"', '\\"')
         return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -832,6 +835,8 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
 <div id="mainParams">{params_panel}</div>
 
 <script>
+// [2026-09-22 同步注入] 当前数据包目录（服务器渲染时确定，供缓存 key 使用）
+const PKG_DATA_DIR = "{pkg_dir_js}";
 // ===== 数据包本地读取（2026-09-18 新增：云端/本地通用，浏览器本地解析不上传） =====
 let PKG = null;
 let PKG_GROUPS = [];
@@ -1398,7 +1403,8 @@ async function refreshPkgSelect() {{
   try {{
     const r = await fetch('api/packages');
     const d = await r.json();
-    window.PKG_DATA_DIR = (d && d.current) || '';
+    // 异步覆盖（与后端注入一致；后端注入优先，这里兜底）
+    if (d && d.current) window.PKG_DATA_DIR = d.current;
     const sel = document.getElementById('pkgSelect');
     if (!d.ok || !d.packages) {{
       sel.innerHTML = '<option value="">（接口不可用）</option>';
