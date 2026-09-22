@@ -45,8 +45,15 @@ from intermediate_params import compute_all_params
 # 路径配置
 # =====================================================================
 CODE_DIR = Path(__file__).resolve().parent
-RUN_DIR = CODE_DIR.parent / "runs" / "v3_learning_20260917"   # 图片输出目录
-EXP014_DIR = CODE_DIR.parent / "runs" / "exp014_full_pipeline_snr10" / "event_001"
+# [2026-09-22 服务器/本地双路径] 云服务器部署时（/home/YSP/dcgdcst_viewer 存在）
+# 使用服务器数据/图集绝对路径；本地开发回退到仓库内相对路径。
+_SERVER_ROOT = Path("/home/YSP/dcgdcst_viewer")
+if _SERVER_ROOT.exists():
+    RUN_DIR = _SERVER_ROOT / "runs" / "v3_learning_20260917"      # 图片输出目录（服务器）
+    EXP014_DIR = _SERVER_ROOT / "data" / "exp014_snr-20" / "event_001"  # 默认数据目录（服务器）
+else:
+    RUN_DIR = CODE_DIR.parent / "runs" / "v3_learning_20260917"   # 图片输出目录
+    EXP014_DIR = CODE_DIR.parent / "runs" / "exp014_full_pipeline_snr10" / "event_001"
 META_FILE = EXP014_DIR / "metadata.json"                       # 指标来源
 PIPELINE_SCRIPT = CODE_DIR / "run_pipeline_v3_learning.py"     # 运行按钮调用的管线
 EXP013_SCRIPT = CODE_DIR / "exp013_full_pipeline_diagnostic.py"  # 输入 SNR 重合成管线
@@ -54,6 +61,8 @@ EXP013_SCRIPT = CODE_DIR / "exp013_full_pipeline_diagnostic.py"  # 输入 SNR �
 CURRENT_DATA_DIR = EXP014_DIR
 CURRENT_META_FILE = META_FILE
 LAST_DATA_FILE = RUN_DIR / "last_data_dir.json"   # 记住上次数据目录（重启恢复）
+# [2026-09-22 数据包列表] 数据包根目录：优先服务器路径，否则本地 runs。
+DATA_ROOT = _SERVER_ROOT / "data" if _SERVER_ROOT.exists() else CODE_DIR.parent / "runs"
 # [2026-09-18 云端只读部署] --readonly 时禁止一切重跑能力（运行按钮/SNR/
 # 输出目录输入框、/api/run），只保留查看与交互；--data-dir 指定数据目录。
 READONLY = False
@@ -343,6 +352,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             # 中间参数总览（二阶矩/峰度/λ*/ν̂/σ̂²/η/迭代/活跃原子/corr/SNR/C_j/C_multi 等）
             self._send_json(_params_for_display())
             return
+        elif self.path == "/api/packages":
+            # [2026-09-22 数据包列表] 服务器内已上传数据包信息列表
+            self._send_json(list_packages())
+            return
         elif self.path.startswith("/api/plot/"):
             # 交互图 JSON：/api/plot/01 → 返回 plotly figure spec
             key = self.path[len("/api/plot/"):].split("?")[0]
@@ -428,31 +441,46 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 self._send_json({"ok": False, "error": err})
             return
         elif self.path == "/api/load_package":
-            # [2026-09-18] 读取面板数据包：解包后显示全部数据
-            if READONLY:
-                self._send_json({"ok": False,
-                                 "error": "只读展示模式：禁止加载数据包"})
-                return
+            # [2026-09-18/09-22] 读取面板数据包：解包后显示全部数据。
+            # 2026-09-22：云端只读模式也允许加载"服务器内已上传的数据包"
+            # （导师查看场景 = 只读展示，不触发重跑/上传）；且支持两种输入：
+            #   ① 已解包数据包目录（data/001-260918，含 metadata.json+npz）
+            #   ② tar.gz 数据包文件（沿用旧逻辑解包）
             try:
                 length = int(self.headers.get("Content-Length") or 0)
                 body = json.loads(self.rfile.read(length).decode("utf-8"))
                 pkg = Path(str(body.get("package", "")).strip())
+                # 传的是目录：
+                #   - 若目录本身就是数据包（含 metadata.json + npz）→ 直接用
+                #   - 否则尝试找目录内的 *_dashboard_package.tar.gz
                 if pkg.is_dir():
-                    _cands = sorted(pkg.glob("*_dashboard_package.tar.gz")) + [pkg / "dashboard_package.tar.gz"]
-                    pkg = next((c for c in _cands if c.exists()), None) or pkg
-                if not pkg.exists() or not pkg.name.endswith(".tar.gz"):
+                    if (pkg / "metadata.json").exists() and \
+                       (pkg / "all_intermediate_results.npz").exists():
+                        pass  # 已解包数据包目录，直接使用
+                    else:
+                        _cands = sorted(pkg.glob("*_dashboard_package.tar.gz")) + [pkg / "dashboard_package.tar.gz"]
+                        pkg = next((c for c in _cands if c.exists()), None) or pkg
+                if not pkg.exists():
                     self._send_json({"ok": False,
                                      "error": f"数据包不存在: {pkg}"})
+                    return
+                if pkg.is_dir():
+                    # 已解包目录：无需 tar.gz 解包，直接切换数据源
+                    dd = pkg
+                elif pkg.name.endswith(".tar.gz"):
+                    dd = pkg.parent
+                    if not _extract_dashboard_package(dd):
+                        self._send_json({"ok": False, "error": "解包失败"})
+                        return
+                else:
+                    self._send_json({"ok": False,
+                                     "error": f"不支持的数据包: {pkg.name}"})
                     return
                 with state_lock:
                     if state["status"] == "running":
                         self._send_json({"ok": False,
                                          "error": "管线正在运行中，请稍后"})
                         return
-                dd = pkg.parent
-                if not _extract_dashboard_package(dd):
-                    self._send_json({"ok": False, "error": "解包失败"})
-                    return
                 global CURRENT_DATA_DIR, CURRENT_META_FILE
                 CURRENT_DATA_DIR = dd
                 CURRENT_META_FILE = dd / "metadata.json"
@@ -677,6 +705,22 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
 .params-note {{ margin:14px 26px 0; font-size:12px; color:#90a4ae;
                background:#16213e; border-left:3px solid #64b5f6;
                padding:10px 14px; border-radius:4px; }}
+.pkg-modal {{ position:fixed; inset:0; background:rgba(0,0,0,0.55);
+              z-index:999; display:flex; align-items:center; justify-content:center; }}
+.pkg-modal-box {{ background:#16213e; border:1px solid #2a2a4a; border-radius:10px;
+                  width:min(960px,94vw); padding:16px 18px; }}
+.pkg-modal-head {{ display:flex; justify-content:space-between; align-items:center;
+                   margin-bottom:12px; }}
+.pkg-table {{ width:100%; border-collapse:collapse; font-size:12px; }}
+.pkg-table th {{ background:#0f1117; color:#90a4ae; text-align:left; padding:7px 10px;
+                 position:sticky; top:0; border-bottom:1px solid #2a2a4a; }}
+.pkg-table td {{ padding:7px 10px; border-bottom:1px solid #1f2340; color:#e0e0e0; }}
+.pkg-table tr {{ cursor:pointer; }}
+.pkg-table tr:hover td {{ background:#1f2a44; }}
+.pkg-cur {{ color:#52c41a; font-weight:600; }}
+.pkg-badge {{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; }}
+.pkg-badge.syn {{ background:#0d47a1; color:#90caf9; }}
+.pkg-badge.real {{ background:#4a148c; color:#ce93d8; }}
 </style>
 <script src="static/plotly.min.js"></script>
 <script src="static/fflate.min.js"></script>
@@ -698,6 +742,24 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
   <button class="runbtn" style="margin-left:auto;" onclick="document.getElementById('pkgFile').click()"
           title="读取 dashboard_package.tar.gz（浏览器本地解析，不上传网络），切换显示全部实验数据">&#128194; 选择数据包</button>
   <input type="file" id="pkgFile" accept=".tar.gz,.gz" style="display:none;">
+  <span class="hslider-wrap" style="margin-left:12px;">
+    <label for="pkgSelect" title="服务器上已上传的数据包列表，选择后直接查看（云端/本地通用）">数据包列表</label>
+    <select id="pkgSelect" onchange="onPkgSelect(this.value)"
+            style="background:#0f1117;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:4px;padding:6px 8px;font-size:12px;max-width:220px;">
+      <option value="">（加载中…）</option>
+    </select>
+  </span>
+  <button class="runbtn" style="padding:6px 12px;font-size:12px;"
+          onclick="openPkgList()" title="查看服务器上所有已上传数据包的详细信息">&#128203; 数据包列表</button>
+</div>
+<div id="pkgListModal" class="pkg-modal" style="display:none;">
+  <div class="pkg-modal-box">
+    <div class="pkg-modal-head">
+      <span style="font-size:15px;font-weight:600;color:#64b5f6;">服务器数据包列表</span>
+      <span onclick="closePkgList()" style="cursor:pointer;color:#90a4ae;font-size:18px;">&times;</span>
+    </div>
+    <div id="pkgListBody" style="max-height:60vh;overflow:auto;padding:4px 2px;">加载中…</div>
+  </div>
 </div>
 <div id="runLog" class="log"></div>
 
@@ -1164,6 +1226,87 @@ function toggleLog() {{
   t.textContent = el.classList.contains('show') ? '隐藏日志' : '显示日志';
 }}
 function esc(s) {{ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }}
+// ===== 数据包列表（2026-09-22 新增：服务器内数据包下拉 + 列表页） =====
+async function refreshPkgSelect() {{
+  try {{
+    const r = await fetch('api/packages');
+    const d = await r.json();
+    const sel = document.getElementById('pkgSelect');
+    if (!d.ok || !d.packages) {{
+      sel.innerHTML = '<option value="">（接口不可用）</option>';
+      return;
+    }}
+    const cur = d.current || '';
+    let h = '<option value="">—— 选择服务器数据包 ——</option>';
+    d.packages.forEach(function (p) {{
+      const tag = (p.dir === cur) ? ' ✓当前' : '';
+      h += '<option value="' + esc(p.dir) + '"' +
+           (p.dir === cur ? ' selected' : '') + '>' +
+           esc(p.name + ' [' + p.kind + '] SNR入' + p.snr_in + '/' +
+               '出' + p.snr_out + 'dB corr' + p.corr + tag) + '</option>';
+    }});
+    sel.innerHTML = h;
+  }} catch (e) {{
+    const sel = document.getElementById('pkgSelect');
+    if (sel) sel.innerHTML = '<option value="">（加载失败）</option>';
+  }}
+}}
+function onPkgSelect(dir) {{
+  if (!dir) return;
+  const status = document.getElementById('runStatus');
+  if (status) {{ status.className = 'status running'; status.textContent = '正在加载数据包 ' + dir + ' ...'; }}
+  fetch('api/load_package', {{
+    method: 'POST',
+    headers: {{'Content-Type': 'application/json'}},
+    body: JSON.stringify({{package: dir}})
+  }}).then(function (r) {{ return r.json(); }}).then(function (data) {{
+    if (data.ok) {{
+      if (status) {{ status.className = 'status good'; status.textContent = '已加载: ' + data.data_dir; }}
+      setTimeout(function () {{ location.reload(); }}, 1000);
+    }} else {{
+      if (status) {{ status.className = 'status error'; status.textContent = '加载失败: ' + (data.error || ''); }}
+    }}
+  }}).catch(function () {{
+    if (status) {{ status.className = 'status error'; status.textContent = '加载失败: 无法连接服务器'; }}
+  }});
+}}
+function openPkgList() {{
+  const modal = document.getElementById('pkgListModal');
+  modal.style.display = 'flex';
+  const body = document.getElementById('pkgListBody');
+  body.innerHTML = '加载中…';
+  fetch('api/packages').then(function (r) {{ return r.json(); }}).then(function (d) {{
+    if (!d.ok || !d.packages) {{ body.innerHTML = '<div style="color:#ef5350;">接口返回异常</div>'; return; }}
+    const cur = d.current || '';
+    const cols = ['包名', '事件日期', '台站', '类型', 'SNR入(dB)', 'SNR出(dB)', 'corr', '时长(h)', '状态'];
+    let h = '<table class="pkg-table"><thead><tr>';
+    cols.forEach(function (c) {{ h += '<th>' + c + '</th>'; }});
+    h += '</tr></thead><tbody>';
+    d.packages.forEach(function (p) {{
+      const isCur = (p.dir === cur);
+      h += '<tr onclick="onPkgSelect(\'' + p.dir.replace(/'/g, "\\'") + '\')'>';
+      h += '<td><b>' + esc(p.name) + '</b></td>';
+      h += '<td>' + esc(p.event_date || '—') + '</td>';
+      h += '<td>' + esc(p.stations || '—') + '</td>';
+      h += '<td><span class="pkg-badge ' + (p.kind === '合成' ? 'syn' : 'real') + '">' + esc(p.kind) + '</span></td>';
+      h += '<td>' + esc(p.snr_in) + '</td>';
+      h += '<td>' + esc(p.snr_out) + '</td>';
+      h += '<td>' + esc(p.corr) + '</td>';
+      h += '<td>' + esc(p.duration_h) + '</td>';
+      h += '<td>' + (isCur ? '<span class="pkg-cur">当前</span>' : '点击加载') + '</td>';
+      h += '</tr>';
+    }});
+    h += '</tbody></table>';
+    if (d.packages.length === 0) h = '<div style="color:#90a4ae;">暂无已上传数据包</div>';
+    body.innerHTML = h;
+  }}).catch(function () {{
+    body.innerHTML = '<div style="color:#ef5350;">加载列表失败</div>';
+  }});
+}}
+function closePkgList() {{
+  document.getElementById('pkgListModal').style.display = 'none';
+}}
+refreshPkgSelect();
 </script>
 </body>
 </html>"""
@@ -1214,6 +1357,74 @@ function esc(s) {{ const d = document.createElement('div'); d.textContent = s; r
 
     def log_message(self, format, *args):
         pass  # 静默 HTTP 请求日志
+
+def list_packages():
+    """[2026-09-22 新增] 扫描 DATA_ROOT 下所有含 metadata.json 的数据包目录，
+    返回可展示的信息列表（包名/台站/事件日期/合成或实测/SNR入出/corr/时长）。
+    兼容两种布局：
+      data/<包名>/metadata.json            （上传脚本解包后的标准布局）
+      data/<包名>/event_001/metadata.json  （旧 exp014 布局）
+    """
+    out = []
+    if not DATA_ROOT.exists():
+        return {"ok": True, "packages": [], "current": "", "root": str(DATA_ROOT)}
+    cur_dir = str(CURRENT_DATA_DIR)
+    for d in sorted(DATA_ROOT.iterdir()):
+        if not d.is_dir():
+            continue
+        # 定位 metadata.json：包根 或 event_001/ 子目录
+        meta_file = d / "metadata.json"
+        if not meta_file.exists():
+            subs = sorted(d.glob("*/metadata.json"))
+            if not subs:
+                continue
+            meta_file = subs[0]
+        try:
+            with open(meta_file, encoding="utf-8") as f:
+                m = json.load(f)
+        except Exception:
+            continue
+        # 目录识别：列表展示用的是"包根目录"，加载时也传包根目录
+        pkg_dir = meta_file.parent if (meta_file.parent.name.startswith("event_") or
+                                       meta_file.parent.name.lower().startswith("exp")) else d
+        mc = m.get("metrics_common", {}) or {}
+        snr_in = mc.get("snr_input_db")
+        snr_out = mc.get("snr_output_db")
+        corr = mc.get("correlation")
+        # 事件日期：event_token（合成时间戳）或 event
+        et = m.get("event_token") or ""
+        if len(et) >= 15:
+            ev = f"{et[0:4]}-{et[4:6]}-{et[6:8]} {et[9:11]}:{et[11:13]}"
+        elif m.get("event"):
+            ev = str(m.get("event"))
+        else:
+            ev = "—"
+        # 合成 or 实测：有 input_snr_control/synthesis_note → 合成；否则实测
+        has_syn = (("input_snr_control" in m) or ("synthesis_note" in m) or
+                   ("synth" in str(m.get("config", {}))) or
+                   ("合成嵌入噪声" in str(m.get("noise_modeling", {}).get("source", ""))) or
+                   ("synthetic" in m.get("event", "").lower()) or
+                   ("snr" in d.name.lower()))
+        kind = "合成" if has_syn else "实测"
+        fs = m.get("fs_hz", 6.625)
+        n = m.get("n_samples", 0)
+        duration_h = round(n / fs / 3600, 1) if (n and fs) else "—"
+        stations = "/".join(m.get("stations", [])) or "—"
+        out.append({
+            "name": d.name,
+            "dir": str(pkg_dir),
+            "stations": stations,
+            "event_date": ev,
+            "kind": kind,
+            "snr_in": "-" if snr_in is None else f"{float(snr_in):.2f}",
+            "snr_out": "-" if snr_out is None else f"{float(snr_out):.2f}",
+            "corr": "-" if corr is None else f"{float(corr):.4f}",
+            "duration_h": str(duration_h),
+        })
+    out.sort(key=lambda x: x["name"], reverse=True)
+    return {"ok": True, "packages": out, "current": cur_dir,
+            "root": str(DATA_ROOT)}
+
 
 def _extract_dashboard_package(data_dir):
     """[2026-09-18 新增] 读取面板数据包：data_dir/dashboard_package.tar.gz。
