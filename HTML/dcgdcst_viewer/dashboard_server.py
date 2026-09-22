@@ -154,6 +154,22 @@ def load_metrics():
     except Exception:
         return {}
 
+def _snr_note_html(m: dict) -> str:
+    """[2026-09-22 SPA] 拼装 SNR 口径说明文本（页面渲染与 /api/metrics 共用）"""
+    parts = []
+    _target_v = m.get("target_snr_db")
+    _sta_vals = m.get("snr_input_per_station") or []
+    if _target_v is not None:
+        parts.append(f"目标 SNR = {_target_v:g} dB")
+    if _sta_vals:
+        _sta_names = m.get("stations", ["S12", "S15", "S16"])
+        _vals = " / ".join(f"{v:.2f}" for v in _sta_vals)
+        parts.append(f"逐站实测 = {_vals} dB")
+    parts.append(
+        "顶栏为三站平均（公共）口径：信号三站相关、噪声三站独立，"
+        "平均后噪声被部分抵消，故公共 SNR 比逐站高（正常现象，非控制失效）")
+    return "SNR 口径：" + "；".join(parts) + "。"
+
 def run_pipeline_thread(input_snr: float | None = None,
                         out_root: str | None = None):
     """后台线程：运行管线重新生成全部图片
@@ -372,6 +388,14 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         elif self.path == "/api/status":
             self._send_json(self._get_state())
+            return
+        elif self.path == "/api/metrics":
+            # [2026-09-22 SPA] 当前数据包完整指标（顶栏卡片 + SNR 口径说明），
+            # 供前端切包后无刷新更新顶部参数
+            _m = load_metrics()
+            _m["data_dir"] = str(CURRENT_DATA_DIR)
+            _m["snr_note"] = _snr_note_html(_m)
+            self._send_json({"ok": True, "metrics": _m})
             return
         elif self.path == "/api/log":
             with state_lock:
@@ -630,7 +654,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                          if (_target_v is not None or _sta_vals)
                          else "SNR 输入 (dB)")
         metric_cards = ""
-        for label, value, fmt, good_when in [
+        _metric_ids = ["m-snr-in", "m-snr-out", "m-snr-gain",
+                       "m-corr", "m-iter", "m-atoms"]
+        for _i, (label, value, fmt, good_when) in enumerate([
             (_snr_in_label, m.get("snr_input_db", 0), ".2f",
              lambda v: v >= 0),
             ("SNR 输出 (dB)", m.get("snr_output_db", 0), ".2f",
@@ -642,7 +668,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
              lambda v: True),
             ("活跃原子", m.get("n_active_atoms", "N/A"), "s",
              lambda v: True),
-        ]:
+        ]):
             v = value
             try:
                 cls = "good" if good_when(float(v)) else "bad"
@@ -651,27 +677,18 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             txt = str(v) if fmt == "s" else f"{v:{fmt}}"
             metric_cards += (
                 f'<div class="metric"><div class="m-label">{label}</div>'
-                f'<div class="m-value {cls}">{txt}</div></div>')
-        _snr_note_parts = []
-        if _target_v is not None:
-            _snr_note_parts.append(f"目标 SNR = {_target_v:g} dB")
-        if _sta_vals:
-            _sta_names = m.get("stations", ["S12", "S15", "S16"])
-            _vals = " / ".join(f"{v:.2f}" for v in _sta_vals)
-            _snr_note_parts.append(f"逐站实测 = {_vals} dB")
-        _snr_note_parts.append(
-            "顶栏为三站平均（公共）口径：信号三站相关、噪声三站独立，"
-            "平均后噪声被部分抵消，故公共 SNR 比逐站高（正常现象，非控制失效）")
+                f'<div class="m-value {cls}" id="{_metric_ids[_i]}">{txt}</div></div>')
         metric_cards += (
             f'<div class="metric" style="min-width:320px;border-color:#0d47a1;">'
             f'<div class="m-label">当前输出目录（完整路径）</div>'
             f'<div class="m-value" id="curDataDir" style="font-size:12px;'
             f'word-break:break-all;line-height:1.4;" '
             f'title="{CURRENT_DATA_DIR}">{CURRENT_DATA_DIR}</div></div>')
-        if _snr_note_parts:
-            metric_cards += (
-                f'<div class="note" style="width:100%;margin:2px 0 0;">'
-                f'SNR 口径：{"；".join(_snr_note_parts)}。</div>')
+        # [2026-09-22 SPA] SNR 口径说明（前端切换时也可通过 /api/metrics 刷新）
+        _snr_note = _snr_note_html(m)
+        metric_cards += (
+            f'<div class="note" id="snrNote" style="width:100%;margin:2px 0 0;">'
+            f'{_snr_note}</div>')
         # [2026-09-22 预取] 注入全部交互图 key 列表
         plot_keys_js = "[" + ",".join(f'"{k}"' for k in PLOT_FACTORIES) + "]"
         # [2026-09-22 修复] 同步注入当前数据包目录（缓存 key 依赖它；
@@ -1425,6 +1442,44 @@ async function refreshPkgSelect() {{
     if (sel) sel.innerHTML = '<option value="">（加载失败）</option>';
   }}
 }}
+// ===== 无刷新更新顶部指标（2026-09-22 SPA）=====
+function updateMetrics() {{
+  return fetch('api/metrics').then(function (r) {{ return r.json(); }})
+    .then(function (d) {{
+      if (!d.ok || !d.metrics) return;
+      const mt = d.metrics;
+      const setV = function (id, v, fmt) {{
+        const el = document.getElementById(id);
+        if (!el) return;
+        let txt = String(v);
+        if (fmt === 'f2') txt = Number(v).toFixed(2);
+        else if (fmt === 'f4') txt = Number(v).toFixed(4);
+        el.textContent = txt;
+        // 颜色：SNR >=0 / corr >0.5 为 good，否则 bad
+        try {{
+          const num = Number(v);
+          if (id === 'm-corr') {{
+            el.className = 'm-value ' + (num > 0.5 ? 'good' : 'bad');
+          }} else if (id === 'm-iter' || id === 'm-atoms') {{
+            el.className = 'm-value';
+          }} else {{
+            el.className = 'm-value ' + (num >= 0 ? 'good' : 'bad');
+          }}
+        }} catch (e) {{}}
+      }};
+      setV('m-snr-in', mt.snr_input_db, 'f2');
+      setV('m-snr-out', mt.snr_output_db, 'f2');
+      setV('m-snr-gain', (Number(mt.snr_output_db) - Number(mt.snr_input_db)), 'f2');
+      setV('m-corr', mt.correlation, 'f4');
+      setV('m-iter', mt.n_iterations, 's');
+      setV('m-atoms', mt.n_active_atoms, 's');
+      const cd = document.getElementById('curDataDir');
+      if (cd && mt.data_dir) {{ cd.textContent = mt.data_dir; cd.title = mt.data_dir; }}
+      const sn = document.getElementById('snrNote');
+      if (sn && mt.snr_note) sn.textContent = mt.snr_note;
+    }}).catch(function () {{}});
+}}
+
 function onPkgSelect(dir) {{
   if (!dir) return;
   // [2026-09-22 秒开] 防止上次切换的静默 reload 与本次冲突
@@ -1440,7 +1495,7 @@ function onPkgSelect(dir) {{
       if (status) {{ status.className = 'status error'; status.textContent = '加载失败: ' + (data.error || ''); }}
       return;
     }}
-    // [2026-09-22 秒开] 立即前端直切，不再等整页 reload：
+    // [2026-09-22 SPA] 无刷新切换：
     // 1) 更新缓存 key 的数据包目录（图缓存立即可命中）
     window.PKG_DATA_DIR = dir;
     // 2) 重置已加载标记，重新渲染当前 tab 的图（缓存命中 → 本地秒出）
@@ -1452,18 +1507,13 @@ function onPkgSelect(dir) {{
     grp.forEach(loadPlot);
     // 3) 刷新下拉框选中态
     refreshPkgSelect();
-    // 4) 更新输出目录卡片（若存在）
-    fetch('api/status').then(function (r) {{ return r.json(); }}).then(function (s) {{
-      const cd = document.getElementById('curDataDir');
-      if (cd && s.data_dir) {{ cd.textContent = s.data_dir; cd.title = s.data_dir; }}
-    }}).catch(function () {{}});
-    // 5) 状态提示：图已切换；指标（SNR/corr 静态卡片）3 秒后随静默刷新更新
+    // 4) 无刷新更新顶部指标卡（SNR/corr/迭代/活跃原子/输出目录/口径说明）
+    updateMetrics();
+    // 5) 状态提示（不再整页 reload）
     if (status) {{
       status.className = 'status good';
-      status.textContent = '已切换: ' + data.data_dir + '（图已本地渲染，3秒后刷新指标）';
+      status.textContent = '已切换: ' + data.data_dir;
     }}
-    // 6) 静默 reload：刷新服务端渲染的指标卡（此时图全在缓存，秒出）
-    window._pkgReloadTimer = setTimeout(function () {{ location.reload(); }}, 3000);
   }}).catch(function () {{
     if (status) {{ status.className = 'status error'; status.textContent = '加载失败: 无法连接服务器'; }}
   }});
