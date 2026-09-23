@@ -724,15 +724,17 @@
         
         <!-- 桌面端导航 -->
         <ul class="hidden md:flex items-center space-x-8">
-          <li><a href="#home" class="nav-link-anim hover:text-primary transition-colors">首页</a></li>
-          <li><a href="#about" class="nav-link-anim hover:text-primary transition-colors">关于我</a></li>
-          <li><a href="#skills" class="nav-link-anim hover:text-primary transition-colors">技能</a></li>
-          <li><a href="#projects" class="nav-link-anim hover:text-primary transition-colors">项目</a></li>
-          <li><a href="#contact" class="nav-link-anim hover:text-primary transition-colors">联系我</a></li>
+          <li><a href="#home" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.home">Home</a></li>
+          <li><a href="#about" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.about">About</a></li>
+          <li><a href="#skills" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.skills">Skills</a></li>
+          <li><a href="#projects" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.projects">Projects</a></li>
+          <li><a href="#contact" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.contact">Contact</a></li>
         </ul>
         
         <!-- 移动端汉堡菜单 -->
-        <button id="menu-toggle" class="md:hidden text-white text-xl">
+    <!-- 语言切换按钮 -->
+    <button id="lang-toggle" class="ml-4 px-3 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-all">EN</button>
+        <button id="menu-toggle" class="md:hidden text-white text-xl ml-2">
           <i class="fa fa-bars"></i>
         </button>
       </nav>
@@ -741,11 +743,11 @@
     <!-- 移动端导航菜单 -->
     <div id="mobile-menu" class="md:hidden hidden bg-dark/95 backdrop-blur-md mt-4 py-4 px-4 absolute w-full border-t border-gray-800">
       <ul class="space-y-4">
-        <li><a href="#home" class="block hover:text-primary transition-colors">首页</a></li>
-        <li><a href="#about" class="block hover:text-primary transition-colors">关于我</a></li>
-        <li><a href="#skills" class="block hover:text-primary transition-colors">技能</a></li>
-        <li><a href="#projects" class="block hover:text-primary transition-colors">项目</a></li>
-        <li><a href="#contact" class="block hover:text-primary transition-colors">联系我</a></li>
+        <li><a href="#home" class="block hover:text-primary transition-colors" data-i18n="nav.home">Home</a></li>
+        <li><a href="#about" class="block hover:text-primary transition-colors" data-i18n="nav.about">About</a></li>
+        <li><a href="#skills" class="block hover:text-primary transition-colors" data-i18n="nav.skills">Skills</a></li>
+        <li><a href="#projects" class="block hover:text-primary transition-colors" data-i18n="nav.projects">Projects</a></li>
+        <li><a href="#contact" class="block hover:text-primary transition-colors" data-i18n="nav.contact">Contact</a></li>
       </ul>
     </div>
   </header>
@@ -782,7 +784,7 @@
             </div>
             <div class="hero-stat">
               <strong>地震学软件</strong>
-              <span>SeisY、SeisRT，波形处理到实时监测</span>
+              <span data-i18n="hero.desc">From Waveform Processing to Real-time Monitoring</span>
             </div>
             <div class="hero-stat">
               <strong>Web 实验室</strong>
@@ -1158,7 +1160,7 @@
             </p>
             <div class="flex flex-wrap gap-2 mb-5">
               <span class="project-chip">项目归档</span>
-              <span class="project-chip">科研主页</span>
+              <span class="project-chip" data-i18n="project.research">Research Homepage</span>
               <span class="project-chip">内容展示</span>
             </div>
             <a href="HTML/YSKY.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
@@ -1751,5 +1753,45 @@
     }
    </script>
     <!-- </script> -->
+
+<script>
+const i18n = {
+  zh: {
+    'nav.home': '首页',
+    'nav.about': '关于我',
+    'nav.skills': '技能',
+    'nav.projects': '项目',
+    'nav.contact': '联系我',
+    'hero.desc': 'SeisY、SeisRT，波形处理到实时监测',
+    'project.research': '科研主页'
+  },
+  en: {
+    'nav.home': 'Home',
+    'nav.about': 'About',
+    'nav.skills': 'Skills',
+    'nav.projects': 'Projects',
+    'nav.contact': 'Contact',
+    'hero.desc': 'SeisY, SeisRT: From Waveform Processing to Real-time Monitoring',
+    'project.research': 'Research Homepage'
+  }
+};
+let currentLang = localStorage.getItem('lang') || 'zh';
+function applyLang(l) {
+  currentLang = l;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (i18n[l][k]) el.textContent = i18n[l][k];
+  });
+  document.getElementById('lang-toggle').textContent = l === 'zh' ? 'EN' : '中文';
+  localStorage.setItem('lang', l);
+}
+document.getElementById('lang-toggle').addEventListener('click', function() {
+  applyLang(currentLang === 'zh' ? 'en' : 'zh');
+});
+document.addEventListener('DOMContentLoaded', function() {
+  applyLang(currentLang);
+});
+</script>
+
 </body>
 </html>
