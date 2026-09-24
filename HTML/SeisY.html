@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeisY - <span data-i18n="page.title">地震数据处理与分析平台</span></title>
+    <title>SeisY - 地震数据处理与分析平台</title>
     <link rel="stylesheet" href="../static/css/seisy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
@@ -1838,6 +1838,7 @@
   };
 
   dict.en = enTranslations;
+  dict.zh["page.title"] = "地震数据处理与分析平台";
 
   var lang = localStorage.getItem('seisy_lang') || 'zh';
 
@@ -1850,6 +1851,7 @@
         el.textContent = dict[l][key];
       }
     });
+    document.title = "SeisY - " + (dict[l]["page.title"] || "地震数据处理与分析平台");
     var btn = document.getElementById('lang-toggle');
     if (btn) btn.textContent = l === 'zh' ? 'EN' : '中文';
     localStorage.setItem('seisy_lang', l);
