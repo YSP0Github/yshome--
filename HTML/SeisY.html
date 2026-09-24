@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeisY - 地震数据处理与分析平台</title>
+    <title>SeisY - <span data-i18n="page.title">地震数据处理与分析平台</span></title>
     <link rel="stylesheet" href="../static/css/seisy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
@@ -179,13 +179,13 @@
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4 fade-in delay-300">
                     <a href="#download" class="px-8 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-custom shadow-lg shadow-accent/20">
-                        <i class="fa fa-download mr-2"></i> 下载 Windows 版
+                        <i class="fa fa-download mr-2"></i> <span data-i18n="hero.btn_download">下载 Windows 版</span>
                     </a>
                     <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="px-8 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-custom shadow-lg shadow-primary/20">
-                        <i class="fa-brands fa-github mr-2"></i> 查看源码
+                        <i class="fa-brands fa-github mr-2"></i> <span data-i18n="hero.btn_source">查看源码</span>
                     </a>
                     <a href="../documents/seisy_user_guide.html" target="_blank" class="px-8 py-3 bg-white text-primary border border-primary rounded-lg font-medium hover:bg-primary/5 transition-custom">
-                        <i class="fa fa-book mr-2"></i> 使用指南
+                        <i class="fa fa-book mr-2"></i> <span data-i18n="hero.btn_guide">使用指南</span>
                     </a>
                 </div>
 
@@ -237,35 +237,35 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4"><span data-i18n="sec.overview">软件概述</span></h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt5 构建，当前提供 Windows 桌面版，适用于地球物理研究与教学。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto"><span data-i18n="overview.intro">SeisY 是一个综合性的地震数据处理和分析平台，基于 PyQt5 构建，当前提供 Windows 桌面版，适用于地球物理研究与教学。</span></p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <h3 class="text-2xl font-semibold mb-6 text-primary">关于 SeisY</h3>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary"><span data-i18n="overview.about_title">关于 SeisY</span></h3>
                     <p class="text-dark/80 mb-6 leading-relaxed">
-                        SeisY 面向地震、月震与行星地震数据的处理、分析与可视化，支持 MiniSEED、SAC、SEG-Y、SEG2、ASCII、TXT、CSV 等 8 种数据格式的导入导出，提供从数据预处理到高级分析的完整工作流。
+                        <span data-i18n="overview.p1">SeisY 面向地震、月震与行星地震数据的处理、分析与可视化，支持 MiniSEED、SAC、SEG-Y、SEG2、ASCII、TXT、CSV 等 8 种数据格式的导入导出，提供从数据预处理到高级分析的完整工作流。</span>
                     </p>
                     <p class="text-dark/80 mb-8 leading-relaxed">
-                        软件集成波形处理、频谱分析、射线追踪、简正模分析、月震工作流与异常修复等 20+ 专业工具模块，支持地球、月球和自定义行星速度模型，并提供中英文双语界面与深浅色主题。
+                        <span data-i18n="overview.p2">软件集成波形处理、频谱分析、射线追踪、简正模分析、月震工作流与异常修复等 20+ 专业工具模块，支持地球、月球和自定义行星速度模型，并提供中英文双语界面与深浅色主题。</span>
                     </p>
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
                         <div class="text-center">
                             <div class="text-3xl font-bold text-primary mb-2">20+</div>
-                            <div class="text-dark/70 text-sm">专业工具</div>
+                            <div class="text-dark/70 text-sm"><span data-i18n="overview.stat_tools">专业工具</span></div>
                         </div>
                         <div class="text-center">
                             <div class="text-3xl font-bold text-primary mb-2">30+</div>
-                            <div class="text-dark/70 text-sm">处理算法</div>
+                            <div class="text-dark/70 text-sm"><span data-i18n="overview.stat_algos">处理算法</span></div>
                         </div>
                         <div class="text-center">
                             <div class="text-3xl font-bold text-primary mb-2">8</div>
-                            <div class="text-dark/70 text-sm">数据格式</div>
+                            <div class="text-dark/70 text-sm"><span data-i18n="overview.stat_formats">数据格式</span></div>
                         </div>
                         <div class="text-center">
                             <div class="text-3xl font-bold text-primary mb-2">8</div>
-                            <div class="text-dark/70 text-sm">一级菜单</div>
+                            <div class="text-dark/70 text-sm"><span data-i18n="overview.stat_menus">一级菜单</span></div>
                         </div>
                     </div>
                 </div>
@@ -279,7 +279,7 @@
                         </div>
                         <img src="../static/images/SeisY/SeisY-plot.png" alt="SeisY 绘图区" class="w-full h-auto">
                     </div>
-                    <p class="text-center text-dark/60 text-sm">三块独立绘图区，支持波形、频谱与处理前后对比展示</p>
+                    <p class="text-center text-dark/60 text-sm"><span data-i18n="overview.plot_caption">三块独立绘图区，支持波形、频谱与处理前后对比展示</span></p>
                 </div>
             </div>
         </div>
@@ -291,7 +291,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4"><span data-i18n="sec.download">软件下载</span></h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">本页提供 SeisY Windows 安装版下载入口，后续版本可继续沿用同一页面更新。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto"><span data-i18n="download.intro">本页提供 SeisY Windows 安装版下载入口，后续版本可继续沿用同一页面更新。</span></p>
             </div>
 
             <!-- 在线下载数据入口 -->
@@ -299,9 +299,9 @@
                 <a href="SeisY-download.html" class="block text-white rounded-2xl p-6 md:p-10 shadow-lg hover:shadow-xl" style="background:linear-gradient(90deg,#0F52BA,#10B981);text-decoration:none;">
                     <div class="flex flex-col md:flex-row md:items-center" style="gap:16px;">
                         <div class="flex-1">
-                            <div class="text-sm" style="opacity:.9;margin-bottom:4px;">不想安装软件？直接用网页版</div>
-                            <div class="text-2xl font-bold">在线下载地震数据（免安装）</div>
-                            <div class="text-sm" style="opacity:.8;margin-top:4px;">支持地球地震与 Apollo 月球地震数据（XA 网络），下载后自动预览波形</div>
+                            <div class="text-sm" style="opacity:.9;margin-bottom:4px;"><span data-i18n="download.web_hint">不想安装软件？直接用网页版</span></div>
+                            <div class="text-2xl font-bold"><span data-i18n="download.web_title">在线下载地震数据（免安装）</span></div>
+                            <div class="text-sm" style="opacity:.8;margin-top:4px;"><span data-i18n="download.web_desc">支持地球地震与 Apollo 月球地震数据（XA 网络），下载后自动预览波形</span></div>
                         </div>
                         <div class="shrink-0"><i class="fa fa-arrow-right text-2xl"></i></div>
                     </div>
@@ -314,8 +314,8 @@
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
                         <div>
                             <div class="text-sm uppercase tracking-[0.18em] text-primary/70 mb-2">Latest Release</div>
-                            <h3 class="text-3xl font-bold">SeisY <span id="download-version">读取中</span></h3>
-                            <p id="download-summary" class="text-dark/60 mt-2">正在读取版本说明…</p>
+                            <h3 class="text-3xl font-bold">SeisY <span id="download-version"><span data-i18n="download.loading_ver">读取中</span></span></h3>
+                            <p id="download-summary" class="text-dark/60 mt-2"><span data-i18n="download.loading_notes">正在读取版本说明…</span></p>
                         </div>
                         <div class="flex items-center gap-3">
                             <div class="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">Windows</div>
@@ -326,27 +326,27 @@
                     <div class="grid md:grid-cols-3 gap-6 mb-8">
                         <div id="download-cards" class="md:col-span-2">
                             <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                                <div class="text-dark/50 text-sm">正在加载下载项…</div>
+                                <div class="text-dark/50 text-sm"><span data-i18n="download.loading_items">正在加载下载项…</span></div>
                             </div>
                         </div>
                         <div class="bg-dark text-white rounded-2xl p-6">
-                            <h4 class="font-semibold mb-3">下载说明</h4>
+                            <h4 class="font-semibold mb-3"><span data-i18n="download.notes_title">下载说明</span></h4>
                             <p class="text-white/70 text-sm leading-6 mb-4">
-                                安装版适合首次安装和长期使用，会自动创建程序入口和桌面快捷方式。
+                                <span data-i18n="download.installer_desc">安装版适合首次安装和长期使用，会自动创建程序入口和桌面快捷方式。</span>
                             </p>
                             <div class="rounded-xl bg-white/10 border border-white/10 p-3 text-sm">
-                                <div class="font-medium mb-1">安装版建议</div>
-                                <p class="text-white/60">自动创建桌面快捷方式和开始菜单入口</p>
+                                <div class="font-medium mb-1"><span data-i18n="download.tip_title">安装版建议</span></div>
+                                <p class="text-white/60"><span data-i18n="download.tip_desc">自动创建桌面快捷方式和开始菜单入口</span></p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-gray-100">
                         <ul id="download-notes" class="space-y-2 text-dark/70 text-sm flex-1">
-                            <li class="text-dark/50">正在加载版本说明…</li>
+                            <li class="text-dark/50"><span data-i18n="download.loading_relnotes">正在加载版本说明…</span></li>
                         </ul>
                         <a id="download-release-page-link" href="https://github.com/YSP0Github/SeisY-Releases/releases" target="_blank" rel="noopener" class="inline-flex items-center text-primary hover:text-primary/80 font-medium transition-custom whitespace-nowrap">
-                            <i class="fa-brands fa-github mr-2"></i>查看全部版本
+                            <i class="fa-brands fa-github mr-2"></i><span data-i18n="download.all_releases">查看全部版本</span>
                             <i class="fa fa-external-link-alt ml-2 text-xs"></i>
                         </a>
                     </div>
@@ -357,11 +357,11 @@
             <div class="max-w-4xl mx-auto">
                 <div class="bg-white rounded-2xl shadow-md p-8">
                     <div class="flex items-center justify-between gap-4 mb-6">
-                        <h4 class="text-xl font-semibold">版本历史</h4>
-                        <span class="text-sm text-dark/50">后续可继续追加</span>
+                        <h4 class="text-xl font-semibold"><span data-i18n="download.history_title">版本历史</span></h4>
+                        <span class="text-sm text-dark/50"><span data-i18n="download.more_coming">后续可继续追加</span></span>
                     </div>
                     <div id="download-history" class="space-y-3">
-                        <div class="text-dark/50">正在读取历史版本…</div>
+                        <div class="text-dark/50"><span data-i18n="download.loading_history">正在读取历史版本…</span></div>
                     </div>
                 </div>
             </div>
@@ -374,7 +374,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4"><span data-i18n="sec.features">核心功能</span></h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 提供从数据预处理到高级分析的完整功能链</p>
+                <p class="text-dark/70 max-w-2xl mx-auto"><span data-i18n="features.intro">SeisY 提供从数据预处理到高级分析的完整功能链</span></p>
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -385,15 +385,15 @@
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center" style="gap:12px;margin-bottom:12px;">
-                                <h3 class="text-xl font-semibold">数据下载</h3>
-                                <span class="rounded-full bg-accent/10 text-accent text-xs font-medium" style="padding:4px 10px;white-space:nowrap;">在线可用</span>
+                                <h3 class="text-xl font-semibold"><span data-i18n="feat.download_title">数据下载</span></h3>
+                                <span class="rounded-full bg-accent/10 text-accent text-xs font-medium" style="padding:4px 10px;white-space:nowrap;"><span data-i18n="badge.available">在线可用</span></span>
                             </div>
-                            <p class="text-dark/70">通过 FDSN 数据中心在线下载地震波形数据，支持地球台网与 Apollo 月球数据（XA 网络），下载后自动预览波形。</p>
+                            <p class="text-dark/70"><span data-i18n="feat.download_desc">通过 FDSN 数据中心在线下载地震波形数据，支持地球台网与 Apollo 月球数据（XA 网络），下载后自动预览波形。</span></p>
                         </div>
                         <div class="shrink-0 flex items-center text-dark/70 text-sm" style="display:flex;align-items:center;gap:24px;">
-                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> 地球 / Apollo 台站数据</span>
-                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> miniSEED 自动预览</span>
-                            <span class="font-medium text-primary" style="display:flex;align-items:center;"><i class="fa fa-arrow-right mr-2"></i> 打开网页版 →</span>
+                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.dl_f1">地球 / Apollo 台站数据</span></span>
+                            <span class="flex items-center" style="display:flex;align-items:center;"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.dl_f2">miniSEED 自动预览</span></span>
+                            <span class="font-medium text-primary" style="display:flex;align-items:center;"><i class="fa fa-arrow-right mr-2"></i> <span data-i18n="feat.dl_f3">打开网页版 →</span></span>
                         </div>
                     </div>
                 </a>
@@ -402,12 +402,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-wave-square"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">波形数据处理</h3>
-                    <p class="text-dark/70 mb-4">20 余种处理操作，覆盖从原始数据到分析就绪的完整预处理链。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.wave_title">波形数据处理</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.wave_desc">20 余种处理操作，覆盖从原始数据到分析就绪的完整预处理链。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 去均值 / 去趋势 / 去仪器响应</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 10 种插值方法 / 6 种加窗函数</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 带通 / 中值滤波 / 归一化</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.wave_f1">去均值 / 去趋势 / 去仪器响应</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.wave_f2">10 种插值方法 / 6 种加窗函数</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.wave_f3">带通 / 中值滤波 / 归一化</span></li>
                     </ul>
                 </div>
 
@@ -415,12 +415,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-chart-bar"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">频谱分析</h3>
-                    <p class="text-dark/70 mb-4">完整的频谱分析工具链，从振幅谱到 PSD 到时频联合分析。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.spec_title">频谱分析</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.spec_desc">完整的频谱分析工具链，从振幅谱到 PSD 到时频联合分析。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 振幅谱 / 功率谱密度 (PSD)</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> Welch 平均 / 时频图</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 滑动相关分析 / SNR 评估</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.spec_f1">振幅谱 / 功率谱密度 (PSD)</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.spec_f2">Welch 平均 / 时频图</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.spec_f3">滑动相关分析 / SNR 评估</span></li>
                     </ul>
                 </div>
 
@@ -428,12 +428,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-crosshairs"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">震源定位 <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">优化开发中</span></h3>
-                    <p class="text-dark/70 mb-4">完整的震源反演定位窗口，支持多种行星速度模型。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.loc_title">震源定位</span> <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><span data-i18n="badge.developing">优化开发中</span></span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.loc_desc">完整的震源反演定位窗口，支持多种行星速度模型。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 台站、波形、拾取、模型一体化</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 地球 / 月球 / 自定义行星模型</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 加权最小二乘反演与结果可视化</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.loc_f1">台站、波形、拾取、模型一体化</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.loc_f2">地球 / 月球 / 自定义行星模型</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.loc_f3">加权最小二乘反演与结果可视化</span></li>
                     </ul>
                 </div>
 
@@ -441,12 +441,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-route"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">射线追踪</h3>
-                    <p class="text-dark/70 mb-4">分层速度模型的射线路径分析与走时计算工作台。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.ray_title">射线追踪</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.ray_desc">分层速度模型的射线路径分析与走时计算工作台。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 正演模式与反求模式</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 起射角搜索与传播几何分析</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 分层模型路径积分可视化</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ray_f1">正演模式与反求模式</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ray_f2">起射角搜索与传播几何分析</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ray_f3">分层模型路径积分可视化</span></li>
                     </ul>
                 </div>
 
@@ -454,12 +454,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-atom"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">简正模分析</h3>
-                    <p class="text-dark/70 mb-4">从模型到观测的完整自由振荡与简正模分析链。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.mode_title">简正模分析</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.mode_desc">从模型到观测的完整自由振荡与简正模分析链。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 模态枚举、频率估计、Q 与阻尼</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 特征函数、震源激发与台站合成</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 观测谱峰检测与理论匹配</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.mode_f1">模态枚举、频率估计、Q 与阻尼</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.mode_f2">特征函数、震源激发与台站合成</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.mode_f3">观测谱峰检测与理论匹配</span></li>
                     </ul>
                 </div>
 
@@ -467,12 +467,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-moon"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">月震工作流 <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">优化开发中</span></h3>
-                    <p class="text-dark/70 mb-4">面向 Apollo 月震数据的多步骤反演流程与数据管理系统。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.moon_title">月震工作流</span> <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><span data-i18n="badge.developing">优化开发中</span></span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.moon_desc">面向 Apollo 月震数据的多步骤反演流程与数据管理系统。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 月震反演：下载→拾取→定位→分析</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> Apollo 批量下载与数据管理</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> PDDM 去噪 / 噪声提取</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.moon_f1">月震反演：下载→拾取→定位→分析</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.moon_f2">Apollo 批量下载与数据管理</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.moon_f3">PDDM 去噪 / 噪声提取</span></li>
                     </ul>
                 </div>
 
@@ -480,12 +480,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-robot"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">AI 助手 <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">暂停服务</span></h3>
-                    <p class="text-dark/70 mb-4">内嵌的科研 AI 助手，用自然语言驱动数据处理与分析流程。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.ai_title">AI 助手</span> <span class="ml-2 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-gray-200 text-gray-500"><span data-i18n="badge.paused">暂停服务</span></span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.ai_desc">内嵌的科研 AI 助手，用自然语言驱动数据处理与分析流程。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 多轮对话、多标签页、历史记录管理</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 基于数据上下文的推荐命令卡片</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 命令行风格处理与执行反馈</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ai_f1">多轮对话、多标签页、历史记录管理</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ai_f2">基于数据上下文的推荐命令卡片</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.ai_f3">命令行风格处理与执行反馈</span></li>
                     </ul>
                 </div>
 
@@ -493,12 +493,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-bandage"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">异常修复引擎</h3>
-                    <p class="text-dark/70 mb-4">自动检测并修复波形中的异常段、缺失值与尖峰，保护真实月震信号。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.repair_title">异常修复引擎</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.repair_desc">自动检测并修复波形中的异常段、缺失值与尖峰，保护真实月震信号。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 滑动峰态检测 + 频谱替换修复</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 10 种缺失值插值 / 月震保护尖峰检测</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 修复前后对比报告与频谱验证</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.repair_f1">滑动峰态检测 + 频谱替换修复</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.repair_f2">10 种缺失值插值 / 月震保护尖峰检测</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.repair_f3">修复前后对比报告与频谱验证</span></li>
                     </ul>
                 </div>
 
@@ -506,12 +506,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-microchip"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">仪器响应管理</h3>
-                    <p class="text-dark/70 mb-4">独立的仪器响应管理器，统一处理台站响应元数据与去响应。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.instr_title">仪器响应管理</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.instr_desc">独立的仪器响应管理器，统一处理台站响应元数据与去响应。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> FDSN 在线下载 StationXML（IRIS/USGS/GFZ…）</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 幅频/相位响应曲线可视化</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 事件级响应绑定与自动 fallback</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.instr_f1">FDSN 在线下载 StationXML（IRIS/USGS/GFZ…）</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.instr_f2">幅频/相位响应曲线可视化</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.instr_f3">事件级响应绑定与自动 fallback</span></li>
                     </ul>
                 </div>
 
@@ -519,11 +519,11 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-database"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">数据全览与质量评估</h3>
-                    <p class="text-dark/70 mb-4">从多维度快速了解事件数据质量，并批量筛查月震候选事件。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.quality_title">数据全览与质量评估</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.quality_desc">从多维度快速了解事件数据质量，并批量筛查月震候选事件。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 数据全览面板：波形/频谱/统计多维度预览</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 月震扫描器：SNR/稳定性/异常度批量评估</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.quality_f1">数据全览面板：波形/频谱/统计多维度预览</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.quality_f2">月震扫描器：SNR/稳定性/异常度批量评估</span></li>
                     </ul>
                 </div>
 
@@ -531,12 +531,12 @@
                     <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-2xl mb-6">
                         <i class="fa fa-globe"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">3D 月球地质图</h3>
-                    <p class="text-dark/70 mb-4">基于 OpenGL 的月球球面渲染，叠加 USGS 统一地质图 GIS 数据。</p>
+                    <h3 class="text-xl font-semibold mb-4"><span data-i18n="feat.geology_title">3D 月球地质图</span></h3>
+                    <p class="text-dark/70 mb-4"><span data-i18n="feat.geology_desc">基于 OpenGL 的月球球面渲染，叠加 USGS 统一地质图 GIS 数据。</span></p>
                     <ul class="text-dark/70 space-y-2">
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 地质单元/接触线/线性特征球面绘制</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 2D 行星台站地图地质图层叠加</li>
-                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> 透明度控制与交互旋转</li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.geology_f1">地质单元/接触线/线性特征球面绘制</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.geology_f2">2D 行星台站地图地质图层叠加</span></li>
+                        <li class="flex items-center"><i class="fa fa-check text-accent mr-2"></i> <span data-i18n="feat.geology_f3">透明度控制与交互旋转</span></li>
                     </ul>
                 </div>
             </div>
@@ -549,7 +549,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4"><span data-i18n="sec.tools">专业工具</span></h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">SeisY 内置的专业工具模块截图展示</p>
+                <p class="text-dark/70 max-w-2xl mx-auto"><span data-i18n="tools.intro">SeisY 内置的专业工具模块截图展示</span></p>
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -557,74 +557,74 @@
                     <img src="../static/images/SeisY/SeisY-Data_Download.png" alt="数据下载器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
                         <div class="flex items-center gap-2 mb-2">
-                            <h3 class="text-lg font-semibold">数据下载器</h3>
-                            <span class="rounded-full bg-accent/10 text-accent text-xs" style="padding:2px 8px;white-space:nowrap;">在线可用</span>
+                            <h3 class="text-lg font-semibold"><span data-i18n="tool.downloader">数据下载器</span></h3>
+                            <span class="rounded-full bg-accent/10 text-accent text-xs" style="padding:2px 8px;white-space:nowrap;"><span data-i18n="badge.available">在线可用</span></span>
                         </div>
-                        <p class="text-dark/70 text-sm">网络、台站、通道与时间范围批量下载，支持地球台网与 Apollo 月球数据，网页版免安装直接使用。</p>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.downloader_desc">网络、台站、通道与时间范围批量下载，支持地球台网与 Apollo 月球数据，网页版免安装直接使用。</span></p>
                     </div>
                 </a>
 
                 <div id="tool-hypocenter" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Hypocenter_locator.png" alt="震源定位器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">震源定位器 <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">优化开发中</span></h3>
-                        <p class="text-dark/70 text-sm">台站、波形、拾取、速度模型、初始震源猜测、结果与地图联动的完整定位流程。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.locator">震源定位器</span> <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><span data-i18n="badge.developing">优化开发中</span></span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.locator_desc">台站、波形、拾取、速度模型、初始震源猜测、结果与地图联动的完整定位流程。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-station-map" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Planetary_station_map.png" alt="行星台站地图" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">行星台站地图</h3>
-                        <p class="text-dark/70 text-sm">台站/震源管理、震中距计算、到时预测、CSV 与图像导出，可联动射线追踪与简正模。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.station_map">行星台站地图</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.station_map_desc">台站/震源管理、震中距计算、到时预测、CSV 与图像导出，可联动射线追踪与简正模。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-raytracer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-RayTracer.png" alt="射线追踪工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">射线追踪工作台</h3>
-                        <p class="text-dark/70 text-sm">射线路径、起射角搜索与传播几何分析，支持分层速度模型的正演与反求。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.raytracer">射线追踪工作台</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.raytracer_desc">射线路径、起射角搜索与传播几何分析，支持分层速度模型的正演与反求。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-normal-mode" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-normal_mode.png" alt="简正模工作台" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">简正模工作台</h3>
-                        <p class="text-dark/70 text-sm">模型、模态、激发与合成分析，提供精确球贝塞尔求根与观测谱对照。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.normal_mode">简正模工作台</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.normal_mode_desc">模型、模态、激发与合成分析，提供精确球贝塞尔求根与观测谱对照。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-model-designer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-models_design.png" alt="模型设计器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">模型设计器</h3>
-                        <p class="text-dark/70 text-sm">1D / 准 1D 分层模型设计、模型体检、导出及发送到简正模工作台。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.model_designer">模型设计器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.model_designer_desc">1D / 准 1D 分层模型设计、模型体检、导出及发送到简正模工作台。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-apollo" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Apollo_data_management.png" alt="Apollo 系统" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">Apollo 月震系统</h3>
-                        <p class="text-dark/70 text-sm">Apollo 月震数据的批量下载、同步、提取、导出和覆盖查看，支持 XA 网络 S12/S14/S15/S16。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.apollo">Apollo 月震系统</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.apollo_desc">Apollo 月震数据的批量下载、同步、提取、导出和覆盖查看，支持 XA 网络 S12/S14/S15/S16。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-ai" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-AI_assistant_v2.png" alt="AI 助手" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">AI 助手 <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">暂停服务</span></h3>
-                        <p class="text-dark/70 text-sm">多轮对话式科研助手，可执行命令并给出上下文推荐，支持清洗、去噪、绘图、统计与批处理。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.ai">AI 助手</span> <span class="ml-1 align-middle text-xs font-normal px-2 py-0.5 rounded-full bg-gray-200 text-gray-500"><span data-i18n="badge.paused">暂停服务</span></span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.ai_desc">多轮对话式科研助手，可执行命令并给出上下文推荐，支持清洗、去噪、绘图、统计与批处理。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-instrument-response" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Instrument_response_manager.png" alt="仪器响应管理器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">仪器响应管理器</h3>
-                        <p class="text-dark/70 text-sm">面向当前事件列表下载、查看并绑定 StationXML 响应，绘制幅频 / 相位曲线与 PZ 图，统一去响应。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.instrument">仪器响应管理器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.instrument_desc">面向当前事件列表下载、查看并绑定 StationXML 响应，绘制幅频 / 相位曲线与 PZ 图，统一去响应。</span></p>
                     </div>
                 </div>
 
@@ -633,8 +633,8 @@
                         <img src="../static/images/SeisY/moon_geology_web.jpg" alt="月球地质图" class="w-full h-full object-cover">
                     </div>
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">3D 月球地质图</h3>
-                        <p class="text-dark/70 text-sm">USGS 月球统一地质图三维球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，标注月海与地质单元。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.geology">3D 月球地质图</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.geology_desc">USGS 月球统一地质图三维球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，标注月海与地质单元。</span></p>
                     </div>
                 </div>
 
@@ -643,56 +643,56 @@
                         <img src="../static/images/SeisY/moon_1024.jpg" alt="月球" class="w-full h-full object-cover">
                     </div>
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">天体地图</h3>
-                        <p class="text-dark/70 text-sm">三维月球球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，叠加台站分布与经纬网格（对应软件天体地图窗口）。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.celestial">天体地图</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.celestial_desc">三维月球球体自动缓转，支持鼠标拖拽旋转 / 滚轮缩放，叠加台站分布与经纬网格（对应软件天体地图窗口）。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-repair" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Anomaly_repair.png" alt="异常修复引擎" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">异常修复引擎</h3>
-                        <p class="text-dark/70 text-sm">段选择 + 异常诊断 + 多种修复方法（参考频谱 / 月震保护尖峰 / 孤立森林等），去脉冲前后对比预览。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.repair">异常修复引擎</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.repair_desc">段选择 + 异常诊断 + 多种修复方法（参考频谱 / 月震保护尖峰 / 孤立森林等），去脉冲前后对比预览。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-scanner" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Moonquake_scanner.png" alt="月震扫描器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">月震扫描器</h3>
-                        <p class="text-dark/70 text-sm">平坦 / 尖峰 / 全模式批量筛查，等级、评分、SNR、稳定性与异常度表格，波形 / STA-LTA / 频谱联动。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.scanner">月震扫描器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.scanner_desc">平坦 / 尖峰 / 全模式批量筛查，等级、评分、SNR、稳定性与异常度表格，波形 / STA-LTA / 频谱联动。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-noise" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Noise_extractor.png" alt="噪声提取器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">噪声提取器</h3>
-                        <p class="text-dark/70 text-sm">月震台站平稳噪声提取，基本参数 / 高级设置 / 噪声分割标签页，adaptive 自适应阈值。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.noise">噪声提取器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.noise_desc">月震台站平稳噪声提取，基本参数 / 高级设置 / 噪声分割标签页，adaptive 自适应阈值。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-overview" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Data_overview.png" alt="数据全览面板" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">数据全览面板</h3>
-                        <p class="text-dark/70 text-sm">波形、包络、能量、直方图、FFT、PSD、时频、自相关、瞬频、峰态、过零率、熵等 12 张预览卡。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.overview">数据全览面板</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.overview_desc">波形、包络、能量、直方图、FFT、PSD、时频、自相关、瞬频、峰态、过零率、熵等 12 张预览卡。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-sliding-corr" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/SeisY-Sliding_correlation.png" alt="滑动相关分析器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">滑动相关分析器</h3>
-                        <p class="text-dark/70 text-sm">长时程与短时程波形的滑动相关分析，Step 步长 / Threshold 阈值 / 绝对值比较，自动定位最佳匹配片段并支持保存为事件。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.sliding_corr">滑动相关分析器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.sliding_corr_desc">长时程与短时程波形的滑动相关分析，Step 步长 / Threshold 阈值 / 绝对值比较，自动定位最佳匹配片段并支持保存为事件。</span></p>
                     </div>
                 </div>
 
                 <div id="tool-repair-db-viewer" class="bg-gray-50 rounded-xl overflow-hidden shadow-md card-hover">
                     <img src="../static/images/SeisY/Repair_DB_Viewer.png" alt="修复库对比查看器" class="w-full h-48 object-cover object-top">
                     <div class="p-5">
-                        <h3 class="text-lg font-semibold mb-2">修复库对比查看器</h3>
-                        <p class="text-dark/70 text-sm">原始库与修复库波形对比查看，支持时域分 / 同画布、频域 PSD / 振幅与 2×2 综合视图，色块标注缺失段修复、DSSRR 重建等异常类型，底部明细表统计修复段、事件与修复方法。</p>
+                        <h3 class="text-lg font-semibold mb-2"><span data-i18n="tool.repair_db">修复库对比查看器</span></h3>
+                        <p class="text-dark/70 text-sm"><span data-i18n="tool.repair_db_desc">原始库与修复库波形对比查看，支持时域分 / 同画布、频域 PSD / 振幅与 2×2 综合视图，色块标注缺失段修复、DSSRR 重建等异常类型，底部明细表统计修复段、事件与修复方法。</span></p>
                     </div>
                 </div>
             </div>
@@ -709,15 +709,15 @@
 
             <div class="grid md:grid-cols-2 gap-12 items-start">
                 <div>
-                    <h3 class="text-2xl font-semibold mb-6 text-primary">技术架构</h3>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary"><span data-i18n="guide.tech_title">技术架构</span></h3>
                     <div class="space-y-4">
                         <div class="flex items-start">
                             <div class="mt-1 mr-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                                 <i class="fa fa-desktop"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">PyQt5 桌面框架</h4>
-                                <p class="text-dark/70">基于 PyQt5 的桌面 GUI，支持中英文双语与深浅色主题，当前提供 Windows 版本。</p>
+                                <h4 class="font-semibold mb-1"><span data-i18n="tech.pyqt">PyQt5 桌面框架</span></h4>
+                                <p class="text-dark/70"><span data-i18n="tech.pyqt_desc">基于 PyQt5 的桌面 GUI，支持中英文双语与深浅色主题，当前提供 Windows 版本。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -725,8 +725,8 @@
                                 <i class="fa fa-database"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">ObsPy 数据引擎</h4>
-                                <p class="text-dark/70">地震学标准数据处理库，支持 MiniSEED、SAC 等格式读写。</p>
+                                <h4 class="font-semibold mb-1"><span data-i18n="tech.obspy">ObsPy 数据引擎</span></h4>
+                                <p class="text-dark/70"><span data-i18n="tech.obspy_desc">地震学标准数据处理库，支持 MiniSEED、SAC 等格式读写。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -734,8 +734,8 @@
                                 <i class="fa fa-chart-line"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">pyqtgraph 实时绘图</h4>
-                                <p class="text-dark/70">高性能波形渲染，适合 10-60 FPS 的实时滚动显示。</p>
+                                <h4 class="font-semibold mb-1"><span data-i18n="tech.pyqtgraph">pyqtgraph 实时绘图</span></h4>
+                                <p class="text-dark/70"><span data-i18n="tech.pyqtgraph_desc">高性能波形渲染，适合 10-60 FPS 的实时滚动显示。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -743,8 +743,8 @@
                                 <i class="fa fa-globe"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">OpenGL 天体可视化</h4>
-                                <p class="text-dark/70">地球、月球、火星等球体渲染，联动台站与震源显示。</p>
+                                <h4 class="font-semibold mb-1"><span data-i18n="tech.opengl">OpenGL 天体可视化</span></h4>
+                                <p class="text-dark/70"><span data-i18n="tech.opengl_desc">地球、月球、火星等球体渲染，联动台站与震源显示。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -752,29 +752,29 @@
                                 <i class="fa fa-calculator"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">走时计算工具</h4>
-                                <p class="text-dark/70">自主开发的射线理论走时计算工具，并与 TauP 对比验证，可用于震源定位与相位预测。</p>
+                                <h4 class="font-semibold mb-1"><span data-i18n="tech.traveltime">走时计算工具</span></h4>
+                                <p class="text-dark/70"><span data-i18n="tech.traveltime_desc">自主开发的射线理论走时计算工具，并与 TauP 对比验证，可用于震源定位与相位预测。</span></p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-semibold mb-6 text-primary">快速上手</h3>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary"><span data-i18n="guide.quickstart">快速上手</span></h3>
                     <div class="bg-white p-8 rounded-xl shadow-md">
-                        <h4 class="font-semibold text-lg mb-4">常规数据处理流程</h4>
+                        <h4 class="font-semibold text-lg mb-4"><span data-i18n="guide.workflow_title">常规数据处理流程</span></h4>
                         <ol class="space-y-3 text-dark/75">
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">1</span>使用"导入文件"导入波形数据</li>
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">2</span>在事件列表中选中目标事件</li>
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">3</span>依次执行去均值、去趋势、滤波和去除仪器响应</li>
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">4</span>使用"绘制当前数据流"查看波形</li>
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">5</span>使用"绘制振幅谱"查看频谱</li>
-                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">6</span>使用"保存数据"或"保存项目"保存结果</li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">1</span><span data-i18n="guide.step1">使用"导入文件"导入波形数据</span></li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">2</span><span data-i18n="guide.step2">在事件列表中选中目标事件</span></li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">3</span><span data-i18n="guide.step3">依次执行去均值、去趋势、滤波和去除仪器响应</span></li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">4</span><span data-i18n="guide.step4">使用"绘制当前数据流"查看波形</span></li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">5</span><span data-i18n="guide.step5">使用"绘制振幅谱"查看频谱</span></li>
+                            <li class="flex items-start"><span class="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">6</span><span data-i18n="guide.step6">使用"保存数据"或"保存项目"保存结果</span></li>
                         </ol>
 
                         <div class="mt-6 pt-6 border-t border-gray-100">
                             <a href="../documents/seisy_user_guide.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-custom">
-                                <i class="fa fa-book mr-2"></i> 查看完整使用指南
+                                <i class="fa fa-book mr-2"></i> <span data-i18n="guide.full_guide">查看完整使用指南</span>
                                 <i class="fa fa-external-link-alt ml-2 text-sm"></i>
                             </a>
                         </div>
@@ -790,7 +790,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4"><span data-i18n="sec.layout">界面布局</span></h2>
                 <div class="w-20 h-1 bg-primary mx-auto mb-6"></div>
-                <p class="text-dark/70 max-w-2xl mx-auto">先从主界面整体布局了解 SeisY，再查看事件列表与详情面板的交互方式。</p>
+                <p class="text-dark/70 max-w-2xl mx-auto"><span data-i18n="layout.intro">先从主界面整体布局了解 SeisY，再查看事件列表与详情面板的交互方式。</span></p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-8">
@@ -803,18 +803,18 @@
                         </div>
                         <img src="../static/images/SeisY/SeisY-main-distribution.png" alt="SeisY 主界面布局分区示意" class="w-full h-auto">
                     </div>
-                    <p class="text-center text-dark/60 text-sm mt-3">主界面总览：资源管理、球体/地图、绘图区与终端/事件区协同工作</p>
+                    <p class="text-center text-dark/60 text-sm mt-3"><span data-i18n="layout.main_caption">主界面总览：资源管理、球体/地图、绘图区与终端/事件区协同工作</span></p>
                 </div>
                 <div class="flex flex-col justify-center">
-                    <h3 class="text-2xl font-semibold mb-6 text-primary">主界面结构</h3>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary"><span data-i18n="layout.structure_title">主界面结构</span></h3>
                     <div class="space-y-4">
                         <div class="flex items-start">
                             <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary mr-3 mt-0.5 flex-shrink-0">
                                 <i class="fa fa-folder-tree text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">左侧资源管理区</h4>
-                                <p class="text-dark/70 text-sm">工作目录浏览、文件树管理、数据导入入口</p>
+                                <h4 class="font-semibold"><span data-i18n="layout.area1">左侧资源管理区</span></h4>
+                                <p class="text-dark/70 text-sm"><span data-i18n="layout.area1_desc">工作目录浏览、文件树管理、数据导入入口</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -822,8 +822,8 @@
                                 <i class="fa fa-globe text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">左下球体/地图区</h4>
-                                <p class="text-dark/70 text-sm">OpenGL 天体可视化，联动台站与震源显示</p>
+                                <h4 class="font-semibold"><span data-i18n="layout.area2">左下球体/地图区</span></h4>
+                                <p class="text-dark/70 text-sm"><span data-i18n="layout.area2_desc">OpenGL 天体可视化，联动台站与震源显示</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -831,8 +831,8 @@
                                 <i class="fa fa-chart-area text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">中间三块绘图区</h4>
-                                <p class="text-dark/70 text-sm">波形、频谱、多事件对比及处理前后展示</p>
+                                <h4 class="font-semibold"><span data-i18n="layout.area3">中间三块绘图区</span></h4>
+                                <p class="text-dark/70 text-sm"><span data-i18n="layout.area3_desc">波形、频谱、多事件对比及处理前后展示</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -840,8 +840,8 @@
                                 <i class="fa fa-terminal text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">右侧终端与事件列表</h4>
-                                <p class="text-dark/70 text-sm">日志、命令终端、事件管理与详情显示</p>
+                                <h4 class="font-semibold"><span data-i18n="layout.area4">右侧终端与事件列表</span></h4>
+                                <p class="text-dark/70 text-sm"><span data-i18n="layout.area4_desc">日志、命令终端、事件管理与详情显示</span></p>
                             </div>
                         </div>
                     </div>
@@ -850,15 +850,15 @@
 
             <div class="grid md:grid-cols-2 gap-8 items-center mt-12">
                 <div class="order-2 md:order-1 flex flex-col justify-center">
-                    <h3 class="text-2xl font-semibold mb-6 text-primary">事件列表与详情面板</h3>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary"><span data-i18n="layout.event_title">事件列表与详情面板</span></h3>
                     <div class="space-y-4 text-dark/70">
                         <div class="flex items-start">
                             <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary mr-3 mt-0.5 flex-shrink-0">
                                 <i class="fa fa-list text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-dark">事件流分组管理</h4>
-                                <p class="text-sm">支持事件分组浏览、批量勾选、右键操作与多事件数据组织。</p>
+                                <h4 class="font-semibold text-dark"><span data-i18n="layout.ev1">事件流分组管理</span></h4>
+                                <p class="text-sm"><span data-i18n="layout.ev1_desc">支持事件分组浏览、批量勾选、右键操作与多事件数据组织。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -866,8 +866,8 @@
                                 <i class="fa fa-circle-info text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-dark">详情与统计信息联动</h4>
-                                <p class="text-sm">可查看事件文件路径、Trace 信息、采样参数、统计量与预览波形。</p>
+                                <h4 class="font-semibold text-dark"><span data-i18n="layout.ev2">详情与统计信息联动</span></h4>
+                                <p class="text-sm"><span data-i18n="layout.ev2_desc">可查看事件文件路径、Trace 信息、采样参数、统计量与预览波形。</span></p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -875,8 +875,8 @@
                                 <i class="fa fa-computer-mouse text-sm"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-dark">面向分析流程的快速操作</h4>
-                                <p class="text-sm">便于从事件筛选、信息核查到后续处理与分析的连续工作流切换。</p>
+                                <h4 class="font-semibold text-dark"><span data-i18n="layout.ev3">面向分析流程的快速操作</span></h4>
+                                <p class="text-sm"><span data-i18n="layout.ev3_desc">便于从事件筛选、信息核查到后续处理与分析的连续工作流切换。</span></p>
                             </div>
                         </div>
                     </div>
@@ -890,7 +890,7 @@
                         </div>
                         <img src="../static/images/SeisY/SeisY-EventList.png" alt="SeisY 事件列表与详情面板" class="w-full h-auto">
                     </div>
-                    <p class="text-center text-dark/60 text-sm mt-3">事件列表与详情面板：支持分组管理、信息查看与波形预览</p>
+                    <p class="text-center text-dark/60 text-sm mt-3"><span data-i18n="layout.event_caption">事件列表与详情面板：支持分组管理、信息查看与波形预览</span></p>
                 </div>
             </div>
         </div>
@@ -908,7 +908,7 @@
                         <span class="font-bold text-xl">SeisY</span>
                     </div>
                     <p class="text-white/70 mb-6">
-                        面向地震、月震与行星地震研究的数据处理、分析与可视化桌面软件，当前提供 Windows 版本。
+                        <span data-i18n="footer.desc">面向地震、月震与行星地震研究的数据处理、分析与可视化桌面软件，当前提供 Windows 版本。</span>
                     </p>
                     <div class="flex space-x-4">
                         <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-primary hover:text-white transition-custom">
@@ -921,31 +921,31 @@
                 </div>
 
                 <div>
-                    <h4 class="font-semibold text-lg mb-6">快速链接</h4>
+                    <h4 class="font-semibold text-lg mb-6"><span data-i18n="footer.quick_links">快速链接</span></h4>
                     <ul class="space-y-3">
-                        <li><a href="#overview" class="text-white/70 hover:text-white transition-custom">软件概述</a></li>
-                        <li><a href="#download" class="text-white/70 hover:text-white transition-custom">软件下载</a></li>
-                        <li><a href="#features" class="text-white/70 hover:text-white transition-custom">核心功能</a></li>
-                        <li><a href="#tools" class="text-white/70 hover:text-white transition-custom">专业工具</a></li>
-                        <li><a href="#layout" class="text-white/70 hover:text-white transition-custom">界面布局</a></li>
+                        <li><a href="#overview" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.overview">软件概述</span></a></li>
+                        <li><a href="#download" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.download">软件下载</span></a></li>
+                        <li><a href="#features" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.features">核心功能</span></a></li>
+                        <li><a href="#tools" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.tools">专业工具</span></a></li>
+                        <li><a href="#layout" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.layout">界面布局</span></a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="font-semibold text-lg mb-6">资源</h4>
+                    <h4 class="font-semibold text-lg mb-6"><span data-i18n="footer.resources">资源</span></h4>
                     <ul class="space-y-3">
-                        <li><a href="../documents/seisy_user_guide.html" target="_blank" class="text-white/70 hover:text-white transition-custom">使用指南</a></li>
-                        <li><a href="https://github.com/YSP0Github/SeisY" target="_blank" class="text-white/70 hover:text-white transition-custom">GitHub 仓库</a></li>
-                        <li><a href="../index.html" class="text-white/70 hover:text-white transition-custom">返回首页</a></li>
+                        <li><a href="../documents/seisy_user_guide.html" target="_blank" class="text-white/70 hover:text-white transition-custom"><span data-i18n="nav.guide">使用指南</span></a></li>
+                        <li><a href="https://github.com/YSP0Github/SeisY" target="_blank" class="text-white/70 hover:text-white transition-custom"><span data-i18n="footer.github_repo">GitHub 仓库</span></a></li>
+                        <li><a href="../index.html" class="text-white/70 hover:text-white transition-custom"><span data-i18n="footer.back_home">返回首页</span></a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="font-semibold text-lg mb-6">联系作者</h4>
+                    <h4 class="font-semibold text-lg mb-6"><span data-i18n="footer.contact">联系作者</span></h4>
                     <ul class="space-y-3">
                         <li class="flex items-center">
                             <i class="fa fa-user mr-3 text-white/70"></i>
-                            <span class="text-white/70">云凇</span>
+                            <span class="text-white/70"><span data-i18n="footer.author_name">云凇</span></span>
                         </li>
                         <li class="flex items-center">
                             <i class="fa fa-envelope mr-3 text-white/70"></i>
@@ -961,14 +961,14 @@
 
             <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-white/50 text-sm mb-4 md:mb-0">
-                    &copy; <span id="currentYear"></span> SeisY 项目页面
+                    &copy; <span id="currentYear"></span> <span data-i18n="footer.copyright">SeisY 项目页面</span>
                     <span class="block md:inline ml-0 md:ml-2">|</span>
                     <a href="https://beian.miit.gov.cn" target="_blank" class="text-slate-500 hover:text-blue-600 transition-colors">鄂ICP备2026000757号-1</a>
                 </p>
                 <div class="flex space-x-6">
-                    <a href="Privacy_policy.html" target="_blank" class="text-white/50 hover:text-white text-sm transition-custom">隐私政策</a>
-                    <a href="About_us.html" target="_blank" class="text-white/50 hover:text-white text-sm transition-custom">关于我们</a>
-                    <a href="../index.html" class="text-white/50 hover:text-white text-sm transition-custom">返回首页</a>
+                    <a href="Privacy_policy.html" target="_blank" class="text-white/50 hover:text-white text-sm transition-custom"><span data-i18n="footer.privacy">隐私政策</span></a>
+                    <a href="About_us.html" target="_blank" class="text-white/50 hover:text-white text-sm transition-custom"><span data-i18n="footer.about_us">关于我们</span></a>
+                    <a href="../index.html" class="text-white/50 hover:text-white text-sm transition-custom"><span data-i18n="footer.back_home">返回首页</span></a>
                 </div>
             </div>
         </div>
@@ -1635,70 +1635,234 @@
 <script>
 (function() {
   var dict = {
-    zh: {
-      'nav.overview': '软件概述',
-      'nav.download': '软件下载',
-      'nav.features': '核心功能',
-      'nav.tools': '专业工具',
-      'nav.guide': '使用指南',
-      'nav.viewer': '数据包查看器',
-      'hero.subtitle': '地震数据处理与分析平台',
-      'hero.desc': '面向地震、月震与行星地震研究的桌面软件，集成波形处理、频谱分析、射线追踪、简正模分析与月震工作流，并内置异常修复引擎，当前提供 Windows 版本。',
-      'hero.btn_download': '下载 Windows 版',
-      'hero.btn_source': '查看源码',
-      'hero.btn_guide': '使用指南',
-      'sec.overview': '软件概述',
-      'sec.download': '软件下载',
-      'sec.features': '核心功能',
-      'sec.tools': '专业工具',
-      'sec.tech': '技术栈与使用指南',
-      'sec.layout': '界面布局'
-    },
-    en: {
-      'nav.overview': 'Overview',
-      'nav.download': 'Download',
-      'nav.features': 'Features',
-      'nav.tools': 'Tools',
-      'nav.guide': 'User Guide',
-      'nav.viewer': 'Data Viewer',
-      'hero.subtitle': 'Seismic Data Processing & Analysis Platform',
-      'hero.desc': 'Desktop software for earthquake, lunar seismic, and planetary seismology research. Integrates waveform processing, spectral analysis, ray tracing, normal mode analysis, and lunar seismic workflows with a built-in anomaly correction engine. Windows version available.',
-      'hero.btn_download': 'Download for Windows',
-      'hero.btn_source': 'View Source',
-      'hero.btn_guide': 'User Guide',
-      'sec.overview': 'Software Overview',
-      'sec.download': 'Download',
-      'sec.features': 'Core Features',
-      'sec.tools': 'Professional Tools',
-      'sec.tech': 'Tech Stack & User Guide',
-      'sec.layout': 'Interface Layout'
-    }
+    zh: {},
+    en: {}
   };
+
+  // 从所有data-i18n元素收集中文原文作为zh字典
+  function collectZh() {
+    var els = document.querySelectorAll('[data-i18n]');
+    els.forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      if (!dict.zh[key]) dict.zh[key] = el.textContent;
+    });
+  }
+
+  // 英文翻译字典
+  var enTranslations = {
+    'page.title': 'Seismic Data Processing & Analysis Platform',
+    'nav.overview': 'Overview',
+    'nav.download': 'Download',
+    'nav.features': 'Features',
+    'nav.tools': 'Tools',
+    'nav.guide': 'User Guide',
+    'nav.viewer': 'Data Viewer',
+    'nav.layout': 'Interface Layout',
+    'hero.subtitle': 'Seismic Data Processing & Analysis Platform',
+    'hero.desc': 'Desktop software for earthquake, lunar seismic, and planetary seismology research. Integrates waveform processing, spectral analysis, ray tracing, normal mode analysis, and lunar seismic workflows with a built-in anomaly correction engine. Windows version available.',
+    'hero.btn_download': 'Download for Windows',
+    'hero.btn_source': 'View Source',
+    'hero.btn_guide': 'User Guide',
+    'overview.intro': 'SeisY is a comprehensive seismic data processing and analysis platform built with PyQt5. Currently available for Windows desktop, suitable for geophysical research and teaching.',
+    'overview.about_title': 'About SeisY',
+    'overview.p1': 'SeisY processes, analyzes, and visualizes earthquake, lunar seismic, and planetary seismic data. It supports import/export of 8 data formats including MiniSEED, SAC, SEG-Y, SEG2, ASCII, TXT, and CSV, providing a complete workflow from preprocessing to advanced analysis.',
+    'overview.p2': 'The software integrates 20+ professional tool modules including waveform processing, spectral analysis, ray tracing, normal mode analysis, lunar seismic workflows, and anomaly correction. It supports Earth, Moon, and custom planetary velocity models, with bilingual interface and light/dark themes.',
+    'overview.stat_tools': 'Professional Tools',
+    'overview.stat_algos': 'Processing Algorithms',
+    'overview.stat_formats': 'Data Formats',
+    'overview.stat_menus': 'Main Menus',
+    'overview.plot_caption': 'Three independent plotting areas supporting waveform, spectrum, and before/after processing comparison',
+    'download.intro': 'This page provides the SeisY Windows installer download. Future versions will continue to use the same page for updates.',
+    'download.web_hint': "Don't want to install? Use the web version directly",
+    'download.web_title': 'Download Seismic Data Online (No Installation)',
+    'download.web_desc': 'Supports Earth earthquake and Apollo lunar seismic data (XA network), with automatic waveform preview after download',
+    'download.loading_ver': 'Loading',
+    'download.loading_notes': 'Loading release notes...',
+    'download.loading_items': 'Loading downloads...',
+    'download.notes_title': 'Download Notes',
+    'download.installer_desc': 'The installer is recommended for first-time installation and long-term use. It automatically creates program entries and desktop shortcuts.',
+    'download.tip_title': 'Installer Recommendation',
+    'download.tip_desc': 'Automatically creates desktop shortcuts and Start Menu entries',
+    'download.loading_relnotes': 'Loading release notes...',
+    'download.all_releases': 'View All Releases',
+    'download.history_title': 'Version History',
+    'download.more_coming': 'More versions coming soon',
+    'download.loading_history': 'Loading version history...',
+    'features.intro': 'SeisY provides a complete feature chain from data preprocessing to advanced analysis',
+    'feat.download_title': 'Data Download',
+    'badge.available': 'Available Online',
+    'feat.download_desc': 'Download seismic waveform data online via FDSN data centers. Supports Earth seismic networks and Apollo lunar data (XA network), with automatic waveform preview after download.',
+    'feat.dl_f1': 'Earth / Apollo station data',
+    'feat.dl_f2': 'miniSEED auto preview',
+    'feat.dl_f3': 'Open Web Version →',
+    'feat.wave_title': 'Waveform Processing',
+    'feat.wave_desc': 'Over 20 processing operations covering the complete preprocessing chain from raw data to analysis-ready.',
+    'feat.wave_f1': 'Demean / Detrend / Remove instrument response',
+    'feat.wave_f2': '10 interpolation methods / 6 window functions',
+    'feat.wave_f3': 'Bandpass / Median filter / Normalization',
+    'feat.spec_title': 'Spectral Analysis',
+    'feat.spec_desc': 'Complete spectral analysis toolchain, from amplitude spectra to PSD to time-frequency joint analysis.',
+    'feat.spec_f1': 'Amplitude spectrum / Power Spectral Density (PSD)',
+    'feat.spec_f2': 'Welch averaging / Spectrogram',
+    'feat.spec_f3': 'Sliding correlation analysis / SNR estimation',
+    'feat.loc_title': 'Hypocenter Location',
+    'badge.developing': 'Under Optimization',
+    'feat.loc_desc': 'Complete hypocenter inversion and location window supporting multiple planetary velocity models.',
+    'feat.loc_f1': 'Integrated stations, waveforms, picks, and models',
+    'feat.loc_f2': 'Earth / Moon / Custom planetary models',
+    'feat.loc_f3': 'Weighted least squares inversion and visualization',
+    'feat.ray_title': 'Ray Tracing',
+    'feat.ray_desc': 'Ray path analysis and travel time calculation workbench for layered velocity models.',
+    'feat.ray_f1': 'Forward and inverse modes',
+    'feat.ray_f2': 'Takeoff angle search and propagation geometry',
+    'feat.ray_f3': 'Layered model path integral visualization',
+    'feat.mode_title': 'Normal Mode Analysis',
+    'feat.mode_desc': 'Complete free oscillation and normal mode analysis chain from model to observation.',
+    'feat.mode_f1': 'Mode enumeration, frequency estimation, Q and damping',
+    'feat.mode_f2': 'Eigenfunctions, source excitation and station synthesis',
+    'feat.mode_f3': 'Observed spectral peak detection and theoretical matching',
+    'feat.moon_title': 'Lunar Seismic Workflow',
+    'feat.moon_desc': 'Multi-step inversion pipeline and data management system for Apollo lunar seismic data.',
+    'feat.moon_f1': 'Lunar inversion: Download → Pick → Locate → Analyze',
+    'feat.moon_f2': 'Apollo batch download and data management',
+    'feat.moon_f3': 'PDDM denoising / Noise extraction',
+    'feat.ai_title': 'AI Assistant',
+    'badge.paused': 'Service Paused',
+    'feat.ai_desc': 'Built-in research AI assistant that drives data processing and analysis workflows using natural language.',
+    'feat.ai_f1': 'Multi-turn dialogue, multi-tab, history management',
+    'feat.ai_f2': 'Context-aware recommended command cards',
+    'feat.ai_f3': 'Command-line style processing and execution feedback',
+    'feat.repair_title': 'Anomaly Repair Engine',
+    'feat.repair_desc': 'Automatically detects and repairs anomalous segments, missing values, and spikes in waveforms, protecting real lunar seismic signals.',
+    'feat.repair_f1': 'Sliding kurtosis detection + spectral replacement repair',
+    'feat.repair_f2': '10 missing value interpolation / Moonquake-protected spike detection',
+    'feat.repair_f3': 'Before/after comparison report and spectral verification',
+    'feat.instr_title': 'Instrument Response Management',
+    'feat.instr_desc': 'Independent instrument response manager for unified station response metadata and response removal.',
+    'feat.instr_f1': 'FDSN online StationXML download (IRIS/USGS/GFZ...)',
+    'feat.instr_f2': 'Amplitude/phase response curve visualization',
+    'feat.instr_f3': 'Event-level response binding and automatic fallback',
+    'feat.quality_title': 'Data Overview & Quality Assessment',
+    'feat.quality_desc': 'Quickly understand event data quality from multiple dimensions, and batch screen lunar seismic candidate events.',
+    'feat.quality_f1': 'Data overview panel: waveform/spectrum/statistics multi-dimensional preview',
+    'feat.quality_f2': 'Moonquake scanner: batch SNR/stability/anomaly assessment',
+    'feat.geology_title': '3D Lunar Geological Map',
+    'feat.geology_desc': 'OpenGL-based lunar sphere rendering with USGS unified geological map GIS data overlay.',
+    'feat.geology_f1': 'Geological units/contact lines/linear features on sphere',
+    'feat.geology_f2': '2D planetary station map with geological layer overlay',
+    'feat.geology_f3': 'Transparency control and interactive rotation',
+    'tools.intro': 'Screenshots of professional tool modules built into SeisY',
+    'tool.downloader': 'Data Downloader',
+    'tool.downloader_desc': 'Batch download by network, station, channel, and time range. Supports Earth seismic networks and Apollo lunar data. Web version available without installation.',
+    'tool.locator': 'Hypocenter Locator',
+    'tool.locator_desc': 'Complete location workflow with stations, waveforms, picks, velocity models, initial hypocenter guess, results and map linkage.',
+    'tool.station_map': 'Planetary Station Map',
+    'tool.station_map_desc': 'Station/hypocenter management, epicentral distance calculation, arrival prediction, CSV and image export. Can link with ray tracing and normal modes.',
+    'tool.raytracer': 'Ray Tracing Workbench',
+    'tool.raytracer_desc': 'Ray paths, takeoff angle search and propagation geometry analysis, supporting forward and inverse modes for layered velocity models.',
+    'tool.normal_mode': 'Normal Mode Workbench',
+    'tool.normal_mode_desc': 'Model, mode, excitation and synthesis analysis, with precise spherical Bessel root finding and observed spectrum comparison.',
+    'tool.model_designer': 'Model Designer',
+    'tool.model_designer_desc': '1D / quasi-1D layered model design, model health check, export, and send to normal mode workbench.',
+    'tool.apollo': 'Apollo Lunar System',
+    'tool.apollo_desc': 'Batch download, sync, extraction, export, and coverage viewing of Apollo lunar seismic data. Supports XA network S12/S14/S15/S16.',
+    'tool.ai': 'AI Assistant',
+    'tool.ai_desc': 'Multi-turn dialogue research assistant that executes commands and provides context recommendations. Supports cleaning, denoising, plotting, statistics, and batch processing.',
+    'tool.instrument': 'Instrument Response Manager',
+    'tool.instrument_desc': 'Download, view, and bind StationXML responses for the current event list. Plot amplitude/phase curves and PZ diagrams, unified response removal.',
+    'tool.geology': '3D Lunar Geological Map',
+    'tool.geology_desc': 'USGS unified lunar geological map on a 3D auto-rotating sphere. Supports mouse drag rotation / scroll zoom, labeling maria and geological units.',
+    'tool.celestial': 'Celestial Map',
+    'tool.celestial_desc': '3D lunar sphere with auto-rotation, mouse drag / scroll zoom, station distribution and lat/lon grid overlay (corresponds to software Celestial Map window).',
+    'tool.repair': 'Anomaly Repair Engine',
+    'tool.repair_desc': 'Segment selection + anomaly diagnosis + multiple repair methods (reference spectrum / moonquake-protected spikes / isolation forest, etc.), before/after despiking comparison preview.',
+    'tool.scanner': 'Moonquake Scanner',
+    'tool.scanner_desc': 'Flat / spike / full-mode batch screening with grade, score, SNR, stability and anomaly tables, linked waveform / STA-LTA / spectrum.',
+    'tool.noise': 'Noise Extractor',
+    'tool.noise_desc': 'Stationary noise extraction for lunar seismic stations, with basic parameters / advanced settings / noise segmentation tabs, adaptive threshold.',
+    'tool.overview': 'Data Overview Panel',
+    'tool.overview_desc': '12 preview cards including waveform, envelope, energy, histogram, FFT, PSD, spectrogram, autocorrelation, instantaneous frequency, kurtosis, zero-crossing rate, entropy, etc.',
+    'tool.sliding_corr': 'Sliding Correlation Analyzer',
+    'tool.sliding_corr_desc': 'Sliding correlation analysis between long and short duration waveforms, with step size / threshold / absolute value comparison, automatic best match location and save as event.',
+    'tool.repair_db': 'Repair Database Comparison Viewer',
+    'tool.repair_db_desc': 'Compare original and repaired database waveforms. Supports time-domain split/same canvas, frequency-domain PSD/amplitude and 2×2 comprehensive views. Color-coded anomaly types like missing segment repair and DSSRR reconstruction, with detail table statistics.',
+    'guide.tech_title': 'Technical Architecture',
+    'tech.pyqt': 'PyQt5 Desktop Framework',
+    'tech.pyqt_desc': 'PyQt5-based desktop GUI with bilingual support and light/dark themes. Windows version currently available.',
+    'tech.obspy': 'ObsPy Data Engine',
+    'tech.obspy_desc': 'Standard seismology data processing library, supporting MiniSEED, SAC and other formats.',
+    'tech.pyqtgraph': 'pyqtgraph Real-time Plotting',
+    'tech.pyqtgraph_desc': 'High-performance waveform rendering suitable for 10-60 FPS real-time scrolling display.',
+    'tech.opengl': 'OpenGL Celestial Visualization',
+    'tech.opengl_desc': 'Earth, Moon, Mars and other sphere rendering, linked with station and hypocenter display.',
+    'tech.traveltime': 'Travel Time Calculation Tools',
+    'tech.traveltime_desc': 'Independently developed ray theory travel time calculation tools, verified against TauP, usable for hypocenter location and phase prediction.',
+    'guide.quickstart': 'Quick Start',
+    'guide.workflow_title': 'Standard Data Processing Workflow',
+    'guide.step1': 'Use "Import File" to import waveform data',
+    'guide.step2': 'Select the target event in the event list',
+    'guide.step3': 'Execute demean, detrend, filtering, and instrument response removal in sequence',
+    'guide.step4': 'Use "Plot Current Data Stream" to view waveforms',
+    'guide.step5': 'Use "Plot Amplitude Spectrum" to view spectra',
+    'guide.step6': 'Use "Save Data" or "Save Project" to save results',
+    'guide.full_guide': 'View Complete User Guide',
+    'layout.intro': 'Start with the overall main interface layout of SeisY, then explore the interaction between the event list and detail panel.',
+    'layout.main_caption': 'Main interface overview: resource management, globe/map, plotting area, and terminal/event area working together',
+    'layout.structure_title': 'Main Interface Structure',
+    'layout.area1': 'Left Resource Management Area',
+    'layout.area1_desc': 'Working directory browsing, file tree management, data import entry',
+    'layout.area2': 'Bottom-left Globe/Map Area',
+    'layout.area2_desc': 'OpenGL celestial visualization, linked with stations and hypocenters',
+    'layout.area3': 'Center Three Plotting Areas',
+    'layout.area3_desc': 'Waveforms, spectra, multi-event comparison and before/after processing display',
+    'layout.area4': 'Right Terminal and Event List',
+    'layout.area4_desc': 'Logs, command terminal, event management and detail display',
+    'layout.event_title': 'Event List and Detail Panel',
+    'layout.ev1': 'Event Stream Group Management',
+    'layout.ev1_desc': 'Supports event group browsing, batch selection, right-click operations and multi-event data organization.',
+    'layout.ev2': 'Detail and Statistics Linkage',
+    'layout.ev2_desc': 'View event file paths, Trace information, sampling parameters, statistics and preview waveforms.',
+    'layout.ev3': 'Quick Actions for Analysis Workflow',
+    'layout.ev3_desc': 'Facilitates continuous workflow switching from event screening and information verification to subsequent processing and analysis.',
+    'layout.event_caption': 'Event list and detail panel: group management, information viewing and waveform preview',
+    'footer.desc': 'Data processing, analysis and visualization desktop software for earthquake, lunar seismic, and planetary seismology research. Windows version available.',
+    'footer.quick_links': 'Quick Links',
+    'footer.resources': 'Resources',
+    'footer.github_repo': 'GitHub Repository',
+    'footer.back_home': 'Back to Home',
+    'footer.contact': 'Contact Author',
+    'footer.author_name': 'Yunsong',
+    'footer.copyright': 'SeisY Project Page',
+    'footer.privacy': 'Privacy Policy',
+    'footer.about_us': 'About Us'
+  };
+
+  dict.en = enTranslations;
 
   var lang = localStorage.getItem('seisy_lang') || 'zh';
 
   function applyLang(l) {
     lang = l;
-    var els = document.querySelectorAll('[data-i18n]');
-    for (var i = 0; i < els.length; i++) {
-      var key = els[i].getAttribute('data-i18n');
+    collectZh();
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
       if (dict[l][key]) {
-        els[i].textContent = dict[l][key];
+        el.textContent = dict[l][key];
       }
-    }
+    });
     var btn = document.getElementById('lang-toggle');
     if (btn) btn.textContent = l === 'zh' ? 'EN' : '中文';
     localStorage.setItem('seisy_lang', l);
   }
 
   function init() {
+    collectZh();
     var btn = document.getElementById('lang-toggle');
     if (btn) {
       btn.addEventListener('click', function() {
         applyLang(lang === 'zh' ? 'en' : 'zh');
       });
     }
-    // 默认中文，只有之前选过英文才切换
     if (lang !== 'zh') applyLang(lang);
     else if (btn) btn.textContent = 'EN';
   }
