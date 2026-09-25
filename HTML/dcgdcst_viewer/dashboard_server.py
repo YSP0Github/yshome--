@@ -38,7 +38,8 @@ from http.server import (
 )
 from pathlib import Path
 
-from plotly_figs import PLOT_FACTORIES, get_figure, set_npz_path
+from plotly_figs import (PLOT_FACTORIES, get_figure, set_npz_path,
+                         HIGH_ORDER_DEFAULT, HIGH_ORDER_MAX)
 from intermediate_params import compute_all_params
 
 # =====================================================================
@@ -274,8 +275,17 @@ def run_pipeline_thread(input_snr: float | None = None,
             state["end_time"] = time.time()
 
 @lru_cache(maxsize=16)
-def _fig_json(key: str) -> str:
-    """生成交互图 JSON（带缓存，numpy 类型由 plotly to_json 处理）"""
+def _fig_json(key: str, order: int | None = None) -> str:
+    """生成交互图 JSON（带缓存，numpy 类型由 plotly to_json 处理）。
+    [2026-09-24 高阶互相关阶数] order：仅 12/18/19（高阶互相关画布）生效——
+    最多绘制到第几阶；None → HIGH_ORDER_DEFAULT（3）。全部阶数已预计算并缓存
+    （plotly_figs 内部按数据源缓存），切换阶数只做切片出图、不重算。
+    缓存键含 order，不同阶数的图互不干扰。
+    """
+    if key in ("12", "18", "19"):
+        o = HIGH_ORDER_DEFAULT if order is None else int(order)
+        o = max(1, min(o, HIGH_ORDER_MAX))
+        return get_figure(key, order=o).to_json()
     return get_figure(key).to_json()
 
 @lru_cache(maxsize=64)
@@ -413,19 +423,23 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             # 交互图 JSON：/api/plot/01 → 返回 plotly figure spec
             # [2026-09-22 预取] 支持 ?dir=<数据包目录>：为指定数据包生成图
             # （前端后台预取其他数据包的图到浏览器缓存，切包时秒开）
+            # [2026-09-24 高阶互相关] 支持 ?order=N：12/18/19 最多画到第 N 阶
             path_q = self.path[len("/api/plot/"):]
             key = path_q.split("?")[0]
             qdir = None
+            order = None
             if "?" in path_q:
                 import urllib.parse as _up
                 q = _up.parse_qs(path_q.split("?", 1)[1])
                 if q.get("dir"):
                     qdir = q["dir"][0]
+                if q.get("order") and q["order"][0].strip().isdigit():
+                    order = int(q["order"][0])
             if key in PLOT_FACTORIES:
                 if qdir:
                     self._send_raw_json(_fig_json_for_dir(qdir, key))
                 else:
-                    self._send_raw_json(_fig_json(key))
+                    self._send_raw_json(_fig_json(key, order))
                 return
             self.send_error(404, f"未知绘图 key: {key}")
             return
@@ -802,6 +816,13 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
     <input type="range" id="plotH" min="280" max="1000" step="10" value="430">
     <span id="plotHVal">430 px</span>
   </span>
+  <span class="hslider-wrap" style="margin-left:12px;">
+    <label for="corrOrderIn">互相关阶数</label>
+    <input type="number" id="corrOrderIn" min="1" max="{HIGH_ORDER_MAX}" step="1" value="{HIGH_ORDER_DEFAULT}"
+           style="width:56px;background:#0f1117;border:1px solid #2a2a4a;color:#e0e0e0;border-radius:4px;padding:4px 6px;font-size:13px;"
+           title="12/18/19 高阶互相关画布最多绘制到第几阶（已预计算至 {HIGH_ORDER_MAX} 阶，切换阶数无需重新计算管线）">
+    <span id="corrOrderVal" style="color:#64b5f6;font-size:12px;min-width:auto;">（预计算至 {HIGH_ORDER_MAX} 阶）</span>
+  </span>
   <button class="runbtn" style="margin-left:auto;" onclick="document.getElementById('pkgFile').click()"
           title="读取本地 dashboard_package.tar.gz（浏览器本地解析，不上传网络），切换显示全部实验数据">&#128194; 选择本地数据包</button>
   <input type="file" id="pkgFile" accept=".tar.gz,.gz" style="display:none;">
@@ -1167,6 +1188,8 @@ function pkgCacheSet(key, fig) {{
 }}
 function currentCacheKey(key) {{
   const dir = (window.PKG_DATA_DIR || '');
+  // [2026-09-24 高阶互相关] 12/18/19 缓存键含阶数，切换阶数后不会命中旧阶数的图
+  if (ORDER_KEYS.includes(key)) return dir + '|' + key + '|order' + orderRows();
   return dir + '|' + key;
 }}
 async function loadPlot(key) {{
@@ -1183,11 +1206,15 @@ async function loadPlot(key) {{
       if (hit && hit.fig) fig = hit.fig;
     }} catch (e) {{ /* 缓存不可用则走网络 */ }}
     if (!fig) {{
-      const r = await fetch('api/plot/' + key);
+      // [2026-09-24 高阶互相关] 12/18/19 请求带阶数参数
+      const order = ORDER_KEYS.includes(key) ? ('?order=' + orderRows()) : '';
+      const r = await fetch('api/plot/' + key + order);
       fig = await r.json();
       // 写入缓存（不阻塞渲染）
       pkgCacheSet(ckey, fig).catch(function () {{}});
     }}
+    // [2026-09-24 高阶互相关] 按阶数比例放大画布，保证高阶多行可读
+    if (ORDER_KEYS.includes(key)) div.style.height = orderDivHeight() + 'px';
     fig = fixFigLayout(fig);
     await Plotly.newPlot(div, fig.data, fig.layout,
                          {{responsive: true, displaylogo: false}});
@@ -1196,6 +1223,34 @@ async function loadPlot(key) {{
     div.innerHTML = '<div style="padding:24px;color:#ef5350;font-size:13px;">'
       + '交互图加载失败（' + e + '）</div>';
   }}
+}}
+// [2026-09-24 高阶互相关阶数] 12/18/19 画布支持"互相关阶数"输入框：
+// 输入 3 → 最多画到三阶；输入 5 → 最多画到五阶。全部阶数已由管线
+// 预计算至 {HIGH_ORDER_MAX} 阶并缓存，切换阶数只重新请求切片图 JSON，
+// 不触发管线/互相关重算。
+const ORDER_KEYS = ['12', '18', '19'];
+function orderRows() {{
+  const el = document.getElementById('corrOrderIn');
+  const v = parseInt(el ? el.value : '', 10);
+  if (isNaN(v) || v < 1) return {HIGH_ORDER_DEFAULT};
+  return Math.min(v, {HIGH_ORDER_MAX});
+}}
+function orderDivHeight() {{
+  const base = Number(document.getElementById('plotH').value) || 430;
+  return Math.min(2200, Math.round(base * Math.max(1, orderRows() / {HIGH_ORDER_DEFAULT})));
+}}
+// [2026-09-24] 阶数输入框变化：清掉 12/18/19 的已加载标记并重新按新阶数加载
+function applyOrder() {{
+  const el = document.getElementById('corrOrderIn');
+  if (!el) return;
+  const v = orderRows();
+  el.value = v;
+  ORDER_KEYS.forEach(k => {{ delete loadedPlots[k]; }});
+  ORDER_KEYS.forEach(k => {{
+    const div = document.getElementById('plot-' + k);
+    if (div) div.innerHTML = '<div class="note">加载中…（最多 ' + v + ' 阶）</div>';
+  }});
+  ORDER_KEYS.forEach(loadPlot);
 }}
 // ===== 后台预取其他数据包（2026-09-22 新增）=====
 let _prefetchBusy = false;
@@ -1278,12 +1333,20 @@ const plotH = document.getElementById('plotH');
 plotH.addEventListener('input', () => {{
   const v = plotH.value;
   document.getElementById('plotHVal').textContent = v + ' px';
-  document.querySelectorAll('.plot-div').forEach(d => {{ d.style.height = v + 'px'; }});
+  document.querySelectorAll('.plot-div').forEach(d => {{
+    const k = (d.id || '').replace('plot-', '');
+    // [2026-09-24 高阶互相关] 12/18/19 按阶数比例放大，其余按滑块值
+    d.style.height = (ORDER_KEYS.includes(k) ? orderDivHeight() : v) + 'px';
+  }});
   Object.keys(loadedPlots).forEach(k => {{
     const div = document.getElementById('plot-' + k);
     if (div) {{ try {{ Plotly.Plots.resize(div); }} catch(e) {{}} }}
   }});
 }});
+// [2026-09-24 互相关阶数输入框] 回车 / 失焦 / 数值变化 → 12/18/19 按新阶数重载
+const corrOrderIn = document.getElementById('corrOrderIn');
+corrOrderIn.addEventListener('change', applyOrder);
+corrOrderIn.addEventListener('keyup', (e) => {{ if (e.key === 'Enter') applyOrder(); }});
 async function startUpload() {{
   const btn = document.getElementById('uploadBtn');
   const status = document.getElementById('runStatus');

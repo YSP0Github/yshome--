@@ -19,6 +19,7 @@ plotly_figs.py（2026-09-17 新增）
 """
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -26,7 +27,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # 与 run_pipeline_v3_learning 共用口径
-from run_pipeline_v3_learning import FREQ_BAND, STATIONS, bandpass_obspy_safe
+from run_pipeline_v3_learning import (CORR_PLOT_BAND, FREQ_BAND, STATIONS,
+                                      bandpass_obspy_safe)
 from dc_gdcst_dtfsbl_v2_learning import (
     advisor_high_order_corr,
     compute_c_multi,
@@ -47,6 +49,39 @@ def set_npz_path(path) -> None:
     global NPZ_PATH, _NPZ_CACHE
     NPZ_PATH = Path(path)
     _NPZ_CACHE = None
+    _HIGH_ORDER_CACHE.clear()
+
+
+# =====================================================================
+# [2026-09-24 高阶互相关阶数控制]
+# ---------------------------------------------------------------------
+# 用户要求：面板画布（12/18/19 交互图）加"阶数"输入框，输入 3 → 最多画
+# 到三阶、输入 5 → 最多画到五阶；初始计算先算到 10 阶并缓存，画布切换
+# 阶数时不再重算（只按阶数切片出图）。
+#   HIGH_ORDER_DEFAULT — 画布默认显示的阶数（保持旧版 3 阶外观）
+#   HIGH_ORDER_MAX     — 预计算的最大阶数（advisor 默认 max_order=10）
+#   _HIGH_ORDER_CACHE  — {(npz路径, source): advisor 全量结果}，按数据源缓存，
+#                        set_npz_path() 时清空（防陈旧数据）。
+# =====================================================================
+HIGH_ORDER_DEFAULT = 3
+HIGH_ORDER_MAX = 10
+_HIGH_ORDER_CACHE: dict = {}
+_HIGH_ORDER_LOCK = threading.Lock()
+
+
+def _get_high_order_orders(source: str, s_b: np.ndarray, fs: float) -> dict:
+    """预计算 12/18/19 所需的全部阶数互相关（每数据源只算一次并缓存）。
+
+    source: "recon"（12 号，FSBL 重建后）/ "preproc"（18 号，预处理后未去噪）
+            / "sim"（19 号，SPECFEM 物理真值）。
+    返回 advisor_high_order_corr 的完整结果（含 orders，共 HIGH_ORDER_MAX 阶）。
+    """
+    key = (str(NPZ_PATH), source)
+    with _HIGH_ORDER_LOCK:
+        if key not in _HIGH_ORDER_CACHE:
+            _HIGH_ORDER_CACHE[key] = advisor_high_order_corr(
+                s_b, fs, freq_band=FREQ_BAND, max_order=HIGH_ORDER_MAX)
+        return _HIGH_ORDER_CACHE[key]
 
 # =====================================================================
 # [2026-09-17 定位] exp013/014 物理域恢复缺陷修正参数
@@ -124,35 +159,48 @@ _TPL = "plotly_dark"
 # =====================================================================
 # [2026-09-17 理论振型虚线] 月球球型自由振荡基频振型频率（模型预测）
 # ---------------------------------------------------------------------
-# 背景：12/18 号图红色竖线是程序 find_band_peaks 检出的谱峰（检测结果），
-#       不是理论振型；用户要求叠加理论自由振荡振型特征频率虚线并标注。
-# 来源：Kachelrieß & Nødtvedt (2023), "Lunar response to gravitational
-#       waves", arXiv:2312.11665, Table I（模型 M1 的球型基频 0S_n）。
 # 物理口径：只有球型（spheroidal）振型有径向位移分量，垂直分量（MHZ）
 #       才能记录到；环型（toroidal）为纯切向运动，垂直地震计观测不到，
-#       故只画球型 0S2–0S5（目标频带 0.001–0.012 Hz 的低频端）。
-# 局限/待办：公开文献只有前 4 阶逐值表；频带内更高阶 0S6–0S30
-#       （≈4.0–11 mHz，Khan & Mosegaard 2001 覆盖 0.86–11 mHz）需用
-#       specfem 实际月球模型 + Mineos 计算后补全（用户有超算环境）。
+#       故只画球型 0S2–0S55（MINEOS 计算，≤20 mHz 全基阶球型分支）。
+# 数据来源：SeisY resources/precomputed_modes/vpremoon/modes.csv
+#       （VPREMOON 模型，MINEOS 求解，l_min=2、n=0 基阶、频率单位 mHz）。
+#       备选模型：weber_vpremoon（Garcia 地幔 + Weber 核，0S2=1.019 mHz）、
+#       garcia_vpremoon（缺 0S2–0S14 低阶，从 0S15=6.12 mHz 起）、
+#       moon_compact（0S2=0.453 mHz，整体偏低）——换模型即替换本列表。
+# 绘图频带 CORR_PLOT_BAND=(0.001,0.020) Hz：12/18/19 谱展示扩展到
+#       20 mHz，使 0S2–0S55 理论线全部可见（信号本身带通仍为 FREQ_BAND）。
 # =====================================================================
 THEORY_SPHEROIDAL_MODES = [
-    ("0S2", 1.020e-3),   # l=2 四极模
-    ("0S3", 1.848e-3),
-    ("0S4", 2.932e-3),
-    ("0S5", 3.976e-3),
+    ("0S2", 0.001082662), ("0S3", 0.001637424), ("0S4", 0.002081414), ("0S5", 0.002486381), ("0S6", 0.002875913), ("0S7", 0.003257351),
+    ("0S8", 0.003633769), ("0S9", 0.004006773), ("0S10", 0.00437728), ("0S11", 0.004745828), ("0S12", 0.005112741), ("0S13", 0.005478207),
+    ("0S14", 0.005842341), ("0S15", 0.006205207), ("0S16", 0.006566848), ("0S17", 0.00692729), ("0S18", 0.007286551), ("0S19", 0.007644648),
+    ("0S20", 0.008001593), ("0S21", 0.0083574), ("0S22", 0.008712081), ("0S23", 0.009065647), ("0S24", 0.00941811), ("0S25", 0.009769478),
+    ("0S26", 0.01011976), ("0S27", 0.01046896), ("0S28", 0.0108171), ("0S29", 0.01116416), ("0S30", 0.01151016), ("0S31", 0.01185509),
+    ("0S32", 0.01219896), ("0S33", 0.01254177), ("0S34", 0.01288352), ("0S35", 0.0132242), ("0S36", 0.01356382), ("0S37", 0.01390235),
+    ("0S38", 0.01423982), ("0S39", 0.0145762), ("0S40", 0.01491149), ("0S41", 0.01524569), ("0S42", 0.01557879), ("0S43", 0.01591078),
+    ("0S44", 0.01624166), ("0S45", 0.01657141), ("0S46", 0.01690004), ("0S47", 0.01722753), ("0S48", 0.01755387), ("0S49", 0.01787906),
+    ("0S50", 0.01820309), ("0S51", 0.01852595), ("0S52", 0.01884764), ("0S53", 0.01916813), ("0S54", 0.01948744), ("0S55", 0.01980553),
 ]
-THEORY_MODE_SOURCE = ("理论 0S_n（Kachelriess & Nodtvedt 2023, "
-                      "arXiv:2312.11665 模型 M1）")
+THEORY_MODE_SOURCE = ("理论 0S_n（MINEOS 计算 · VPREMOON 模型，"
+                      "SeisY precomputed_modes/vpremoon，≤20 mHz）")
+# 理论线标注密度：全部 54 条线都画，但文字标注只标每隔 THEORY_LABEL_STEP 条
+# （0S2,0S4,0S6,…），避免 54 个标签挤在一起；交互图可缩放查看任意一条。
+THEORY_LABEL_STEP = 2
+# 理论线外观（2026-09-24 美化）：细 + 半透明金色，避免 54 条虚线喧宾夺主；
+# 标签同样降透明度。plotly shape 无独立 opacity 属性，用 rgba 颜色实现。
+THEORY_LINE_COLOR = "rgba(255, 213, 79, 0.5)"
+THEORY_LABEL_COLOR = "rgba(255, 213, 79, 0.85)"
 
 
 def add_theory_spheroidal_shapes(shapes: list, annos: list,
                                  row: int = 1,
-                                 y_rows: tuple = (0.97, 0.84)) -> None:
+                                 y_rows: tuple = (0.97, 0.89, 0.84, 0.78)) -> None:
     """把理论球型振型频率画成金色虚线 + 振型名标注（批量 shapes/annotations）。
 
     与检测峰（红色点线）区分：理论线用金色实心虚线（dash="dash"）；
     标注用 HTML 下标 <sub>0</sub>S<sub>2</sub> 形式（避免 unicode 下标
-    在部分中文字体下渲染成方块）。相邻两行交替放置减少标注重叠。
+    在部分中文字体下渲染成方块）。4 个 y 层交替放置减少标注重叠；
+    THEORY_LABEL_STEP 控制文字标注密度（线全部画，标签隔条标）。
     row: 目标子图行号（1 起）。线条通过 xref=xN / yref=yN domain 引用
     落到**对应子图内**（不写引用会挂到第一个子图轴、yref="paper" 则
     贯穿整图高度，旧实现即此缺陷）。
@@ -168,13 +216,16 @@ def add_theory_spheroidal_shapes(shapes: list, annos: list,
         y_top = y_rows[i % len(y_rows)]
         shapes.append(dict(type="line", x0=f, x1=f, y0=0.03, y1=0.97,
                            xref=xax, yref=yax,
-                           line=dict(color="#FFD54F", dash="dash", width=1.0)))
-        # "0S2" → HTML 下标 "0" 与 "2"
+                           line=dict(color=THEORY_LINE_COLOR, dash="dash",
+                                     width=0.5)))
+        if i % THEORY_LABEL_STEP != 0:
+            continue
+        # "0S2"/"0S12" → HTML 下标 "0" 与 "2"/"12"（label[2:] 兼容两位数）
         annos.append(dict(x=f, y=y_top, xref=xax, yref=yax,
-                          text=f"<sub>{label[0]}</sub>S<sub>{label[2]}</sub>",
+                          text=f"<sub>{label[0]}</sub>S<sub>{label[2:]}</sub>",
                           showarrow=False,
-                          font=dict(size=10, color="#FFD54F"),
-                          xanchor="left" if f < 0.003 else "right",
+                          font=dict(size=8, color=THEORY_LABEL_COLOR),
+                          xanchor="left" if f < 0.015 else "right",
                           yanchor="bottom"))
 _COLORS = dict(red="#EF5350", green="#66BB6A", blue="#42A5F5",
                orange="#FFA726", purple="#AB47BC", teal="#26A69A",
@@ -583,53 +634,66 @@ def plot11_c_multi(npz: dict):
 # =====================================================================
 # 12 高阶互相关 3→2→1（待办 B）：C3 谱 + 层级幅度
 # =====================================================================
-def plot12_high_order_corr(npz: dict):
-    """12 高阶互相关 3→2→1：各阶频率域线性振幅谱（2026-09-17 改版）
+def _order_corr_figure(npz: dict, source: str, title: str,
+                       order: int | None = None) -> go.Figure:
+    """12/18/19 共用：各阶频率域线性振幅谱（2026-09-24 扩展为可调阶数）
 
-    用户口径：高阶互相关幅值随阶数递减是理论必然，**不做峰值幅度对比**；
-    高阶互相关的价值在频率域**谱峰特征（位置/形状）随阶数的变化**。
-    故每阶（一阶 C12/C23/C31、二阶 C1223/C2331、三阶 C3）分别画
-    线性坐标振幅谱 |FFT(c)|，并标注各阶谱峰频率。
-    输入用 fix_phys 修正后的重建信号（与真值同尺度）。
-    [2026-09-17 理论振型虚线] 叠加理论球型 0S2-0S5（金色虚线+标注）。
-    [性能/正确性修复] shapes/annotations 全部收集后**循环外一次性**
-    update_layout 提交（见 add_theory_spheroidal_shapes 注释）。
+    source: "recon"(12, FSBL 重建后) / "preproc"(18, 预处理后未去噪)
+            / "sim"(19, SPECFEM 物理真值)
+    order:  最多绘制到第几阶（None → HIGH_ORDER_DEFAULT；上限
+            HIGH_ORDER_MAX。只影响子图行数/显示，**不触发重算**——
+            全部阶数已由 _get_high_order_orders 预计算并缓存）。
+
+    每阶 3 条序列（C12/C23/C31 → C1223/C2331/C3112 → ……循环相邻
+    互相关），分别画线性坐标振幅谱 |FFT(c)|，标注各阶谱峰频率；
+    叠加理论球型 0S2-0S55 金色虚线+标注（shapes/annotations 循环外
+    一次性提交，绕过 plotly 7.1 逐轮 update 的丢弃/重复缺陷）。
     """
     fs = float(npz["fs_hz"])
-    s = fix_phys(npz, npz["station_signals_phys"])
+    if source == "recon":
+        s = fix_phys(npz, npz["station_signals_phys"])
+    elif source == "preproc":
+        s = npz["x_preprocessed"]
+    else:
+        s = npz["signal_filtered"]
     s_b = bandpass_obspy_safe(s, fs, FREQ_BAND[0], FREQ_BAND[1])
-    res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
+    res = _get_high_order_orders(source, s_b, fs)
+    n_rows = max(1, min((HIGH_ORDER_DEFAULT if order is None else int(order)),
+                        len(res["orders"])))
+    orders = res["orders"][:n_rows]
 
-    groups = [
-        ("一阶：两两互相关", [("C12", res["c12"]), ("C23", res["c23"]),
-                           ("C31", res["c31"])]),
-        ("二阶：一阶的互相关", [("C1223", res["c1223"]),
-                             ("C2331", res["c2331"])]),
-        ("三阶：最终互相关", [("C3", res["c3"])]),
-    ]
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
-                        subplot_titles=[g[0] for g in groups])
+    fig = make_subplots(rows=n_rows, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.04 if n_rows > 4 else 0.06,
+                        subplot_titles=[o["label"] for o in orders])
     # 理论球型振型图例项（ghost trace：仅用于图例，不画数据）
     fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
-                             line=dict(color="#FFD54F", dash="dash", width=1),
+                             line=dict(color=THEORY_LINE_COLOR, dash="dash",
+                                       width=1.5),
                              name=THEORY_MODE_SOURCE, showlegend=True),
                   row=1, col=1)
     # 全部 shapes/annotations（理论线 + 各子图谱峰）→ 循环外一次提交
     all_shapes, all_annos = [], []
-    for r in range(1, 4):
+    for r in range(1, n_rows + 1):
         add_theory_spheroidal_shapes(all_shapes, all_annos, row=r)
-    for r, (gname, pairs) in enumerate(groups, start=1):
-        colors = [_COLORS["red"], _COLORS["green"], _COLORS["blue"]]
-        for k, (name, c) in enumerate(pairs):
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
-            fig.add_trace(go.Scatter(x=f, y=a, name=name, mode="lines",
+    colors = [_COLORS["red"], _COLORS["green"], _COLORS["blue"]]
+    for r, o in enumerate(orders, start=1):
+        xax = "x" if r == 1 else f"x{r}"
+        yax = "y domain" if r == 1 else f"y{r} domain"
+        # 显示归一化：每阶按本阶 3 条序列的最大幅值统一缩放（一阶原始幅值
+        # 与二阶起的归一化幅值差十几个量级，不缩放会让各阶纵轴不可比；
+        # 线性缩放不改变谱峰位置，也不改变存储的原始数据）
+        seqs = o["sequences"]
+        smax = max(float(np.max(np.abs(s["c"]))) for s in seqs)
+        if smax > 0:
+            seqs = [dict(s, c=s["c"] / smax) for s in seqs]
+        for k, seq in enumerate(seqs):
+            f, a = corr_linear_spectrum(seq["c"], fs, CORR_PLOT_BAND)
+            fig.add_trace(go.Scatter(x=f, y=a, name=seq["short"], mode="lines",
                                      line=dict(color=colors[k % 3], width=1.1)),
                           row=r, col=1)
         # 本阶谱峰标注（每序列最强 2 峰；批量 shapes/annotations）
-        xax = "x" if r == 1 else f"x{r}"
-        yax = "y domain" if r == 1 else f"y{r} domain"
-        for name, c in pairs:
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
+        for seq in seqs:
+            f, a = corr_linear_spectrum(seq["c"], fs, CORR_PLOT_BAND)
             for fp in find_band_peaks(f, a, max_peaks=2):
                 all_shapes.append(dict(type="line", x0=fp, x1=fp, y0=0.02, y1=0.98,
                                        xref=xax, yref=yax,
@@ -639,21 +703,33 @@ def plot12_high_order_corr(npz: dict):
                                       font=dict(size=9, color="red"),
                                       xanchor="left", yanchor="bottom"))
         fig.update_yaxes(title_text="|FFT(c)|（线性）", row=r, col=1)
-    # 全部 shapes/annotations 一次性提交（直接赋值属性，保留 subplot 标题；
-    # 绕过 plotly 7.1 update_layout(shapes/annotations=...) 不可预测的
-    # 合并/丢弃行为——实测逐轮 update 只保留部分条目）
-    _titles = list(fig.layout.annotations)      # subplot_titles 生成的 3 个标题
+    # 全部 shapes/annotations 一次性提交（直接赋值属性，保留 subplot 标题）
+    _titles = list(fig.layout.annotations)
     fig.layout.annotations = _titles + all_annos
     fig.layout.shapes = all_shapes
-    fig.update_xaxes(title_text="频率 (Hz)（线性轴）", row=3, col=1)
-    fig.update_layout(**_base_layout(
+    fig.update_xaxes(title_text="频率 (Hz)（线性轴）", row=n_rows, col=1)
+    fig.update_layout(**_base_layout(title))
+    return fig
+
+
+def plot12_high_order_corr(npz: dict, order: int | None = None):
+    """12 高阶互相关 3→2→1：各阶频率域线性振幅谱（2026-09-17 改版，
+    2026-09-24 扩展为可调阶数）
+
+    用户口径：高阶互相关幅值随阶数递减是理论必然，**不做峰值幅度对比**；
+    高阶互相关的价值在频率域**谱峰特征（位置/形状）随阶数的变化**。
+    故每阶（一阶 C12/C23/C31、二阶 C1223/C2331/C3112、三阶及以上……
+    每阶 3 条）分别画线性坐标振幅谱 |FFT(c)|，并标注各阶谱峰频率。
+    输入用 fix_phys 修正后的重建信号（与真值同尺度）。
+    [2026-09-17 理论振型虚线] 叠加理论球型 0S2-0S5（金色虚线+标注）。
+    [性能/正确性修复] shapes/annotations 全部收集后**循环外一次性**
+    update_layout 提交（见 add_theory_spheroidal_shapes 注释）。
+    """
+    return _order_corr_figure(npz, "recon",
         "12 高阶互相关 3→2→1 各阶频率域振幅谱（线性坐标，看谱峰特征变化；"
         "不做峰值幅度对比——高阶幅值递减为理论现象）。"
-        "红色点线=程序检出谱峰；金色虚线=理论球型基频振型 0S2-0S5"
-        "（KachelrieSS & Nodtvedt 2023, arXiv:2312.11665；更高阶"
-        " 0S6-0S30 待 Mineos 按实际月球模型补全）",
-        height=900))
-    return fig
+        "红色点线=程序检出谱峰；金色虚线=理论球型基频振型 0S2-0S55"
+        "（MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
 
 
 def plot13_delta_tau(npz: dict):
@@ -828,132 +904,44 @@ def plot17_preprocessed_amp_spectrum(npz: dict):
 # 按 F 阶段 12 号图样式可视化（各阶频率域线性振幅谱）。
 # 与 12 号（FSBL 重建后信号）对比，可见 FSBL 提取效果。
 # =====================================================================
-def plot18_preprocessed_higher_order_corr(npz: dict):
-    """18 预处理后数据直接高阶互相关（2026-09-17 用户要求新增）
+def plot18_preprocessed_higher_order_corr(npz: dict, order: int | None = None):
+    """18 预处理后数据直接高阶互相关（2026-09-17 用户要求新增，
+    2026-09-24 扩展为可调阶数）
 
     三站预处理后数据直接做高阶互相关（未去噪），按 12 号图样式：
-    各阶频率域线性振幅谱（一阶 C12/C23/C31、二阶 C1223/C2331、三阶 C3）。
+    各阶频率域线性振幅谱（一阶 C12/C23/C31、二阶 C1223/C2331/C3112、
+    三阶及以上……每阶 3 条，阶数可在画布输入框调整，预计算至 10 阶）。
     与 12 号（FSBL 重建后）对比，可见 FSBL 提取效果。
     [2026-09-17 理论振型虚线] 叠加理论球型 0S2-0S5（金色虚线+标注）；
     shapes 循环外一次性提交（与 plot12 相同的正确性/性能修复）。
     """
-    fs = float(npz["fs_hz"])
-    x = npz["x_preprocessed"]
-    s_b = bandpass_obspy_safe(x, fs, FREQ_BAND[0], FREQ_BAND[1])
-    res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
-    groups = [
-        ("一阶：两两互相关", [("C12", res["c12"]), ("C23", res["c23"]),
-                           ("C31", res["c31"])]),
-        ("二阶：一阶的互相关", [("C1223", res["c1223"]),
-                             ("C2331", res["c2331"])]),
-        ("三阶：最终互相关", [("C3", res["c3"])]),
-    ]
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
-                        subplot_titles=[g[0] for g in groups])
-    fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
-                             line=dict(color="#FFD54F", dash="dash", width=1),
-                             name=THEORY_MODE_SOURCE, showlegend=True),
-                  row=1, col=1)
-    all_shapes, all_annos = [], []
-    for r in range(1, 4):
-        add_theory_spheroidal_shapes(all_shapes, all_annos, row=r)
-    for r, (gname, pairs) in enumerate(groups, start=1):
-        colors = [_COLORS["red"], _COLORS["green"], _COLORS["blue"]]
-        for k, (name, c) in enumerate(pairs):
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
-            fig.add_trace(go.Scatter(x=f, y=a, name=name, mode="lines",
-                                     line=dict(color=colors[k % 3], width=1.1)),
-                          row=r, col=1)
-        xax = "x" if r == 1 else f"x{r}"
-        yax = "y domain" if r == 1 else f"y{r} domain"
-        for name, c in pairs:
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
-            for fp in find_band_peaks(f, a, max_peaks=2):
-                all_shapes.append(dict(type="line", x0=fp, x1=fp, y0=0.02, y1=0.98,
-                                       xref=xax, yref=yax,
-                                       line=dict(color="red", dash="dot", width=0.8)))
-                all_annos.append(dict(x=fp, y=0.98, xref=xax, yref=yax,
-                                      text=f"{fp:.5f} Hz", showarrow=False,
-                                      font=dict(size=9, color="red"),
-                                      xanchor="left", yanchor="bottom"))
-        fig.update_yaxes(title_text="|FFT(c)|（线性）", row=r, col=1)
-    # 全部 shapes/annotations 一次性提交（直接赋值属性，保留 subplot 标题；
-    # 绕过 plotly 7.1 update_layout(shapes/annotations=...) 不可预测的
-    # 合并/丢弃行为——实测逐轮 update 只保留部分条目）
-    _titles = list(fig.layout.annotations)      # subplot_titles 生成的 3 个标题
-    fig.layout.annotations = _titles + all_annos
-    fig.layout.shapes = all_shapes
-    fig.update_xaxes(title_text="频率 (Hz)（线性轴）", row=3, col=1)
-    fig.update_layout(**_base_layout(
+    return _order_corr_figure(npz, "preproc",
         "18 预处理后数据（未去噪）直接高阶互相关：各阶频率域振幅谱"
-        "（与 12 号 FSBL 重建后对比，看去噪效果）。"
-        "金色虚线=理论球型基频振型 0S2-0S5（KachelrieSS & Nodtvedt"
-        " 2023, arXiv:2312.11665）",
-        height=900))
-    return fig
+        "（与 12 号 FSBL 重建后对比，看去噪效果；阶数可在画布输入框调整，"
+        "已预计算至 10 阶）。"
+        "金色虚线=理论球型基频振型 0S2-0S55（MINEOS 计算 · VPREMOON"
+        " 模型，≤20 mHz）", order)
 
 
-def plot19_simulated_preprocessed_higher_order_corr(npz: dict):
-    """19 模拟数据（SPECFEM 物理真值）带通后直接高阶互相关（2026-09-17 新增）
+def plot19_simulated_preprocessed_higher_order_corr(npz: dict,
+                                                    order: int | None = None):
+    """19 模拟数据（SPECFEM 物理真值）带通后直接高阶互相关（2026-09-17 新增，
+    2026-09-24 扩展为可调阶数）
 
     用户：第一页底部再加"模拟数据预处理后的高阶互相关"。
     口径：npz["signal_filtered"] = SPECFEM 模拟物理真值（位移 m），
-    纯净（无噪声、无仪器响应），带通 [0.001,0.012] Hz 后直接做 3→2→1
-    高阶互相关——展示"信号完美、噪声为零"时各阶互相关谱的理论形态，
+    纯净（无噪声、无仪器响应），带通 [0.001,0.012] Hz 后直接做高阶
+    互相关（每阶 3 条，阶数可在画布输入框调整，预计算至 10 阶）——
+    展示"信号完美、噪声为零"时各阶互相关谱的理论形态，
     与 18（含噪观测预处理后，看噪声污染）、12（FSBL 重建后，看去噪效果）
     形成三档对比。制式与 12/18 完全一致（峰标注 + 理论振型虚线）。
     """
-    fs = float(npz["fs_hz"])
-    s = npz["signal_filtered"]                     # SPECFEM 物理真值（m）
-    s_b = bandpass_obspy_safe(s, fs, FREQ_BAND[0], FREQ_BAND[1])
-    res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
-    groups = [
-        ("一阶：两两互相关", [("C12", res["c12"]), ("C23", res["c23"]),
-                           ("C31", res["c31"])]),
-        ("二阶：一阶的互相关", [("C1223", res["c1223"]),
-                             ("C2331", res["c2331"])]),
-        ("三阶：最终互相关", [("C3", res["c3"])]),
-    ]
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
-                        subplot_titles=[g[0] for g in groups])
-    fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
-                             line=dict(color="#FFD54F", dash="dash", width=1),
-                             name=THEORY_MODE_SOURCE, showlegend=True),
-                  row=1, col=1)
-    all_shapes, all_annos = [], []
-    for r in range(1, 4):
-        add_theory_spheroidal_shapes(all_shapes, all_annos, row=r)
-    for r, (gname, pairs) in enumerate(groups, start=1):
-        colors = [_COLORS["red"], _COLORS["green"], _COLORS["blue"]]
-        for k, (name, c) in enumerate(pairs):
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
-            fig.add_trace(go.Scatter(x=f, y=a, name=name, mode="lines",
-                                     line=dict(color=colors[k % 3], width=1.1)),
-                          row=r, col=1)
-        xax = "x" if r == 1 else f"x{r}"
-        yax = "y domain" if r == 1 else f"y{r} domain"
-        for name, c in pairs:
-            f, a = corr_linear_spectrum(c, fs, FREQ_BAND)
-            for fp in find_band_peaks(f, a, max_peaks=2):
-                all_shapes.append(dict(type="line", x0=fp, x1=fp, y0=0.02, y1=0.98,
-                                       xref=xax, yref=yax,
-                                       line=dict(color="red", dash="dot", width=0.8)))
-                all_annos.append(dict(x=fp, y=0.98, xref=xax, yref=yax,
-                                      text=f"{fp:.5f} Hz", showarrow=False,
-                                      font=dict(size=9, color="red"),
-                                      xanchor="left", yanchor="bottom"))
-        fig.update_yaxes(title_text="|FFT(c)|（线性）", row=r, col=1)
-    _titles = list(fig.layout.annotations)
-    fig.layout.annotations = _titles + all_annos
-    fig.layout.shapes = all_shapes
-    fig.update_xaxes(title_text="频率 (Hz)（线性轴）", row=3, col=1)
-    fig.update_layout(**_base_layout(
+    return _order_corr_figure(npz, "sim",
         "19 模拟数据（SPECFEM 物理真值，位移 m）带通后直接高阶互相关："
         "各阶频率域振幅谱（理论极限参考：无噪声、无仪器响应；"
-        "与 18 含噪观测 / 12 FSBL 重建后对比；金色虚线=理论球型 0S2-0S5，"
-        "Kachelriess & Nodtvedt 2023）",
-        height=900))
-    return fig
+        "与 18 含噪观测 / 12 FSBL 重建后对比；阶数可在画布输入框调整，"
+        "已预计算至 10 阶；金色虚线=理论球型 0S2-0S55，"
+        "MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
 
 
 # =====================================================================
@@ -982,12 +970,16 @@ PLOT_FACTORIES = {
 }
 
 
-def get_figure(key: str):
-    """按 key 生成 go.Figure（09 需要 meta，其余仅 npz）"""
+def get_figure(key: str, order: int | None = None):
+    """按 key 生成 go.Figure。
+
+    order（仅 12/18/19 生效）：最多绘制到第几阶（None → HIGH_ORDER_DEFAULT）。
+    数据已按 HIGH_ORDER_MAX 预计算并缓存，切换阶数只做切片、不重算。
+    """
     npz = load_npz()
     fn = PLOT_FACTORIES[key]
-    if key == "09":
-        return fn(npz)
+    if key in ("12", "18", "19"):
+        return fn(npz, order=order)
     return fn(npz)
 
 

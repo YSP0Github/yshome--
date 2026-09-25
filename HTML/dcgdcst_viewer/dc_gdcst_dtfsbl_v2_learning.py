@@ -373,34 +373,67 @@ def max_sigma2_conservative_init(
 # =====================================================================
 # [新问题 11 + 待办 B] 导师 3→2→1 高阶互相关
 # ---------------------------------------------------------------------
-# 导师方法（2026-09-17 确认配对规则）：
+# 导师方法（2026-09-17 确认配对规则；2026-09-24 扩展为任意阶数）：
 #   一阶：C12、C23、C31（三个两两互相关，注意方向 C31 非 C13）
-#   二阶：C1223 = C12∘C23、C2331 = C23∘C31（两个）
-#   三阶：C3 = C1223∘C2331（一个）
+#   二阶：C1223 = C12∘C23、C2331 = C23∘C31、C3112 = C31∘C12
+#   三阶：上一阶 3 条序列的循环相邻互相关（同样 3 条）
+#   …… 每阶固定 3 条（3 站循环闭合），理论上可无限递推；
+#   本实现默认预计算到 max_order=10 阶，供面板画布随时切换显示，
+#   切换阶数时不再重算。
 # 目的：逐级压制各台独立残差噪声，凸显三站共有的自由振荡成分。
 # 替代原 extract_free_oscillations 中的"单参考截断"版
 # （原实现：C12、C13 → corr(C12, C13)，缺 C23，非 3→2→1）。
 # =====================================================================
+# 中文序数（"一阶…十阶"，超出用阿拉伯数字）
+_CN_ORDINALS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+
+
+def _cn_ordinal(k: int) -> str:
+    return _CN_ORDINALS[k - 1] if 1 <= k <= len(_CN_ORDINALS) else str(k)
+
+
 def advisor_high_order_corr(
     signals: np.ndarray,
     fs: float,
     freq_band: tuple[float, float] = FREQ_BAND,
     nfft: int = 8192,
+    max_order: int = 10,
+    keep_len: int = 131072,
 ) -> dict:
-    """[新问题 11 + 待办 B] 导师 3→2→1 层级高阶互相关提取
+    """[新问题 11 + 待办 B] 导师 3→2→1 层级高阶互相关提取（可算到任意阶）
+
+    配对规则（3 站循环闭合，每阶 3 条序列）：
+      一阶: C12 = corr(s1,s2)、C23 = corr(s2,s3)、C31 = corr(s3,s1)
+      二阶: C1223 = corr(C12,C23)、C2331 = corr(C23,C31)、C3112 = corr(C31,C12)
+      三阶: 上一阶 3 条序列的循环相邻互相关（同 3 条）……依此类推。
+    序列命名递推：name_k_i = name_{k-1}_i + name_{k-1}_{(i+1)%3}[1:]（去掉前导 C）。
 
     参数:
       signals  — (n_stations, n_samples) 三台站重建信号 ŝ_j
       fs       — 采样率
       freq_band — 目标频带 [0.001, 0.012] Hz
       nfft     — FFT 长度（频谱细化用）
+      max_order — 计算到的最大阶数（默认 10；面板画布可任意选择 ≤ 该值显示）
+      keep_len — 每阶互相关后保留的中央窗口长度。序列长度随阶数指数增长
+                 （≈2^k·N），但谱峰分析只看零延迟附近的中央段：截断后
+                 频率分辨率 df≈fs/keep_len（131072 点 ≈5e-5 Hz）仍远高于
+                 目标频带需求，时间/内存随阶数保持恒定。
 
     返回 dict:
-      c12/c23/c31 — 一阶互相关（全延迟，mode="full"）
-      c1223/c2331 — 二阶互相关
-      c3          — 三阶互相关（最终）
-      spectrum    — (freqs, psd) C3 的功率谱（在目标频带内提谱峰用）
-      peak_freqs  — 带内谱峰频率列表（find_peaks + 阈值）
+      c12/c23/c31   — 一阶互相关（全延迟，mode="full"，原始幅值）
+      c1223/c2331/c3112 — 二阶互相关（三条，归一化互相关）
+      c3            — 三阶互相关（= orders[2].sequences[0]，兼容旧调用）
+      orders        — 列表，每项 {"order", "label",
+                        "sequences": [{"name","short","c"}, ...]}，共 max_order 阶
+                      name=完整配对链名（如 C12232331）；short=图例短标签
+                      （前 3 阶用完整名，更高阶用 "C12 链/C23 链/C31 链"）
+      spectrum      — (freqs, psd) C3 的功率谱（在目标频带内提谱峰用）
+      peak_freqs    — 带内谱峰频率列表（find_peaks + 阈值）
+
+    数值稳定性：互相关幅值随阶数按能量平方增长，counts 域数据到约 6 阶
+    即溢出 float64（→NaN 污染后续阶）。故二阶起对参与相关的每条序列先做
+    L2 归一化（归一化互相关，值域 [-1,1]），谱峰位置与未归一化完全一致
+    （线性缩放只乘常数），且高阶幅值不再爆炸/下溢，可稳定算到任意阶。
     """
     from scipy.signal import find_peaks, correlate as scipy_correlate
 
@@ -408,6 +441,7 @@ def advisor_high_order_corr(
     n_st, n_samples = signals.shape
     if n_st < 3:
         raise ValueError("advisor_high_order_corr requires >= 3 stations")
+    max_order = max(1, int(max_order))
 
     # 去均值（互相关对直流敏感）
     s = signals - signals.mean(axis=1, keepdims=True)
@@ -418,19 +452,57 @@ def advisor_high_order_corr(
     def _fft_corr(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return scipy_correlate(a, b, mode="full", method="fft")
 
+    def _central(a: np.ndarray, length: int) -> np.ndarray:
+        """保留序列中央 length 点（谱峰分析只看零延迟附近）"""
+        n = len(a)
+        if n <= length:
+            return a
+        start = (n - length) // 2
+        return a[start:start + length]
+
+    def _normalized(x: np.ndarray) -> np.ndarray:
+        """L2 归一化（防高阶幅值按能量平方增长导致 float64 溢出/下溢）"""
+        nrm = np.linalg.norm(x)
+        return x / nrm if nrm > 1e-300 else x
+
     # ---- 一阶：三站两两互相关（方向按用户口径 C12/C23/C31）----
     c12 = _fft_corr(s[0], s[1])
     c23 = _fft_corr(s[1], s[2])
     c31 = _fft_corr(s[2], s[0])
 
-    # ---- 二阶：一阶互相关的互相关 ----
-    c1223 = _fft_corr(c12, c23)
-    c2331 = _fft_corr(c23, c31)
+    names = ["C12", "C23", "C31"]
+    seqs = [c12, c23, c31]
+    orders = [{
+        "order": 1,
+        "label": "一阶：两两互相关",
+        "sequences": [{"name": n, "short": n, "c": c}
+                      for n, c in zip(names, seqs)],
+    }]
 
-    # ---- 三阶：二阶互相关的互相关 ----
-    c3 = _fft_corr(c1223, c2331)
+    # ---- 二阶及以上：上一阶 3 条序列的循环相邻互相关（每阶 3 条）----
+    for k in range(2, max_order + 1):
+        a, b, c = (_normalized(_central(x, keep_len)) for x in seqs)
+        nxt = [_fft_corr(a, b), _fft_corr(b, c), _fft_corr(c, a)]
+        nm = [names[0] + names[1][1:],
+              names[1] + names[2][1:],
+              names[2] + names[0][1:]]
+        # 图例短标签：前 3 阶完整名（<=8 字符）；更高阶用"起始对 链"
+        sh = [n if len(n) <= 8 else f"{n[:3]} 链" for n in nm]
+        orders.append({
+            "order": k,
+            "label": f"{_cn_ordinal(k)}阶：{_cn_ordinal(k-1)}阶的互相关",
+            "sequences": [{"name": n, "short": s, "c": x}
+                          for n, s, x in zip(nm, sh, nxt)],
+        })
+        names, seqs = nm, nxt
 
-    # ---- C3 谱（目标频带内提峰）----
+    # ---- 兼容旧调用键（别名到新结构）----
+    c1223 = orders[1]["sequences"][0]["c"]
+    c2331 = orders[1]["sequences"][1]["c"]
+    c3112 = orders[1]["sequences"][2]["c"]
+    c3 = orders[2]["sequences"][0]["c"]
+
+    # ---- C3 谱（目标频带内提峰，兼容旧口径）----
     n_c3 = min(len(c3), max(nfft * 4, 1024))
     c3_fft = np.abs(np.fft.rfft(c3[:n_c3], n=n_c3)) ** 2
     freqs = np.fft.rfftfreq(n_c3, d=1.0 / fs)
@@ -443,8 +515,9 @@ def advisor_high_order_corr(
 
     return {
         "c12": c12, "c23": c23, "c31": c31,
-        "c1223": c1223, "c2331": c2331,
+        "c1223": c1223, "c2331": c2331, "c3112": c3112,
         "c3": c3,
+        "orders": orders,
         "spectrum": (freqs, c3_fft),
         "peak_freqs": peak_freqs,
     }
