@@ -1614,9 +1614,11 @@ function openPkgList() {{
     body.innerHTML = h;
     // 事件委托：data-dir 属性 → 点击加载对应数据包
     // （2026-09-22 修复：不用 onclick 内联，规避 f-string 单引号转义问题）
+    // [2026-09-26 交互优化] 点击某行加载数据包后，弹窗自动关闭（原实现只加载不关闭）
     body.querySelectorAll('tr[data-dir]').forEach(function (tr) {{
       tr.addEventListener('click', function () {{
         onPkgSelect(tr.getAttribute('data-dir'));
+        closePkgList();
       }});
     }});
   }}).catch(function () {{
@@ -1626,6 +1628,14 @@ function openPkgList() {{
 function closePkgList() {{
   document.getElementById('pkgListModal').style.display = 'none';
 }}
+// [2026-09-26 交互优化] 点击遮罩空白区域（弹窗外部）自动关闭（仅注册一次）
+document.getElementById('pkgListModal').addEventListener('click', function (e) {{
+  if (e.target === this) closePkgList();
+}});
+// [2026-09-26 交互优化] 按 ESC 关闭弹窗（仅注册一次）
+document.addEventListener('keydown', function (e) {{
+  if (e.key === 'Escape') closePkgList();
+}});
 // 全部交互图 key（供后台预取遍历）
 const PLOT_FACTORIES_KEYS = {plot_keys_js};
 // 页面加载完成后空闲预取其他数据包（延迟 2.5s，避免影响首屏）
