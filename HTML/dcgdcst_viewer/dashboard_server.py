@@ -1140,6 +1140,7 @@ const loadedPlots = {{}};
 const PKG_CACHE_DB = 'dcgdcst_plot_cache';
 const PKG_CACHE_STORE = 'figures';
 const PKG_CACHE_MAX = 200;
+const PKG_CACHE_VER = 'v20260930'; // [2026-09-30] 图标题等改版后旧缓存自动失效
 let _pkgCacheDB = null;
 function pkgCacheOpen() {{
   return new Promise(function (resolve, reject) {{
@@ -1203,8 +1204,8 @@ function pkgCacheSet(key, fig) {{
 function currentCacheKey(key) {{
   const dir = (window.PKG_DATA_DIR || '');
   // [2026-09-24 高阶互相关] 12/18/19 缓存键含阶数，切换阶数后不会命中旧阶数的图
-  if (ORDER_KEYS.includes(key)) return dir + '|' + key + '|order' + orderRows();
-  return dir + '|' + key;
+  if (ORDER_KEYS.includes(key)) return dir + '|' + PKG_CACHE_VER + '|' + key + '|order' + orderRows();
+  return dir + '|' + PKG_CACHE_VER + '|' + key;
 }}
 const plotLoadSeq = {{}};
 function setLoading(key, on, msg) {{
@@ -1303,7 +1304,7 @@ async function prefetchAllPackages() {{
     others.forEach(function (p) {{ total += keys.length; }});
     for (const p of others) {{
       for (const k of keys) {{
-        const ckey = p.dir + '|' + k;
+        const ckey = p.dir + '|' + PKG_CACHE_VER + '|' + k;
         try {{
           const hit = await pkgCacheGet(ckey);
           if (hit && hit.fig) {{ done++; continue; }}
