@@ -184,6 +184,8 @@ THEORY_SPHEROIDAL_MODES = [
 ]
 THEORY_MODE_SOURCE = ("理论 0S_n（MINEOS 计算 · VPREMOON 模型，"
                       "SeisY precomputed_modes/vpremoon，≤20 mHz）")
+# [2026-09-30 图例精简] HTML 自定义图例用短名（完整来源说明放卡片左下角 caption）
+THEORY_LEGEND_SHORT = "理论 0S_n（≤20 mHz）"
 # 理论线标注密度：全部 54 条线都画，但文字标注只标每隔 THEORY_LABEL_STEP 条
 # （0S2,0S4,0S6,…），避免 54 个标签挤在一起；交互图可缩放查看任意一条。
 THEORY_LABEL_STEP = 2
@@ -675,7 +677,7 @@ def _order_corr_figure(npz: dict, source: str, title: str,
     fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
                              line=dict(color=THEORY_LINE_COLOR, dash="dash",
                                        width=1.5),
-                             name=THEORY_MODE_SOURCE, showlegend=True),
+                             name=THEORY_LEGEND_SHORT, showlegend=True),
                   row=1, col=1)
     # 全部 shapes/annotations（理论线 + 各子图谱峰）→ 循环外一次提交
     all_shapes, all_annos = [], []
@@ -923,11 +925,7 @@ def plot18_preprocessed_higher_order_corr(npz: dict, order: int | None = None):
     shapes 循环外一次性提交（与 plot12 相同的正确性/性能修复）。
     """
     return _order_corr_figure(npz, "preproc",
-        "18 预处理后数据（未去噪）直接高阶互相关：各阶频率域振幅谱"
-        "（与 12 号 FSBL 重建后对比，看去噪效果；阶数可在画布输入框调整，"
-        "已预计算至 10 阶）。"
-        "金色虚线=理论球型基频振型 0S2-0S55（MINEOS 计算 · VPREMOON"
-        " 模型，≤20 mHz）", order)
+        "18 合成月震记录（预处理后，未去噪）高阶互相关", order)
 
 
 def plot19_simulated_preprocessed_higher_order_corr(npz: dict,
@@ -945,11 +943,7 @@ def plot19_simulated_preprocessed_higher_order_corr(npz: dict,
     形成三档对比。制式与 12/18 完全一致（峰标注 + 理论振型虚线）。
     """
     return _order_corr_figure(npz, "sim",
-        "19 模拟数据（SPECFEM 物理真值，位移 m）带通后直接高阶互相关："
-        "各阶频率域振幅谱（理论极限参考：无噪声、无仪器响应；"
-        "与 18 含噪观测 / 12 FSBL 重建后对比；阶数可在画布输入框调整，"
-        "已预计算至 10 阶；金色虚线=理论球型 0S2-0S55，"
-        "MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
+        "19 模拟数据（SPECFEM 物理真值，位移 m）高阶互相关", order)
 
 
 def plot20_noise_higher_order_corr(npz: dict, order: int | None = None):
@@ -963,11 +957,7 @@ def plot20_noise_higher_order_corr(npz: dict, order: int | None = None):
     制式与 12/18/19 完全一致（峰标注 + 理论振型虚线，阶数可调）。
     """
     return _order_corr_figure(npz, "noise",
-        "20 合成噪声（noise_synth_embedded n12/n15/n16）带通后直接高阶互相关："
-        "各阶频率域振幅谱（纯噪声参考：应为平坦、无稳定谱峰；"
-        "与 19 纯信号 / 18 含噪观测 / 12 FSBL 重建后对比；阶数可在画布"
-        "输入框调整，已预计算至 10 阶；金色虚线=理论球型 0S2-0S55，"
-        "MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
+        "20 合成记录内噪声（n12/n15/n16）高阶互相关", order)
 
 
 # =====================================================================

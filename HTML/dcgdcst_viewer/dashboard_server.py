@@ -75,9 +75,9 @@ IMAGE_GROUPS = [
         ("01", "01_input.png", "01 输入：观测 / counts 真值 / 物理真值（位移 m，双轴，来源已标注）"),
         ("02", "02_preprocessed.png", "02 预处理：去均值/去趋势/带通（ObsPy 零相位，问题 12）"),
         ("17", "17_preprocessed_amp_spectrum.png", "17 三站预处理后数据振幅谱（02 输出，目标频带阴影）"),
-        ("18", "18_preprocessed_higher_order_corr.png", "18 预处理后数据直接高阶互相关（未去噪，12 号图样式）"),
-        ("19", "19_simulated_preprocessed_higher_order_corr.png", "19 模拟数据（SPECFEM 真值 m）带通后直接高阶互相关（理论极限，与 18 含噪 / 12 FSBL 后对比）"),
-        ("20", "20_noise_higher_order_corr.png", "20 合成噪声（noise_synth_embedded n12/n15/n16）带通后直接高阶互相关（纯噪声参考，与 19 纯信号 / 18 含噪 / 12 FSBL 后对比）"),
+        ("18", "18_preprocessed_higher_order_corr.png", "18 合成月震记录（预处理后，未去噪）直接高阶互相关：与 12 号 FSBL 重建后对比，看去噪效果；阶数可在画布输入框调整（已预计算至 10 阶）"),
+        ("19", "19_simulated_preprocessed_higher_order_corr.png", "19 模拟数据（SPECFEM 物理真值，位移 m）带通后直接高阶互相关：理论极限参考（无噪声、无仪器响应），与 18 含噪观测 / 12 FSBL 重建后对比；阶数可调（已预计算至 10 阶）"),
+        ("20", "20_noise_higher_order_corr.png", "20 合成记录内噪声（n12/n15/n16，= 观测 − 真值，已验证）直接高阶互相关：纯噪声参考，应为平坦无稳定峰，与 19 纯信号 / 18 含噪观测 / 12 FSBL 后对比；阶数可调（已预计算至 10 阶）"),
     ]),
     ("A-5 仪器响应（待办 A）", [
         ("03", "03_response_units.png", "03 仪器响应幅度+相位，单位标注 counts/m（DISP 位移型）"),
@@ -768,7 +768,11 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
 .panel {{ display:none; padding:18px 26px; }}
 .panel.active {{ display:block; }}
 .plot-wrap {{ padding:6px 6px 0; }}
-.plot-div {{ width:100%; height:430px; background:#0a0e1a; border-radius:6px; }}
+.plot-div {{ width:100%; height:430px; background:#0a0e1a; border-radius:6px; position:relative; }}
+.plot-loading {{ position:absolute; inset:0; display:flex; align-items:center;
+                justify-content:center; background:rgba(10,14,26,0.72); color:#64b5f6;
+                font-size:13px; z-index:5; border-radius:6px; text-align:center;
+                padding:0 20px; }}
 .hslider-wrap {{ margin-left:18px; display:inline-flex; align-items:center; gap:8px; }}
 .hslider-wrap label {{ color:#90a4ae; font-size:12px; }}
 .hslider-wrap input[type=range] {{ width:160px; accent-color:#1565c0; }}
@@ -942,7 +946,12 @@ function fixFigLayout(fig) {{
     const t = String(L.title.text);
     if (t.length > 30) {{
       const idx = t.indexOf('——');
-      L.title.text = (idx > 0 ? t.slice(0, idx) : t).trim();
+      if (idx > 0) {{
+        L.title.text = t.slice(0, idx).trim();
+      }} else {{
+        // 无“——”分隔符：按长度截断（原实现 idx=-1 → slice(0,-1) 只去掉末字符，几乎不精简）
+        L.title.text = t.slice(0, 26) + '…';
+      }}
     }}
     L.title.font = L.title.font || {{}};
     L.title.font.size = Math.min(L.title.font.size || 16, 15);
@@ -1197,12 +1206,29 @@ function currentCacheKey(key) {{
   if (ORDER_KEYS.includes(key)) return dir + '|' + key + '|order' + orderRows();
   return dir + '|' + key;
 }}
+const plotLoadSeq = {{}};
+function setLoading(key, on, msg) {{
+  const div = document.getElementById('plot-' + key);
+  if (!div) return;
+  let m = div.querySelector('.plot-loading');
+  if (on) {{
+    if (!m) {{ m = document.createElement('div'); m.className = 'plot-loading'; div.appendChild(m); }}
+    m.textContent = msg || '加载中…';
+  }} else if (m) {{
+    m.remove();
+  }}
+}}
 async function loadPlot(key) {{
   if (loadedPlots[key]) return;
   const div = document.getElementById('plot-' + key);
   if (!div) return;
   loadedPlots[key] = true;
   const ckey = currentCacheKey(key);
+  // [2026-09-30] 序号令牌：并发/快速切换时只有最后一次请求能管理遮罩与图例
+  const seq = (plotLoadSeq[key] = (plotLoadSeq[key] || 0) + 1);
+  // 加载中提示改为绝对定位遮罩（盖在旧图上，不替换 innerHTML），
+  // 避免与下方 HTML 图注/卡片说明重叠；finally 保证必然移除
+  setLoading(key, true, ORDER_KEYS.includes(key) ? ('加载中…（最多 ' + orderRows() + ' 阶）') : '加载中…');
   try {{
     let fig = null;
     // 1) 先查浏览器本地缓存（同一数据包二次查看秒开）
@@ -1223,10 +1249,14 @@ async function loadPlot(key) {{
     fig = fixFigLayout(fig);
     await Plotly.newPlot(div, fig.data, fig.layout,
                          {{responsive: true, displaylogo: false}});
-    addHtmlLegend(div.id, fig);
+    if (seq === plotLoadSeq[key]) addHtmlLegend(div.id, fig);
   }} catch(e) {{
-    div.innerHTML = '<div style="padding:24px;color:#ef5350;font-size:13px;">'
-      + '交互图加载失败（' + e + '）</div>';
+    if (seq === plotLoadSeq[key]) {{
+      div.innerHTML = '<div style="padding:24px;color:#ef5350;font-size:13px;">'
+        + '交互图加载失败（' + e + '）</div>';
+    }}
+  }} finally {{
+    if (seq === plotLoadSeq[key]) setLoading(key, false);
   }}
 }}
 // [2026-09-24 高阶互相关阶数] 12/18/19 画布支持"互相关阶数"输入框：
@@ -1251,10 +1281,7 @@ function applyOrder() {{
   const v = orderRows();
   el.value = v;
   ORDER_KEYS.forEach(k => {{ delete loadedPlots[k]; }});
-  ORDER_KEYS.forEach(k => {{
-    const div = document.getElementById('plot-' + k);
-    if (div) div.innerHTML = '<div class="note">加载中…（最多 ' + v + ' 阶）</div>';
-  }});
+  ORDER_KEYS.forEach(k => setLoading(k, true, '加载中…（最多 ' + v + ' 阶）'));
   ORDER_KEYS.forEach(loadPlot);
 }}
 // ===== 后台预取其他数据包（2026-09-22 新增）=====
