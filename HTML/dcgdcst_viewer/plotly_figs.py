@@ -637,10 +637,10 @@ def plot11_c_multi(npz: dict):
 # =====================================================================
 def _order_corr_figure(npz: dict, source: str, title: str,
                        order: int | None = None) -> go.Figure:
-    """12/18/19 共用：各阶频率域线性振幅谱（2026-09-24 扩展为可调阶数）
+    """12/18/19/20 共用：各阶频率域线性振幅谱（2026-09-24 扩展为可调阶数）
 
     source: "recon"(12, FSBL 重建后) / "preproc"(18, 预处理后未去噪)
-            / "sim"(19, SPECFEM 物理真值)
+            / "sim"(19, SPECFEM 物理真值) / "noise"(20, 合成噪声 n12/n15/n16)
     order:  最多绘制到第几阶（None → HIGH_ORDER_DEFAULT；上限
             HIGH_ORDER_MAX。只影响子图行数/显示，**不触发重算**——
             全部阶数已由 _get_high_order_orders 预计算并缓存）。
@@ -655,6 +655,9 @@ def _order_corr_figure(npz: dict, source: str, title: str,
         s = fix_phys(npz, npz["station_signals_phys"])
     elif source == "preproc":
         s = npz["x_preprocessed"]
+    elif source == "noise":
+        # [2026-09-30 图20] 合成观测中嵌入的实测噪声（= observations − clean_counts）
+        s = npz["noise_synth_embedded"]
     else:
         s = npz["signal_filtered"]
     s_b = bandpass_obspy_safe(s, fs, FREQ_BAND[0], FREQ_BAND[1])
@@ -949,6 +952,24 @@ def plot19_simulated_preprocessed_higher_order_corr(npz: dict,
         "MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
 
 
+def plot20_noise_higher_order_corr(npz: dict, order: int | None = None):
+    """20 合成噪声（n12/n15/n16）带通后直接高阶互相关（2026-09-30 新增）
+
+    用户：18 是三个合成月震记录（观测）的高阶互相关，另加噪声版——
+    用数据包 noise_synth_embedded（合成观测中嵌入的实测噪声，已验证
+    = observations − clean_counts，逐站 std=3）计算噪声的高阶互相关。
+    展示"纯噪声、无信号"时各阶互相关谱的形态（应为平坦无稳定峰），
+    与 19（纯信号）、18（含噪观测）、12（FSBL 重建后）形成四档对比。
+    制式与 12/18/19 完全一致（峰标注 + 理论振型虚线，阶数可调）。
+    """
+    return _order_corr_figure(npz, "noise",
+        "20 合成噪声（noise_synth_embedded n12/n15/n16）带通后直接高阶互相关："
+        "各阶频率域振幅谱（纯噪声参考：应为平坦、无稳定谱峰；"
+        "与 19 纯信号 / 18 含噪观测 / 12 FSBL 重建后对比；阶数可在画布"
+        "输入框调整，已预计算至 10 阶；金色虚线=理论球型 0S2-0S55，"
+        "MINEOS 计算 · VPREMOON 模型，≤20 mHz）", order)
+
+
 # =====================================================================
 # 注册表：key → 生成函数（供 dashboard /api/plot/<key> 使用）
 # =====================================================================
@@ -972,18 +993,19 @@ PLOT_FACTORIES = {
     "17": plot17_preprocessed_amp_spectrum,
     "18": plot18_preprocessed_higher_order_corr,
     "19": plot19_simulated_preprocessed_higher_order_corr,
+    "20": plot20_noise_higher_order_corr,
 }
 
 
 def get_figure(key: str, order: int | None = None):
     """按 key 生成 go.Figure。
 
-    order（仅 12/18/19 生效）：最多绘制到第几阶（None → HIGH_ORDER_DEFAULT）。
+    order（仅 12/18/19/20 生效）：最多绘制到第几阶（None → HIGH_ORDER_DEFAULT）。
     数据已按 HIGH_ORDER_MAX 预计算并缓存，切换阶数只做切片、不重算。
     """
     npz = load_npz()
     fn = PLOT_FACTORIES[key]
-    if key in ("12", "18", "19"):
+    if key in ("12", "18", "19", "20"):
         return fn(npz, order=order)
     return fn(npz)
 

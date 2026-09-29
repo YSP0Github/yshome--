@@ -77,6 +77,7 @@ IMAGE_GROUPS = [
         ("17", "17_preprocessed_amp_spectrum.png", "17 三站预处理后数据振幅谱（02 输出，目标频带阴影）"),
         ("18", "18_preprocessed_higher_order_corr.png", "18 预处理后数据直接高阶互相关（未去噪，12 号图样式）"),
         ("19", "19_simulated_preprocessed_higher_order_corr.png", "19 模拟数据（SPECFEM 真值 m）带通后直接高阶互相关（理论极限，与 18 含噪 / 12 FSBL 后对比）"),
+        ("20", "20_noise_higher_order_corr.png", "20 合成噪声（noise_synth_embedded n12/n15/n16）带通后直接高阶互相关（纯噪声参考，与 19 纯信号 / 18 含噪 / 12 FSBL 后对比）"),
     ]),
     ("A-5 仪器响应（待办 A）", [
         ("03", "03_response_units.png", "03 仪器响应幅度+相位，单位标注 counts/m（DISP 位移型）"),
@@ -282,7 +283,7 @@ def _fig_json(key: str, order: int | None = None) -> str:
     （plotly_figs 内部按数据源缓存），切换阶数只做切片出图、不重算。
     缓存键含 order，不同阶数的图互不干扰。
     """
-    if key in ("12", "18", "19"):
+    if key in ("12", "18", "19", "20"):
         o = HIGH_ORDER_DEFAULT if order is None else int(order)
         o = max(1, min(o, HIGH_ORDER_MAX))
         return get_figure(key, order=o).to_json()
@@ -635,11 +636,15 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             keys_js = []
             for key, png, caption in items:
                 keys_js.append(repr(key))
+                # [2026-09-30] 下载链接仅在静态 PNG 已生成时显示（避免 404）
+                png_link = ""
+                if (RUN_DIR / png).exists():
+                    png_link = (f'<a href="{png}?t={ts}" target="_blank" '
+                                f'class="png-link">下载 PNG</a>')
                 cards += (
                     f'<div class="card">'
                     f'<div class="plot-wrap"><div id="plot-{key}" class="plot-div"></div></div>'
-                    f'<div class="card-cap">{caption} · '
-                    f'<a href="{png}?t={ts}" target="_blank" class="png-link">下载 PNG</a>'
+                    f'<div class="card-cap">{caption} · {png_link}'
                     f'</div></div>')
             plot_groups_js += ("" if i == 0 else ",") + f'{i}:[{",".join(keys_js)}]'
             active = " active" if i == 0 else ""
@@ -820,7 +825,7 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
     <label for="corrOrderIn">互相关阶数</label>
     <input type="number" id="corrOrderIn" min="1" max="{HIGH_ORDER_MAX}" step="1" value="{HIGH_ORDER_DEFAULT}"
            style="width:56px;background:#0f1117;border:1px solid #2a2a4a;color:#e0e0e0;border-radius:4px;padding:4px 6px;font-size:13px;"
-           title="12/18/19 高阶互相关画布最多绘制到第几阶（已预计算至 {HIGH_ORDER_MAX} 阶，切换阶数无需重新计算管线）">
+           title="12/18/19/20 高阶互相关画布最多绘制到第几阶（已预计算至 {HIGH_ORDER_MAX} 阶，切换阶数无需重新计算管线）">
     <span id="corrOrderVal" style="color:#64b5f6;font-size:12px;min-width:auto;">（预计算至 {HIGH_ORDER_MAX} 阶）</span>
   </span>
   <button class="runbtn" style="margin-left:auto;" onclick="document.getElementById('pkgFile').click()"
@@ -1228,7 +1233,7 @@ async function loadPlot(key) {{
 // 输入 3 → 最多画到三阶；输入 5 → 最多画到五阶。全部阶数已由管线
 // 预计算至 {HIGH_ORDER_MAX} 阶并缓存，切换阶数只重新请求切片图 JSON，
 // 不触发管线/互相关重算。
-const ORDER_KEYS = ['12', '18', '19'];
+const ORDER_KEYS = ['12', '18', '19', '20'];
 function orderRows() {{
   const el = document.getElementById('corrOrderIn');
   const v = parseInt(el ? el.value : '', 10);
