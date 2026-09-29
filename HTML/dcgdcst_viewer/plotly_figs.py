@@ -31,6 +31,7 @@ from run_pipeline_v3_learning import (CORR_PLOT_BAND, FREQ_BAND, STATIONS,
                                       bandpass_obspy_safe)
 from dc_gdcst_dtfsbl_v2_learning import (
     advisor_high_order_corr,
+    advisor_slice_high_order_orders,
     compute_c_multi,
     corr_linear_spectrum,
     evaluate_in_band,
@@ -644,8 +645,8 @@ def _order_corr_figure(npz: dict, source: str, title: str,
             HIGH_ORDER_MAX。只影响子图行数/显示，**不触发重算**——
             全部阶数已由 _get_high_order_orders 预计算并缓存）。
 
-    每阶 3 条序列（C12/C23/C31 → C1223/C2331/C3112 → ……循环相邻
-    互相关），分别画线性坐标振幅谱 |FFT(c)|，标注各阶谱峰频率；
+    各阶序列数三角递减 3→2→1（一阶 C12/C23/C31 → 二阶 C1223/C2331 →
+    三阶 C12232331），分别画线性坐标振幅谱 |FFT(c)|，标注各阶谱峰频率；
     叠加理论球型 0S2-0S55 金色虚线+标注（shapes/annotations 循环外
     一次性提交，绕过 plotly 7.1 逐轮 update 的丢弃/重复缺陷）。
     """
@@ -660,7 +661,9 @@ def _order_corr_figure(npz: dict, source: str, title: str,
     res = _get_high_order_orders(source, s_b, fs)
     n_rows = max(1, min((HIGH_ORDER_DEFAULT if order is None else int(order)),
                         len(res["orders"])))
-    orders = res["orders"][:n_rows]
+    # [2026-09-30 用户口径] 算到 K 阶 → 第 k 行显示 min(3, K-k+1) 条
+    # （三角递减：K=3 → 3/2/1；K=4 → 3/3/2/1）。链条保留 C3112 可无限递推。
+    orders = advisor_slice_high_order_orders(res["orders"], n_rows)
 
     fig = make_subplots(rows=n_rows, cols=1, shared_xaxes=True,
                         vertical_spacing=0.04 if n_rows > 4 else 0.06,
@@ -718,8 +721,8 @@ def plot12_high_order_corr(npz: dict, order: int | None = None):
 
     用户口径：高阶互相关幅值随阶数递减是理论必然，**不做峰值幅度对比**；
     高阶互相关的价值在频率域**谱峰特征（位置/形状）随阶数的变化**。
-    故每阶（一阶 C12/C23/C31、二阶 C1223/C2331/C3112、三阶及以上……
-    每阶 3 条）分别画线性坐标振幅谱 |FFT(c)|，并标注各阶谱峰频率。
+    故各阶（一阶 C12/C23/C31、二阶 C1223/C2331、三阶 C12232331……
+    序列数三角递减 3→2→1）分别画线性坐标振幅谱 |FFT(c)|，并标注各阶谱峰频率。
     输入用 fix_phys 修正后的重建信号（与真值同尺度）。
     [2026-09-17 理论振型虚线] 叠加理论球型 0S2-0S5（金色虚线+标注）。
     [性能/正确性修复] shapes/annotations 全部收集后**循环外一次性**
@@ -909,8 +912,9 @@ def plot18_preprocessed_higher_order_corr(npz: dict, order: int | None = None):
     2026-09-24 扩展为可调阶数）
 
     三站预处理后数据直接做高阶互相关（未去噪），按 12 号图样式：
-    各阶频率域线性振幅谱（一阶 C12/C23/C31、二阶 C1223/C2331/C3112、
-    三阶及以上……每阶 3 条，阶数可在画布输入框调整，预计算至 10 阶）。
+    各阶频率域线性振幅谱（一阶 C12/C23/C31、二阶 C1223/C2331、
+    三阶 C12232331……序列数三角递减 3→2→1，阶数可在画布输入框调整，
+    预计算至 10 阶）。
     与 12 号（FSBL 重建后）对比，可见 FSBL 提取效果。
     [2026-09-17 理论振型虚线] 叠加理论球型 0S2-0S5（金色虚线+标注）；
     shapes 循环外一次性提交（与 plot12 相同的正确性/性能修复）。
@@ -931,7 +935,8 @@ def plot19_simulated_preprocessed_higher_order_corr(npz: dict,
     用户：第一页底部再加"模拟数据预处理后的高阶互相关"。
     口径：npz["signal_filtered"] = SPECFEM 模拟物理真值（位移 m），
     纯净（无噪声、无仪器响应），带通 [0.001,0.012] Hz 后直接做高阶
-    互相关（每阶 3 条，阶数可在画布输入框调整，预计算至 10 阶）——
+    互相关（序列数三角递减 3→2→1，阶数可在画布输入框调整，预计算至
+    10 阶）——
     展示"信号完美、噪声为零"时各阶互相关谱的理论形态，
     与 18（含噪观测预处理后，看噪声污染）、12（FSBL 重建后，看去噪效果）
     形成三档对比。制式与 12/18 完全一致（峰标注 + 理论振型虚线）。

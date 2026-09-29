@@ -373,13 +373,13 @@ def max_sigma2_conservative_init(
 # =====================================================================
 # [新问题 11 + 待办 B] 导师 3→2→1 高阶互相关
 # ---------------------------------------------------------------------
-# 导师方法（2026-09-17 确认配对规则；2026-09-24 扩展为任意阶数）：
+# 导师方法（2026-09-17 确认配对规则；2026-09-24 扩展为任意阶数；
+# 2026-09-30 定稿：计算层循环闭合可无限递推，显示层按 K 阶三角裁剪）：
 #   一阶：C12、C23、C31（三个两两互相关，注意方向 C31 非 C13）
-#   二阶：C1223 = C12∘C23、C2331 = C23∘C31、C3112 = C31∘C12
-#   三阶：上一阶 3 条序列的循环相邻互相关（同样 3 条）
-#   …… 每阶固定 3 条（3 站循环闭合），理论上可无限递推；
-#   本实现默认预计算到 max_order=10 阶，供面板画布随时切换显示，
-#   切换阶数时不再重算。
+#   二阶：C1223 = C12∘C23、C2331 = C23∘C31、C3112 = C31∘C12（循环相邻配对）
+#   三阶：上一阶 3 条序列的循环相邻互相关（同样 3 条）……依此类推，可无限递推。
+#   [2026-09-30 用户口径] 显示时算到 K 阶 → 第 k 行只显示 min(3, K-k+1) 条
+#   （三角递减：K=3 → 3/2/1；K=4 → 3/3/2/1），见 advisor_slice_high_order_orders()。
 # 目的：逐级压制各台独立残差噪声，凸显三站共有的自由振荡成分。
 # 替代原 extract_free_oscillations 中的"单参考截断"版
 # （原实现：C12、C13 → corr(C12, C13)，缺 C23，非 3→2→1）。
@@ -402,11 +402,15 @@ def advisor_high_order_corr(
 ) -> dict:
     """[新问题 11 + 待办 B] 导师 3→2→1 层级高阶互相关提取（可算到任意阶）
 
-    配对规则（3 站循环闭合，每阶 3 条序列）：
+    配对规则（3 站循环闭合，每阶 3 条，可无限递推）：
       一阶: C12 = corr(s1,s2)、C23 = corr(s2,s3)、C31 = corr(s3,s1)
       二阶: C1223 = corr(C12,C23)、C2331 = corr(C23,C31)、C3112 = corr(C31,C12)
       三阶: 上一阶 3 条序列的循环相邻互相关（同 3 条）……依此类推。
     序列命名递推：name_k_i = name_{k-1}_i + name_{k-1}_{(i+1)%3}[1:]（去掉前导 C）。
+    [2026-09-30 用户口径] 显示三角递减：算到 K 阶时第 k 行只显示
+    min(3, K-k+1) 条（如 K=3 → 一阶 3/二阶 2/三阶 1；K=4 → 一阶 3/二阶
+    3/三阶 2/四阶 1）。裁剪逻辑见 advisor_slice_high_order_orders()，
+    本函数返回完整 3 条/阶的链条（含 C3112，保证可一直算下去）。
 
     参数:
       signals  — (n_stations, n_samples) 三台站重建信号 ŝ_j
@@ -421,10 +425,12 @@ def advisor_high_order_corr(
 
     返回 dict:
       c12/c23/c31   — 一阶互相关（全延迟，mode="full"，原始幅值）
-      c1223/c2331/c3112 — 二阶互相关（三条，归一化互相关）
+      c1223/c2331/c3112 — 二阶互相关（三条循环相邻配对，归一化互相关）
       c3            — 三阶互相关（= orders[2].sequences[0]，兼容旧调用）
       orders        — 列表，每项 {"order", "label",
                         "sequences": [{"name","short","c"}, ...]}，共 max_order 阶
+                      （循环闭合下每阶恒 3 条，可无限递推；显示按 K 阶裁剪为
+                      三角递减，见 advisor_slice_high_order_orders()）
                       name=完整配对链名（如 C12232331）；short=图例短标签
                       （前 3 阶用完整名，更高阶用 "C12 链/C23 链/C31 链"）
       spectrum      — (freqs, psd) C3 的功率谱（在目标频带内提谱峰用）
@@ -479,7 +485,9 @@ def advisor_high_order_corr(
                       for n, c in zip(names, seqs)],
     }]
 
-    # ---- 二阶及以上：上一阶 3 条序列的循环相邻互相关（每阶 3 条）----
+    # ---- 二阶及以上：上一阶序列循环相邻配对互相关（每阶 3 条，可无限递推）----
+    # 显示时按"算到 K 阶"裁剪：第 k 行显示 min(3, K-k+1) 条（三角递减），
+    # 见 advisor_slice_high_order_orders()。计算层保留完整 3 条/阶链条。
     for k in range(2, max_order + 1):
         a, b, c = (_normalized(_central(x, keep_len)) for x in seqs)
         nxt = [_fft_corr(a, b), _fft_corr(b, c), _fft_corr(c, a)]
@@ -496,7 +504,7 @@ def advisor_high_order_corr(
         })
         names, seqs = nm, nxt
 
-    # ---- 兼容旧调用键（别名到新结构）----
+    # ---- 兼容旧调用键（别名到新结构；循环闭合下二阶 3 条全保留）----
     c1223 = orders[1]["sequences"][0]["c"]
     c2331 = orders[1]["sequences"][1]["c"]
     c3112 = orders[1]["sequences"][2]["c"]
@@ -521,6 +529,28 @@ def advisor_high_order_corr(
         "spectrum": (freqs, c3_fft),
         "peak_freqs": peak_freqs,
     }
+
+
+def advisor_slice_high_order_orders(orders: list, max_order: int) -> list:
+    """[2026-09-30 用户口径] 按"算到 K 阶"裁剪高阶互相关显示结构。
+
+    用户规则：算到 K 阶时，第 k 行显示 min(3, K-k+1) 条序列（三角递减）。
+       K=3 → 一阶 3 / 二阶 2 / 三阶 1
+       K=4 → 一阶 3 / 二阶 3 / 三阶 2 / 四阶 1
+       K≥5 → 一阶..(K-2)阶各 3 条，倒数第二阶 2 条，最末阶 1 条
+    输入 orders 为 advisor_high_order_corr 的完整链条（每阶 3 条）；
+    返回只保留前 max_order 阶、每阶截取前 min(3, max_order-k+1) 条的副本。
+    """
+    out = []
+    for o in orders[:max_order]:
+        k = o["order"]
+        n_show = max(1, min(3, max_order - k + 1))
+        out.append({
+            "order": o["order"],
+            "label": o["label"],
+            "sequences": o["sequences"][:n_show],
+        })
+    return out
 
 
 # =====================================================================

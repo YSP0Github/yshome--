@@ -102,6 +102,7 @@ from dc_gdcst_dtfsbl_v2_learning import (          # noqa: E402
     bandpass_obspy_safe,                           # 新问题 12：ObsPy 带通
     compute_c_multi,                               # 新问题 09 / 待办 F
     advisor_high_order_corr,                       # 新问题 11 / 待办 B
+    advisor_slice_high_order_orders,               # 2026-09-30：显示三角裁剪
     instrument_response_unit_aware,                # 新问题 07 / 待办 A
     test_delta_tau_vs_theory,                      # 新问题 14 / 待办 D
     build_learning_config,                         # 新问题 03：max_iter=8000
@@ -639,16 +640,17 @@ def plot_high_order_corr(npz: dict):
     [新问题 11 / 待办 B] 导师 3→2→1 高阶互相关。
     用户口径：高阶互相关幅值随阶数递减是理论必然，**不做峰值幅度对比**；
     要看各阶互相关**频率域谱峰特征（位置/形状）**的变化。
-    2026-09-24 起每阶固定 3 条序列（3 站循环闭合：一阶 C12/C23/C31、
-    二阶 C1223/C2331/C3112、三阶及以上为上一阶循环相邻互相关），
-    默认计算并绘制到 10 阶；每阶分别画线性坐标振幅谱 |FFT(c)| 并标注
+    2026-09-30 起序列数三角递减 3→2→1（一阶 C12/C23/C31、
+    二阶 C1223/C2331、三阶 C12232331，3 站至多 3 阶），
+    每阶分别画线性坐标振幅谱 |FFT(c)| 并标注
     谱峰频率。输入用 _fix_phys 修正后的重建信号（与真值同尺度）。
     """
     fs = float(npz["fs_hz"])
     s = _fix_phys(npz, npz["station_signals_phys"])
     s_b = bandpass_obspy_safe(s, fs, FREQ_BAND[0], FREQ_BAND[1])
     res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
-    orders = res["orders"]
+    # [2026-09-30 用户口径] 静态 PNG 固定按 3 阶显示三角（3/2/1 条）
+    orders = advisor_slice_high_order_orders(res["orders"], 3)
     n_rows = len(orders)
     fig, axes = plt.subplots(n_rows, 1, figsize=(14, 2.0 + 3.4 * n_rows),
                              sharex=True)
@@ -867,13 +869,14 @@ def plot_preprocessed_high_order_corr(npz: dict):
     2026-09-24 扩展为全阶数）
 
     三站预处理后数据直接做高阶互相关（未去噪），按 12 号图样式：
-    各阶频率域线性振幅谱（每阶 3 条序列，默认计算并绘制到 10 阶）。
+    各阶频率域线性振幅谱（序列数三角递减 3→2→1，3 站至多 3 阶）。
     """
     fs = float(npz["fs_hz"])
     x = npz["x_preprocessed"]
     s_b = bandpass_obspy_safe(x, fs, FREQ_BAND[0], FREQ_BAND[1])
     res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
-    orders = res["orders"]
+    # [2026-09-30 用户口径] 静态 PNG 固定按 3 阶显示三角（3/2/1 条）
+    orders = advisor_slice_high_order_orders(res["orders"], 3)
     n_rows = len(orders)
     fig, axes = plt.subplots(n_rows, 1, figsize=(14, 2.0 + 3.4 * n_rows),
                              sharex=True)
@@ -930,7 +933,7 @@ def plot_simulated_preprocessed_high_order_corr(npz: dict):
 
     模拟数据（SPECFEM 物理真值 signal_filtered，位移 m）带通后直接做
     高阶互相关，按 12/18 号图样式：各阶频率域线性振幅谱 + 谱峰标注 +
-    理论球型振型虚线（每阶 3 条序列，默认计算并绘制到 10 阶）。
+    理论球型振型虚线（序列数三角递减 3→2→1，3 站至多 3 阶）。
     理论极限参考档（无噪声、无仪器响应），与 18（含噪观测）/
     12（FSBL 重建后）对比。
     """
@@ -938,7 +941,8 @@ def plot_simulated_preprocessed_high_order_corr(npz: dict):
     s = npz["signal_filtered"]
     s_b = bandpass_obspy_safe(s, fs, FREQ_BAND[0], FREQ_BAND[1])
     res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
-    orders = res["orders"]
+    # [2026-09-30 用户口径] 静态 PNG 固定按 3 阶显示三角（3/2/1 条）
+    orders = advisor_slice_high_order_orders(res["orders"], 3)
     n_rows = len(orders)
     fig, axes = plt.subplots(n_rows, 1, figsize=(14, 2.0 + 3.4 * n_rows),
                              sharex=True)
@@ -1022,8 +1026,10 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
     s_b = bandpass_obspy_safe(recon_phys, fs, FREQ_BAND[0], FREQ_BAND[1])
     res = advisor_high_order_corr(s_b, fs, freq_band=FREQ_BAND)
     corr_spec = {}
-    # 旧键兼容（一/二/三阶代表序列）
+    # 旧键兼容（一/二/三阶代表序列；c3112 在 3→2→1 三角结构下为 None，跳过）
     for k in ("c12", "c23", "c31", "c1223", "c2331", "c3112", "c3"):
+        if res[k] is None:
+            continue
         f, a = corr_linear_spectrum(res[k], fs, FREQ_BAND)
         corr_spec[f"corr_{k}_freqs"] = f
         corr_spec[f"corr_{k}_amp"] = a
@@ -1073,11 +1079,10 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
         "spec_recon_phys": spec_recon[:, m],
         "spec_common_phys": spec_common[m],
         "spec_truth_mean_phys": spec_tm[m],
-        # 高阶互相关（旧键兼容）
+        # 高阶互相关（旧键兼容；c3112 三角结构下不存在，跳过）
         "corr_c12": res["c12"], "corr_c23": res["c23"],
         "corr_c31": res["c31"], "corr_c1223": res["c1223"],
-        "corr_c2331": res["c2331"], "corr_c3112": res["c3112"],
-        "corr_c3": res["c3"],
+        "corr_c2331": res["c2331"], "corr_c3": res["c3"],
         # 高阶互相关全阶数（2026-09-24：每阶 3 条序列，共 max_order 阶）
         "high_order_max": len(res["orders"]),
     }
