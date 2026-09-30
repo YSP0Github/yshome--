@@ -164,13 +164,9 @@ def _snr_note_html(m: dict) -> str:
     if _target_v is not None:
         parts.append(f"目标 SNR = {_target_v:g} dB")
     if _sta_vals:
-        _sta_names = m.get("stations", ["S12", "S15", "S16"])
         _vals = " / ".join(f"{v:.2f}" for v in _sta_vals)
         parts.append(f"逐站实测 = {_vals} dB")
-    parts.append(
-        "顶栏为三站平均（公共）口径：信号三站相关、噪声三站独立，"
-        "平均后噪声被部分抵消，故公共 SNR 比逐站高（正常现象，非控制失效）")
-    return "SNR 口径：" + "；".join(parts) + "。"
+    return "SNR 口径：" + "；".join(parts) + "。" if parts else ""
 
 def run_pipeline_thread(input_snr: float | None = None,
                         out_root: str | None = None):
@@ -664,19 +660,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             '<button class="navbtn" onclick="showTab(8)">'
             '参数总览（中间计算）</button>')
         # 指标卡
-        snr_improve = m.get("snr_output_db", 0) - m.get("snr_input_db", 0)
-        # [2026-09-18 口径标注] 顶栏 SNR 输入卡注明"公共·三站平均"；
-        # 目标 SNR 与逐站实测值在下方 note 行展示（详见 _snr_note_parts）。
+        # [2026-09-30] SNR 输入优先用目标设定值（与目录名 snr-XX 一致、逐站相同），
+        # 无目标时回退到 metadata 的 snr_input_db
         _target_v = m.get("target_snr_db")
-        _sta_vals = m.get("snr_input_per_station") or []
-        _snr_in_label = ("SNR 输入 (dB, 公共·三站平均)"
-                         if (_target_v is not None or _sta_vals)
-                         else "SNR 输入 (dB)")
+        _snr_in_val = _target_v if _target_v is not None else m.get("snr_input_db", 0)
+        snr_improve = m.get("snr_output_db", 0) - _snr_in_val
+        _snr_in_label = "SNR 输入 (dB)"
         metric_cards = ""
         _metric_ids = ["m-snr-in", "m-snr-out", "m-snr-gain",
                        "m-corr", "m-iter", "m-atoms"]
         for _i, (label, value, fmt, good_when) in enumerate([
-            (_snr_in_label, m.get("snr_input_db", 0), ".2f",
+            (_snr_in_label, _snr_in_val, ".2f",
              lambda v: v >= 0),
             ("SNR 输出 (dB)", m.get("snr_output_db", 0), ".2f",
              lambda v: v >= 0),
@@ -1531,7 +1525,9 @@ async function refreshPkgSelect() {{
       h += '<option value="' + esc(p.dir) + '"' +
            (p.dir === cur ? ' selected' : '') + '>' +
            esc(p.name + ' [' + p.kind + '] 目标SNR入' + p.snr_in +
-               '出' + p.snr_out + 'dB corr' + p.corr + tag) + '</option>';
+               '/预处理' + (p.snr_pre || '—') +
+               '/平均' + (p.snr_in_avg || '—') +
+               '/出' + p.snr_out + 'dB corr' + p.corr + tag) + '</option>';
     }});
     sel.innerHTML = h;
   }} catch (e) {{
@@ -1564,9 +1560,12 @@ function updateMetrics() {{
           }}
         }} catch (e) {{}}
       }};
-      setV('m-snr-in', mt.snr_input_db, 'f2');
+      // [2026-09-30] SNR 输入优先用目标设定值
+      const snrInVal = (mt.target_snr_db !== undefined && mt.target_snr_db !== null)
+                        ? mt.target_snr_db : mt.snr_input_db;
+      setV('m-snr-in', snrInVal, 'f2');
       setV('m-snr-out', mt.snr_output_db, 'f2');
-      setV('m-snr-gain', (Number(mt.snr_output_db) - Number(mt.snr_input_db)), 'f2');
+      setV('m-snr-gain', (Number(mt.snr_output_db) - Number(snrInVal)), 'f2');
       setV('m-corr', mt.correlation, 'f4');
       setV('m-iter', mt.n_iterations, 's');
       setV('m-atoms', mt.n_active_atoms, 's');
@@ -1623,7 +1622,7 @@ function openPkgList() {{
   fetch('api/packages').then(function (r) {{ return r.json(); }}).then(function (d) {{
     if (!d.ok || !d.packages) {{ body.innerHTML = '<div style="color:#ef5350;">接口返回异常</div>'; return; }}
     const cur = d.current || '';
-    const cols = ['包名', '事件日期', '台站', '类型', '目标SNR入(dB)', '公共SNR入(dB)', 'SNR出(dB)', 'corr', '时长(h)', '状态'];
+    const cols = ['包名', '事件日期', '台站', '类型', '目标SNR入(dB)', '预处理SNR(dB)', '平均SNR入(dB)', 'SNR出(dB)', 'corr', '时长(h)', '状态'];
     let h = '<table class="pkg-table"><thead><tr>';
     cols.forEach(function (c) {{ h += '<th>' + c + '</th>'; }});
     h += '</tr></thead><tbody>';
@@ -1635,7 +1634,8 @@ function openPkgList() {{
       h += '<td>' + esc(p.stations || '—') + '</td>';
       h += '<td><span class="pkg-badge ' + (p.kind === '合成' ? 'syn' : 'real') + '">' + esc(p.kind) + '</span></td>';
       h += '<td>' + esc(p.snr_in) + '</td>';
-      h += '<td>' + esc(p.snr_in_common || '—') + '</td>';
+      h += '<td>' + esc(p.snr_pre || '—') + '</td>';
+      h += '<td>' + esc(p.snr_in_avg || '—') + '</td>';
       h += '<td>' + esc(p.snr_out) + '</td>';
       h += '<td>' + esc(p.corr) + '</td>';
       h += '<td>' + esc(p.duration_h) + '</td>';
@@ -1731,6 +1731,37 @@ refreshPkgSelect();
     def log_message(self, format, *args):
         pass  # 静默 HTTP 请求日志
 
+_SNR_PRE_CACHE: dict = {}
+
+def _calc_preprocessed_snr(npz_path) -> str:
+    """计算预处理后带内 SNR = 10·log10(Σ(clean_bp)² / Σ(noise_bp)²)。
+    noise_bp = bandpass(observations - clean_counts)（实际嵌入噪声）。
+    """
+    key = str(npz_path)
+    if key in _SNR_PRE_CACHE:
+        return _SNR_PRE_CACHE[key]
+    try:
+        import numpy as np
+        d = dict(np.load(npz_path, allow_pickle=True))
+        fs = float(d["fs_hz"])
+        # 与本地口径一致：bandpass 从 plotly_figs 引入的模块读取
+        import plotly_figs as _pf
+        bandpass_obspy_safe = _pf.bandpass_obspy_safe
+        FREQ_BAND = _pf.FREQ_BAND
+        noise_actual = d["observations"] - d["clean_counts"]
+        clean_bp = bandpass_obspy_safe(d["clean_counts"], fs, FREQ_BAND[0], FREQ_BAND[1])
+        noise_bp = bandpass_obspy_safe(noise_actual, fs, FREQ_BAND[0], FREQ_BAND[1])
+        p_sig = float(np.sum(clean_bp ** 2))
+        p_noise = float(np.sum(noise_bp ** 2))
+        if p_noise < 1e-30:
+            result = "—"
+        else:
+            result = f"{10 * np.log10(p_sig / p_noise):.2f}"
+    except Exception:
+        result = "—"
+    _SNR_PRE_CACHE[key] = result
+    return result
+
 def list_packages():
     """[2026-09-22 新增] 扫描 DATA_ROOT 下所有含 metadata.json 的数据包目录，
     返回可展示的信息列表（包名/台站/事件日期/合成或实测/SNR入出/corr/时长）。
@@ -1762,14 +1793,17 @@ def list_packages():
         pkg_dir = meta_file.parent if (meta_file.parent.name.startswith("event_") or
                                        meta_file.parent.name.lower().startswith("exp")) else d
         mc = m.get("metrics_common", {}) or {}
-        snr_in_common = mc.get("snr_input_db")
+        # [2026-09-30] 平均 SNR 入 = 各站 snr_input_db 的算术平均，无则回退公共
+        _per_sta = [s.get("snr_input_db") for s in (m.get("metrics_per_station") or [])
+                    if s.get("snr_input_db") is not None]
+        snr_in_avg = (sum(_per_sta) / len(_per_sta)) if _per_sta else mc.get("snr_input_db")
         snr_out = mc.get("snr_output_db")
         corr = mc.get("correlation")
         # [2026-09-22 统一] 列表 SNR 入优先用目标 SNR（和目录名一致），无则回退公共
         _ctrl = m.get("input_snr_control", {}) or {}
         snr_in = _ctrl.get("target_snr_db")
         if snr_in is None:
-            snr_in = snr_in_common
+            snr_in = snr_in_avg
         # 事件日期：event_token（合成时间戳）或 event
         et = m.get("event_token") or ""
         if len(et) >= 15:
@@ -1791,7 +1825,7 @@ def list_packages():
         stations = "/".join(m.get("stations", [])) or "—"
         # [2026-09-22 统一包名] 优先用 metadata 构造显示名（和本地一致），
         # 无 target_snr 则回退目录名；重复名追加日期后缀
-        if snr_in is not None and snr_in != snr_in_common:
+        if snr_in is not None and snr_in != snr_in_avg:
             _tgt_str = f"{float(snr_in):g}"
             _disp = f"exp014_full_pipeline_snr{_tgt_str}"
         else:
@@ -1807,6 +1841,12 @@ def list_packages():
             _disp = _disp + (f"_{_date_suf}" if _date_suf else f"_v{_name_seen[_disp]}")
         else:
             _name_seen[_disp] = 1
+        # [2026-09-30] 预处理后 SNR（从绘制用 npz 计算，带缓存）
+        _npz = None
+        for _cand in (list(pkg_dir.rglob("all_intermediate_results.npz"))):
+            _npz = _cand
+            break
+        snr_pre = _calc_preprocessed_snr(_npz) if _npz else "—"
         out.append({
             "name": _disp,
             "dir": str(pkg_dir),
@@ -1814,7 +1854,8 @@ def list_packages():
             "event_date": ev,
             "kind": kind,
             "snr_in": "-" if snr_in is None else f"{float(snr_in):.2f}",
-            "snr_in_common": "-" if snr_in_common is None else f"{float(snr_in_common):.2f}",
+            "snr_pre": snr_pre,
+            "snr_in_avg": "-" if snr_in_avg is None else f"{float(snr_in_avg):.2f}",
             "snr_out": "-" if snr_out is None else f"{float(snr_out):.2f}",
             "corr": "-" if corr is None else f"{float(corr):.4f}",
             "duration_h": str(duration_h),

@@ -48,7 +48,7 @@ NPZ_PATH = Path(r"G:\PhD\04_methods\18_DC-GDCST+DT-FSBL"
 def set_npz_path(path) -> None:
     """切换交互图数据源（dashboard 按当前 SNR 结果目录调用）并清缓存"""
     global NPZ_PATH, _NPZ_CACHE
-    NPZ_PATH = Path(path)
+    NPZ_PATH = Path(path).resolve()
     _NPZ_CACHE = None
     _HIGH_ORDER_CACHE.clear()
 
@@ -296,24 +296,60 @@ def plot01_input(npz: dict):
 # =====================================================================
 # 02 预处理：ObsPy 零相位带通（每站一行）
 # =====================================================================
-def plot02_preprocessed(npz: dict):
+def plot02_preprocessed(npz: dict, show_noresp: bool = False):
+    """02 预处理后时域对比（合成月震记录 / 噪声 / 纯信号经仪器响应）
+
+    show_noresp=True 时额外叠加纯信号不经仪器响应（signal_filtered，物理域 m，
+    归一化到 counts 尺度以便同图比较）。
+    """
     fs = float(npz["fs_hz"])
     n = npz["observations"].shape[1]
     t = np.arange(n) / fs
     step = max(1, n // 4000)
     t_d = t[::step]
     x_re = bandpass_obspy_safe(npz["x_preprocessed"], fs, FREQ_BAND[0], FREQ_BAND[1])
+    # [2026-09-30] noise_synth_embedded 存的是未缩放原始噪声（std=3），
+    # 实际嵌入观测的噪声 = observations - clean_counts（含缩放 scale，std≈360）。
+    # 用后者才能在图上正确反映 SNR 比例（-30 dB 时噪声 >> 信号）。
+    noise_actual = npz["observations"] - npz["clean_counts"]
+    noise_bp = bandpass_obspy_safe(noise_actual, fs, FREQ_BAND[0], FREQ_BAND[1])
+    clean_bp = bandpass_obspy_safe(npz["clean_counts"], fs, FREQ_BAND[0], FREQ_BAND[1])
+    titles = [f"{st}: 合成月震记录 / 噪声 / 纯信号(H)" for st in STATIONS]
+    if show_noresp:
+        titles = [f"{st}: +纯信号(无H, 归一化)" for st in STATIONS]
+        titles = [f"{STATIONS[j]}: 合成月震记录 / 噪声 / 纯信号(H) / 纯信号(无H)"
+                  for j in range(3)]
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.05,
-                        subplot_titles=[f"{st}: 预处理后" for st in STATIONS])
+                        subplot_titles=titles)
     for j, st in enumerate(STATIONS):
-        fig.add_trace(go.Scatter(x=t_d, y=x_re[j][::step], name=st,
+        r = j + 1
+        fig.add_trace(go.Scatter(x=t_d, y=x_re[j][::step], name=f"{st} 合成月震记录",
                                  mode="lines", line=dict(color=_COLORS["blue"], width=1)),
-                      row=j + 1, col=1)
-        fig.update_yaxes(title_text="counts", row=j + 1, col=1)
+                      row=r, col=1)
+        fig.add_trace(go.Scatter(x=t_d, y=noise_bp[j][::step], name=f"{st} 噪声",
+                                 mode="lines", line=dict(color=_COLORS["red"], width=0.8)),
+                      row=r, col=1)
+        fig.add_trace(go.Scatter(x=t_d, y=clean_bp[j][::step], name=f"{st} 纯信号(H)",
+                                 mode="lines",
+                                 line=dict(color=_COLORS["green"], width=0.8, dash="dash")),
+                      row=r, col=1)
+        if show_noresp:
+            sig = npz["signal_filtered"][j]
+            sig_bp = bandpass_obspy_safe(sig, fs, FREQ_BAND[0], FREQ_BAND[1])
+            # 归一化到 counts 尺度（按 std 匹配 clean_counts）
+            scale = float(np.std(clean_bp[j]) / max(np.std(sig_bp), 1e-30))
+            fig.add_trace(go.Scatter(x=t_d, y=sig_bp[::step] * scale,
+                                     name=f"{st} 纯信号(无H, 归一化)",
+                                     mode="lines",
+                                     line=dict(color=_COLORS["purple"], width=0.8,
+                                               dash="dot")),
+                          row=r, col=1)
+        fig.update_yaxes(title_text="counts", row=r, col=1)
     fig.update_xaxes(title_text="时间 (s)", row=3, col=1)
-    fig.update_layout(**_base_layout(
-        "02 预处理：A-2 去均值 / A-3 去趋势 / A-4 ObsPy 零相位带通 "
-        f"[{FREQ_BAND[0]}, {FREQ_BAND[1]}] Hz（问题 12）", height=720))
+    title = "02 预处理后时域（合成月震记录 / 噪声 / 纯信号）"
+    if show_noresp:
+        title += "——纯信号(无H)已归一化到 counts 尺度"
+    fig.update_layout(**_base_layout(title))
     return fig
 
 
@@ -880,28 +916,61 @@ def plot16_freq_amp_spectrum(npz: dict):
 # 输入 = 02 预处理后数据 x_preprocessed（counts 域，去趋势+带通）。
 # 线性振幅谱 |FFT(x)|，全频带（可交互缩放），目标频带 [0.001,0.012] Hz 阴影。
 # =====================================================================
-def plot17_preprocessed_amp_spectrum(npz: dict):
+def plot17_preprocessed_amp_spectrum(npz: dict, show_noresp: bool = False):
+    """17 预处理后振幅谱对比（合成月震记录 / 噪声 / 纯信号经仪器响应）
+
+    show_noresp=True 时额外叠加纯信号不经仪器响应（signal_filtered，归一化）。
+    """
     fs = float(npz["fs_hz"])
     x = npz["x_preprocessed"]
     n = x.shape[1]
     freqs = np.fft.rfftfreq(n, 1.0 / fs)
-    spec = np.abs(np.fft.rfft(x, n=n, axis=1)) * (2.0 / n)
+    spec_obs = np.abs(np.fft.rfft(x, n=n, axis=1)) * (2.0 / n)
+    # [2026-09-30] 用实际嵌入噪声（observations - clean_counts），非未缩放的 noise_synth_embedded
+    noise_actual = npz["observations"] - npz["clean_counts"]
+    noise_bp = bandpass_obspy_safe(noise_actual, fs, FREQ_BAND[0], FREQ_BAND[1])
+    spec_noise = np.abs(np.fft.rfft(noise_bp, n=n, axis=1)) * (2.0 / n)
+    clean_bp = bandpass_obspy_safe(npz["clean_counts"], fs, FREQ_BAND[0], FREQ_BAND[1])
+    spec_clean = np.abs(np.fft.rfft(clean_bp, n=n, axis=1)) * (2.0 / n)
+    if show_noresp:
+        sig_bp = bandpass_obspy_safe(npz["signal_filtered"], fs, FREQ_BAND[0], FREQ_BAND[1])
+        spec_sig = np.abs(np.fft.rfft(sig_bp, n=n, axis=1)) * (2.0 / n)
+    sub_titles = [f"{st}: 合成月震记录 / 噪声 / 纯信号(H)" for st in STATIONS]
+    if show_noresp:
+        sub_titles = [f"{st}: 合成月震记录 / 噪声 / 纯信号(H) / 纯信号(无H)"
+                      for st in STATIONS]
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.05,
-                        subplot_titles=[f"{st}: 预处理后数据振幅谱" for st in STATIONS])
+                        subplot_titles=sub_titles)
     for j, st in enumerate(STATIONS):
         r = j + 1
-        fig.add_trace(go.Scatter(x=freqs, y=spec[j], name=f"{st} |X(f)|",
+        fig.add_trace(go.Scatter(x=freqs, y=spec_obs[j], name=f"{st} 合成月震记录",
                                  mode="lines", line=dict(color=_COLORS["blue"], width=1)),
                       row=r, col=1)
+        fig.add_trace(go.Scatter(x=freqs, y=spec_noise[j], name=f"{st} 噪声",
+                                 mode="lines", line=dict(color=_COLORS["red"], width=0.8)),
+                      row=r, col=1)
+        fig.add_trace(go.Scatter(x=freqs, y=spec_clean[j], name=f"{st} 纯信号(H)",
+                                 mode="lines",
+                                 line=dict(color=_COLORS["green"], width=0.8, dash="dash")),
+                      row=r, col=1)
+        if show_noresp:
+            # 归一化到 counts 尺度
+            scale = float(np.std(spec_clean[j]) / max(np.std(spec_sig[j]), 1e-30))
+            fig.add_trace(go.Scatter(x=freqs, y=spec_sig[j] * scale,
+                                     name=f"{st} 纯信号(无H, 归一化)",
+                                     mode="lines",
+                                     line=dict(color=_COLORS["purple"], width=0.8,
+                                               dash="dot")),
+                          row=r, col=1)
         fig.add_vrect(x0=FREQ_BAND[0], x1=FREQ_BAND[1], fillcolor="green",
                       opacity=0.08, line_width=0, row=r, col=1)
         fig.update_yaxes(title_text="|X(f)|（线性）", row=r, col=1)
-    fig.update_xaxes(title_text="频率 (Hz)", row=4 if False else 3, col=1)
+    fig.update_xaxes(title_text="频率 (Hz)", row=3, col=1)
     fig.update_xaxes(range=[0.0, 0.02], row=3, col=1)
-    fig.update_layout(**_base_layout(
-        "17 三站预处理后数据振幅谱（02 预处理：去趋势+带通，counts 域；"
-        "绿色阴影 = 目标频带 [0.001,0.012] Hz；可缩放查看低频细节）",
-        height=820))
+    title = "17 预处理后振幅谱（合成月震记录 / 噪声 / 纯信号）"
+    if show_noresp:
+        title += "——纯信号(无H)已归一化到 counts 尺度"
+    fig.update_layout(**_base_layout(title))
     return fig
 
 
@@ -987,16 +1056,19 @@ PLOT_FACTORIES = {
 }
 
 
-def get_figure(key: str, order: int | None = None):
+def get_figure(key: str, order: int | None = None, show_noresp: bool = False):
     """按 key 生成 go.Figure。
 
     order（仅 12/18/19/20 生效）：最多绘制到第几阶（None → HIGH_ORDER_DEFAULT）。
+    show_noresp（仅 02/17 生效）：是否叠加纯信号不经仪器响应的曲线。
     数据已按 HIGH_ORDER_MAX 预计算并缓存，切换阶数只做切片、不重算。
     """
     npz = load_npz()
     fn = PLOT_FACTORIES[key]
     if key in ("12", "18", "19", "20"):
         return fn(npz, order=order)
+    if key in ("02", "17"):
+        return fn(npz, show_noresp=show_noresp)
     return fn(npz)
 
 
