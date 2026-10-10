@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SeisY｜地震、月震与行星地震数据处理平台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230D1B2A'/%3E%3Cpath d='M4 16h5l3-8 4 16 3-10 2 2h7' stroke='%23FFB627' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Chakra+Petch:wght@500;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#0D1B2A; --bg2:#1B263B; --bg3:#0A1628;
+  --fg:#E0E1DD; --fg2:#778DA9;
+  --amber:#FFB627; --blue:#415A77; --orange:#FF6B35;
+  --line:rgba(65,90,119,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:'DM Sans','Noto Sans SC',-apple-system,sans-serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:480px;margin:0 auto;position:relative;overflow:hidden;}
+img{display:block;width:100%;}
+a{text-decoration:none;color:inherit;}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.06em;}
+
+/* ===== HERO ===== */
+.hero{padding:64px 24px 40px;background:
+  radial-gradient(600px 300px at 50% -60px, rgba(255,182,39,.14), transparent 70%),
+  var(--bg);
+  text-align:center;position:relative;}
+.hero .kicker{font-size:12px;color:var(--fg2);margin-bottom:18px;}
+.hero h1{
+  font-family:'Chakra Petch','Noto Sans SC',sans-serif;
+  font-size:44px;font-weight:700;letter-spacing:-.01em;line-height:1.1;margin-bottom:14px;
+}
+.hero h1 .amber{color:var(--amber);}
+.hero .sub{font-size:15px;color:var(--fg2);max-width:340px;margin:0 auto 28px;}
+.hero-shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  box-shadow:0 0 60px rgba(255,182,39,.10);margin-bottom:28px;}
+.cta-row{display:flex;gap:12px;justify-content:center;}
+.btn{
+  display:inline-block;padding:13px 26px;border-radius:8px;font-size:15px;font-weight:500;
+  border:1px solid var(--line);transition:transform .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--amber);color:#1a1206;border-color:var(--amber);font-weight:700;}
+.btn-ghost{background:rgba(27,38,59,.7);color:var(--fg);}
+
+/* ===== STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.stat{background:var(--bg);padding:18px 6px;text-align:center;}
+.stat .num{font-family:'Chakra Petch',sans-serif;font-size:22px;font-weight:700;color:var(--amber);}
+.stat .lab{font-size:11px;color:var(--fg2);margin-top:4px;}
+
+/* ===== SECTIONS ===== */
+.sec{padding:44px 24px 8px;}
+.sec .tag{font-size:11px;color:var(--amber);margin-bottom:10px;}
+.sec h2{
+  font-family:'Chakra Petch','Noto Sans SC',sans-serif;
+  font-size:23px;font-weight:700;line-height:1.35;margin-bottom:14px;
+}
+.sec p{font-size:14.5px;color:var(--fg);margin-bottom:12px;}
+.sec .note{font-size:13px;color:var(--fg2);}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:18px 0 6px;}
+.shot img{width:100%;height:auto;}
+.cap{font-size:12px;color:var(--fg2);padding:0 2px 8px;}
+
+/* feature card list */
+.feat{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(65,90,119,.25);}
+.feat:last-child{border-bottom:none;}
+.feat .ico{flex:0 0 34px;height:34px;border:1px solid var(--line);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;color:var(--amber);
+  font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--bg2);}
+.feat h3{font-size:15px;font-weight:700;margin-bottom:3px;}
+.feat p{font-size:13px;color:var(--fg2);margin:0;}
+
+/* audience */
+.who{background:var(--bg2);margin:36px 16px 0;border:1px solid var(--line);border-radius:12px;padding:24px;}
+.who h2{font-family:'Chakra Petch','Noto Sans SC',sans-serif;font-size:19px;margin-bottom:14px;}
+.who ul{list-style:none;}
+.who li{font-size:14px;padding:8px 0 8px 20px;position:relative;color:var(--fg);}
+.who li::before{content:'';position:absolute;left:0;top:16px;width:8px;height:2px;background:var(--amber);}
+
+/* final CTA */
+.final{padding:56px 24px 90px;text-align:center;
+  background:radial-gradient(500px 260px at 50% 100%, rgba(255,107,53,.12), transparent 70%),var(--bg3);}
+.final h2{font-family:'Chakra Petch','Noto Sans SC',sans-serif;font-size:24px;margin-bottom:12px;}
+.final p{font-size:14px;color:var(--fg2);margin-bottom:24px;}
+.final .btn-primary{font-size:16px;padding:15px 38px;}
+.final .url{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--fg2);margin-top:18px;word-break:break-all;}
+
+/* sticky bottom bar */
+.bar{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(13,27,42,.92);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;max-width:480px;margin:0 auto;}
+.bar a{flex:1;text-align:center;padding:12px;border-radius:8px;font-size:14px;font-weight:700;}
+.bar .b1{background:var(--amber);color:#1a1206;}
+.bar .b2{border:1px solid var(--line);color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="kicker mono">SEISY · SEISMOLOGY DESKTOP PLATFORM</div>
+    <h1>SeisY<br><span class="amber">地震数据</span>处理与分析平台</h1>
+    <p class="sub">面向地震、月震与行星地震研究——从数据下载到高级分析，一个桌面平台全部装下。</p>
+    <div class="hero-shot"><img src="assets/hero-main.png" alt="SeisY 主界面"></div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://yshome.top/HTML/SeisY.html">下载 Windows 版</a>
+      <a class="btn btn-ghost" href="https://yshome.top/HTML/SeisY.html">进入官网</a>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="stats">
+    <div class="stat"><div class="num">20+</div><div class="lab">专业工具</div></div>
+    <div class="stat"><div class="num">30+</div><div class="lab">处理算法</div></div>
+    <div class="stat"><div class="num">8</div><div class="lab">数据格式</div></div>
+    <div class="stat"><div class="num">双语</div><div class="lab">双主题</div></div>
+  </section>
+
+  <!-- ===== 01 数据下载 ===== -->
+  <section class="sec">
+    <div class="tag mono">01 / DATA</div>
+    <h2>数据从哪来？在线下载，地球和月球都支持</h2>
+    <p>通过 FDSN 数据中心在线下载波形，既支持地球台网，也支持 Apollo 月球数据（XA 网络 S12/S14/S15/S16）。台网、台站、时间范围批量设置，下载完自动预览波形。</p>
+    <div class="shot"><img src="assets/data-download.png" alt="地震数据下载参数界面"></div>
+    <div class="cap">选好台网、台站和时间范围，月震数据一键到手。</div>
+  </section>
+
+  <!-- ===== 02 波形与频谱 ===== -->
+  <section class="sec">
+    <div class="tag mono">02 / PROCESSING</div>
+    <h2>波形处理与频谱分析：30+ 算法预处理链</h2>
+    <div class="feat">
+      <div class="ico">wf</div>
+      <div><h3>20+ 波形处理</h3><p>去均值 / 去趋势 / 去仪器响应，10 种插值，6 种加窗，带通与中值滤波。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">sp</div>
+      <div><h3>完整频谱链</h3><p>振幅谱、PSD、Welch 平均、时频图、滑动相关、SNR 评估。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">8</div>
+      <div><h3>8 种格式互通</h3><p>MiniSEED、SAC、SEG-Y、SEG2、ASCII、TXT、CSV 导入导出。</p></div>
+    </div>
+    <div class="shot"><img src="assets/data-overview.png" alt="数据全览面板"></div>
+    <div class="cap">波形、包络、FFT、PSD、时频……数据质量一次看清。</div>
+  </section>
+
+  <!-- ===== 03 异常修复 ===== -->
+  <section class="sec">
+    <div class="tag mono">03 / REPAIR</div>
+    <h2>异常修复引擎：月震数据的"医生"</h2>
+    <p>Apollo 月震数据来自上世纪 70 年代，缺失值、尖峰、异常段是家常便饭。SeisY 用滑动峰态检测自动定位异常，频谱替换修复，还内置"月震保护"尖峰检测——去掉噪声，不碰真实信号。</p>
+    <div class="shot"><img src="assets/repair-engine.png" alt="异常修复工具"></div>
+    <div class="cap">修复前后并排预览，频谱验证，支持手动写回与双库对比。</div>
+  </section>
+
+  <!-- ===== 04 月震扫描 ===== -->
+  <section class="sec">
+    <div class="tag mono">04 / SCAN</div>
+    <h2>月震扫描：批量筛查候选事件</h2>
+    <p>几个月、几年的连续记录，靠人工翻不现实。扫描器按等级、评分、信噪比、稳定性批量筛查，与波形、STA-LTA、频谱联动显示。</p>
+    <div class="shot"><img src="assets/moonquake-scanner.png" alt="月震扫描器"></div>
+    <div class="cap">一次扫完整月数据，候选事件一目了然。</div>
+  </section>
+
+  <!-- ===== 05 高级分析 ===== -->
+  <section class="sec">
+    <div class="tag mono">05 / INVERSION</div>
+    <h2>定位、射线追踪与简正模</h2>
+    <p>台站、波形、拾取、速度模型与地图联动，支持地球、月球和自定义行星模型的震源反演；射线正演 / 反求、自由振荡分析也在同一个平台里完成。</p>
+    <div class="shot"><img src="assets/hypocenter.png" alt="震源定位器"></div>
+    <div class="cap">月震定位工作流，一个窗口内闭环。</div>
+  </section>
+
+  <!-- ===== 06 3D 月球 ===== -->
+  <section class="sec">
+    <div class="tag mono">06 / MOON</div>
+    <h2>3D 月球地质图</h2>
+    <p>USGS 月球统一地质图贴上三维球面，拖拽旋转、缩放，月海与地质单元可交互查看，台站与震源位置联动显示。</p>
+    <div class="shot"><img src="assets/moon-3d.png" alt="3D 月球地质图"></div>
+    <div class="cap">换个方式，看月球。</div>
+  </section>
+
+  <!-- ===== 谁适合 ===== -->
+  <section class="who">
+    <h2>谁适合用 SeisY？</h2>
+    <ul>
+      <li>地球物理、地震学方向的研究者和研究生</li>
+      <li>处理 Apollo 月震数据、做行星科学的人</li>
+      <li>希望一个软件走完"下载—处理—分析—成图"的师生</li>
+    </ul>
+  </section>
+
+  <!-- ===== FINAL CTA ===== -->
+  <section class="final">
+    <h2>少一点搬运，多一点发现</h2>
+    <p>当前版本 v0.1.9（2026-09-10）。Windows 安装版、免安装网页版都在官网。</p>
+    <a class="btn btn-primary" href="https://yshome.top/HTML/SeisY.html">前往官网下载试用</a>
+    <div class="url">https://yshome.top/HTML/SeisY.html</div>
+  </section>
+
+</div>
+
+<!-- ===== 底部固定 CTA ===== -->
+<div class="bar">
+  <a class="b1" href="https://yshome.top/HTML/SeisY.html">下载 SeisY</a>
+  <a class="b2" href="https://yshome.top/HTML/SeisY.html">官网 / 网页版</a>
+</div>
+</body>
+</html>
