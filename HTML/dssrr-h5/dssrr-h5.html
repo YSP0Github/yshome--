@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSSRR｜月震数据长缺口修复工具</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230F2C4C'/%3E%3Cpath d='M3 16h5l2-7 4 14 3-9 2 4h10' stroke='%234CC2FF' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Chakra+Petch:wght@500;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#0F2C4C; --bg2:#1B4470; --bg3:#0A2138;
+  --fg:#EAF2FA; --fg2:#9DB8D0;
+  --cyan:#4CC2FF; --line:rgba(76,194,255,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:'DM Sans','Noto Sans SC',-apple-system,sans-serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:480px;margin:0 auto;position:relative;overflow:hidden;}
+img{display:block;width:100%;}
+a{text-decoration:none;color:inherit;}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.06em;}
+
+/* ===== HERO ===== */
+.hero{padding:60px 24px 40px;background:
+  radial-gradient(600px 300px at 50% -60px, rgba(76,194,255,.16), transparent 70%),
+  var(--bg);
+  text-align:center;position:relative;}
+.hero .logo{width:72px;margin:0 auto 18px;}
+.hero .kicker{font-size:12px;color:var(--fg2);margin-bottom:16px;}
+.hero h1{
+  font-family:'Chakra Petch','Noto Sans SC',sans-serif;
+  font-size:42px;font-weight:700;letter-spacing:.01em;line-height:1.1;margin-bottom:14px;
+}
+.hero h1 .cyan{color:var(--cyan);}
+.hero .sub{font-size:15px;color:var(--fg2);max-width:350px;margin:0 auto 28px;}
+.hero-shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  box-shadow:0 0 60px rgba(76,194,255,.12);margin-bottom:28px;}
+.cta-row{display:flex;gap:12px;justify-content:center;}
+.btn{
+  display:inline-block;padding:13px 26px;border-radius:8px;font-size:15px;font-weight:500;
+  border:1px solid var(--line);transition:transform .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--cyan);color:#06223a;border-color:var(--cyan);font-weight:700;}
+.btn-ghost{background:rgba(27,68,112,.7);color:var(--fg);}
+
+/* ===== STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.stat{background:var(--bg);padding:18px 6px;text-align:center;}
+.stat .num{font-family:'Chakra Petch',sans-serif;font-size:21px;font-weight:700;color:var(--cyan);}
+.stat .lab{font-size:11px;color:var(--fg2);margin-top:4px;}
+
+/* ===== SECTIONS ===== */
+.sec{padding:44px 24px 8px;}
+.sec .tag{font-size:11px;color:var(--cyan);margin-bottom:10px;}
+.sec h2{
+  font-family:'Chakra Petch','Noto Sans SC',sans-serif;
+  font-size:23px;font-weight:700;line-height:1.35;margin-bottom:14px;
+}
+.sec p{font-size:14.5px;color:var(--fg);margin-bottom:12px;}
+.sec .note{font-size:13px;color:var(--fg2);}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:18px 0 6px;}
+.shot img{width:100%;height:auto;}
+.cap{font-size:12px;color:var(--fg2);padding:0 2px 8px;}
+
+/* step / feature card list */
+.feat{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(76,194,255,.14);}
+.feat:last-child{border-bottom:none;}
+.feat .ico{flex:0 0 34px;height:34px;border:1px solid var(--line);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;color:var(--cyan);
+  font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--bg2);}
+.feat h3{font-size:15px;font-weight:700;margin-bottom:3px;}
+.feat p{font-size:13px;color:var(--fg2);margin:0;}
+
+/* audience */
+.who{background:var(--bg2);margin:36px 16px 0;border:1px solid var(--line);border-radius:12px;padding:24px;}
+.who h2{font-family:'Chakra Petch','Noto Sans SC',sans-serif;font-size:19px;margin-bottom:14px;}
+.who ul{list-style:none;}
+.who li{font-size:14px;padding:8px 0 8px 20px;position:relative;color:var(--fg);}
+.who li::before{content:'';position:absolute;left:0;top:16px;width:8px;height:2px;background:var(--cyan);}
+
+/* boundary list */
+.blist{list-style:none;}
+.blist li{font-size:14px;padding:10px 0 10px 22px;position:relative;color:var(--fg);border-bottom:1px solid rgba(76,194,255,.12);}
+.blist li:last-child{border-bottom:none;}
+.blist li::before{content:'!';position:absolute;left:0;top:10px;width:15px;height:15px;
+  border:1px solid var(--cyan);border-radius:50%;color:var(--cyan);font-size:10px;
+  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;}
+
+/* final CTA */
+.final{padding:56px 24px 96px;text-align:center;
+  background:radial-gradient(500px 260px at 50% 100%, rgba(76,194,255,.14), transparent 70%),var(--bg3);}
+.final h2{font-family:'Chakra Petch','Noto Sans SC',sans-serif;font-size:24px;margin-bottom:12px;}
+.final p{font-size:14px;color:var(--fg2);margin-bottom:24px;}
+.final .btn-primary{font-size:16px;padding:15px 38px;}
+.final .url{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--fg2);margin-top:18px;word-break:break-all;}
+
+/* install chip */
+.install{background:var(--bg3);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;margin:18px 0 6px;font-family:'JetBrains Mono',monospace;font-size:12.5px;
+  color:var(--cyan);word-break:break-all;}
+
+/* sticky bottom bar */
+.bar{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(15,44,76,.93);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;max-width:480px;margin:0 auto;}
+.bar a{flex:1;text-align:center;padding:12px;border-radius:8px;font-size:14px;font-weight:700;}
+.bar .b1{background:var(--cyan);color:#06223a;}
+.bar .b2{border:1px solid var(--line);color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="logo"><img src="assets/logo.png" alt="DSSRR logo"></div>
+    <div class="kicker mono">DSSRR · DUAL-SIDED SPECTRAL REFERENCE RECONSTRUCTION</div>
+    <h1>DSSRR<br><span class="cyan">长缺口</span>修复工具</h1>
+    <p class="sub">无需训练、不用拟合——只靠缺口两侧的健康数据，把缺失的月震波形补回来。</p>
+    <div class="hero-shot"><img src="assets/hero.png" alt="波形中间缺失的一段被亮蓝色重建波形补齐"></div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/YSP0Github/DSSRR">GitHub 源码</a>
+      <a class="btn btn-ghost" href="https://pypi.org/project/dssrr/">PyPI 安装</a>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="stats">
+    <div class="stat"><div class="num">90+</div><div class="lab">分钟缺口</div></div>
+    <div class="stat"><div class="num">0</div><div class="lab">训练数据</div></div>
+    <div class="stat"><div class="num">2</div><div class="lab">核心依赖</div></div>
+    <div class="stat"><div class="num">MIT</div><div class="lab">开源协议</div></div>
+  </section>
+
+  <!-- ===== 01 问题 ===== -->
+  <section class="sec">
+    <div class="tag mono">01 / PROBLEM</div>
+    <h2>五十年前的月球数据，"破"在哪</h2>
+    <p>1969–1977 年，Apollo 月震仪记录了人类第一批月震数据。半个世纪过去，遥测中断造成整段缺失，磁带老化让波形冻结，还有饱和、尖峰、阶跃……短则几秒，长则一个多小时，直接挡住后续的频谱分析、事件检测与震源定位。</p>
+    <div class="shot"><img src="assets/before-after.png" alt="去异常前后时域频域对比"></div>
+    <div class="cap">Apollo S12 台站去异常前后：被异常掩盖的真实信号纹理重新显现。</div>
+  </section>
+
+  <!-- ===== 02 老办法失效 ===== -->
+  <section class="sec">
+    <div class="tag mono">02 / WHY</div>
+    <h2>缺口一长，插值就"躺平"了</h2>
+    <div class="feat">
+      <div class="ico">lin</div>
+      <div><h3>线性插值</h3><p>几分钟缺口补成一条直线，功率谱直接塌掉，能量分布全毁。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">fft</div>
+      <div><h3>FFT 外推</h3><p>只看一侧数据，那一侧若不平稳，补出的内容就被带偏。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">ssa</div>
+      <div><h3>SSA / 神经网络</h3><p>SSA 长缺口下退化；神经网络要训练数据、要拟合权重。</p></div>
+    </div>
+    <p class="note">我们要补的不是一条平滑的线，而是一段在频谱、自相关、能量分布上都和真实信号一致的波形纹理。</p>
+  </section>
+
+  <!-- ===== 03 流水线 ===== -->
+  <section class="sec">
+    <div class="tag mono">03 / PIPELINE</div>
+    <h2>DSSRR：向缺口"两边"借答案</h2>
+    <div class="feat">
+      <div class="ico">1</div>
+      <div><h3>提取双侧参考窗</h3><p>缺口前后各取一段健康数据，默认长度为缺口一半，限 120–600 秒，留 1 秒安全间隔。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">2</div>
+      <div><h3>融合目标频谱</h3><p>分别估计两侧 PSD，在对数域等权融合，任何一侧都无法"一家独大"。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">3</div>
+      <div><h3>合成替换信号</h3><p>随机相位参考块重叠相加，再按目标频谱缩放能量，纹理真实。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">4</div>
+      <div><h3>对齐与融合</h3><p>低频趋势桥接、边界交叉淡化，需要时量化回原始整数网格。</p></div>
+    </div>
+    <div class="feat">
+      <div class="ico">5</div>
+      <div><h3>验证</h3><p>频谱、包络、直流、自相关、能量等诊断指标随数据返回。</p></div>
+    </div>
+    <p class="note">硬性保证：缺口之外的每一个样本，原样保留，一个不动。</p>
+  </section>
+
+  <!-- ===== 04 效果 ===== -->
+  <section class="sec">
+    <div class="tag mono">04 / RESULTS</div>
+    <h2>90 分钟缺口，也能稳住</h2>
+    <p>把缺口从 2 分钟拉到 90 分钟：线性插值、FFT、SSA 的误差随缺口拉长明显恶化，DSSRR（红）始终贴近底部、保持稳定，修复信号与真实信号的能量比一直在 1 附近。</p>
+    <div class="shot"><img src="assets/effect-length.png" alt="缺口长度 2-90 分钟效应"></div>
+    <div class="cap">其他方法随长度恶化，DSSRR 始终稳定。</div>
+    <p>真实 Apollo S12、S15 归档里，冻结、饱和与异常段被自动定位（粉色窗口），修复只在窗内写入，窗外原样保留，修复段与周围纹理自然衔接。</p>
+    <div class="shot"><img src="assets/effect-archival.png" alt="真实 Apollo 归档修复前后"></div>
+    <div class="cap">真实归档修复，边界纹理自然衔接。</div>
+  </section>
+
+  <!-- ===== 05 GUI ===== -->
+  <section class="sec">
+    <div class="tag mono">05 / GUI</div>
+    <h2>桌面 GUI：不写代码，也能修</h2>
+    <p>DSSRR 自带 PyQt5 界面（中英双语）。Repaired DB Viewer 把原始库与修复库上下对照，明细表逐条列出每个缺口的类型、时间、方法和长度。</p>
+    <div class="shot"><img src="assets/viewer.png" alt="Repaired DB Viewer"></div>
+    <div class="cap">修复做了什么，一目了然。</div>
+    <p>Manual Repair 用鼠标直接拖选异常段，多方法实时预览，修改可撤销、可累计；Batch Repair 自动检测、多级修复、对照月震目录保护真实事件，也可用命令行 dssrr-batch 无人值守运行。</p>
+    <div class="shot"><img src="assets/manual.png" alt="Manual Repair"></div>
+    <div class="cap">拖选、预览、确认，修复过程完全可控。</div>
+    <p>每次修复自动导出三段式报告：时域对比、归一化功率谱、频谱图。</p>
+    <div class="shot"><img src="assets/report.png" alt="地震数据异常修复报告：时域、PSD、频谱对比"></div>
+    <div class="cap">修复前后差在哪，清清楚楚。</div>
+    <div class="install">pip install "dssrr[gui]"</div>
+    <div class="cap">科学内核只依赖 numpy 与 scipy，Python 3.9+。</div>
+  </section>
+
+  <!-- ===== 06 边界 ===== -->
+  <section class="sec">
+    <div class="tag mono">06 / BOUNDARIES</div>
+    <h2>诚实的边界：什么修不了</h2>
+    <ul class="blist">
+      <li>只复现二阶统计特征（PSD、自相关、能量），缺口内的原始相位无法恢复。</li>
+      <li>缺口里若发生一次性瞬变（如一次真实月震），任何统计方法都找不回它。</li>
+      <li>假设信号局部平稳；参考窗短于约 120 秒时，低频分辨率会变差。</li>
+      <li>批量模式下，超过最大修复时长的缺口只标记，不会硬编内容。</li>
+    </ul>
+    <p class="note">宁可留一个诚实的标记，也不给你一段看似完整、实则虚构的数据。</p>
+  </section>
+
+  <!-- ===== 谁适合 ===== -->
+  <section class="who">
+    <h2>谁适合用 DSSRR？</h2>
+    <ul>
+      <li>处理 Apollo 月震数据、做行星科学的研究者</li>
+      <li>手头有长缺口时间序列的地震学研究者</li>
+      <li>不想训练模型、只想快速得到可信修复的人</li>
+    </ul>
+  </section>
+
+  <!-- ===== FINAL CTA ===== -->
+  <section class="final">
+    <h2>缺口再长，也有靠谱的补法</h2>
+    <p>MIT 协议完全开源，方法论文投稿 Seismological Research Letters，版本已在 Zenodo 归档。</p>
+    <a class="btn btn-primary" href="https://github.com/YSP0Github/DSSRR">前往 GitHub 试用</a>
+    <div class="url">https://github.com/YSP0Github/DSSRR</div>
+  </section>
+
+
+</div>
+
+<!-- ===== 底部固定 CTA ===== -->
+<div class="bar">
+  <a class="b1" href="https://github.com/YSP0Github/DSSRR">GitHub 源码</a>
+  <a class="b2" href="https://pypi.org/project/dssrr/">pip install dssrr</a>
+</div>
+</body>
+</html>
