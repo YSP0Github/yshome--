@@ -3,7 +3,7 @@
  * 新增一条公式：在 src/content/cards/ 下新建 <id>.ts 并 export default，
  * 然后运行 npm run build（或 npm run gen-index）即可。
  *
- * 当前共 310 条。
+ * 当前共 566 条。
  */
 import absorptionBandQ from './cards/absorption-band-q.js';
 import acousticImpedance from './cards/acoustic-impedance.js';
@@ -64,7 +64,21 @@ import dDoublePrimePostPerovskite from './cards/d-double-prime-post-perovskite.j
 import dalembertSolution from './cards/dalembert-solution.js';
 import dampedLeastSquares from './cards/damped-least-squares.js';
 import dampingRatio from './cards/damping-ratio.js';
+import dcAnisotropyCoefficient from './cards/dc-anisotropy-coefficient.js';
+import dcApparentResistivity from './cards/dc-apparent-resistivity.js';
+import dcArchieFormationFactor from './cards/dc-archie-formation-factor.js';
+import dcArchieResistivityRatio from './cards/dc-archie-resistivity-ratio.js';
+import dcArrayGeometricFactor from './cards/dc-array-geometric-factor.js';
+import dcDipoleDipoleArray from './cards/dc-dipole-dipole-array.js';
+import dcFormationFactorRoRw from './cards/dc-formation-factor-ro-rw.js';
 import dcIsoClvdDecomposition from './cards/dc-iso-clvd-decomposition.js';
+import dcOhmLawResistivity from './cards/dc-ohm-law-resistivity.js';
+import dcPointSourcePotential from './cards/dc-point-source-potential.js';
+import dcResistivityParameters from './cards/dc-resistivity-parameters.js';
+import dcSchlumbergerArray from './cards/dc-schlumberger-array.js';
+import dcVesCurve from './cards/dc-ves-curve.js';
+import dcWaterSaturationArchie from './cards/dc-water-saturation-archie.js';
+import dcWennerArray from './cards/dc-wenner-array.js';
 import debyePeakRelaxation from './cards/debye-peak-relaxation.js';
 import deviatoricStress from './cards/deviatoric-stress.js';
 import dipMoveoutCorrection from './cards/dip-moveout-correction.js';
@@ -85,6 +99,13 @@ import eikonalEquation from './cards/eikonal-equation.js';
 import elasticImpedance from './cards/elastic-impedance.js';
 import elasticModuliConversions from './cards/elastic-moduli-conversions.js';
 import ellipticityCorrection from './cards/ellipticity-correction.js';
+import emCagniardApparentResistivity from './cards/em-cagniard-apparent-resistivity.js';
+import emFaradayInduction from './cards/em-faraday-induction.js';
+import emMaxwellEquations from './cards/em-maxwell-equations.js';
+import emMtDepthPenetration from './cards/em-mt-depth-penetration.js';
+import emMtImpedance from './cards/em-mt-impedance.js';
+import emPlaneWaveInConductor from './cards/em-plane-wave-in-conductor.js';
+import emSkinDepth from './cards/em-skin-depth.js';
 import energyMagnitudeRelation from './cards/energy-magnitude-relation.js';
 import engineeringShearStrain from './cards/engineering-shear-strain.js';
 import equationOfMotion from './cards/equation-of-motion.js';
@@ -117,6 +138,27 @@ import generalizedHookeLaw from './cards/generalized-hooke-law.js';
 import geometricalSpreading from './cards/geometrical-spreading.js';
 import gmpeFunctionalForm from './cards/gmpe-functional-form.js';
 import gradient from './cards/gradient.js';
+import gravityAiryIsostasy from './cards/gravity-airy-isostasy.js';
+import gravityBouguerAnomaly from './cards/gravity-bouguer-anomaly.js';
+import gravityBouguerComplete from './cards/gravity-bouguer-complete.js';
+import gravityBouguerSimple from './cards/gravity-bouguer-simple.js';
+import gravityCentrifugalEffect from './cards/gravity-centrifugal-effect.js';
+import gravityEotvosCorrection from './cards/gravity-eotvos-correction.js';
+import gravityFieldFromPotential from './cards/gravity-field-from-potential.js';
+import gravityFreeAirAnomaly from './cards/gravity-free-air-anomaly.js';
+import gravityFreeAirCorrection from './cards/gravity-free-air-correction.js';
+import gravityFreeAirGradient from './cards/gravity-free-air-gradient.js';
+import gravityGeoidEllipsoid from './cards/gravity-geoid-ellipsoid.js';
+import gravityLatitudeVariation from './cards/gravity-latitude-variation.js';
+import gravityNewtonLaw from './cards/gravity-newton-law.js';
+import gravityNormalFormula from './cards/gravity-normal-formula.js';
+import gravityPotentialPoint from './cards/gravity-potential-point.js';
+import gravityPotentialSecondDerivatives from './cards/gravity-potential-second-derivatives.js';
+import gravityPrattIsostasy from './cards/gravity-pratt-isostasy.js';
+import gravitySolidSphere from './cards/gravity-solid-sphere.js';
+import gravitySphericalHarmonicsJ2 from './cards/gravity-spherical-harmonics-j2.js';
+import gravitySphericalShell from './cards/gravity-spherical-shell.js';
+import gravityTerrainCorrection from './cards/gravity-terrain-correction.js';
 import greenFunctionDefinition from './cards/green-function-definition.js';
 import groundMotionParameters from './cards/ground-motion-parameters.js';
 import groupVelocity from './cards/group-velocity.js';
@@ -140,6 +182,11 @@ import infinitesimalStrainTensor from './cards/infinitesimal-strain-tensor.js';
 import instrumentDeconvolution from './cards/instrument-deconvolution.js';
 import intensityPgaConversion from './cards/intensity-pga-conversion.js';
 import interbedMultiple from './cards/interbed-multiple.js';
+import ipColeColeModel from './cards/ip-cole-cole-model.js';
+import ipFrequencyDomainPfe from './cards/ip-frequency-domain-pfe.js';
+import ipPolarizabilityDefinition from './cards/ip-polarizability-definition.js';
+import ipPolarizationMechanisms from './cards/ip-polarization-mechanisms.js';
+import ipTimeDomainChargeability from './cards/ip-time-domain-chargeability.js';
 import isotropicHookeLaw from './cards/isotropic-hooke-law.js';
 import kinematicRayEquations from './cards/kinematic-ray-equations.js';
 import kirchhoffMigration from './cards/kirchhoff-migration.js';
@@ -155,6 +202,27 @@ import lithostaticPressure from './cards/lithostatic-pressure.js';
 import localMagnitude from './cards/local-magnitude.js';
 import loveWaveDispersion from './cards/love-wave-dispersion.js';
 import loveWaveHigherModes from './cards/love-wave-higher-modes.js';
+import magCentralDipoleField from './cards/mag-central-dipole-field.js';
+import magChemicalRemanence from './cards/mag-chemical-remanence.js';
+import magCoulombLaw from './cards/mag-coulomb-law.js';
+import magCurieLaw from './cards/mag-curie-law.js';
+import magCurieTemperature from './cards/mag-curie-temperature.js';
+import magDepositionalRemanence from './cards/mag-depositional-remanence.js';
+import magDipoleFieldAxial from './cards/mag-dipole-field-axial.js';
+import magDipoleFieldGeneral from './cards/mag-dipole-field-general.js';
+import magDipolePotential from './cards/mag-dipole-potential.js';
+import magDiurnalCorrection from './cards/mag-diurnal-correction.js';
+import magEarthDipoleMoment from './cards/mag-earth-dipole-moment.js';
+import magElementConversions from './cards/mag-element-conversions.js';
+import magGeomagneticElements from './cards/mag-geomagnetic-elements.js';
+import magGeomagneticReversal from './cards/mag-geomagnetic-reversal.js';
+import magIgrfReferenceField from './cards/mag-igrf-reference-field.js';
+import magInducedVsRemanent from './cards/mag-induced-vs-remanent.js';
+import magMagnetizationSusceptibility from './cards/mag-magnetization-susceptibility.js';
+import magMarineAnomalyStripe from './cards/mag-marine-anomaly-stripe.js';
+import magReductionToPole from './cards/mag-reduction-to-pole.js';
+import magThermalRemanence from './cards/mag-thermal-remanence.js';
+import magVirtualGeomagneticPole from './cards/mag-virtual-geomagnetic-pole.js';
 import magnitudeCompletenessMc from './cards/magnitude-completeness-mc.js';
 import magnitudeSaturating from './cards/magnitude-saturation.js';
 import mantleDiscontinuities from './cards/mantle-discontinuities.js';
@@ -166,6 +234,16 @@ import migrationImpulseResponse from './cards/migration-impulse-response.js';
 import modeMultipletSplitting from './cards/mode-multiplet-splitting.js';
 import modelCovarianceMatrix from './cards/model-covariance-matrix.js';
 import modifiedOmoriLaw from './cards/modified-omori-law.js';
+import modphysBohrHydrogenLevels from './cards/modphys-bohr-hydrogen-levels.js';
+import modphysComptonScattering from './cards/modphys-compton-scattering.js';
+import modphysDeBroglieWavelength from './cards/modphys-de-broglie-wavelength.js';
+import modphysHeisenbergUncertainty from './cards/modphys-heisenberg-uncertainty.js';
+import modphysPhotoelectricEffect from './cards/modphys-photoelectric-effect.js';
+import modphysPlanckEnergyQuantum from './cards/modphys-planck-energy-quantum.js';
+import modphysSchrodingerEquation from './cards/modphys-schrodinger-equation.js';
+import modphysStefanBoltzmannLaw from './cards/modphys-stefan-boltzmann-law.js';
+import modphysWavefunctionProbability from './cards/modphys-wavefunction-probability.js';
+import modphysWienDisplacementLaw from './cards/modphys-wien-displacement-law.js';
 import mohorovicicDiscontinuity from './cards/mohorovicic-discontinuity.js';
 import mohrCircleMaxShear from './cards/mohr-circle-max-shear.js';
 import momentRateFunction from './cards/moment-rate-function.js';
@@ -181,10 +259,42 @@ import nmoStretchMuting from './cards/nmo-stretch-muting.js';
 import noiseCrossCorrelationStacking from './cards/noise-cross-correlation-stacking.js';
 import nonhyperbolicMoveout from './cards/nonhyperbolic-moveout.js';
 import normalModeSummation from './cards/normal-mode-summation.js';
+import nucActivity from './cards/nuc-activity.js';
+import nucAlphaBetaGammaDecay from './cards/nuc-alpha-beta-gamma-decay.js';
+import nucBindingEnergyPerNucleon from './cards/nuc-binding-energy-per-nucleon.js';
+import nucHalfLifeMeanLife from './cards/nuc-half-life-mean-life.js';
+import nucMassDefectBindingEnergy from './cards/nuc-mass-defect-binding-energy.js';
+import nucNuclearConstituents from './cards/nuc-nuclear-constituents.js';
+import nucNuclearRadius from './cards/nuc-nuclear-radius.js';
+import nucRadioactiveDecayLaw from './cards/nuc-radioactive-decay-law.js';
 import nyquistSampling from './cards/nyquist-sampling.js';
 import okadaDislocation from './cards/okada-dislocation.js';
 import omegaSquareModel from './cards/omega-square-model.js';
 import omoriLaw from './cards/omori-law.js';
+import optBirefringence from './cards/opt-birefringence.js';
+import optBrewsterAngle from './cards/opt-brewster-angle.js';
+import optCircularApertureAiry from './cards/opt-circular-aperture-airy.js';
+import optDiffractionGrating from './cards/opt-diffraction-grating.js';
+import optDoubleSlitInterference from './cards/opt-double-slit-interference.js';
+import optGratingResolvingPower from './cards/opt-grating-resolving-power.js';
+import optLateralMagnification from './cards/opt-lateral-magnification.js';
+import optLawOfReflection from './cards/opt-law-of-reflection.js';
+import optLensmakerEquation from './cards/opt-lensmaker-equation.js';
+import optMalusLaw from './cards/opt-malus-law.js';
+import optMichelsonInterferometer from './cards/opt-michelson-interferometer.js';
+import optNewtonRings from './cards/opt-newton-rings.js';
+import optOpticalInstrumentsMagnification from './cards/opt-optical-instruments-magnification.js';
+import optOpticalPathLength from './cards/opt-optical-path-length.js';
+import optPathDifferencePhase from './cards/opt-path-difference-phase.js';
+import optPrismMinimumDeviation from './cards/opt-prism-minimum-deviation.js';
+import optRayleighCriterion from './cards/opt-rayleigh-criterion.js';
+import optRefractiveIndex from './cards/opt-refractive-index.js';
+import optSingleSlitDiffraction from './cards/opt-single-slit-diffraction.js';
+import optSnellLaw from './cards/opt-snell-law.js';
+import optSphericalMirrorEquation from './cards/opt-spherical-mirror-equation.js';
+import optThinFilmInterference from './cards/opt-thin-film-interference.js';
+import optThinLensEquation from './cards/opt-thin-lens-equation.js';
+import optTotalInternalReflection from './cards/opt-total-internal-reflection.js';
 import pAndSImpedance from './cards/p-and-s-impedance.js';
 import pWaveVelocityFormula from './cards/p-wave-velocity-formula.js';
 import parsevalTheorem from './cards/parseval-theorem.js';
@@ -194,6 +304,74 @@ import petersonNoiseModel from './cards/peterson-noise-model.js';
 import phaseGroupVelocity from './cards/phase-group-velocity.js';
 import phaseShiftMigration from './cards/phase-shift-migration.js';
 import phaseVelocity from './cards/phase-velocity.js';
+import physAdiabaticProcess from './cards/phys-adiabatic-process.js';
+import physAngularMomentum from './cards/phys-angular-momentum.js';
+import physApparentWeightElevator from './cards/phys-apparent-weight-elevator.js';
+import physArchimedesBuoyancy from './cards/phys-archimedes-buoyancy.js';
+import physBeats from './cards/phys-beats.js';
+import physBernoulliEquation from './cards/phys-bernoulli-equation.js';
+import physCarnotEfficiency from './cards/phys-carnot-efficiency.js';
+import physCentripetalForce from './cards/phys-centripetal-force.js';
+import physCoefficientRestitution from './cards/phys-coefficient-restitution.js';
+import physConservationAngularMomentum from './cards/phys-conservation-angular-momentum.js';
+import physConservationMechanicalEnergy from './cards/phys-conservation-mechanical-energy.js';
+import physConservationMomentum from './cards/phys-conservation-momentum.js';
+import physConstantAcceleration from './cards/phys-constant-acceleration.js';
+import physContinuityEquation from './cards/phys-continuity-equation.js';
+import physDampedHarmonicOscillator from './cards/phys-damped-harmonic-oscillator.js';
+import physDopplerEffect from './cards/phys-doppler-effect.js';
+import physElasticCollision from './cards/phys-elastic-collision.js';
+import physElasticPotentialEnergy from './cards/phys-elastic-potential-energy.js';
+import physEntropySecondLaw from './cards/phys-entropy-second-law.js';
+import physEquipartitionTheorem from './cards/phys-equipartition-theorem.js';
+import physFirstLawThermo from './cards/phys-first-law-thermo.js';
+import physForcedOscillationResonance from './cards/phys-forced-oscillation-resonance.js';
+import physFourierHeatConduction from './cards/phys-fourier-heat-conduction.js';
+import physFreeFall from './cards/phys-free-fall.js';
+import physFrictionForce from './cards/phys-friction-force.js';
+import physGravitationalPotentialEnergy from './cards/phys-gravitational-potential-energy.js';
+import physHeatCapacity from './cards/phys-heat-capacity.js';
+import physHydrostaticPressure from './cards/phys-hydrostatic-pressure.js';
+import physIdealGasLaw from './cards/phys-ideal-gas-law.js';
+import physImpulseMomentum from './cards/phys-impulse-momentum.js';
+import physInclinedPlane from './cards/phys-inclined-plane.js';
+import physInelasticCollision from './cards/phys-inelastic-collision.js';
+import physKinematicDerivatives from './cards/phys-kinematic-derivatives.js';
+import physKineticEnergy from './cards/phys-kinetic-energy.js';
+import physKineticTheoryPressure from './cards/phys-kinetic-theory-pressure.js';
+import physLinearMomentum from './cards/phys-linear-momentum.js';
+import physMassSpringOscillator from './cards/phys-mass-spring-oscillator.js';
+import physMaxwellSpeedDistribution from './cards/phys-maxwell-speed-distribution.js';
+import physMayerRelation from './cards/phys-mayer-relation.js';
+import physMeanTranslationalKineticEnergy from './cards/phys-mean-translational-kinetic-energy.js';
+import physMechanicalPower from './cards/phys-mechanical-power.js';
+import physMomentOfInertia from './cards/phys-moment-of-inertia.js';
+import physNewtonFirstLaw from './cards/phys-newton-first-law.js';
+import physNewtonSecondLaw from './cards/phys-newton-second-law.js';
+import physNewtonThirdLaw from './cards/phys-newton-third-law.js';
+import physNewtonViscosity from './cards/phys-newton-viscosity.js';
+import physParallelAxisTheorem from './cards/phys-parallel-axis-theorem.js';
+import physPascalPrinciple from './cards/phys-pascal-principle.js';
+import physPrincipleSuperposition from './cards/phys-principle-superposition.js';
+import physProjectileMotion from './cards/phys-projectile-motion.js';
+import physRefrigeratorCop from './cards/phys-refrigerator-cop.js';
+import physRelativeVelocity from './cards/phys-relative-velocity.js';
+import physRotationalDynamicsLaw from './cards/phys-rotational-dynamics-law.js';
+import physRotationalKineticEnergy from './cards/phys-rotational-kinetic-energy.js';
+import physSatelliteOrbit from './cards/phys-satellite-orbit.js';
+import physSimpleHarmonicMotion from './cards/phys-simple-harmonic-motion.js';
+import physSimplePendulum from './cards/phys-simple-pendulum.js';
+import physSoundIntensityLevel from './cards/phys-sound-intensity-level.js';
+import physStringWaveSpeed from './cards/phys-string-wave-speed.js';
+import physTemperatureScales from './cards/phys-temperature-scales.js';
+import physThermalLinearExpansion from './cards/phys-thermal-linear-expansion.js';
+import physTorqueDefinition from './cards/phys-torque-definition.js';
+import physUniformCircularMotion from './cards/phys-uniform-circular-motion.js';
+import physWaveEquation1d from './cards/phys-wave-equation-1d.js';
+import physWaveSpeedRelation from './cards/phys-wave-speed-relation.js';
+import physWeightVsMass from './cards/phys-weight-vs-mass.js';
+import physWorkByForce from './cards/phys-work-by-force.js';
+import physWorkEnergyTheorem from './cards/phys-work-energy-theorem.js';
 import poissonEarthquakeOccurrence from './cards/poisson-earthquake-occurrence.js';
 import poissonFromVelocities from './cards/poisson-from-velocities.js';
 import poissonsRatioLame from './cards/poissons-ratio-lame.js';
@@ -232,6 +410,15 @@ import reflectionHyperbola from './cards/reflection-hyperbola.js';
 import reflectionTransmissionEnergy from './cards/reflection-transmission-energy.js';
 import reflectivityLogConversion from './cards/reflectivity-log-conversion.js';
 import refractedWaveInterceptTime from './cards/refracted-wave-intercept-time.js';
+import relEnergyMomentumRelation from './cards/rel-energy-momentum-relation.js';
+import relGalileanTransformation from './cards/rel-galilean-transformation.js';
+import relLengthContraction from './cards/rel-length-contraction.js';
+import relLorentzTransformation from './cards/rel-lorentz-transformation.js';
+import relMassEnergyEquivalence from './cards/rel-mass-energy-equivalence.js';
+import relRelativisticMomentum from './cards/rel-relativistic-momentum.js';
+import relRelativisticVelocityAddition from './cards/rel-relativistic-velocity-addition.js';
+import relSrPostulates from './cards/rel-sr-postulates.js';
+import relTimeDilation from './cards/rel-time-dilation.js';
 import residueTheorem from './cards/residue-theorem.js';
 import resolutionMatrix from './cards/resolution-matrix.js';
 import responseSpectrumOscillator from './cards/response-spectrum-oscillator.js';
@@ -296,6 +483,58 @@ import triplicationCaustic from './cards/triplication-caustic.js';
 import tstarOperator from './cards/tstar-operator.js';
 import tuningWedgeModel from './cards/tuning-wedge-model.js';
 import turningPointDepth from './cards/turning-point-depth.js';
+import uemAcPeakRms from './cards/uem-ac-peak-rms.js';
+import uemAcPowerFactor from './cards/uem-ac-power-factor.js';
+import uemAmpereForceWire from './cards/uem-ampere-force-wire.js';
+import uemAmpereLoopLaw from './cards/uem-ampere-loop-law.js';
+import uemBiotSavartLaw from './cards/uem-biot-savart-law.js';
+import uemCapacitance from './cards/uem-capacitance.js';
+import uemCapacitiveReactance from './cards/uem-capacitive-reactance.js';
+import uemCapacitorEnergy from './cards/uem-capacitor-energy.js';
+import uemCapacitorSeriesParallel from './cards/uem-capacitor-series-parallel.js';
+import uemChargedParticleCyclotron from './cards/uem-charged-particle-cyclotron.js';
+import uemConductorElectrostaticEquilibrium from './cards/uem-conductor-electrostatic-equilibrium.js';
+import uemContinuousChargeField from './cards/uem-continuous-charge-field.js';
+import uemCoulombLaw from './cards/uem-coulomb-law.js';
+import uemCurrentCurrentDensity from './cards/uem-current-current-density.js';
+import uemDielectricConstant from './cards/uem-dielectric-constant.js';
+import uemDiscreteChargeSuperposition from './cards/uem-discrete-charge-superposition.js';
+import uemDisplacementCurrent from './cards/uem-displacement-current.js';
+import uemElectricFieldPointCharge from './cards/uem-electric-field-point-charge.js';
+import uemElectricFlux from './cards/uem-electric-flux.js';
+import uemElectricPotentialPointCharge from './cards/uem-electric-potential-point-charge.js';
+import uemElectricPower from './cards/uem-electric-power.js';
+import uemElectromotiveForce from './cards/uem-electromotive-force.js';
+import uemElectrostaticEnergy from './cards/uem-electrostatic-energy.js';
+import uemEmSpectrum from './cards/uem-em-spectrum.js';
+import uemEmWaveSpeed from './cards/uem-em-wave-speed.js';
+import uemEquipotentialSurface from './cards/uem-equipotential-surface.js';
+import uemFaradayLawEmf from './cards/uem-faraday-law-emf.js';
+import uemGaussLaw from './cards/uem-gauss-law.js';
+import uemInductiveReactance from './cards/uem-inductive-reactance.js';
+import uemInductorEnergy from './cards/uem-inductor-energy.js';
+import uemKirchhoffLaws from './cards/uem-kirchhoff-laws.js';
+import uemLenzLaw from './cards/uem-lenz-law.js';
+import uemLorentzForce from './cards/uem-lorentz-force.js';
+import uemMagneticDipoleMoment from './cards/uem-magnetic-dipole-moment.js';
+import uemMagneticFieldB from './cards/uem-magnetic-field-b.js';
+import uemMagneticFluxDef from './cards/uem-magnetic-flux-def.js';
+import uemMaxwellEquations from './cards/uem-maxwell-equations.js';
+import uemMotionalEmf from './cards/uem-motional-emf.js';
+import uemMutualInductance from './cards/uem-mutual-inductance.js';
+import uemOhmsLaw from './cards/uem-ohms-law.js';
+import uemParallelPlateCapacitor from './cards/uem-parallel-plate-capacitor.js';
+import uemPotentialGradientE from './cards/uem-potential-gradient-e.js';
+import uemPoyntingVectorEnergy from './cards/uem-poynting-vector-energy.js';
+import uemRcTransient from './cards/uem-rc-transient.js';
+import uemResistanceResistivity from './cards/uem-resistance-resistivity.js';
+import uemResistorSeriesParallel from './cards/uem-resistor-series-parallel.js';
+import uemRlTransient from './cards/uem-rl-transient.js';
+import uemRlcImpedance from './cards/uem-rlc-impedance.js';
+import uemSelfInductance from './cards/uem-self-inductance.js';
+import uemSeriesResonance from './cards/uem-series-resonance.js';
+import uemSolenoidB from './cards/uem-solenoid-b.js';
+import uemStraightWireB from './cards/uem-straight-wire-b.js';
 import velocityAnalysis from './cards/velocity-analysis.js';
 import velocityModelParameterization from './cards/velocity-model-parameterization.js';
 import velocityRatioPoisson from './cards/velocity-ratio-poisson.js';
@@ -311,6 +550,23 @@ import wavenumberWavelength from './cards/wavenumber-wavelength.js';
 import wiechertHerglotzInversion from './cards/wiechert-herglotz-inversion.js';
 import wienerFilter from './cards/wiener-filter.js';
 import windowFunctionLeakage from './cards/window-function-leakage.js';
+import wlArchieWaterSaturation from './cards/wl-archie-water-saturation.js';
+import wlAveragePorosityCombination from './cards/wl-average-porosity-combination.js';
+import wlCementationSaturationIndices from './cards/wl-cementation-saturation-indices.js';
+import wlDensityLog from './cards/wl-density-log.js';
+import wlFormationWaterResistivity from './cards/wl-formation-water-resistivity.js';
+import wlIntegratedInterpretation from './cards/wl-integrated-interpretation.js';
+import wlInvadedZoneProfile from './cards/wl-invaded-zone-profile.js';
+import wlNaturalGamma from './cards/wl-natural-gamma.js';
+import wlNeutronDensityCrossplot from './cards/wl-neutron-density-crossplot.js';
+import wlNeutronPorosity from './cards/wl-neutron-porosity.js';
+import wlPorosityFromDensity from './cards/wl-porosity-from-density.js';
+import wlPorosityFromSonic from './cards/wl-porosity-from-sonic.js';
+import wlResistivityLog from './cards/wl-resistivity-log.js';
+import wlShaleCorrectedPorosity from './cards/wl-shale-corrected-porosity.js';
+import wlShaleVolumeLarionov from './cards/wl-shale-volume-larionov.js';
+import wlSonicTravelTime from './cards/wl-sonic-travel-time.js';
+import wlSpontaneousPotential from './cards/wl-spontaneous-potential.js';
 import wyllieTimeAverage from './cards/wyllie-time-average.js';
 import youngsModulusLame from './cards/youngs-modulus-lame.js';
 import zenerStandardLinearSolid from './cards/zener-standard-linear-solid.js';
@@ -376,7 +632,21 @@ export const ALL_CARDS = [
     dalembertSolution,
     dampedLeastSquares,
     dampingRatio,
+    dcAnisotropyCoefficient,
+    dcApparentResistivity,
+    dcArchieFormationFactor,
+    dcArchieResistivityRatio,
+    dcArrayGeometricFactor,
+    dcDipoleDipoleArray,
+    dcFormationFactorRoRw,
     dcIsoClvdDecomposition,
+    dcOhmLawResistivity,
+    dcPointSourcePotential,
+    dcResistivityParameters,
+    dcSchlumbergerArray,
+    dcVesCurve,
+    dcWaterSaturationArchie,
+    dcWennerArray,
     debyePeakRelaxation,
     deviatoricStress,
     dipMoveoutCorrection,
@@ -397,6 +667,13 @@ export const ALL_CARDS = [
     elasticImpedance,
     elasticModuliConversions,
     ellipticityCorrection,
+    emCagniardApparentResistivity,
+    emFaradayInduction,
+    emMaxwellEquations,
+    emMtDepthPenetration,
+    emMtImpedance,
+    emPlaneWaveInConductor,
+    emSkinDepth,
     energyMagnitudeRelation,
     engineeringShearStrain,
     equationOfMotion,
@@ -429,6 +706,27 @@ export const ALL_CARDS = [
     geometricalSpreading,
     gmpeFunctionalForm,
     gradient,
+    gravityAiryIsostasy,
+    gravityBouguerAnomaly,
+    gravityBouguerComplete,
+    gravityBouguerSimple,
+    gravityCentrifugalEffect,
+    gravityEotvosCorrection,
+    gravityFieldFromPotential,
+    gravityFreeAirAnomaly,
+    gravityFreeAirCorrection,
+    gravityFreeAirGradient,
+    gravityGeoidEllipsoid,
+    gravityLatitudeVariation,
+    gravityNewtonLaw,
+    gravityNormalFormula,
+    gravityPotentialPoint,
+    gravityPotentialSecondDerivatives,
+    gravityPrattIsostasy,
+    gravitySolidSphere,
+    gravitySphericalHarmonicsJ2,
+    gravitySphericalShell,
+    gravityTerrainCorrection,
     greenFunctionDefinition,
     groundMotionParameters,
     groupVelocity,
@@ -452,6 +750,11 @@ export const ALL_CARDS = [
     instrumentDeconvolution,
     intensityPgaConversion,
     interbedMultiple,
+    ipColeColeModel,
+    ipFrequencyDomainPfe,
+    ipPolarizabilityDefinition,
+    ipPolarizationMechanisms,
+    ipTimeDomainChargeability,
     isotropicHookeLaw,
     kinematicRayEquations,
     kirchhoffMigration,
@@ -467,6 +770,27 @@ export const ALL_CARDS = [
     localMagnitude,
     loveWaveDispersion,
     loveWaveHigherModes,
+    magCentralDipoleField,
+    magChemicalRemanence,
+    magCoulombLaw,
+    magCurieLaw,
+    magCurieTemperature,
+    magDepositionalRemanence,
+    magDipoleFieldAxial,
+    magDipoleFieldGeneral,
+    magDipolePotential,
+    magDiurnalCorrection,
+    magEarthDipoleMoment,
+    magElementConversions,
+    magGeomagneticElements,
+    magGeomagneticReversal,
+    magIgrfReferenceField,
+    magInducedVsRemanent,
+    magMagnetizationSusceptibility,
+    magMarineAnomalyStripe,
+    magReductionToPole,
+    magThermalRemanence,
+    magVirtualGeomagneticPole,
     magnitudeCompletenessMc,
     magnitudeSaturating,
     mantleDiscontinuities,
@@ -478,6 +802,16 @@ export const ALL_CARDS = [
     modeMultipletSplitting,
     modelCovarianceMatrix,
     modifiedOmoriLaw,
+    modphysBohrHydrogenLevels,
+    modphysComptonScattering,
+    modphysDeBroglieWavelength,
+    modphysHeisenbergUncertainty,
+    modphysPhotoelectricEffect,
+    modphysPlanckEnergyQuantum,
+    modphysSchrodingerEquation,
+    modphysStefanBoltzmannLaw,
+    modphysWavefunctionProbability,
+    modphysWienDisplacementLaw,
     mohorovicicDiscontinuity,
     mohrCircleMaxShear,
     momentRateFunction,
@@ -493,10 +827,42 @@ export const ALL_CARDS = [
     noiseCrossCorrelationStacking,
     nonhyperbolicMoveout,
     normalModeSummation,
+    nucActivity,
+    nucAlphaBetaGammaDecay,
+    nucBindingEnergyPerNucleon,
+    nucHalfLifeMeanLife,
+    nucMassDefectBindingEnergy,
+    nucNuclearConstituents,
+    nucNuclearRadius,
+    nucRadioactiveDecayLaw,
     nyquistSampling,
     okadaDislocation,
     omegaSquareModel,
     omoriLaw,
+    optBirefringence,
+    optBrewsterAngle,
+    optCircularApertureAiry,
+    optDiffractionGrating,
+    optDoubleSlitInterference,
+    optGratingResolvingPower,
+    optLateralMagnification,
+    optLawOfReflection,
+    optLensmakerEquation,
+    optMalusLaw,
+    optMichelsonInterferometer,
+    optNewtonRings,
+    optOpticalInstrumentsMagnification,
+    optOpticalPathLength,
+    optPathDifferencePhase,
+    optPrismMinimumDeviation,
+    optRayleighCriterion,
+    optRefractiveIndex,
+    optSingleSlitDiffraction,
+    optSnellLaw,
+    optSphericalMirrorEquation,
+    optThinFilmInterference,
+    optThinLensEquation,
+    optTotalInternalReflection,
     pAndSImpedance,
     pWaveVelocityFormula,
     parsevalTheorem,
@@ -506,6 +872,74 @@ export const ALL_CARDS = [
     phaseGroupVelocity,
     phaseShiftMigration,
     phaseVelocity,
+    physAdiabaticProcess,
+    physAngularMomentum,
+    physApparentWeightElevator,
+    physArchimedesBuoyancy,
+    physBeats,
+    physBernoulliEquation,
+    physCarnotEfficiency,
+    physCentripetalForce,
+    physCoefficientRestitution,
+    physConservationAngularMomentum,
+    physConservationMechanicalEnergy,
+    physConservationMomentum,
+    physConstantAcceleration,
+    physContinuityEquation,
+    physDampedHarmonicOscillator,
+    physDopplerEffect,
+    physElasticCollision,
+    physElasticPotentialEnergy,
+    physEntropySecondLaw,
+    physEquipartitionTheorem,
+    physFirstLawThermo,
+    physForcedOscillationResonance,
+    physFourierHeatConduction,
+    physFreeFall,
+    physFrictionForce,
+    physGravitationalPotentialEnergy,
+    physHeatCapacity,
+    physHydrostaticPressure,
+    physIdealGasLaw,
+    physImpulseMomentum,
+    physInclinedPlane,
+    physInelasticCollision,
+    physKinematicDerivatives,
+    physKineticEnergy,
+    physKineticTheoryPressure,
+    physLinearMomentum,
+    physMassSpringOscillator,
+    physMaxwellSpeedDistribution,
+    physMayerRelation,
+    physMeanTranslationalKineticEnergy,
+    physMechanicalPower,
+    physMomentOfInertia,
+    physNewtonFirstLaw,
+    physNewtonSecondLaw,
+    physNewtonThirdLaw,
+    physNewtonViscosity,
+    physParallelAxisTheorem,
+    physPascalPrinciple,
+    physPrincipleSuperposition,
+    physProjectileMotion,
+    physRefrigeratorCop,
+    physRelativeVelocity,
+    physRotationalDynamicsLaw,
+    physRotationalKineticEnergy,
+    physSatelliteOrbit,
+    physSimpleHarmonicMotion,
+    physSimplePendulum,
+    physSoundIntensityLevel,
+    physStringWaveSpeed,
+    physTemperatureScales,
+    physThermalLinearExpansion,
+    physTorqueDefinition,
+    physUniformCircularMotion,
+    physWaveEquation1d,
+    physWaveSpeedRelation,
+    physWeightVsMass,
+    physWorkByForce,
+    physWorkEnergyTheorem,
     poissonEarthquakeOccurrence,
     poissonFromVelocities,
     poissonsRatioLame,
@@ -544,6 +978,15 @@ export const ALL_CARDS = [
     reflectionTransmissionEnergy,
     reflectivityLogConversion,
     refractedWaveInterceptTime,
+    relEnergyMomentumRelation,
+    relGalileanTransformation,
+    relLengthContraction,
+    relLorentzTransformation,
+    relMassEnergyEquivalence,
+    relRelativisticMomentum,
+    relRelativisticVelocityAddition,
+    relSrPostulates,
+    relTimeDilation,
     residueTheorem,
     resolutionMatrix,
     responseSpectrumOscillator,
@@ -608,6 +1051,58 @@ export const ALL_CARDS = [
     tstarOperator,
     tuningWedgeModel,
     turningPointDepth,
+    uemAcPeakRms,
+    uemAcPowerFactor,
+    uemAmpereForceWire,
+    uemAmpereLoopLaw,
+    uemBiotSavartLaw,
+    uemCapacitance,
+    uemCapacitiveReactance,
+    uemCapacitorEnergy,
+    uemCapacitorSeriesParallel,
+    uemChargedParticleCyclotron,
+    uemConductorElectrostaticEquilibrium,
+    uemContinuousChargeField,
+    uemCoulombLaw,
+    uemCurrentCurrentDensity,
+    uemDielectricConstant,
+    uemDiscreteChargeSuperposition,
+    uemDisplacementCurrent,
+    uemElectricFieldPointCharge,
+    uemElectricFlux,
+    uemElectricPotentialPointCharge,
+    uemElectricPower,
+    uemElectromotiveForce,
+    uemElectrostaticEnergy,
+    uemEmSpectrum,
+    uemEmWaveSpeed,
+    uemEquipotentialSurface,
+    uemFaradayLawEmf,
+    uemGaussLaw,
+    uemInductiveReactance,
+    uemInductorEnergy,
+    uemKirchhoffLaws,
+    uemLenzLaw,
+    uemLorentzForce,
+    uemMagneticDipoleMoment,
+    uemMagneticFieldB,
+    uemMagneticFluxDef,
+    uemMaxwellEquations,
+    uemMotionalEmf,
+    uemMutualInductance,
+    uemOhmsLaw,
+    uemParallelPlateCapacitor,
+    uemPotentialGradientE,
+    uemPoyntingVectorEnergy,
+    uemRcTransient,
+    uemResistanceResistivity,
+    uemResistorSeriesParallel,
+    uemRlTransient,
+    uemRlcImpedance,
+    uemSelfInductance,
+    uemSeriesResonance,
+    uemSolenoidB,
+    uemStraightWireB,
     velocityAnalysis,
     velocityModelParameterization,
     velocityRatioPoisson,
@@ -623,6 +1118,23 @@ export const ALL_CARDS = [
     wiechertHerglotzInversion,
     wienerFilter,
     windowFunctionLeakage,
+    wlArchieWaterSaturation,
+    wlAveragePorosityCombination,
+    wlCementationSaturationIndices,
+    wlDensityLog,
+    wlFormationWaterResistivity,
+    wlIntegratedInterpretation,
+    wlInvadedZoneProfile,
+    wlNaturalGamma,
+    wlNeutronDensityCrossplot,
+    wlNeutronPorosity,
+    wlPorosityFromDensity,
+    wlPorosityFromSonic,
+    wlResistivityLog,
+    wlShaleCorrectedPorosity,
+    wlShaleVolumeLarionov,
+    wlSonicTravelTime,
+    wlSpontaneousPotential,
     wyllieTimeAverage,
     youngsModulusLame,
     zenerStandardLinearSolid,
@@ -689,7 +1201,21 @@ export const CARD_MODULES = {
     'dalembert-solution': dalembertSolution,
     'damped-least-squares': dampedLeastSquares,
     'damping-ratio': dampingRatio,
+    'dc-anisotropy-coefficient': dcAnisotropyCoefficient,
+    'dc-apparent-resistivity': dcApparentResistivity,
+    'dc-archie-formation-factor': dcArchieFormationFactor,
+    'dc-archie-resistivity-ratio': dcArchieResistivityRatio,
+    'dc-array-geometric-factor': dcArrayGeometricFactor,
+    'dc-dipole-dipole-array': dcDipoleDipoleArray,
+    'dc-formation-factor-ro-rw': dcFormationFactorRoRw,
     'dc-iso-clvd-decomposition': dcIsoClvdDecomposition,
+    'dc-ohm-law-resistivity': dcOhmLawResistivity,
+    'dc-point-source-potential': dcPointSourcePotential,
+    'dc-resistivity-parameters': dcResistivityParameters,
+    'dc-schlumberger-array': dcSchlumbergerArray,
+    'dc-ves-curve': dcVesCurve,
+    'dc-water-saturation-archie': dcWaterSaturationArchie,
+    'dc-wenner-array': dcWennerArray,
     'debye-peak-relaxation': debyePeakRelaxation,
     'deviatoric-stress': deviatoricStress,
     'dip-moveout-correction': dipMoveoutCorrection,
@@ -710,6 +1236,13 @@ export const CARD_MODULES = {
     'elastic-impedance': elasticImpedance,
     'elastic-moduli-conversions': elasticModuliConversions,
     'ellipticity-correction': ellipticityCorrection,
+    'em-cagniard-apparent-resistivity': emCagniardApparentResistivity,
+    'em-faraday-induction': emFaradayInduction,
+    'em-maxwell-equations': emMaxwellEquations,
+    'em-mt-depth-penetration': emMtDepthPenetration,
+    'em-mt-impedance': emMtImpedance,
+    'em-plane-wave-in-conductor': emPlaneWaveInConductor,
+    'em-skin-depth': emSkinDepth,
     'energy-magnitude-relation': energyMagnitudeRelation,
     'engineering-shear-strain': engineeringShearStrain,
     'equation-of-motion': equationOfMotion,
@@ -742,6 +1275,27 @@ export const CARD_MODULES = {
     'geometrical-spreading': geometricalSpreading,
     'gmpe-functional-form': gmpeFunctionalForm,
     'gradient': gradient,
+    'gravity-airy-isostasy': gravityAiryIsostasy,
+    'gravity-bouguer-anomaly': gravityBouguerAnomaly,
+    'gravity-bouguer-complete': gravityBouguerComplete,
+    'gravity-bouguer-simple': gravityBouguerSimple,
+    'gravity-centrifugal-effect': gravityCentrifugalEffect,
+    'gravity-eotvos-correction': gravityEotvosCorrection,
+    'gravity-field-from-potential': gravityFieldFromPotential,
+    'gravity-free-air-anomaly': gravityFreeAirAnomaly,
+    'gravity-free-air-correction': gravityFreeAirCorrection,
+    'gravity-free-air-gradient': gravityFreeAirGradient,
+    'gravity-geoid-ellipsoid': gravityGeoidEllipsoid,
+    'gravity-latitude-variation': gravityLatitudeVariation,
+    'gravity-newton-law': gravityNewtonLaw,
+    'gravity-normal-formula': gravityNormalFormula,
+    'gravity-potential-point': gravityPotentialPoint,
+    'gravity-potential-second-derivatives': gravityPotentialSecondDerivatives,
+    'gravity-pratt-isostasy': gravityPrattIsostasy,
+    'gravity-solid-sphere': gravitySolidSphere,
+    'gravity-spherical-harmonics-j2': gravitySphericalHarmonicsJ2,
+    'gravity-spherical-shell': gravitySphericalShell,
+    'gravity-terrain-correction': gravityTerrainCorrection,
     'green-function-definition': greenFunctionDefinition,
     'ground-motion-parameters': groundMotionParameters,
     'group-velocity': groupVelocity,
@@ -765,6 +1319,11 @@ export const CARD_MODULES = {
     'instrument-deconvolution': instrumentDeconvolution,
     'intensity-pga-conversion': intensityPgaConversion,
     'interbed-multiple': interbedMultiple,
+    'ip-cole-cole-model': ipColeColeModel,
+    'ip-frequency-domain-pfe': ipFrequencyDomainPfe,
+    'ip-polarizability-definition': ipPolarizabilityDefinition,
+    'ip-polarization-mechanisms': ipPolarizationMechanisms,
+    'ip-time-domain-chargeability': ipTimeDomainChargeability,
     'isotropic-hooke-law': isotropicHookeLaw,
     'kinematic-ray-equations': kinematicRayEquations,
     'kirchhoff-migration': kirchhoffMigration,
@@ -780,6 +1339,27 @@ export const CARD_MODULES = {
     'local-magnitude': localMagnitude,
     'love-wave-dispersion': loveWaveDispersion,
     'love-wave-higher-modes': loveWaveHigherModes,
+    'mag-central-dipole-field': magCentralDipoleField,
+    'mag-chemical-remanence': magChemicalRemanence,
+    'mag-coulomb-law': magCoulombLaw,
+    'mag-curie-law': magCurieLaw,
+    'mag-curie-temperature': magCurieTemperature,
+    'mag-depositional-remanence': magDepositionalRemanence,
+    'mag-dipole-field-axial': magDipoleFieldAxial,
+    'mag-dipole-field-general': magDipoleFieldGeneral,
+    'mag-dipole-potential': magDipolePotential,
+    'mag-diurnal-correction': magDiurnalCorrection,
+    'mag-earth-dipole-moment': magEarthDipoleMoment,
+    'mag-element-conversions': magElementConversions,
+    'mag-geomagnetic-elements': magGeomagneticElements,
+    'mag-geomagnetic-reversal': magGeomagneticReversal,
+    'mag-igrf-reference-field': magIgrfReferenceField,
+    'mag-induced-vs-remanent': magInducedVsRemanent,
+    'mag-magnetization-susceptibility': magMagnetizationSusceptibility,
+    'mag-marine-anomaly-stripe': magMarineAnomalyStripe,
+    'mag-reduction-to-pole': magReductionToPole,
+    'mag-thermal-remanence': magThermalRemanence,
+    'mag-virtual-geomagnetic-pole': magVirtualGeomagneticPole,
     'magnitude-completeness-mc': magnitudeCompletenessMc,
     'magnitude-saturation': magnitudeSaturating,
     'mantle-discontinuities': mantleDiscontinuities,
@@ -791,6 +1371,16 @@ export const CARD_MODULES = {
     'mode-multiplet-splitting': modeMultipletSplitting,
     'model-covariance-matrix': modelCovarianceMatrix,
     'modified-omori-law': modifiedOmoriLaw,
+    'modphys-bohr-hydrogen-levels': modphysBohrHydrogenLevels,
+    'modphys-compton-scattering': modphysComptonScattering,
+    'modphys-de-broglie-wavelength': modphysDeBroglieWavelength,
+    'modphys-heisenberg-uncertainty': modphysHeisenbergUncertainty,
+    'modphys-photoelectric-effect': modphysPhotoelectricEffect,
+    'modphys-planck-energy-quantum': modphysPlanckEnergyQuantum,
+    'modphys-schrodinger-equation': modphysSchrodingerEquation,
+    'modphys-stefan-boltzmann-law': modphysStefanBoltzmannLaw,
+    'modphys-wavefunction-probability': modphysWavefunctionProbability,
+    'modphys-wien-displacement-law': modphysWienDisplacementLaw,
     'mohorovicic-discontinuity': mohorovicicDiscontinuity,
     'mohr-circle-max-shear': mohrCircleMaxShear,
     'moment-rate-function': momentRateFunction,
@@ -806,10 +1396,42 @@ export const CARD_MODULES = {
     'noise-cross-correlation-stacking': noiseCrossCorrelationStacking,
     'nonhyperbolic-moveout': nonhyperbolicMoveout,
     'normal-mode-summation': normalModeSummation,
+    'nuc-activity': nucActivity,
+    'nuc-alpha-beta-gamma-decay': nucAlphaBetaGammaDecay,
+    'nuc-binding-energy-per-nucleon': nucBindingEnergyPerNucleon,
+    'nuc-half-life-mean-life': nucHalfLifeMeanLife,
+    'nuc-mass-defect-binding-energy': nucMassDefectBindingEnergy,
+    'nuc-nuclear-constituents': nucNuclearConstituents,
+    'nuc-nuclear-radius': nucNuclearRadius,
+    'nuc-radioactive-decay-law': nucRadioactiveDecayLaw,
     'nyquist-sampling': nyquistSampling,
     'okada-dislocation': okadaDislocation,
     'omega-square-model': omegaSquareModel,
     'omori-law': omoriLaw,
+    'opt-birefringence': optBirefringence,
+    'opt-brewster-angle': optBrewsterAngle,
+    'opt-circular-aperture-airy': optCircularApertureAiry,
+    'opt-diffraction-grating': optDiffractionGrating,
+    'opt-double-slit-interference': optDoubleSlitInterference,
+    'opt-grating-resolving-power': optGratingResolvingPower,
+    'opt-lateral-magnification': optLateralMagnification,
+    'opt-law-of-reflection': optLawOfReflection,
+    'opt-lensmaker-equation': optLensmakerEquation,
+    'opt-malus-law': optMalusLaw,
+    'opt-michelson-interferometer': optMichelsonInterferometer,
+    'opt-newton-rings': optNewtonRings,
+    'opt-optical-instruments-magnification': optOpticalInstrumentsMagnification,
+    'opt-optical-path-length': optOpticalPathLength,
+    'opt-path-difference-phase': optPathDifferencePhase,
+    'opt-prism-minimum-deviation': optPrismMinimumDeviation,
+    'opt-rayleigh-criterion': optRayleighCriterion,
+    'opt-refractive-index': optRefractiveIndex,
+    'opt-single-slit-diffraction': optSingleSlitDiffraction,
+    'opt-snell-law': optSnellLaw,
+    'opt-spherical-mirror-equation': optSphericalMirrorEquation,
+    'opt-thin-film-interference': optThinFilmInterference,
+    'opt-thin-lens-equation': optThinLensEquation,
+    'opt-total-internal-reflection': optTotalInternalReflection,
     'p-and-s-impedance': pAndSImpedance,
     'p-wave-velocity-formula': pWaveVelocityFormula,
     'parseval-theorem': parsevalTheorem,
@@ -819,6 +1441,74 @@ export const CARD_MODULES = {
     'phase-group-velocity': phaseGroupVelocity,
     'phase-shift-migration': phaseShiftMigration,
     'phase-velocity': phaseVelocity,
+    'phys-adiabatic-process': physAdiabaticProcess,
+    'phys-angular-momentum': physAngularMomentum,
+    'phys-apparent-weight-elevator': physApparentWeightElevator,
+    'phys-archimedes-buoyancy': physArchimedesBuoyancy,
+    'phys-beats': physBeats,
+    'phys-bernoulli-equation': physBernoulliEquation,
+    'phys-carnot-efficiency': physCarnotEfficiency,
+    'phys-centripetal-force': physCentripetalForce,
+    'phys-coefficient-restitution': physCoefficientRestitution,
+    'phys-conservation-angular-momentum': physConservationAngularMomentum,
+    'phys-conservation-mechanical-energy': physConservationMechanicalEnergy,
+    'phys-conservation-momentum': physConservationMomentum,
+    'phys-constant-acceleration': physConstantAcceleration,
+    'phys-continuity-equation': physContinuityEquation,
+    'phys-damped-harmonic-oscillator': physDampedHarmonicOscillator,
+    'phys-doppler-effect': physDopplerEffect,
+    'phys-elastic-collision': physElasticCollision,
+    'phys-elastic-potential-energy': physElasticPotentialEnergy,
+    'phys-entropy-second-law': physEntropySecondLaw,
+    'phys-equipartition-theorem': physEquipartitionTheorem,
+    'phys-first-law-thermo': physFirstLawThermo,
+    'phys-forced-oscillation-resonance': physForcedOscillationResonance,
+    'phys-fourier-heat-conduction': physFourierHeatConduction,
+    'phys-free-fall': physFreeFall,
+    'phys-friction-force': physFrictionForce,
+    'phys-gravitational-potential-energy': physGravitationalPotentialEnergy,
+    'phys-heat-capacity': physHeatCapacity,
+    'phys-hydrostatic-pressure': physHydrostaticPressure,
+    'phys-ideal-gas-law': physIdealGasLaw,
+    'phys-impulse-momentum': physImpulseMomentum,
+    'phys-inclined-plane': physInclinedPlane,
+    'phys-inelastic-collision': physInelasticCollision,
+    'phys-kinematic-derivatives': physKinematicDerivatives,
+    'phys-kinetic-energy': physKineticEnergy,
+    'phys-kinetic-theory-pressure': physKineticTheoryPressure,
+    'phys-linear-momentum': physLinearMomentum,
+    'phys-mass-spring-oscillator': physMassSpringOscillator,
+    'phys-maxwell-speed-distribution': physMaxwellSpeedDistribution,
+    'phys-mayer-relation': physMayerRelation,
+    'phys-mean-translational-kinetic-energy': physMeanTranslationalKineticEnergy,
+    'phys-mechanical-power': physMechanicalPower,
+    'phys-moment-of-inertia': physMomentOfInertia,
+    'phys-newton-first-law': physNewtonFirstLaw,
+    'phys-newton-second-law': physNewtonSecondLaw,
+    'phys-newton-third-law': physNewtonThirdLaw,
+    'phys-newton-viscosity': physNewtonViscosity,
+    'phys-parallel-axis-theorem': physParallelAxisTheorem,
+    'phys-pascal-principle': physPascalPrinciple,
+    'phys-principle-superposition': physPrincipleSuperposition,
+    'phys-projectile-motion': physProjectileMotion,
+    'phys-refrigerator-cop': physRefrigeratorCop,
+    'phys-relative-velocity': physRelativeVelocity,
+    'phys-rotational-dynamics-law': physRotationalDynamicsLaw,
+    'phys-rotational-kinetic-energy': physRotationalKineticEnergy,
+    'phys-satellite-orbit': physSatelliteOrbit,
+    'phys-simple-harmonic-motion': physSimpleHarmonicMotion,
+    'phys-simple-pendulum': physSimplePendulum,
+    'phys-sound-intensity-level': physSoundIntensityLevel,
+    'phys-string-wave-speed': physStringWaveSpeed,
+    'phys-temperature-scales': physTemperatureScales,
+    'phys-thermal-linear-expansion': physThermalLinearExpansion,
+    'phys-torque-definition': physTorqueDefinition,
+    'phys-uniform-circular-motion': physUniformCircularMotion,
+    'phys-wave-equation-1d': physWaveEquation1d,
+    'phys-wave-speed-relation': physWaveSpeedRelation,
+    'phys-weight-vs-mass': physWeightVsMass,
+    'phys-work-by-force': physWorkByForce,
+    'phys-work-energy-theorem': physWorkEnergyTheorem,
     'poisson-earthquake-occurrence': poissonEarthquakeOccurrence,
     'poisson-from-velocities': poissonFromVelocities,
     'poissons-ratio-lame': poissonsRatioLame,
@@ -857,6 +1547,15 @@ export const CARD_MODULES = {
     'reflection-transmission-energy': reflectionTransmissionEnergy,
     'reflectivity-log-conversion': reflectivityLogConversion,
     'refracted-wave-intercept-time': refractedWaveInterceptTime,
+    'rel-energy-momentum-relation': relEnergyMomentumRelation,
+    'rel-galilean-transformation': relGalileanTransformation,
+    'rel-length-contraction': relLengthContraction,
+    'rel-lorentz-transformation': relLorentzTransformation,
+    'rel-mass-energy-equivalence': relMassEnergyEquivalence,
+    'rel-relativistic-momentum': relRelativisticMomentum,
+    'rel-relativistic-velocity-addition': relRelativisticVelocityAddition,
+    'rel-sr-postulates': relSrPostulates,
+    'rel-time-dilation': relTimeDilation,
     'residue-theorem': residueTheorem,
     'resolution-matrix': resolutionMatrix,
     'response-spectrum-oscillator': responseSpectrumOscillator,
@@ -921,6 +1620,58 @@ export const CARD_MODULES = {
     'tstar-operator': tstarOperator,
     'tuning-wedge-model': tuningWedgeModel,
     'turning-point-depth': turningPointDepth,
+    'uem-ac-peak-rms': uemAcPeakRms,
+    'uem-ac-power-factor': uemAcPowerFactor,
+    'uem-ampere-force-wire': uemAmpereForceWire,
+    'uem-ampere-loop-law': uemAmpereLoopLaw,
+    'uem-biot-savart-law': uemBiotSavartLaw,
+    'uem-capacitance': uemCapacitance,
+    'uem-capacitive-reactance': uemCapacitiveReactance,
+    'uem-capacitor-energy': uemCapacitorEnergy,
+    'uem-capacitor-series-parallel': uemCapacitorSeriesParallel,
+    'uem-charged-particle-cyclotron': uemChargedParticleCyclotron,
+    'uem-conductor-electrostatic-equilibrium': uemConductorElectrostaticEquilibrium,
+    'uem-continuous-charge-field': uemContinuousChargeField,
+    'uem-coulomb-law': uemCoulombLaw,
+    'uem-current-current-density': uemCurrentCurrentDensity,
+    'uem-dielectric-constant': uemDielectricConstant,
+    'uem-discrete-charge-superposition': uemDiscreteChargeSuperposition,
+    'uem-displacement-current': uemDisplacementCurrent,
+    'uem-electric-field-point-charge': uemElectricFieldPointCharge,
+    'uem-electric-flux': uemElectricFlux,
+    'uem-electric-potential-point-charge': uemElectricPotentialPointCharge,
+    'uem-electric-power': uemElectricPower,
+    'uem-electromotive-force': uemElectromotiveForce,
+    'uem-electrostatic-energy': uemElectrostaticEnergy,
+    'uem-em-spectrum': uemEmSpectrum,
+    'uem-em-wave-speed': uemEmWaveSpeed,
+    'uem-equipotential-surface': uemEquipotentialSurface,
+    'uem-faraday-law-emf': uemFaradayLawEmf,
+    'uem-gauss-law': uemGaussLaw,
+    'uem-inductive-reactance': uemInductiveReactance,
+    'uem-inductor-energy': uemInductorEnergy,
+    'uem-kirchhoff-laws': uemKirchhoffLaws,
+    'uem-lenz-law': uemLenzLaw,
+    'uem-lorentz-force': uemLorentzForce,
+    'uem-magnetic-dipole-moment': uemMagneticDipoleMoment,
+    'uem-magnetic-field-b': uemMagneticFieldB,
+    'uem-magnetic-flux-def': uemMagneticFluxDef,
+    'uem-maxwell-equations': uemMaxwellEquations,
+    'uem-motional-emf': uemMotionalEmf,
+    'uem-mutual-inductance': uemMutualInductance,
+    'uem-ohms-law': uemOhmsLaw,
+    'uem-parallel-plate-capacitor': uemParallelPlateCapacitor,
+    'uem-potential-gradient-e': uemPotentialGradientE,
+    'uem-poynting-vector-energy': uemPoyntingVectorEnergy,
+    'uem-rc-transient': uemRcTransient,
+    'uem-resistance-resistivity': uemResistanceResistivity,
+    'uem-resistor-series-parallel': uemResistorSeriesParallel,
+    'uem-rl-transient': uemRlTransient,
+    'uem-rlc-impedance': uemRlcImpedance,
+    'uem-self-inductance': uemSelfInductance,
+    'uem-series-resonance': uemSeriesResonance,
+    'uem-solenoid-b': uemSolenoidB,
+    'uem-straight-wire-b': uemStraightWireB,
     'velocity-analysis': velocityAnalysis,
     'velocity-model-parameterization': velocityModelParameterization,
     'velocity-ratio-poisson': velocityRatioPoisson,
@@ -936,6 +1687,23 @@ export const CARD_MODULES = {
     'wiechert-herglotz-inversion': wiechertHerglotzInversion,
     'wiener-filter': wienerFilter,
     'window-function-leakage': windowFunctionLeakage,
+    'wl-archie-water-saturation': wlArchieWaterSaturation,
+    'wl-average-porosity-combination': wlAveragePorosityCombination,
+    'wl-cementation-saturation-indices': wlCementationSaturationIndices,
+    'wl-density-log': wlDensityLog,
+    'wl-formation-water-resistivity': wlFormationWaterResistivity,
+    'wl-integrated-interpretation': wlIntegratedInterpretation,
+    'wl-invaded-zone-profile': wlInvadedZoneProfile,
+    'wl-natural-gamma': wlNaturalGamma,
+    'wl-neutron-density-crossplot': wlNeutronDensityCrossplot,
+    'wl-neutron-porosity': wlNeutronPorosity,
+    'wl-porosity-from-density': wlPorosityFromDensity,
+    'wl-porosity-from-sonic': wlPorosityFromSonic,
+    'wl-resistivity-log': wlResistivityLog,
+    'wl-shale-corrected-porosity': wlShaleCorrectedPorosity,
+    'wl-shale-volume-larionov': wlShaleVolumeLarionov,
+    'wl-sonic-travel-time': wlSonicTravelTime,
+    'wl-spontaneous-potential': wlSpontaneousPotential,
     'wyllie-time-average': wyllieTimeAverage,
     'youngs-modulus-lame': youngsModulusLame,
     'zener-standard-linear-solid': zenerStandardLinearSolid,

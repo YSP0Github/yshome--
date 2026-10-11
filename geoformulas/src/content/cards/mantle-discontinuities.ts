@@ -15,7 +15,7 @@ const mantleDiscontinuities: FormulaCard = {
   audience: 'master',
   complete: 'L2',
   statement: {
-    main: String.raw`z_{\text{起伏}}=\frac{\Delta t_{Ps}}{\sqrt{\dfrac{1}{v_S^{2}}-p^{2}}-\sqrt{\dfrac{1}{v_P^{2}}-p^{2}}}\cdot\frac{1}{\text{（使用一维参考速度）}}`,
+    main: String.raw`z=\frac{\Delta t_{Ps}}{\sqrt{v_S^{-2}-p^{2}}-\sqrt{v_P^{-2}-p^{2}}}\quad(\text{给定一维参考速度与射线参数})`,
     variants: [
       { name: t('两相变界面的克拉珀龙斜率', 'Clapeyron slopes of the two phase transitions'), latex: String.raw`\frac{\mathrm{d}P}{\mathrm{d}T}=\gamma:\quad 410\ \text{约}\ +2\ \text{MPa/K},\qquad 660\ \text{约}\ -2\ \text{MPa/K}` },
       { name: t('过渡带厚度与温度的关系', 'Transition-zone thickness versus temperature'), latex: String.raw`\text{冷（俯冲）}\to\ 410\ \text{抬升},\ 660\ \text{下降}\ \to\ \text{过渡带加厚}` },

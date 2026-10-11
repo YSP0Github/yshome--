@@ -44,7 +44,7 @@ A_{\max} \simeq \frac{2}{\pi}\,\frac{\rho_2 V_{S2}}{\rho_1 V_{S1}}`,
     { n: 1, op: 'setup', title: t('一层覆盖半空间，波垂直入射', 'A layer over a half-space with vertical incidence'), latex: String.raw`u(z,\omega) = A e^{ikz}+B e^{-ikz}` },
     { n: 2, op: 'physics', title: t('自由表面应力为零、基底位移连续', 'Zero traction at the free surface, continuous displacement at the base'), latex: String.raw`\sigma_{xz}(0)=0;\quad u(H^-)=u(H^+)` },
     { n: 3, op: 'algebra', title: t('导出地表与基底位移之比', 'Derive the surface-to-base displacement ratio'), latex: String.raw`|T(\omega)| = \frac{1}{\left|\cos kH + i\,\alpha\sin kH\right|},\quad \alpha = \frac{\rho_2V_{S2}}{\rho_1V_{S1}}` },
-    { n: 4, op: 'identity', title: t('sin(kH) = 0 时取极小分母，即 kH = (2n+1)π/2', 'The denominator is minimal when sin(kH) = 0, i.e. kH = (2n+1)π/2'), latex: String.raw`kH = \frac{(2n+1)\pi}{2} \Longrightarrow \frac{\omega H}{V_S} = \frac{(2n+1)\pi}{2}` },
+    { n: 4, op: 'identity', title: t('cos(kH) = 0 时取极小分母，即 kH = (2n+1)π/2', 'The denominator is minimal when cos(kH) = 0, i.e. kH = (2n+1)π/2'), latex: String.raw`kH = \frac{(2n+1)\pi}{2} \Longrightarrow \frac{\omega H}{V_S} = \frac{(2n+1)\pi}{2}` },
     { n: 5, op: 'result', title: t('解出共振频率', 'Solve for the resonance frequencies'), latex: String.raw`f_n = \frac{(2n+1)\pi}{2}\cdot\frac{V_S}{2\pi H} = \frac{(2n+1)V_S}{4H}` },
   ],
   viz: [

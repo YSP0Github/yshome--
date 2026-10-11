@@ -15,7 +15,7 @@ const velocityModelParameterization = {
     statement: {
         main: String.raw `v(z) = v_k + \frac{v_{k+1}-v_k}{z_{k+1}-z_k}(z-z_k),\qquad z_k \le z \le z_{k+1}`,
         variants: [
-            { name: t('常速度层的走时', 'Travel time in a constant-velocity layer'), latex: String.raw `\Delta t = \frac{\Delta z}{\sqrt{v^{-2}-p^{2}}}\ \text{（单层水平射线段）}` },
+            { name: t('常速度层中的走时与水平距离', 'Travel time and horizontal distance in a constant-velocity layer'), latex: String.raw `\Delta t = \Delta z\,\sqrt{v^{-2}-p^{2}},\qquad \Delta X = \frac{p\,\Delta z}{\sqrt{v^{-2}-p^{2}}}` },
             { name: t('线性梯度层中的走时（v = a + bz）', 'Travel time in a linear-gradient layer (v = a + bz)'), latex: String.raw `T = \frac{1}{b}\,\mathrm{arcosh}\!\left(\frac{1}{p v_1}\right)\ \text{的差形式},\qquad X = \frac{1}{bp}\sqrt{1-p^{2}v^{2}}` },
             { name: t('均匀球壳中的走时（扁平化后）', 'Travel time in a homogeneous spherical shell (after flattening)'), latex: String.raw `T(p) = \frac{1}{\zeta}\left[\sqrt{1-p^{2}v^{2}}\ \right]_{r_1}^{r_2}\ \text{形式},\qquad \zeta = \frac{v}{r}\ \text{的对数导数}` },
             { name: t('模型参数个数与分辨率的矛盾', 'Tension between parameter count and resolution'), latex: String.raw `N_{\text{参数}} \uparrow \Rightarrow \text{拟合残差} \downarrow,\ \text{但}\ \mathrm{Var}(\hat{m}) \uparrow` },

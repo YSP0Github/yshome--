@@ -15,7 +15,7 @@ const freeSurfaceAmplification = {
     statement: {
         main: String.raw `A_{\text{地表}}=(1+R)\,A_{\text{入射}}\approx2\,A_{\text{入射}}\quad(\text{垂直入射})`,
         variants: [
-            { name: t('由阻抗关系给出', 'From the impedance relation'), latex: String.raw `1+R=\frac{2Z_2}{Z_1+Z_2}\;\xrightarrow[\ Z_2\to0\ ]{}\ 2` },
+            { name: t('由阻抗关系给出', 'From the impedance relation'), latex: String.raw `1+R=\frac{2Z_1}{Z_1+Z_2}\;\xrightarrow[\ Z_2\to0\ ]{}\ 2` },
             { name: t('斜入射时随入射角变化', 'At oblique incidence it varies with angle'), latex: String.raw `\text{放大因子}\in[1,2]\ \text{，随波型与入射角变化，可超过 2（临界角附近）}` },
             { name: t('S 波常被放大得更多', 'S waves are often amplified more'), latex: String.raw `\text{实际记录中}\ \frac{A_S}{A_P}\ \text{常大于理论值}` },
         ],

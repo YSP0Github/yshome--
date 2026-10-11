@@ -53,7 +53,7 @@ const sourceSpectralScaling: FormulaCard = {
     { n: 3, op: 'algebra', title: t('解出半径', 'Solve for the radius'),
       latex: String.raw`a = \left(\frac{7M_0}{16\Delta\sigma}\right)^{1/3}` },
     { n: 4, op: 'identity', title: t('拐角频率与尺度成反比', 'Corner frequency is inversely proportional to dimension'),
-      latex: String.raw`f_c \approx \frac{0.32\,\beta}{a}` },
+      latex: String.raw`f_c \approx \frac{0.37\,\beta}{a}` },
     { n: 5, op: 'result', title: t('合并得到 f_c 与 Δσ、M₀ 的关系', 'Combine to relate f_c to Δσ and M₀'),
       latex: String.raw`f_c \approx 0.49\,\beta\left(\frac{\Delta\sigma}{M_0}\right)^{1/3}` },
   ],

@@ -100,10 +100,10 @@ z = \int_0^{t_{Ps}}\frac{\mathrm{d}t}{p_{S}^{-1} - p_{P}^{-1}}\ \text{的时间�
     input: t('Vp = 6.2 km/s，ν = 0.27，p = 0.06 s/km', 'Vp = 6.2 km/s, ν = 0.27, p = 0.06 s/km'),
     steps: [
       t('Vs = 6.2 × √(0.23/0.73) = 3.48 km/s', 'Vs = 6.2 × √(0.23/0.73) = 3.48 km/s'),
-      t('√(Vs⁻²−p²) = 0.2686，√(Vp⁻²−p²) = 0.1488', '√(Vs⁻²−p²) = 0.2686, √(Vp⁻²−p²) = 0.1488'),
-      t('H = 5 / (0.2686 − 0.1488) = 41.8 km', 'H = 5 / (0.2686 − 0.1488) = 41.8 km'),
+      t('√(Vs⁻²−p²) = √(0.0826−0.0036) = 0.281，√(Vp⁻²−p²) = √(0.0260−0.0036) = 0.150', '√(Vs⁻²−p²) = √(0.0826−0.0036) = 0.281, √(Vp⁻²−p²) = √(0.0260−0.0036) = 0.150'),
+      t('H = 5 / (0.281 − 0.150) = 38.1 km', 'H = 5 / (0.281 − 0.150) = 38.1 km'),
     ],
-    output: t('Moho 深度约 42 km，符合造山带地壳', 'Moho depth about 42 km, consistent with an orogenic crust'),
+    output: t('Moho 深度约 38 km，符合典型大陆地壳', 'Moho depth about 38 km, consistent with typical continental crust'),
   },
   links: {
     upstream: [

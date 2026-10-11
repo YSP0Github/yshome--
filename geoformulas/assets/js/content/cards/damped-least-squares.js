@@ -63,7 +63,7 @@ const dampedLeastSquares = {
             t('ε² → ∞：模型极平滑但几乎不拟合数据（欠拟合）', 'ε² → ∞: very smooth model that barely fits the data (under-fitting)'),
             t('取曲线拐角处的 ε²', 'Choose ε² at the corner of the L-curve'),
         ],
-        output: t('拐角坐标 batik 数据残差与模型大小之间的最佳妥协点', 'The corner is the optimal compromise between data misfit and model size'),
+        output: t('拐角即数据残差与模型大小之间的最佳妥协点', 'The corner is the optimal compromise between data misfit and model size'),
     },
     numerics: [
         { note: t('大型问题不要真的求逆，改用共轭梯度（CG）迭代', 'For large problems never form the inverse; use conjugate gradients'), snippet: 'solve (GᵀG + ε²I) m = Gᵀd  via CG仅需 forward 与 adjoint 算子的调用' },

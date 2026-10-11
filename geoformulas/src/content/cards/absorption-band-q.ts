@@ -15,7 +15,7 @@ const absorptionBandQ: FormulaCard = {
   audience: 'phd',
   complete: 'L3',
   statement: {
-    main: String.raw`Q^{-1}(\omega)=Q_m^{-1}\cdot\frac{2}{\pi}\arctan\!\left(\frac{\omega\tau_m}{Q_m}\cdot\frac{1}{1+\omega^{2}\tau_m^{2}}\cdot\left(\text{标准线性固体}\right)\right)`,
+    main: String.raw`Q^{-1}(\omega)=\frac{\omega(\tau_\sigma-\tau_\varepsilon)}{1+\omega^{2}\tau_\sigma\tau_\varepsilon}\quad\text{（标准线性固体）}`,
     variants: [
       { name: t('幂律形式（观测常用）', 'Power-law form (common observationally)'), latex: String.raw`Q(\omega)=Q_0\left(\frac{\omega}{\omega_0}\right)^{\alpha},\qquad 0\le\alpha\le1` },
       { name: t('对应的复模量', 'Corresponding complex modulus'), latex: String.raw`M(\omega)=M_0\left[1+\frac{2}{\pi Q}\ln\frac{\omega}{\omega_0}-\frac{i}{2Q}\right]` },

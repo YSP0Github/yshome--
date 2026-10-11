@@ -17,8 +17,8 @@ const phaseGroupVelocity: FormulaCard = {
   statement: {
     main: String.raw`U=\frac{\mathrm{d}\omega}{\mathrm{d}k}=c+k\frac{\mathrm{d}c}{\mathrm{d}k}=c-\lambda\frac{\mathrm{d}c}{\mathrm{d}\lambda}`,
     variants: [
-      { name: t('用周期表示', 'In terms of period'), latex: String.raw`U=c+T\frac{\mathrm{d}c}{\mathrm{d}T}` },
-      { name: t('由频散曲线 U(T) 反推 c(T)', 'Recovering c(T) from a measured U(T)'), latex: String.raw`c(T)=\frac{1}{T}\int_0^{T}U(T')\,\mathrm{d}T'` },
+      { name: t('用周期表示', 'In terms of period'), latex: String.raw`U=\frac{c^{2}}{c+T\,\mathrm{d}c/\mathrm{d}T}` },
+      { name: t('正频散时群速度小于相速度', 'Normal dispersion: group velocity is below phase velocity'), latex: String.raw`\frac{\mathrm{d}c}{\mathrm{d}T}>0\ \Longrightarrow\ U<c` },
     ],
   },
   meaning: t(
@@ -71,14 +71,14 @@ const phaseGroupVelocity: FormulaCard = {
           const T = 1 + (i / 200) * 49
           const c = c0 + dc * (T - 1)
           cPts.push([T, c])
-          uPts.push([T, c + T * dc])
+          uPts.push([T, c * c / (c + T * dc)])
         }
         return [
           { label: t('相速度 c(T)', 'phase velocity c(T)'), color: '#185FA5', points: cPts },
           { label: t('群速度 U(T)', 'group velocity U(T)'), color: '#0F6E56', points: uPts },
         ]
       },
-      note: t('当 c 随周期增大（正频散）时 U > c；反频散时 U < c，群速度甚至可以小于零。', 'When c grows with period (normal dispersion) U > c; under inverse dispersion U < c and the group velocity can even become negative.'),
+      note: t('当 c 随周期增大（正频散）时 U < c；反频散（dc/dT < 0）时 U > c，群速度曲线在相速度上方。', 'When c grows with period (normal dispersion) U < c; under inverse dispersion (dc/dT < 0) U > c and the group-velocity curve sits above the phase velocity.'),
     },
   ],
   links: {

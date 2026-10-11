@@ -91,9 +91,9 @@ const bendingMethodRayTracing = {
         title: t('两层模型的折返点', 'Bending point in a two-layer model'),
         input: t('v₁ = 4.0，v₂ = 7.0 km/s，H = 20 km，X = 150 km', 'v₁ = 4.0, v₂ = 7.0 km/s, H = 20 km, X = 150 km'),
         steps: [
-            t('数值求极小得 x ≈ 47 km', 'Numerical minimisation gives x ≈ 47 km'),
-            t('sin i₁ = 47/√(47²+20²) = 0.920，sin i₂ = 103/√(103²+20²) = 0.982', 'sin i₁ = 47/√(47²+20²) = 0.920, sin i₂ = 103/√(103²+20²) = 0.982'),
-            t('0.920/4.0 = 0.230 = 0.982/7.0 ✓', '0.920/4.0 = 0.230 = 0.982/7.0 ✓'),
+            t('数值求极小得 x ≈ 13.7 km', 'Numerical minimisation gives x ≈ 13.7 km'),
+            t('sin i₁ = 13.7/√(13.7²+20²) = 0.565，sin i₂ = 136.3/√(136.3²+20²) = 0.989', 'sin i₁ = 13.7/√(13.7²+20²) = 0.565, sin i₂ = 136.3/√(136.3²+20²) = 0.989'),
+            t('0.565/4.0 = 0.141 = 0.989/7.0 ✓', '0.565/4.0 = 0.141 = 0.989/7.0 ✓'),
         ],
         output: t('Snell 定律成立，走时最小', 'Snell’s law holds and the travel time is minimal'),
     },

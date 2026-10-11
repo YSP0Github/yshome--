@@ -51,7 +51,7 @@ const rayleighVelocityApproximation = {
                 const exact = [];
                 const exactF = (nu) => {
                     const r = (1 - 2 * nu) / (2 * (1 - nu));
-                    const alpha = 1 / r;
+                    const alpha = 1 / Math.sqrt(r);
                     const F = (c) => {
                         const qa = Math.sqrt(Math.max(0, 1 - (c * c) / (alpha * alpha)));
                         const qb = Math.sqrt(Math.max(0, 1 - c * c));

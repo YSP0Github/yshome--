@@ -114,9 +114,9 @@ const psWaveVelocities = {
         title: t('PREM 下地壳顶部', 'Uppermost lower crust in PREM'),
         input: t('λ = 40 GPa，μ = 45 GPa，ρ = 2900 kg/m³', 'λ = 40 GPa, μ = 45 GPa, ρ = 2900 kg/m³'),
         steps: [
-            t('α = √((40+90)×10⁹ / 2900) = 6.74 km/s', 'α = √((40+90)×10⁹ / 2900) = 6.74 km/s'),
+            t('α = √((40+90)×10⁹ / 2900) = 6.70 km/s', 'α = √((40+90)×10⁹ / 2900) = 6.70 km/s'),
             t('β = √(45×10⁹ / 2900) = 3.94 km/s', 'β = √(45×10⁹ / 2900) = 3.94 km/s'),
-            t('α/β = 1.71 ⇒ ν ≈ 0.24，接近泊松固体', 'α/β = 1.71 ⇒ ν ≈ 0.24, close to a Poisson solid'),
+            t('α/β = 1.70 ⇒ ν ≈ 0.24，接近泊松固体', 'α/β = 1.70 ⇒ ν ≈ 0.24, close to a Poisson solid'),
         ],
         output: t('与实测下地壳速度 6.5–7.0 km/s 相符', 'Consistent with observed lower-crust velocities of 6.5–7.0 km/s'),
     },

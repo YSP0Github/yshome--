@@ -15,8 +15,8 @@ const phaseGroupVelocity = {
     statement: {
         main: String.raw `U=\frac{\mathrm{d}\omega}{\mathrm{d}k}=c+k\frac{\mathrm{d}c}{\mathrm{d}k}=c-\lambda\frac{\mathrm{d}c}{\mathrm{d}\lambda}`,
         variants: [
-            { name: t('用周期表示', 'In terms of period'), latex: String.raw `U=c+T\frac{\mathrm{d}c}{\mathrm{d}T}` },
-            { name: t('由频散曲线 U(T) 反推 c(T)', 'Recovering c(T) from a measured U(T)'), latex: String.raw `c(T)=\frac{1}{T}\int_0^{T}U(T')\,\mathrm{d}T'` },
+            { name: t('用周期表示', 'In terms of period'), latex: String.raw `U=\frac{c^{2}}{c+T\,\mathrm{d}c/\mathrm{d}T}` },
+            { name: t('正频散时群速度小于相速度', 'Normal dispersion: group velocity is below phase velocity'), latex: String.raw `\frac{\mathrm{d}c}{\mathrm{d}T}>0\ \Longrightarrow\ U<c` },
         ],
     },
     meaning: t('在频散介质里，「波峰移动的速度」和「能量传播的速度」不是同一个东西。相速度 c = ω/k 是等相位面的移动；群速度 U = dω/dk 是波包（也就是能量）的移动。面波频散测量测到的到时对应群速度，而大多数正演公式给出的是相速度 —— 两者搞混会导致反演出的速度结构系统性偏错。', 'In a dispersive medium the speed of a wave crest and the speed of energy transport are not the same thing. Phase velocity c = ω/k is the motion of a constant-phase surface; group velocity U = dω/dk is the motion of the wave packet, i.e. of energy. Dispersion measurements pick arrival times, which correspond to group velocity, whereas most forward formulas give phase velocity. Confusing the two biases the inverted velocity structure systematically.'),
@@ -66,14 +66,14 @@ const phaseGroupVelocity = {
                     const T = 1 + (i / 200) * 49;
                     const c = c0 + dc * (T - 1);
                     cPts.push([T, c]);
-                    uPts.push([T, c + T * dc]);
+                    uPts.push([T, c * c / (c + T * dc)]);
                 }
                 return [
                     { label: t('相速度 c(T)', 'phase velocity c(T)'), color: '#185FA5', points: cPts },
                     { label: t('群速度 U(T)', 'group velocity U(T)'), color: '#0F6E56', points: uPts },
                 ];
             },
-            note: t('当 c 随周期增大（正频散）时 U > c；反频散时 U < c，群速度甚至可以小于零。', 'When c grows with period (normal dispersion) U > c; under inverse dispersion U < c and the group velocity can even become negative.'),
+            note: t('当 c 随周期增大（正频散）时 U < c；反频散（dc/dT < 0）时 U > c，群速度曲线在相速度上方。', 'When c grows with period (normal dispersion) U < c; under inverse dispersion (dc/dT < 0) U > c and the group-velocity curve sits above the phase velocity.'),
         },
     ],
     links: {

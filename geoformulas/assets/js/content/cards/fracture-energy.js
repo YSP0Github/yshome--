@@ -13,7 +13,7 @@ const fractureEnergy = {
     audience: 'phd',
     complete: 'L3',
     statement: {
-        main: String.raw `E_{G} = \frac{1}{2}\left(\sigma_{0}-\sigma_{f}\right)\bar{u}\,A = \frac{(\sigma_{0}-\sigma_{f})\,M_{0}}{2\mu}`,
+        main: String.raw `E_{G} = G_c\,A = \frac{1}{2}\left(\sigma_{0}-\sigma_{f}\right)D_{c}\,A`,
         variants: [
             { name: t('线性滑动弱化本构', 'Linear slip-weakening law'), latex: String.raw `\sigma(u) = \sigma_0 - (\sigma_0-\sigma_f)\frac{u}{D_c}\quad (u<D_c),\qquad \sigma = \sigma_f\ (u\ge D_c)` },
             { name: t('单位面积的断裂能', 'Fracture energy per unit area'), latex: String.raw `G_c = \frac{1}{2}(\sigma_0-\sigma_f)D_c` },
@@ -47,10 +47,11 @@ const fractureEnergy = {
             latex: String.raw `\sigma(u)-\sigma_f = (\sigma_0-\sigma_f)\left(1-\frac{u}{D_c}\right)` },
         { n: 3, op: 'algebra', title: t('积分', 'Integrate'),
             latex: String.raw `G_c = (\sigma_0-\sigma_f)\int_0^{D_c}\left(1-\frac{u}{D_c}\right)du = \frac{1}{2}(\sigma_0-\sigma_f)D_c` },
-        { n: 4, op: 'identity', title: t('总能量等于单位面积能量乘面积', 'Total energy is the per-area value times area'),
-            latex: String.raw `E_G = G_c\,A = \frac{1}{2}(\sigma_0-\sigma_f)\bar{u}A` },
-        { n: 5, op: 'result', title: t('用地震矩消去 ūA', 'Eliminate ūA using the seismic moment'),
-            latex: String.raw `E_G = \frac{(\sigma_0-\sigma_f)M_0}{2\mu}` },
+        { n: 4, op: 'identity', title: t('总断裂能 = 单位面积断裂能 × 破裂面积', 'Total fracture energy = G_c × rupture area'),
+            latex: String.raw `E_G = G_c\,A = \frac{1}{2}(\sigma_0-\sigma_f)D_c\,A` },
+        { n: 5, op: 'result', title: t('注意它不同于总应变能释放 ΔW', 'Note: this differs from the total strain-energy release ΔW'),
+            latex: String.raw `\Delta W = \frac{1}{2}(\sigma_0-\sigma_f)\bar{u}\,A = \frac{(\sigma_0-\sigma_f)M_0}{2\mu}\;\gg\; E_G\quad(\bar{u}\gg D_c)`,
+            note: t('E_G 用弱化距离 D_c（通常远小于总滑移 ū），而 ΔW 用总滑移。二者只差一个几何因子，量级上 E_G ≪ ΔW。', 'E_G uses the weakening distance D_c (usually much smaller than total slip ū), whereas ΔW uses total slip. E_G ≪ ΔW.') },
     ],
     viz: [
         {
@@ -82,9 +83,9 @@ const fractureEnergy = {
         input: t('σ₀ = 10 MPa，σ_f = 6 MPa，D_c = 0.5 m', 'σ₀ = 10 MPa, σ_f = 6 MPa, D_c = 0.5 m'),
         steps: [
             t('G_c = ½ × 4 MPa × 0.5 m = 1×10⁶ J/m²', 'G_c = ½ × 4 MPa × 0.5 m = 1×10⁶ J/m²'),
-            t('若 M₀ = 1×10²⁰ N·m，μ = 30 GPa，则 E_G = 4×10⁶×10²⁰/(2×3×10¹⁰) = 6.7×10¹⁵ J', 'For M₀ = 1×10²⁰ N·m and μ = 30 GPa, E_G = 4×10⁶×10²⁰/(2×3×10¹⁰) = 6.7×10¹⁵ J'),
+            t('若破裂面积 A = 10³ km² = 10⁹ m²，则 E_G = 10⁶ × 10⁹ = 10¹⁵ J', 'If rupture area A = 10³ km² = 10⁹ m², then E_G = 10⁶ × 10⁹ = 10¹⁵ J'),
         ],
-        output: t('与同震级辐射能量同量级 —— 大约一半的能量被消耗在破裂尖端', 'Comparable to the radiated energy of the same event — roughly half the energy is consumed at the rupture tip'),
+        output: t('E_G 通常比辐射能量小 1–2 个数量级 —— 大部分释放的应变能仍变成了地震波', 'E_G is usually 1–2 orders of magnitude smaller than radiated energy — most released strain energy still becomes seismic waves'),
     },
     links: {
         upstream: [{ id: 'static-stress-drop', note: t('应力降的定义', 'Definition of stress drop') }],

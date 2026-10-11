@@ -16,7 +16,7 @@ const dDoublePrimePostPerovskite: FormulaCard = {
   complete: 'L3',
   statement: {
     main: String.raw`\text{MgSiO}_3\ \text{(钙钛矿)} \xrightarrow{\ \sim 125\ \text{GPa},\ \sim 2500\ \text{K}\ } \text{MgSiO}_3\ \text{(后钙钛矿)},\qquad
-\Delta V < 0,\ \Delta S > 0`,
+\Delta V < 0,\ \Delta S < 0`,
     variants: [
       { name: t('相变边界的 Clapeyron 斜率', 'Clapeyron slope of the phase boundary'), latex: String.raw`\frac{\mathrm{d}P}{\mathrm{d}T} = \frac{\Delta S}{\Delta V}` },
       { name: t('正斜率时冷的下沉板片内相变加深', 'With a positive slope the transition deepens inside cold slabs'), latex: String.raw`\text{冷异常} \Rightarrow T \downarrow \Rightarrow P_{\text{相变}} \downarrow \Rightarrow \text{深度} \downarrow` },
@@ -43,7 +43,7 @@ const dDoublePrimePostPerovskite: FormulaCard = {
     { n: 1, op: 'physics', title: t('两相平衡时化学势相等', 'At equilibrium the chemical potentials of the two phases are equal'), latex: String.raw`\mu_{\text{Pv}}(P,T) = \mu_{\text{pPv}}(P,T)` },
     { n: 2, op: 'identity', title: t('沿相变边界微分', 'Differentiate along the phase boundary'), latex: String.raw`\mathrm{d}\mu = -S\,\mathrm{d}T + V\,\mathrm{d}P \Longrightarrow \Delta S\,\mathrm{d}T = \Delta V\,\mathrm{d}P` },
     { n: 3, op: 'algebra', title: t('得到 Clapeyron 方程', 'Obtain the Clapeyron equation'), latex: String.raw`\frac{\mathrm{d}P}{\mathrm{d}T} = \frac{\Delta S}{\Delta V}` },
-    { n: 4, op: 'substitute', title: t('实验测得 ΔS > 0、ΔV < 0，故斜率为正且很陡', 'Experiments give ΔS > 0 and ΔV < 0, so the slope is positive and steep'), latex: String.raw`\frac{\mathrm{d}P}{\mathrm{d}T} \approx +5\text{ 到 } +13\ \text{MPa/K}` },
+    { n: 4, op: 'substitute', title: t('实测斜率为正且陡，意味着 ΔS<0（低压相 Pv 熵更高）', 'The measured slope is positive and steep, implying ΔS<0 (the low-pressure Pv phase has higher entropy)'), latex: String.raw`\frac{\mathrm{d}P}{\mathrm{d}T}=\frac{\Delta S}{\Delta V}\approx +8\ \text{MPa/K},\quad \Delta V<0\ \Rightarrow\ \Delta S<0` },
     { n: 5, op: 'result', title: t('冷板片内温度低 → 相变压力低 → 深度浅，出现双重界面', 'Cold slabs are cooler, so the transition pressure is lower and the depth shallower, producing a double interface'), latex: String.raw`T_{\text{板片}} < T_{\text{周围}} \Longrightarrow z_{\text{pPv}} \text{变浅} \Longrightarrow \text{Pv→pPv 与 pPv→Pv 两个界面}` },
   ],
   viz: [
@@ -62,8 +62,8 @@ const dDoublePrimePostPerovskite: FormulaCard = {
       compute: (p) => {
         const slope = p['slope'], dT = p['dT'], z0 = p['z0']
         const dPdz = 0.045 // GPa/km ≈ 45 MPa/km near CMB
-        // Δz = (dP/dT)·ΔT / (dP/dz)，注意符号：z 向下为正
-        const dz = (-slope * dT) / (dPdz * 1000) // 单位 km
+        // Δz = (dP/dT)·ΔT / (dP/dz)，z 向下为正；冷板片 ΔT<0、正斜率 => Δz<0（变浅）
+        const dz = (slope * dT) / (dPdz * 1000) // 单位 km
         const top: Array<[number, number]> = []
         const bot: Array<[number, number]> = []
         for (let i = 0; i <= 300; i++) {
@@ -84,7 +84,7 @@ const dDoublePrimePostPerovskite: FormulaCard = {
     input: t('斜率 = 8 MPa/K，ΔT = −800 K，dP/dz ≈ 45 MPa/km', 'slope = 8 MPa/K, ΔT = −800 K, dP/dz ≈ 45 MPa/km'),
     steps: [
       t('ΔP = 8 × (−800) = −6400 MPa = −6.4 GPa', 'ΔP = 8 × (−800) = −6400 MPa = −6.4 GPa'),
-      t('Δz = −ΔP / (dP/dz) = 6400 / 45 = 142 km（向上）', 'Δz = −ΔP / (dP/dz) = 6400 / 45 = 142 km (upward)'),
+      t('Δz = ΔP / (dP/dz) = −6400 / 45 = −142 km（深度变小，即抬升 142 km）', 'Δz = ΔP / (dP/dz) = −6400 / 45 = −142 km (depth decreases, i.e. rises 142 km)'),
     ],
     output: t('冷板片内相变面抬升约 140 km，与地震学观测的界面起伏量级吻合', 'The transition surface rises by about 140 km inside a cold slab, matching the order of seismologically observed undulations'),
   },

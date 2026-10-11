@@ -139,8 +139,8 @@ const maximumLikelihoodEstimation = {
         input: t('残差（s）：0.10, −0.30, 0.40, −0.20, 0.00, 0.25, −0.15, −0.05', 'Residuals (s): 0.10, −0.30, 0.40, −0.20, 0.00, 0.25, −0.15, −0.05'),
         steps: [
             t('均值 μ_ML = 0.0063 s（几乎为零，符合无系统偏差的预期）', 'Mean μ_ML = 0.0063 s (essentially zero, as expected for no systematic bias)'),
-            t('ML 方差 σ²_ML = (1/8)Σ(x−x均值)² = 0.0472 s²，σ_ML = 0.217 s', 'ML variance σ²_ML = (1/8)Σ(x − x_mean)² = 0.0472 s², σ_ML = 0.217 s'),
-            t('无偏修正 s² = (8/7)×0.0472 = 0.0540 s²，s = 0.232 s', 'Unbiased correction s² = (8/7)×0.0472 = 0.0540 s², s = 0.232 s'),
+            t('ML 方差 σ²_ML = (1/8)Σ(x−x均值)² = 0.0484 s²，σ_ML = 0.220 s', 'ML variance σ²_ML = (1/8)Σ(x − x_mean)² = 0.0484 s², σ_ML = 0.220 s'),
+            t('无偏修正 s² = (8/7)×0.0484 = 0.0553 s²，s = 0.235 s', 'Unbiased correction s² = (8/7)×0.0484 = 0.0553 s², s = 0.235 s'),
         ],
         output: t('用 8 个数据点估计方差，有偏与无偏差了 14% —— 样本越小差别越大，这正是一自由度修正的意义。', 'With only eight points the biased and unbiased variance estimates differ by 14%. The smaller the sample the larger the gap, which is the whole point of the one-degree-of-freedom correction.'),
     },

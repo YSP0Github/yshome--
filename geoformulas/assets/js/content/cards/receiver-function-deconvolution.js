@@ -13,9 +13,9 @@ const receiverFunctionDeconvolution = {
     audience: 'phd',
     complete: 'L3',
     statement: {
-        main: String.raw `R(\omega) = \frac{Z(\omega)\,\overline{R_{r}(\omega)}}{\max\!\left\{|R_{r}(\omega)|^{2},\ c\,\max|R_{r}|^{2}\right\}}\,G(\omega)`,
+        main: String.raw `R(\omega) = \frac{R_{r}(\omega)\,\overline{Z(\omega)}}{\max\!\left\{|Z(\omega)|^{2},\ c\,\max|Z|^{2}\right\}}\,G(\omega)`,
         variants: [
-            { name: t('理想去卷积', 'Ideal deconvolution'), latex: String.raw `R(\omega) = \frac{Z(\omega)}{R_r(\omega)}` },
+            { name: t('理想去卷积', 'Ideal deconvolution'), latex: String.raw `R(\omega) = \frac{R_r(\omega)}{Z(\omega)}` },
             { name: t('水位 c 的作用', 'Role of the water level c'), latex: String.raw `c \approx 0.001\text{–}0.05\ \text{压制谱谷处的噪声放大}` },
             { name: t('高斯低通', 'Gaussian low-pass'), latex: String.raw `G(\omega) = e^{-\omega^{2}/(4a^{2})},\qquad a \approx 1\text{–}5\ \text{rad/s}` },
         ],

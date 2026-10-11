@@ -13,7 +13,7 @@ const apparentStress = {
     audience: 'phd',
     complete: 'L2',
     statement: {
-        main: String.raw `\sigma_a=\mu\,\frac{E_s}{M_0},\qquad \eta_{sw}=\frac{\sigma_a}{\Delta\sigma}=\frac{2\mu E_s}{\Delta\sigma\,M_0}`,
+        main: String.raw `\sigma_a=\mu\,\frac{E_s}{M_0},\qquad \eta_{sw}=\frac{\sigma_a}{\Delta\sigma}=\frac{\mu E_s}{\Delta\sigma\,M_0}`,
         variants: [
             { name: t('辐射地震能量', 'Radiated seismic energy'), latex: String.raw `E_s=\frac{1}{2}\left(\Delta\sigma_1+\Delta\sigma_2\right)\bar{D}\,A\ \to\ \frac{\Delta\sigma\,\bar{D}\,A}{2}\ \text{（Orowan 模型）}` },
             { name: t('能量—震级关系', 'Energy–magnitude relation'), latex: String.raw `\log_{10}E_s=1.5\,M_s+11.8\quad (E_s\ \text{单位 erg})` },
@@ -41,7 +41,7 @@ const apparentStress = {
         { n: 3, op: 'algebra', title: t('定义视应力', 'Define the apparent stress'),
             latex: String.raw `\sigma_a\equiv\mu\frac{E_s}{M_0}=\frac{\Delta\sigma_{\text{eff}}}{2}` },
         { n: 4, op: 'result', title: t('辐射效率', 'Radiation efficiency'),
-            latex: String.raw `\eta_{sw}=\frac{\sigma_a}{\Delta\sigma}=\frac{2\mu E_s}{\Delta\sigma\,M_0}` },
+            latex: String.raw `\eta_{sw}=\frac{\sigma_a}{\Delta\sigma}=\frac{\mu E_s}{\Delta\sigma\,M_0}` },
     ],
     links: {
         upstream: [{ id: 'seismic-moment', note: t('M₀ 来自它', 'M₀ comes from it') }],

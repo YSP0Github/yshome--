@@ -87,8 +87,8 @@ const acousticImpedance = {
             n: 6,
             op: 'result',
             title: t('为什么反射系数只含 Z', 'Why the reflection coefficient contains only Z'),
-            latex: String.raw `R=\frac{Z_2-Z_1}{Z_2+Z_1},\qquad T=1+R_{\text{stress}}=\frac{2Z_1}{Z_2+Z_1}`,
-            note: t('因为界面条件只需应力连续与位移连续，而应力恰好是 Z 乘质点速度。', 'Because the interface conditions require only continuity of stress and of displacement, and stress is exactly Z times particle velocity.'),
+            latex: String.raw `R=\frac{Z_2-Z_1}{Z_2+Z_1},\qquad T_{\text{位移}}=1-R=\frac{2Z_1}{Z_2+Z_1}`,
+            note: t('位移连续给出位移透射系数 T = 1 − R；应力连续给出压力透射系数 T_σ = 1 + R = 2Z₂/(Z₁+Z₂)。界面条件只需应力连续与位移连续，而应力恰好是 Z 乘质点速度。', 'Displacement continuity gives the displacement transmission coefficient T = 1 − R; stress continuity gives the pressure transmission coefficient T_σ = 1 + R = 2Z₂/(Z₁+Z₂). The interface conditions require only continuity of stress and of displacement, and stress is exactly Z times particle velocity.'),
         },
     ],
     viz: [

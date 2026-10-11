@@ -21,7 +21,8 @@ export function createViewport(o) {
     let ch = 600;
     const clampK = (v) => Math.min(max, Math.max(min, v));
     function apply() {
-        o.svg.setAttribute('viewBox', `${ox} ${oy} ${cw} ${ch}`);
+        // ox/oy 是「世界坐标」偏移；root 已 scale(k)，viewBox 原点需乘 k 才与世界坐标对齐
+        o.svg.setAttribute('viewBox', `${ox * k} ${oy * k} ${cw} ${ch}`);
         o.root.setAttribute('transform', `scale(${k})`);
         live.onScale?.(k);
     }

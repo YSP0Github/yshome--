@@ -69,7 +69,7 @@ const rayleighWaveEquation: FormulaCard = {
         const r = (1 - 2 * nu) / (2 * (1 - nu))
         const ratio2 = r * r
         const beta = 1
-        const alpha = beta / r
+        const alpha = beta / Math.sqrt(r)
         const F = (c: number) => {
           const qa = Math.sqrt(Math.max(0, 1 - (c * c) / (alpha * alpha)))
           const qb = Math.sqrt(Math.max(0, 1 - (c * c) / (beta * beta)))

@@ -16,8 +16,8 @@ const ALPHA_MIN = 0.0005; // 温度下限：低于此值彻底静止（实测残
 const COLLIDE_K = 0.35; // 碰撞作为速度力（不是硬性位置投影），才能随温度一起衰减到静止
 const MOUSE_ALPHA = 0.25; // 鼠标在场时维持的最低温度，保证斥力场一直有效
 const MIN_FIT_K = 0.5; // 自适应缩放下限：310 个气泡若硬塞进画布会小到看不清
-const MOUSE_R = 190; // 鼠标影响半径
-const MOUSE_F = 30; // 鼠标斥力
+const MOUSE_R = 120; // 鼠标影响半径（世界单位）：温和让位，不再弹飞
+const MOUSE_F = 9; // 鼠标斥力：大幅削弱，只是轻轻拨开周围气泡
 const MAX_V = 26; // 单帧最大位移，防止数值爆炸
 /**
  * 被指向节点的跟随：不是简单的比例项，而是一个临界阻尼弹簧。
@@ -26,10 +26,13 @@ const MAX_V = 26; // 单帧最大位移，防止数值爆炸
  * 气泡只要偏离圆心 8px 以上，40 帧内就被推到 124px 外（命中半径才20~53px），
  * 于是「鼠标移上去就抓不住」，点不中。用弹簧后可在~0.3s 内贴到光标下且不过冲。
  */
-const HOVER_W = 0.42; // 弹簧角频率（越大越跟手）
+const HOVER_W = 0.44; // 弹簧角频率（越大越跟手、越快贴住光标）；略降以免粘住、妨碍抓取周围气泡
 const HOVER_Z = 1.0; // 阻尼比：1 = 临界阻尼，无振荡
 const MIN_HIT_R = 13; // 命中半径下限（屏幕像素）：缩到很小时仍要能点准
-const PRESS_SLACK = 26; // 抬起的容差环：手指/光标在按下到抬起之间允许偏出的量
+const HOVER_PAD = 9; // sticky hover 捕获区额外缓冲（屏幕像素）：光标在该范围内不切换 hover
+const PRESS_SLACK = 26; // 抬起的容差环：按下在空白、抬起落在气泡边缘时的容差
+const CLICK_SLOP = 8; // 屏幕像素：按下→抬起位移不超过它仍算「点击」而非拖动
+const CLICK_MS = 500; // 毫秒：按下→抬起时长不超过它仍算「点击」
 export function renderBubble(host, opts) {
     const lang = getLang();
     clear(host);
@@ -104,6 +107,10 @@ export function renderBubble(host, opts) {
     let lastX = 0;
     let lastY = 0;
     let panning = false;
+    /** pointerdown 瞬间的屏幕坐标与时间，pointerup 据此判定「点击」（屏幕像素阈值，与缩放无关） */
+    let downSX = 0;
+    let downSY = 0;
+    let downTime = 0;
     const mouse = { x: -1e5, y: -1e5, on: false };
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     /* ── 开关条 ───────────────────────────────────────── */
@@ -425,23 +432,42 @@ export function renderBubble(host, opts) {
      *
      * 半径取「实际渲染半径」与「最小可点半径」的较大者：缩小时圆可能只有4px，
      * 那是像素级精度，人点不准，所以给一个 13px 的舒适区。
+     *
+     * 命中选择：在所有满足半径的候选里选「数组下标最大」者。redraw 按数组顺序绘制、
+     * 下标靠后即在视觉上层，这样命中结果永远是光标下最上层那个可见气泡，
+     * 与 hover 高亮、与实际看到的圆保持一致，不会误命中被盖住、看不见的气泡。
      */
     function hit(sx, sy, slack = 0) {
         syncScreen();
         let best = -1;
-        let bd = Infinity;
         for (let i = 0; i < bubbles.length; i++) {
             const b = bubbles[i];
             const dx = b.sx - sx;
             const dy = b.sy - sy;
             const d = Math.hypot(dx, dy);
             const rr = Math.max(b.r * view.k, MIN_HIT_R) + slack;
-            if (d <= rr && d < bd) {
-                bd = d;
-                best = i;
-            }
+            if (d <= rr)
+                best = i; // 后写覆盖前值 → 最上层者胜出
         }
         return best;
+    }
+    /**
+     * hover 命中（带滞回）。
+     *
+     * 密集重叠区里，每帧裸 hit() 会让「光标下最上层气泡」频繁切换，目标一帧没被选中
+     * 就从「豁免斥力+被弹簧拉」掉回「吃斥力」，于是被 ~20–39 的加速度弹飞、再也抓不回。
+     * 这里加滞回：一旦 hovered=i，只要光标仍在该气泡的「扩大捕获区」
+     * （max(渲染半径, MIN_HIT_R) + HOVER_PAD 屏幕像素）内，就保持 i 不被抢占；
+     * 只有光标明确离开该捕获区后才重新 hit()。这样目标稳定豁免斥力、持续被吸向光标。
+     */
+    function hoverHit(sx, sy) {
+        if (hovered >= 0) {
+            const b = bubbles[hovered];
+            const cap = Math.max(b.r * view.k, MIN_HIT_R) + HOVER_PAD;
+            if (Math.hypot(b.sx - sx, b.sy - sy) <= cap)
+                return hovered;
+        }
+        return hit(sx, sy);
     }
     function setHover(i, ev) {
         if (hovered === i) {
@@ -476,18 +502,21 @@ export function renderBubble(host, opts) {
         mouse.y = sy;
         mouse.on = true;
         if (dragging >= 0) {
-            const [wx, wy] = toWorld(sx, sy);
-            const b = bubbles[dragging];
-            if (Math.hypot(wx - b.x, wy - b.y) > 3) {
-                if (!dragMoved) {
-                    dragMoved = true;
-                    locked = -1;
-                }
+            // 用「屏幕像素」而非世界单位判定拖动：缩放后 view.k 可低到 0.3，
+            // 世界单位 3px 阈值在屏幕上只有 5~10px，会把普通点击的轻微抖动误判成拖动，
+            // 进而吞掉 click、把气泡钉死。屏幕像素阈值与缩放无关，稳定可点。
+            if (!dragMoved && Math.hypot(sx - downSX, sy - downSY) > CLICK_SLOP) {
+                dragMoved = true;
+                locked = -1; // 真正开始拖动才解冻，让它跟随光标
             }
-            b.x = wx;
-            b.y = wy;
-            reheat(0.5);
-            kick();
+            if (dragMoved) {
+                const [wx, wy] = toWorld(sx, sy);
+                const b = bubbles[dragging];
+                b.x = wx;
+                b.y = wy;
+                reheat(0.5);
+                kick();
+            }
             return;
         }
         if (panning) {
@@ -498,7 +527,7 @@ export function renderBubble(host, opts) {
             redraw();
             return;
         }
-        setHover(hit(sx, sy), ev);
+        setHover(hoverHit(sx, sy), ev);
         // 鼠标一动就重新升温：这是斥力场能被感知到的前提
         reheat(MOUSE_ALPHA);
         kick();
@@ -508,11 +537,16 @@ export function renderBubble(host, opts) {
         setHover(-1);
     });
     canvas.addEventListener('pointerdown', (ev) => {
+        if (ev.button !== 0)
+            return;
         const rect = canvas.getBoundingClientRect();
         const sx = ev.clientX - rect.left;
         const sy = ev.clientY - rect.top;
         lastX = sx;
         lastY = sy;
+        downSX = sx;
+        downSY = sy;
+        downTime = performance.now();
         dragMoved = false;
         const i = hit(sx, sy);
         dragging = i;
@@ -523,30 +557,36 @@ export function renderBubble(host, opts) {
         else
             canvas.setPointerCapture(ev.pointerId);
         // 注意：这里**不**升温。升温会让气泡立刻散开，夹在按下与抬起之间的
-        // 那几十毫秒里目标可能已被邻居挤走，导致 click 无效。
+        // 那几十毫秒里目标可能已被邻居挤走，导致点击落空。
         kick();
     });
-    window.addEventListener('pointerup', () => {
+    window.addEventListener('pointerup', (ev) => {
+        const tapped = dragging >= 0 && !dragMoved;
         // 只有真正拖动过才把气泡钉住；单击则保持自由
         if (dragging >= 0 && dragMoved)
             bubbles[dragging].pinned = true;
+        // 点击导航统一放在 pointerup：setPointerCapture 后原生 click 可能被抑制，
+        // 直接用「按下→抬起位移 < 屏幕阈值 且 时长 < 阈值」判定一次点击。
+        if (tapped) {
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left;
+            const sy = ev.clientY - rect.top;
+            const dt = performance.now() - downTime;
+            if (Math.hypot(sx - downSX, sy - downSY) <= CLICK_SLOP && dt <= CLICK_MS) {
+                // 优先用按下瞬间锁定的目标；只有「按下时什么都没点中」才按抬起位置重命中（带容差）。
+                let i = pressTarget;
+                if (i < 0)
+                    i = hit(sx, sy, PRESS_SLACK);
+                if (i >= 0)
+                    location.hash = `#/card/${bubbles[i].card.id}`;
+            }
+        }
         dragging = -1;
         locked = -1;
         panning = false;
-        syncState();
-    });
-    canvas.addEventListener('click', (ev) => {
-        if (dragMoved)
-            return;
-        const rect = canvas.getBoundingClientRect();
-        // 优先用按下瞬间锁定的目标；它可能被邻居挤开，也可能光标已轻微移出。
-        // 只有「按下时什么都没点中」才退回重新命中。
-        let i = pressTarget;
-        if (i < 0)
-            i = hit(ev.clientX - rect.left, ev.clientY - rect.top, PRESS_SLACK);
         pressTarget = -1;
-        if (i >= 0)
-            location.hash = `#/card/${bubbles[i].card.id}`;
+        dragMoved = false;
+        syncState();
     });
     canvas.addEventListener('dblclick', (ev) => {
         const rect = canvas.getBoundingClientRect();

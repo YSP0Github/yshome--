@@ -38,7 +38,7 @@ const vtiShAzimuthalVelocity = {
             },
             {
                 name: t('4ψ 项从哪来：HTI 中的 qP 速度', 'Where the 4ψ term comes from: the qP velocity in HTI'),
-                latex: String.raw `v_{P}(\psi)\approx\alpha_{0}\left(1+\delta^{(V)}\sin^{2}\psi\cos^{2}\psi+\varepsilon^{(V)}\sin^{4}\psi\right)=\alpha_{0}\left[\cdots+\frac{\delta^{(V)}-2\varepsilon^{(V)}}{8}\cos 4\psi+\cdots\right]`,
+                latex: String.raw `v_{P}(\psi)\approx\alpha_{0}\left(1+\delta^{(V)}\sin^{2}\psi\cos^{2}\psi+\varepsilon^{(V)}\sin^{4}\psi\right)=\alpha_{0}\left[\cdots+\frac{\varepsilon^{(V)}-\delta^{(V)}}{8}\cos 4\psi+\cdots\right]`,
             },
         ],
     },
@@ -108,7 +108,7 @@ const vtiShAzimuthalVelocity = {
             n: 6,
             op: 'result',
             title: t('谐波分解：为什么 SH 只有 2ψ，而别的模式有 4ψ', 'Harmonic decomposition: why SH has only 2ψ while other modes carry 4ψ'),
-            latex: String.raw `v_{SH}(\psi)=\beta_{0}\left[1+\underbrace{\frac{\gamma}{2}}_{a_{2}}\left(1-\cos 2\psi\right)\right],\qquad v_{P}(\psi)=\alpha_{0}\left[\cdots-\frac{2\varepsilon^{(V)}-\delta^{(V)}}{8}\cos 4\psi+\cdots\right]`,
+            latex: String.raw `v_{SH}(\psi)=\beta_{0}\left[1+\underbrace{\frac{\gamma}{2}}_{a_{2}}\left(1-\cos 2\psi\right)\right],\qquad v_{P}(\psi)=\alpha_{0}\left[\cdots+\frac{\varepsilon^{(V)}-\delta^{(V)}}{8}\cos 4\psi+\cdots\right]`,
             note: t('一般方位各向异性写成 v = v̄[1 + a₂cos2ψ + a₄cos4ψ]。对 TI 中的 SH，a₄ ≡ 0 —— 只有单一 cos 2ψ 的椭圆型图案；4ψ 项出现在 qP 波以及斜方/单斜介质中，所以它常被用来判别「是不是只有一组裂隙」。', 'A general azimuthally anisotropic velocity reads v = v̄[1 + a₂cos2ψ + a₄cos4ψ]. For SH in a TI medium a₄ ≡ 0: an elliptical pattern with a single cos 2ψ. The 4ψ term shows up for qP waves and in orthorhombic or monoclinic media, which is why it is used as a diagnostic of whether more than one fracture set is present.'),
         },
     ],

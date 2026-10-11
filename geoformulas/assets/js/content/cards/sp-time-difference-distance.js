@@ -40,7 +40,7 @@ const spTimeDifferenceDistance = {
         { sym: 't_{P},\\ t_{S}', name: t('P 波、S 波的到时', 'arrival times of P and S'), unit: 's' },
         { sym: '\\alpha', name: t('P 波速度', 'P-wave velocity'), unit: 'km/s', typical: '5.0 – 8.0（地壳 6.0）' },
         { sym: '\\beta', name: t('S 波速度', 'S-wave velocity'), unit: 'km/s', typical: '2.9 – 4.6（地壳 3.46）' },
-        { sym: '\\alpha/\\beta', name: t('波速比，等价于泊松比 ν = 0.5 时的 √3', 'velocity ratio; √3 for a Poisson solid (ν = 0.25)'), unit: '—', typical: '1.60 – 1.85' },
+        { sym: '\\alpha/\\beta', name: t('波速比，等价于泊松比 ν = 0.25 时的 √3', 'velocity ratio; √3 for a Poisson solid (ν = 0.25)'), unit: '—', typical: '1.60 – 1.85' },
         { sym: 'k=\\dfrac{\\alpha\\beta}{\\alpha-\\beta}', name: t('换算系数，d = k·Δt', 'conversion factor, d = k·Δt'), unit: 'km/s', typical: '7.5 – 9.0' },
     ],
     conditions: {

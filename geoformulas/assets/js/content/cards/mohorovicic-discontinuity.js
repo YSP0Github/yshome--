@@ -69,7 +69,7 @@ const mohorovicicDiscontinuity = {
                 const pts = [];
                 for (let i = 0; i <= 200; i++) {
                     const h = (i / 200) * 70;
-                    const tt = h * Math.sqrt(1 / (vs * vs) - 1 / (vp * vp));
+                    const tt = h * (1 / vs - 1 / vp);
                     pts.push([h, tt]);
                 }
                 return [{ label: t('t_Ps(h)', 't_Ps(h)'), color: '#185FA5', points: pts }];
@@ -81,9 +81,9 @@ const mohorovicicDiscontinuity = {
         input: t('h = 70 km，v_P = 6.3 km/s，v_P/v_S = 1.75', 'h = 70 km, v_P = 6.3 km/s, v_P/v_S = 1.75'),
         steps: [
             t('v_S = 6.3/1.75 = 3.60 km/s', 'v_S = 6.3/1.75 = 3.60 km/s'),
-            t('t_Ps = 70×√(1/3.6² − 1/6.3²) = 70×√(0.0772−0.0252) = 70×0.228 = 16.0 s', 't_Ps = 70×√(1/3.6² − 1/6.3²) = 70×√(0.0772−0.0252) = 70×0.228 = 16.0 s'),
+            t('t_Ps = 70×(1/3.6 − 1/6.3) = 70×(0.278−0.159) = 70×0.119 = 8.3 s', 't_Ps = 70×(1/3.6 − 1/6.3) = 70×(0.278−0.159) = 70×0.119 = 8.3 s'),
         ],
-        output: t('16 s 的到时差是接收函数上识别巨厚地壳的直接标志', 'A 16 s delay is the direct signature of very thick crust on a receiver function'),
+        output: t('8.3 s 的到时差是接收函数上识别巨厚地壳的直接标志', 'An 8.3 s delay is the direct signature of very thick crust on a receiver function'),
     },
     links: {
         upstream: [

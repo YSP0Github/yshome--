@@ -15,7 +15,7 @@ const radiatedSeismicEnergy: FormulaCard = {
   audience: 'master',
   complete: 'L2',
   statement: {
-    main: String.raw`E_s=\frac{1}{2}\rho c\int\!\!\int\dot{u}^{2}(\boldsymbol{x},t)\,\mathrm{d}S\,\mathrm{d}t\cdot\left(\text{对全部方向与波型求和}\right)`,
+    main: String.raw`E_s=\rho c\int\!\!\int\dot{u}^{2}(\boldsymbol{x},t)\,\mathrm{d}S\,\mathrm{d}t\cdot\left(\text{对全部方向与波型求和}\right)`,
     variants: [
       { name: t('用速度谱积分的形式', 'Integral over the velocity spectrum'), latex: String.raw`E_s=4\pi\rho c\,R^{2}\int\left|\dot{u}(f)\right|^{2}e^{2\pi f R/(Qc)}\,\mathrm{d}f` },
       { name: t('能量—震级关系', 'Energy–magnitude relation'), latex: String.raw`\log_{10}E_s=1.5\,M_s+11.8\quad(E_s\ \text{单位 erg})` },

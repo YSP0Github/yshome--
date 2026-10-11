@@ -18,7 +18,7 @@ const haskellSourceModel: FormulaCard = {
     main: String.raw`|\dot{M}(\omega)| = M_{0}\left|\frac{\sin(\omega\tau_{r}/2)}{\omega\tau_{r}/2}\right|\left|\frac{\sin X}{X}\right|,\qquad X = \frac{\omega L}{2v_{r}}\left(1-\frac{v_{r}}{\alpha}\cos\theta\right)`,
     variants: [
       { name: t('方向性因子', 'Directivity factor'), latex: String.raw`C_{d} = \left|\frac{\sin X}{X}\right|` },
-      { name: t('破裂方向与台站同向时 X 变小', 'X shrinks when rupture heads toward the station'), latex: String.raw`\cos\theta = \frac{v_r}{\alpha}\ \Longrightarrow\ X = 0,\ C_d = 1` },
+      { name: t('破裂朝向台站时 X 最小、振幅最大', 'X is minimised (amplitude maximised) when rupture heads toward the station'), latex: String.raw`\theta=0:\ X=\frac{\omega L}{2v_r}\left(1-\frac{v_r}{\alpha}\right)\ \text{最小},\ C_d\ \text{最大}` },
       { name: t('多普勒式解释', 'Doppler-like interpretation'), latex: String.raw`T_{\text{obs}} = T_d\left(1-\frac{v_r}{\alpha}\cos\theta\right)` },
     ],
   },

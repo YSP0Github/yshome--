@@ -16,7 +16,7 @@ const shueyApproximation = {
         main: String.raw `R(\theta)\simeq R_{0}+G\sin^{2}\theta`,
         variants: [
             { name: t('截距与梯度', 'Intercept and gradient'), latex: String.raw `R_{0}=\frac{1}{2}\!\left(\frac{\Delta\alpha}{\alpha}+\frac{\Delta\rho}{\rho}\right),\qquad G=\frac{1}{2}\frac{\Delta\alpha}{\alpha}-2\frac{\beta^{2}}{\alpha^{2}}\!\left(2\frac{\Delta\beta}{\beta}+\frac{\Delta\rho}{\rho}\right)` },
-            { name: t('三项式', 'Three-term form'), latex: String.raw `R(\theta)\simeq R_{0}+G\sin^{2}\theta+F\sin^{2}\theta\left(\tan^{2}\theta-1\right),\quad F=\frac{1}{2}\frac{\Delta\alpha}{\alpha}` },
+            { name: t('三项式', 'Three-term form'), latex: String.raw `R(\theta)\simeq R_{0}+G\sin^{2}\theta+F\sin^{2}\theta\tan^{2}\theta,\quad F=\frac{1}{2}\frac{\Delta\alpha}{\alpha}` },
         ],
     },
     meaning: t('把「垂直入射的反射系数」和「反射系数随入射角怎么变」分开。前者由波阻抗决定，后者对泊松比极敏感 —— 而含气会让泊松比骤降。所以 AVO 异常（负梯度、III 类）本质是找 Poisson 比异常。', 'It separates the vertical-incidence reflectivity from how that reflectivity changes with angle. The first comes from impedance; the second is highly sensitive to Poisson ratio — and gas makes Poisson ratio drop sharply. AVO anomalies are, at heart, Poisson-ratio anomalies.'),
@@ -83,7 +83,7 @@ const shueyApproximation = {
                     const th = (deg * Math.PI) / 180;
                     const s2 = Math.sin(th) ** 2;
                     lin.push([deg, R0 + G * s2]);
-                    three.push([deg, R0 + G * s2 + F * s2 * (Math.tan(th) ** 2 - 1)]);
+                    three.push([deg, R0 + G * s2 + F * s2 * (Math.tan(th) ** 2)]);
                 }
                 return [
                     { label: t('Shuey 两项式', 'Shuey two-term'), color: '#185FA5', points: lin },
