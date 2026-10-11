@@ -1,0 +1,88 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="40" x2="1540" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1024"/>
+      <stop offset="0.55" stop-color="#0E1A3A"/>
+      <stop offset="1" stop-color="#11203F"/>
+    </linearGradient>
+    <radialGradient id="glowCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop stop-color="#22D3EE" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowBlue" cx="0.5" cy="0.5" r="0.5">
+      <stop stop-color="#3B82F6" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cardFill" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#162447" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#0E1834" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="0.55" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+    <pattern id="dots" width="46" height="46" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="2" fill="#2B3E6E" fill-opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#dots)"/>
+  <ellipse cx="1180" cy="300" rx="520" ry="360" fill="url(#glowCyan)"/>
+  <ellipse cx="360" cy="720" rx="480" ry="340" fill="url(#glowBlue)"/>
+
+  <!-- 依赖网络（节点 + 连线） -->
+  <g stroke="#3B82F6" stroke-opacity="0.32" stroke-width="2">
+    <line x1="1010" y1="250" x2="1180" y2="180"/>
+    <line x1="1010" y1="250" x2="1210" y2="330"/>
+    <line x1="1010" y1="250" x2="1360" y2="250"/>
+    <line x1="1180" y1="180" x2="1360" y2="250"/>
+    <line x1="1210" y1="330" x2="1360" y2="250"/>
+    <line x1="1210" y1="330" x2="1420" y2="420"/>
+    <line x1="1360" y1="250" x2="1470" y2="180"/>
+    <line x1="1360" y1="250" x2="1500" y2="340"/>
+    <line x1="1420" y1="420" x2="1500" y2="340"/>
+  </g>
+  <g>
+    <circle cx="1010" cy="250" r="13" fill="#22D3EE"/>
+    <circle cx="1180" cy="180" r="10" fill="#60A5FA"/>
+    <circle cx="1210" cy="330" r="11" fill="#60A5FA"/>
+    <circle cx="1360" cy="250" r="16" fill="#A78BFA"/>
+    <circle cx="1420" cy="420" r="9" fill="#60A5FA"/>
+    <circle cx="1470" cy="180" r="8" fill="#60A5FA"/>
+    <circle cx="1500" cy="340" r="10" fill="#60A5FA"/>
+  </g>
+
+  <!-- 漂浮公式卡片 -->
+  <g>
+    <rect x="120" y="150" width="330" height="120" rx="16" fill="url(#cardFill)" stroke="#2E4A86" stroke-width="1.6"/>
+    <text x="148" y="196" fill="#7C93C7" font-family="Consolas, monospace" font-size="18" letter-spacing="2">RAY THEORY</text>
+    <text x="148" y="244" fill="#E6EEFB" font-family="Cambria Math, Georgia, serif" font-size="34">t = ∫ ds / v</text>
+  </g>
+  <g>
+    <rect x="190" y="330" width="360" height="120" rx="16" fill="url(#cardFill)" stroke="#2E4A86" stroke-width="1.6"/>
+    <text x="218" y="376" fill="#7C93C7" font-family="Consolas, monospace" font-size="18" letter-spacing="2">ELASTICITY</text>
+    <text x="218" y="424" fill="#E6EEFB" font-family="Cambria Math, Georgia, serif" font-size="34">σ = C : ε</text>
+  </g>
+  <g>
+    <rect x="120" y="510" width="340" height="120" rx="16" fill="url(#cardFill)" stroke="#2E4A86" stroke-width="1.6"/>
+    <text x="148" y="556" fill="#7C93C7" font-family="Consolas, monospace" font-size="18" letter-spacing="2">POTENTIAL</text>
+    <text x="148" y="604" fill="#E6EEFB" font-family="Cambria Math, Georgia, serif" font-size="34">∇²φ = 0</text>
+  </g>
+  <g>
+    <rect x="560" y="560" width="320" height="110" rx="16" fill="url(#cardFill)" stroke="#2E4A86" stroke-width="1.6"/>
+    <text x="588" y="604" fill="#7C93C7" font-family="Consolas, monospace" font-size="17" letter-spacing="2">CLASSICAL</text>
+    <text x="588" y="648" fill="#E6EEFB" font-family="Cambria Math, Georgia, serif" font-size="32">F = m a</text>
+  </g>
+  <g>
+    <rect x="1130" y="520" width="330" height="110" rx="16" fill="url(#cardFill)" stroke="#2E4A86" stroke-width="1.6"/>
+    <text x="1158" y="564" fill="#7C93C7" font-family="Consolas, monospace" font-size="17" letter-spacing="2">QUANTUM</text>
+    <text x="1158" y="608" fill="#E6EEFB" font-family="Cambria Math, Georgia, serif" font-size="32">E = h f</text>
+  </g>
+
+  <!-- 主标题 -->
+  <text x="120" y="760" fill="url(#titleGrad)" font-family="Segoe UI, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="4">GEOFORMULAS</text>
+  <text x="124" y="812" fill="#9FB4E2" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">地球物理公式大全 · 566 条公式 · 推导 · 可视化</text>
+  <rect x="126" y="832" width="240" height="5" rx="2.5" fill="url(#titleGrad)"/>
+</svg>
