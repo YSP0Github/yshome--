@@ -1,0 +1,211 @@
+# ============================================================
+# 样板条目：正常时差 (NMO) 走时方程
+# 用途：展示 FormulaCard 的完整数据结构，编写其他条目时照抄此模板
+# ============================================================
+
+meta:
+  id: seismic-reflection-nmo-traveltime
+  slug: nmo-traveltime
+  name_zh: 正常时差（动校正）走时方程
+  name_en: Normal Moveout (NMO) Travel-time Equation
+  aliases: [NMO, 双曲走时方程, hyperbolic moveout]
+  version: 1
+  authors: [""]
+  updated: 2026-10-10
+
+domain:
+  level1: 03 反射与透射
+  level2: 时距关系与校正
+  keywords: [走时, 偏移距, NMO, 叠加, CMP, 速度分析]
+
+statement:
+  main: >-
+    t^{2} = t_{0}^{2} + \frac{x^{2}}{v^{2}}
+  variants:
+    - name: 显式解算 t
+      latex: t(x) = \sqrt{t_{0}^{2} + x^{2}/v^{2}}
+    - name: NMO 校正量 \Delta t
+      latex: \Delta t_{\mathrm{NMO}} = t(x) - t_{0} \simeq \frac{x^{2}}{2\,v^{2}\,t_{0}} \quad (x \ll v t_{0})
+    - name: 层状介质（改用均方根速度）
+      latex: t^{2} = t_{0}^{2} + \frac{x^{2}}{v_{\mathrm{rms}}^{2}}
+
+symbols:
+  - sym: t
+    name_zh: 双程反射走时
+    name_en: two-way reflection travel time
+    dimension: T
+    unit: s
+    typical: 0.5 – 5 s
+  - sym: t_0
+    name_zh: 零偏移距双程走时
+    name_en: zero-offset two-way travel time
+    dimension: T
+    unit: s
+    typical: 0.5 – 5 s
+  - sym: x
+    name_zh: 炮检距（偏移距）
+    name_en: offset (source–receiver distance)
+    dimension: L
+    unit: m
+    typical: 100 – 6000 m
+  - sym: v
+    name_zh: 上覆介质速度（层状介质时用 v_rms）
+    name_en: velocity above the reflector (rms velocity if layered)
+    dimension: L T^-1
+    unit: m/s
+    typical: 1500 – 5000 m/s
+  - sym: z
+    name_zh: 反射界面深度
+    name_en: reflector depth
+    dimension: L
+    unit: m
+    typical: 500 – 5000 m
+
+conditions:
+  applies_if:
+    - 单一水平反射界面
+    - 上覆介质速度恒定（或允许用均方根速度近似的水平层状介质）
+    - 各向同性介质
+  assumptions:
+    - 射线按直线传播后镜面反射（等价于 Huygens 原理在常速介质中的结果）
+    - 忽略波的转换（只追踪同类波）
+    - 界面倾角为零
+  breaks_when:
+    - 界面倾斜（此时应对倾角做 dip-moveout / DMO 处理）
+    - 大偏移距 x/z ≳ 1（此时必须做非双曲校正，见有余项的高阶展开）
+    - 强横向变速介质
+
+# ------------------------------------------------------------
+# 每步：op 为「这步做了什么类型的事」，用于前端上色与提示
+# 可选值：setup | geometry | substitute | algebra | taylor | apply-identity | dimensionless | result
+# ------------------------------------------------------------
+derivation:
+  - n: 1
+    op: setup
+    title: 几何设定
+    latex: \text{设界面水平，深度 } z\text{，速度 } v\text{，炮点 }S\text{ 与检波点 }R\text{ 相距 }x
+    note: >-
+      利用对称性：水平界面的反射点位于炮点与检波点的中点正上方，故半偏移距为 x/2。
+    refs: []
+
+  - n: 2
+    op: geometry
+    title: 由勾股定理写出单程射线长度
+    latex: \ell = \sqrt{z^{2} + \left(\frac{x}{2}\right)^{2}}
+    note: 这是整条推导唯一的物理输入 —— 其余全是代数。
+
+  - n: 3
+    op: substitute
+    title: 双程路径 ÷ 速度 = 走时
+    latex: t = \frac{2\ell}{v} = \frac{2}{v}\sqrt{z^{2} + \frac{x^{2}}{4}}
+    note: 2 倍是因为射线要走一个来回。
+
+  - n: 4
+    op: setup
+    title: 定义零偏移距走时
+    latex: t_{0} = \left. t \right|_{x=0} = \frac{2z}{v} \;\Longleftrightarrow\; z = \frac{v t_{0}}{2}
+    note: >-
+      这一步把不可直接观测的 z 换成可直接从剖面上读到的 t₀ —— 是整个地震处理里反复出现的常用技巧。
+
+  - n: 5
+    op: substitute
+    title: 消去深度 z
+    latex: t = \sqrt{\frac{4z^{2}}{v^{2}} + \frac{x^{2}}{v^{2}}} = \sqrt{t_{0}^{2} + \frac{x^{2}}{v^{2}}}
+    note: 把第 4 步的 z 代入第 3 步，2 的系数刚好消掉。
+
+  - n: 6
+    op: result
+    title: 得到标准形式
+    latex: t^{2} = t_{0}^{2} + \frac{x^{2}}{v^{2}}
+    note: >-
+      这表明在常速水平层模型下，(x, t) 平面上的时距曲线是一条**双曲线** ——
+      这就是「正常时差」这个名字的来源，也是后续 NMO 校正与速度分析的基础。
+
+  - n: 7
+    op: taylor
+    title: （附）小偏移距展开，给出校正量的直观形式
+    latex: >-
+      t = t_{0}\sqrt{1+\frac{x^{2}}{v^{2}t_{0}^{2}}}
+      \approx t_{0}\left(1 + \frac{x^{2}}{2v^{2}t_{0}^{2}}\right)
+      \;\Rightarrow\; \Delta t_{\mathrm{NMO}} \approx \frac{x^{2}}{2 v^{2} t_{0}}
+    note: >-
+      有效条件是 x \ll v t_{0}。可以看到校正量随 x 的**平方**增长 —— 远道拉得特别狠，
+      所以实际处理中会出现「NMO 拉伸 / stretch mute」问题。
+
+viz:
+  - id: nmo-curve
+    type: V1                      # V0 静态 / V1 参数曲线 / V2 场 / V3 动画 / V4 三维 / V5 重内核
+    engine: plotly
+    numerics: nmoTravelTime       # 对应 src/numerics/nmo.ts 导出的函数
+    title: 时距曲线随速度的变化
+    plot:
+      x: x_km
+      y: t_s
+      group_by: v
+    controls:
+      - id: t0
+        label: 零偏移距走时 t₀
+        min: 0.3
+        max: 4.0
+        step: 0.05
+        default: 1.0
+        unit: s
+      - id: v
+        label: 速度 v
+        min: 1500
+        max: 5000
+        step: 50
+        default: 2500
+        unit: m/s
+    notes: 拖动 v 可以看到曲线如何「变平」，这正是速度分析要反演的观测量。
+
+  - id: nmo-geometry
+    type: V0
+    engine: svg
+    title: 射线几何示意
+    asset: ./assets/nmo-geometry.svg
+    notes: 标出 z、x/2、ℓ，并让 hovering 符号表中的 z / x 时图上对应线段高亮。
+
+numerics:
+  fn: nmoTravelTime
+  signature: "(x: number, t0: number, v: number) => number"
+  stability: 全参数域稳定；无奇点
+  tests:
+    - desc: 零偏移距应等于 t0
+      input: { x: 0, t0: 1.5, v: 2500 }
+      expect: 1.5
+    - desc: 已知解析值回归
+      input: { x: 3000, t0: 1.0, v: 2500 }
+      expect: 1.5620499351813308
+
+links:
+  upstream:
+    - id: exploration-seismology-reflection-geometry
+      note: 反射几何与双程路径的定义
+    - id: bodywave-traveltime-constant-velocity
+      note: 常速介质走时 = 距离 / 速度
+  downstream:
+    - id: velocity-analysis-constant-velocity-scan
+      note: 由 NMO 曲线反演 v_rms
+    - id: nmo-correction-stretch-mute
+      note: 动校正拉伸与切除
+    - id: cmp-stacking
+      note: CMP 道集叠加
+  seealso:
+    - id: dmo-dip-moveout
+      note: 倾斜界面时的修正
+    - id: nonhyperbolic-moveout
+
+refs:
+  - type: book
+    text: Yilmaz, Seismic Data Analysis, Vol.1, Ch.3 —— NMO 与速度分析
+    url: https://wiki.seg.org/wiki/Normal_moveout
+  - type: book
+    text: Sheriff & Geldart, Exploration Seismology, 2nd ed., §4.3
+  - type: web
+    text: SEG Wiki — Normal moveout
+    url: https://wiki.seg.org/wiki/Normal_moveout
+
+difficulty:
+  prerequisites: [勾股定理, 双程走时概念]
+  level: 入门
