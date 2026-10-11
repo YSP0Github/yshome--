@@ -329,6 +329,12 @@
                 const uploadUrl = window.withBasePath ? window.withBasePath(`/documents/${docId}/upload-file`) : `/documents/${docId}/upload-file`;
                 xhr.open('POST', uploadUrl, true);
                 
+                // 携带 CSRF token，否则 POST 会被 Flask-WTF 拦截并返回 400
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) {
+                    xhr.setRequestHeader('X-CSRFToken', csrfMeta.getAttribute('content'));
+                }
+                
                 xhr.upload.addEventListener('progress', function(e) {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
