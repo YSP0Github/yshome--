@@ -1085,7 +1085,29 @@
             const setNotes = (arr, rawBody) => {
                 if (!notesEl) return;
                 if (rawBody && window.marked) {
-                    notesEl.innerHTML = `<div class="md-body">${renderMarkdownSafe(rawBody)}</div>`;
+                    // 摘要展示：默认只显示首段核心摘要，完整说明折叠在「查看完整更新说明」内
+                    let summary = '';
+                    for (const line of rawBody.split('\n')) {
+                        const t = line.trim();
+                        if (!t || /^#{1,6}\s/.test(t) || /^\|/.test(t) || /^[-*]\s/.test(t)) continue;
+                        const clean = t.replace(/[*`_>]/g, '').replace(/\s+/g, ' ').trim();
+                        if (clean.length < 25) continue;
+                        summary = clean;
+                        break;
+                    }
+                    if (summary.length > 220) summary = summary.slice(0, 220) + '…';
+                    const esc = summary.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    const fullHtml = `<div class="md-body">${renderMarkdownSafe(rawBody)}</div>`;
+                    notesEl.innerHTML = `
+                        <li class="w-full">
+                            <div class="text-dark/70 text-sm leading-6">${esc}</div>
+                            <details class="mt-3">
+                                <summary class="cursor-pointer inline-flex items-center gap-2 text-primary font-medium text-sm select-none">
+                                    <i class="fa fa-chevron-down text-xs"></i>查看完整更新说明
+                                </summary>
+                                <div class="mt-3">${fullHtml}</div>
+                            </details>
+                        </li>`;
                     return;
                 }
                 notesEl.innerHTML = '';
