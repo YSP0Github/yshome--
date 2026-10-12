@@ -73,8 +73,8 @@ READONLY = False
 IMAGE_GROUPS = [
     ("A 输入与预处理", [
         ("01", "01_input.png", "01 输入：观测 / counts 真值 / 物理真值（位移 m，双轴，来源已标注）"),
-        ("02", "02_preprocessed.png", "02 预处理：去均值/去趋势/带通（ObsPy 零相位，问题 12）"),
-        ("17", "17_preprocessed_amp_spectrum.png", "17 三站预处理后数据振幅谱（02 输出，目标频带阴影）"),
+        ("02", "02_preprocessed.png", "02 合成月震记录预处理后时域：合成观测(蓝) / 噪声(红) / 纯信号经H(绿)；勾选「纯信号无H」叠加纯信号不经仪器响应(紫, 归一化)"),
+        ("17", "17_preprocessed_amp_spectrum.png", "17 合成月震记录预处理后振幅谱：合成观测(蓝) / 噪声(红) / 纯信号经H(绿)；勾选「纯信号无H」叠加不经仪器响应(紫)"),
         ("18", "18_preprocessed_higher_order_corr.png", "18 合成月震记录（预处理后，未去噪）直接高阶互相关：与 12 号 FSBL 重建后对比，看去噪效果；阶数可在画布输入框调整（已预计算至 10 阶）"),
         ("19", "19_simulated_preprocessed_higher_order_corr.png", "19 模拟数据（SPECFEM 物理真值，位移 m）带通后直接高阶互相关：理论极限参考（无噪声、无仪器响应），与 18 含噪观测 / 12 FSBL 重建后对比；阶数可调（已预计算至 10 阶）"),
         ("20", "20_noise_higher_order_corr.png", "20 合成记录内噪声（n12/n15/n16，= 观测 − 真值，已验证）直接高阶互相关：纯噪声参考，应为平坦无稳定峰，与 19 纯信号 / 18 含噪观测 / 12 FSBL 后对比；阶数可调（已预计算至 10 阶）"),
@@ -145,6 +145,7 @@ def load_metrics():
             "stations": meta.get("stations", ["S12", "S15", "S16"]),
             "fs": meta.get("fs_hz", 6.625),
             "freq_band": meta.get("freq_band", [0.001, 0.012]),
+            "event_token": meta.get("event_token", ""),  # 合成月震事件时间戳
             "snr_input_db": m.get("snr_input_db", 0),
             "snr_output_db": m.get("snr_output_db", 0),
             "correlation": m.get("correlation", 0),
@@ -271,18 +272,21 @@ def run_pipeline_thread(input_snr: float | None = None,
             state["status"] = "error"
             state["end_time"] = time.time()
 
-@lru_cache(maxsize=16)
-def _fig_json(key: str, order: int | None = None) -> str:
+@lru_cache(maxsize=128)
+def _fig_json(key: str, order: int | None = None, noresp: bool = False) -> str:
     """生成交互图 JSON（带缓存，numpy 类型由 plotly to_json 处理）。
-    [2026-09-24 高阶互相关阶数] order：仅 12/18/19（高阶互相关画布）生效——
+    [2026-09-24 高阶互相关阶数] order：仅 12/18/19/20（高阶互相关画布）生效——
     最多绘制到第几阶；None → HIGH_ORDER_DEFAULT（3）。全部阶数已预计算并缓存
     （plotly_figs 内部按数据源缓存），切换阶数只做切片出图、不重算。
     缓存键含 order，不同阶数的图互不干扰。
+    noresp：仅 02/17 生效——是否叠加纯信号不经仪器响应的曲线。
     """
     if key in ("12", "18", "19", "20"):
         o = HIGH_ORDER_DEFAULT if order is None else int(order)
         o = max(1, min(o, HIGH_ORDER_MAX))
         return get_figure(key, order=o).to_json()
+    if key in ("02", "17"):
+        return get_figure(key, show_noresp=noresp).to_json()
     return get_figure(key).to_json()
 
 @lru_cache(maxsize=64)
@@ -358,8 +362,11 @@ def _params_for_display() -> dict:
     # E 重建评估
     rows = []
     for r in p["stages"]["E_重建评估"]:
+        si = r["snr_in_dB"]
+        so = r["snr_out_dB"]
         rows.append([r["domain"], f'{r["corr_inband"]:.4f}',
-                     f'{r["snr_in_dB"]:.2f}', f'{r["snr_out_dB"]:.2f}'])
+                     f'{si:.2f}' if si is not None else '—',
+                     f'{so:.2f}' if so is not None else '—'])
     tables.append({
         "title": "E 重建评估（带通后，问题 13）",
         "note": "评估必须目标频带 [0.001,0.012] Hz 带通后计算 corr/SNR；物理域 = DISP 位移口径（问题 07）",
@@ -420,11 +427,13 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             # 交互图 JSON：/api/plot/01 → 返回 plotly figure spec
             # [2026-09-22 预取] 支持 ?dir=<数据包目录>：为指定数据包生成图
             # （前端后台预取其他数据包的图到浏览器缓存，切包时秒开）
-            # [2026-09-24 高阶互相关] 支持 ?order=N：12/18/19 最多画到第 N 阶
+            # [2026-09-24 高阶互相关] 支持 ?order=N：12/18/19/20 最多画到第 N 阶
+            # [2026-09-30 纯信号无H] 支持 ?noresp=1：02/17 叠加纯信号不经仪器响应
             path_q = self.path[len("/api/plot/"):]
             key = path_q.split("?")[0]
             qdir = None
             order = None
+            noresp = False
             if "?" in path_q:
                 import urllib.parse as _up
                 q = _up.parse_qs(path_q.split("?", 1)[1])
@@ -432,11 +441,13 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                     qdir = q["dir"][0]
                 if q.get("order") and q["order"][0].strip().isdigit():
                     order = int(q["order"][0])
+                if q.get("noresp") and q["noresp"][0].strip() in ("1", "true", "True"):
+                    noresp = True
             if key in PLOT_FACTORIES:
                 if qdir:
                     self._send_raw_json(_fig_json_for_dir(qdir, key))
                 else:
-                    self._send_raw_json(_fig_json(key, order))
+                    self._send_raw_json(_fig_json(key, order, noresp))
                 return
             self.send_error(404, f"未知绘图 key: {key}")
             return
@@ -667,9 +678,15 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         snr_improve = m.get("snr_output_db", 0) - _snr_in_val
         _snr_in_label = "SNR 输入 (dB)"
         metric_cards = ""
-        _metric_ids = ["m-snr-in", "m-snr-out", "m-snr-gain",
+        # 事件日期（合成月震时间戳，格式 19760113_070152 → 1976-01-13 07:01:52）
+        _et = m.get("event_token", "")
+        _et_disp = ""
+        if _et and len(_et) >= 13:
+            _et_disp = f"{_et[0:4]}-{_et[4:6]}-{_et[6:8]} {_et[9:11]}:{_et[11:13]}"
+        _metric_ids = ["", "m-snr-in", "m-snr-out", "m-snr-gain",
                        "m-corr", "m-iter", "m-atoms"]
         for _i, (label, value, fmt, good_when) in enumerate([
+            ("事件日期", _et_disp or "—", "s", lambda v: True),
             (_snr_in_label, _snr_in_val, ".2f",
              lambda v: v >= 0),
             ("SNR 输出 (dB)", m.get("snr_output_db", 0), ".2f",
@@ -688,9 +705,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             except Exception:
                 cls = ""
             txt = str(v) if fmt == "s" else f"{v:{fmt}}"
+            _mid = _metric_ids[_i]
+            _id_attr = f' id="{_mid}"' if _mid else ""
             metric_cards += (
                 f'<div class="metric"><div class="m-label">{label}</div>'
-                f'<div class="m-value {cls}" id="{_metric_ids[_i]}">{txt}</div></div>')
+                f'<div class="m-value {cls}"{_id_attr}>{txt}</div></div>')
         metric_cards += (
             f'<div class="metric" style="min-width:320px;border-color:#0d47a1;">'
             f'<div class="m-label">当前输出目录（完整路径）</div>'
@@ -826,6 +845,11 @@ body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang
            title="12/18/19/20 高阶互相关画布最多绘制到第几阶（已预计算至 {HIGH_ORDER_MAX} 阶，切换阶数无需重新计算管线）">
     <span id="corrOrderVal" style="color:#64b5f6;font-size:12px;min-width:auto;">（预计算至 {HIGH_ORDER_MAX} 阶）</span>
   </span>
+  <span class="hslider-wrap" style="margin-left:12px;">
+    <label for="norespChk" style="cursor:pointer;" title="02/17 图叠加纯信号不经仪器响应的曲线（归一化到 counts 尺度）">
+      <input type="checkbox" id="norespChk" style="accent-color:#1565c0;"> 纯信号无H
+    </label>
+  </span>
   <button class="runbtn" style="margin-left:auto;" onclick="document.getElementById('pkgFile').click()"
           title="读取本地 dashboard_package.tar.gz（浏览器本地解析，不上传网络），切换显示全部实验数据">&#128194; 选择本地数据包</button>
   <input type="file" id="pkgFile" accept=".tar.gz,.gz" style="display:none;">
@@ -935,17 +959,13 @@ function pkgBackToPanel() {{
 }}
 function fixFigLayout(fig) {{
   const L = fig.layout || {{}};
-  // 长标题精简：完整说明由卡片 caption 承担，图内只留主标题（避免标题占多行挤压图例）
+  // [2026-09-30] 长标题：不截断，完整显示（plotly 自动换行）；如有“——”分隔符则只取前半
+  // （后半为补充说明，已在卡片 caption 中），避免标题占多行挤压图例
   if (L.title && L.title.text) {{
     const t = String(L.title.text);
-    if (t.length > 30) {{
-      const idx = t.indexOf('——');
-      if (idx > 0) {{
-        L.title.text = t.slice(0, idx).trim();
-      }} else {{
-        // 无“——”分隔符：按长度截断（原实现 idx=-1 → slice(0,-1) 只去掉末字符，几乎不精简）
-        L.title.text = t.slice(0, 26) + '…';
-      }}
+    const idx = t.indexOf('——');
+    if (idx > 0) {{
+      L.title.text = t.slice(0, idx).trim();
     }}
     L.title.font = L.title.font || {{}};
     L.title.font.size = Math.min(L.title.font.size || 16, 15);
@@ -1000,15 +1020,20 @@ function renderPkgView(name, sizeBytes) {{
           }}
         }});
       }};
-      if (m.snr_input_db !== undefined) upd('SNR 输入', m.snr_input_db, v => v.toFixed(2));
+      // [2026-09-30] SNR 输入优先用目标设定值（和目录名 snr-XX 一致、逐站相同），
+      // 无目标时回退 metadata 的 snr_input_db
+      const snrIn = (meta.input_snr_control && meta.input_snr_control.target_snr_db !== undefined
+                     && meta.input_snr_control.target_snr_db !== null)
+        ? meta.input_snr_control.target_snr_db : m.snr_input_db;
+      if (snrIn !== undefined) upd('SNR 输入', snrIn, v => v.toFixed(2));
       if (m.snr_output_db !== undefined) upd('SNR 输出', m.snr_output_db, v => v.toFixed(2));
       if (m.correlation !== undefined) upd('相关系数', m.correlation, v => v.toFixed(4));
       const fsbl = meta.fsbl_info || {{}};
       if (fsbl.n_iterations !== undefined) upd('FSBL 迭代', fsbl.n_iterations, v => String(v));
       if (fsbl.n_active_atoms !== undefined) upd('活跃原子', fsbl.n_active_atoms, v => String(v));
-      // SNR 提升
-      if (m.snr_input_db !== undefined && m.snr_output_db !== undefined) {{
-        const gain = m.snr_output_db - m.snr_input_db;
+      // SNR 提升（用 snrIn 计算，与"SNR 输入"显示口径一致）
+      if (snrIn !== undefined && m.snr_output_db !== undefined) {{
+        const gain = m.snr_output_db - snrIn;
         upd('SNR 提升', gain, v => v.toFixed(2));
       }}
     }}
@@ -1195,11 +1220,13 @@ function pkgCacheSet(key, fig) {{
     }});
   }});
 }}
-function currentCacheKey(key) {{
+function currentCacheKey(key, noresp) {{
   const dir = (window.PKG_DATA_DIR || '');
   // [2026-09-24 高阶互相关] 12/18/19 缓存键含阶数，切换阶数后不会命中旧阶数的图
-  if (ORDER_KEYS.includes(key)) return dir + '|' + PKG_CACHE_VER + '|' + key + '|order' + orderRows();
-  return dir + '|' + PKG_CACHE_VER + '|' + key;
+  // [2026-09-30 纯信号无H] 02/17 缓存键含 noresp 状态，勾选前后不串图
+  const nr = noresp ? '|nr' : '';
+  if (ORDER_KEYS.includes(key)) return dir + '|' + PKG_CACHE_VER + '|' + key + '|order' + orderRows() + nr;
+  return dir + '|' + PKG_CACHE_VER + '|' + key + nr;
 }}
 const plotLoadSeq = {{}};
 function setLoading(key, on, msg) {{
@@ -1218,7 +1245,10 @@ async function loadPlot(key) {{
   const div = document.getElementById('plot-' + key);
   if (!div) return;
   loadedPlots[key] = true;
-  const ckey = currentCacheKey(key);
+  // [2026-09-30 纯信号无H] 02/17 支持 noresp 开关：叠加纯信号不经仪器响应
+  const norespChk = document.getElementById('norespChk');
+  const noresp = (key === '02' || key === '17') && norespChk && norespChk.checked;
+  const ckey = currentCacheKey(key, noresp);
   // [2026-09-30] 序号令牌：并发/快速切换时只有最后一次请求能管理遮罩与图例
   const seq = (plotLoadSeq[key] = (plotLoadSeq[key] || 0) + 1);
   // 加载中提示改为绝对定位遮罩（盖在旧图上，不替换 innerHTML），
@@ -1233,8 +1263,11 @@ async function loadPlot(key) {{
     }} catch (e) {{ /* 缓存不可用则走网络 */ }}
     if (!fig) {{
       // [2026-09-24 高阶互相关] 12/18/19 请求带阶数参数
-      const order = ORDER_KEYS.includes(key) ? ('?order=' + orderRows()) : '';
-      const r = await fetch('api/plot/' + key + order);
+      // [2026-09-30 纯信号无H] 02/17 勾选后请求带 noresp=1
+      let qs = '';
+      if (ORDER_KEYS.includes(key)) qs = '?order=' + orderRows();
+      if (noresp) qs = qs ? (qs + '&noresp=1') : '?noresp=1';
+      const r = await fetch('api/plot/' + key + qs);
       fig = await r.json();
       // 写入缓存（不阻塞渲染）
       pkgCacheSet(ckey, fig).catch(function () {{}});
@@ -1374,6 +1407,14 @@ plotH.addEventListener('input', () => {{
 const corrOrderIn = document.getElementById('corrOrderIn');
 corrOrderIn.addEventListener('change', applyOrder);
 corrOrderIn.addEventListener('keyup', (e) => {{ if (e.key === 'Enter') applyOrder(); }});
+// [2026-09-30 纯信号无仪器响应开关] 02/17 图重新加载（带/不带 noresp=1）
+const norespChk = document.getElementById('norespChk');
+if (norespChk) {{
+  norespChk.addEventListener('change', () => {{
+    ['02', '17'].forEach(k => {{ delete loadedPlots[k]; }});
+    ['02', '17'].forEach(loadPlot);
+  }});
+}}
 async function startUpload() {{
   const btn = document.getElementById('uploadBtn');
   const status = document.getElementById('runStatus');
@@ -1578,6 +1619,8 @@ function updateMetrics() {{
 
 function onPkgSelect(dir) {{
   if (!dir) return;
+  // 若当前在本地 tar.gz 数据包视图，先退回主面板
+  if (window.PKG) pkgBackToPanel();
   // [2026-09-22 秒开] 防止上次切换的静默 reload 与本次冲突
   if (window._pkgReloadTimer) {{ clearTimeout(window._pkgReloadTimer); window._pkgReloadTimer = null; }}
   const status = document.getElementById('runStatus');
@@ -1594,13 +1637,15 @@ function onPkgSelect(dir) {{
     // [2026-09-22 SPA] 无刷新切换：
     // 1) 更新缓存 key 的数据包目录（图缓存立即可命中）
     window.PKG_DATA_DIR = dir;
-    // 2) 重置已加载标记，重新渲染当前 tab 的图（缓存命中 → 本地秒出）
+    // 2) 重置已加载标记 + 参数表标记，重新渲染当前 tab 的图（缓存命中 → 本地秒出）
     for (const k in loadedPlots) delete loadedPlots[k];
+    paramsLoaded = false;
     const active = document.querySelector('.navbtn.active');
     const idx = active ? Array.prototype.indexOf.call(
       document.querySelectorAll('.navbtn'), active) : 0;
     const grp = PLOT_GROUPS[idx] || [];
     grp.forEach(loadPlot);
+    if (idx === 8) loadParams();
     // 3) 刷新下拉框选中态
     refreshPkgSelect();
     // 4) 无刷新更新顶部指标卡（SNR/corr/迭代/活跃原子/输出目录/口径说明）
