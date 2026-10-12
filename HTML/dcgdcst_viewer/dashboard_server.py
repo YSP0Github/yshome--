@@ -1159,7 +1159,7 @@ const loadedPlots = {{}};
 const PKG_CACHE_DB = 'dcgdcst_plot_cache';
 const PKG_CACHE_STORE = 'figures';
 const PKG_CACHE_MAX = 200;
-const PKG_CACHE_VER = 'v20260930'; // [2026-09-30] 图标题等改版后旧缓存自动失效
+const PKG_CACHE_VER = 'v20261012'; // [2026-10-12] 02/17 新增噪声/纯信号曲线后旧缓存自动失效（否则初始页命中旧图）
 let _pkgCacheDB = null;
 function pkgCacheOpen() {{
   return new Promise(function (resolve, reject) {{
