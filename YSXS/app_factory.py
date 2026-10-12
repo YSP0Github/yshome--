@@ -53,7 +53,14 @@ def create_app() -> Flask:
     url_prefix = normalize_url_prefix(os.environ.get('YSXS_URL_PREFIX'))
     app.config['APPLICATION_ROOT'] = url_prefix
     app.config['YSXS_URL_PREFIX'] = url_prefix
-    app.config.setdefault('SESSION_COOKIE_PATH', '/')
+    # cookie path 兜底：Flask 默认 SESSION_COOKIE_PATH=None，会产生空 Path 的 cookie
+    if not app.config.get('SESSION_COOKIE_PATH'):
+        app.config['SESSION_COOKIE_PATH'] = '/'
+    # Secure 标志支持环境变量覆盖：HTTPS 正式站点保持 True；
+    # HTTP 试用站点（IP 直连）需设 YSXS_COOKIE_SECURE=false，否则浏览器丢弃 session cookie
+    _secure_env = os.environ.get('YSXS_COOKIE_SECURE')
+    if _secure_env is not None:
+        app.config['SESSION_COOKIE_SECURE'] = _secure_env.strip().lower() == 'true'
     app.url_map.strict_slashes = False
 
     app.config.setdefault('SQLALCHEMY_DATABASE_URI', f"sqlite:///{BASE_DIR / 'literature.db'}")
