@@ -1030,6 +1030,61 @@ def plot20_noise_higher_order_corr(npz: dict, order: int | None = None):
 
 
 # =====================================================================
+# [2026-10-13 导师询问] 21 预加重乘子 P(f)：|H| / P / G / 相对放大倍数
+# =====================================================================
+def plot21_preemphasis_factor(npz: dict):
+    """预加重乘子目标带内曲线（导师询问"低频预加重=人为乘大？"）。
+
+    公式：P(f)=1/max(|H|,floor)，floor=max|H|×1e-3（纯幅度、相位不变）；
+    G(f)=P·|H| 为有效算子（|H|>floor 时 G=1，最低频 G<1 由 floor 截断）；
+    相对放大倍数 D(f)=P(f)/P(0.012Hz)（0.001Hz 处约 24.6×）。
+    数据用 npz 中目标带内 64 频点复 H；三站同型号响应一致时合并为一条。
+    """
+    freqs = np.asarray(npz["freqs"], dtype=float)       # (64,)
+    resp = np.asarray(npz["response"])                  # (3,64) complex
+    amps = np.abs(resp)
+    same = bool(np.allclose(amps[0], amps[1]) and np.allclose(amps[0], amps[2]))
+    _amp = amps[0] if same else amps
+    floor = float(np.max(amps[0])) * 1e-3
+    P = 1.0 / np.maximum(_amp, floor)
+    G = P * _amp
+    i_ref = int(np.argmin(np.abs(freqs - 0.012)))
+    D = P / P[i_ref]
+    _name = "S12/S15/S16（同型号）" if same else "S12/S15/S16"
+    _c = "#333333" if same else _COLORS["blue"]
+    fig = make_subplots(
+        rows=4, cols=1, shared_xaxes=True, vertical_spacing=0.07,
+        subplot_titles=[
+            "仪器位移响应幅度 |H(f)|（DISP, counts/m）＋ floor=max|H|×1e-3",
+            "预加重乘子 P(f)=1/max(|H|,floor)（低频人为乘大，纯幅度、相位不变）",
+            "有效算子 G=P·|H|（|H|>floor 时 G=1；最低频 G<1 由 floor 截断）",
+            "相对放大倍数 P(f)/P(0.012Hz)（0.001Hz≈24.6×）"])
+    fig.add_trace(go.Scatter(x=freqs, y=_amp, name=_name, mode="lines",
+                             line=dict(color=_c, width=2)), row=1, col=1)
+    fig.add_hline(y=floor, line_dash="dash", line_color=_c, line_width=1,
+                  annotation_text=f"floor={floor:.2e}", row=1, col=1)
+    fig.add_trace(go.Scatter(x=freqs, y=P, name=_name, mode="lines",
+                             line=dict(color=_c, width=2)), row=2, col=1)
+    fig.add_trace(go.Scatter(x=freqs, y=G, name=_name, mode="lines",
+                             line=dict(color=_c, width=2)), row=3, col=1)
+    fig.add_trace(go.Scatter(x=freqs, y=D, name=_name, mode="lines",
+                             line=dict(color=_c, width=2)), row=4, col=1)
+    fig.update_yaxes(type="log", row=1, col=1)
+    fig.update_yaxes(type="log", row=2, col=1)
+    fig.update_yaxes(type="log", range=[np.log10(1e-3), np.log10(2.0)],
+                     row=3, col=1)
+    fig.update_yaxes(type="linear", row=4, col=1)
+    fig.update_xaxes(title_text="频率 (Hz)", row=4, col=1)
+    # 目标频带高亮
+    for r in (1, 2, 3, 4):
+        fig.add_vrect(x0=FREQ_BAND[0], x1=FREQ_BAND[1], fillcolor="orange",
+                      opacity=0.08, line_width=0, row=r, col=1)
+    fig.update_layout(**_base_layout(
+        "21 预加重乘子 P(f)（目标带内；三站同型号；低频相对高频放大约 24.6×）"))
+    return fig
+
+
+# =====================================================================
 # 注册表：key → 生成函数（供 dashboard /api/plot/<key> 使用）
 # =====================================================================
 PLOT_FACTORIES = {
@@ -1053,6 +1108,7 @@ PLOT_FACTORIES = {
     "18": plot18_preprocessed_higher_order_corr,
     "19": plot19_simulated_preprocessed_higher_order_corr,
     "20": plot20_noise_higher_order_corr,
+    "21": plot21_preemphasis_factor,
 }
 
 

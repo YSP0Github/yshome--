@@ -263,6 +263,62 @@ def plot_response_units(npz: dict):
 
 
 # =====================================================================
+# [2026-10-13 导师询问] 预加重乘子 P(f) 目标带内曲线（21 号图）
+# =====================================================================
+def plot_preemphasis(npz: dict):
+    """21_preemphasis_factor.png
+
+    导师询问"低频预加重=人为乘大？乘子随频率的曲线"：
+      预加重 P(f)=1/max(|H|,floor)，floor=max|H|×1e-3，纯幅度、相位不变；
+      有效算子 G(f)=P·|H|（|H|>floor 时 G=1，最低频被 floor 截断 G<1）；
+      相对放大倍数 D(f)=P(f)/P(0.012Hz)（低频相对高频放大约 24.6×）。
+    数据用 npz 中目标带内 64 频点复 H（npz['freqs']/['response']），
+    三站同型号仪器响应一致时合并为一条曲线，避免重叠误导。
+    """
+    freqs = np.asarray(npz["freqs"], dtype=float)          # (64,)
+    resp = np.asarray(npz["response"])                     # (3,64) complex
+    amps = np.abs(resp)
+    # 三站同型号仪器：曲线相同则合并显示
+    same = bool(np.allclose(amps[0], amps[1]) and np.allclose(amps[0], amps[2]))
+    _amp = amps[0] if same else amps
+    floor = float(np.max(amps[0])) * 1e-3                  # floor=max|H|×1e-3
+    P = 1.0 / np.maximum(_amp, floor)
+    G = P * _amp
+    i_ref = int(np.argmin(np.abs(freqs - 0.012)))
+    D = P / P[i_ref]
+
+    fig, ax = plt.subplots(4, 1, figsize=(11, 13), sharex=True)
+    _label = "S12/S15/S16（同型号）" if same else "S12/S15/S16"
+    c = "#333333" if same else "#1f77b4"
+    ax[0].semilogy(freqs, _amp, color=c, lw=1.8, label=f"{_label} |H(f)|")
+    ax[0].axhline(floor, color=c, ls="--", lw=1.2, alpha=0.85,
+                  label=f"floor={floor:.2e}")
+    ax[1].semilogy(freqs, P, color=c, lw=1.8, label=f"{_label} P(f)")
+    ax[2].semilogy(freqs, G, color=c, lw=1.8, label=f"{_label} G=P·|H|")
+    ax[3].plot(freqs, D, color=c, lw=1.8,
+               label=f"{_label} 相对倍数 P/P(0.012Hz)")
+    ax[0].set_title("仪器位移响应幅度 |H(f)|（DISP, counts/m）＋ floor=max|H|×1e-3",
+                    fontsize=12)
+    ax[1].set_title("预加重乘子 P(f)=1/max(|H|,floor)：低频人为乘大（纯幅度、相位不变）",
+                    fontsize=12)
+    ax[2].set_title("有效算子 G=P·|H|：|H|>floor 时 G=1（已拉平）；最低频 G<1（floor 截断）",
+                    fontsize=12)
+    ax[3].set_title("相对放大倍数 P(f)/P(0.012Hz)：低频比高频多放大约 24.6×",
+                    fontsize=12)
+    ax[3].set_xlabel("频率 (Hz)", fontsize=11)
+    ax[2].set_ylim(1e-3, 2.0)
+    ax[2].axhline(1.0, color="gray", ls=":", lw=1.0)
+    ax[3].axhline(1.0, color="gray", ls=":", lw=1.0)
+    for a in ax:
+        a.axvspan(FREQ_BAND[0], FREQ_BAND[1], color="orange", alpha=0.10)
+        a.grid(alpha=0.25, which="both")
+        a.legend(loc="upper left", fontsize=10)
+    fig.tight_layout()
+    _save(fig, "21_preemphasis_factor.png",
+          f"P(0.001)/P(0.012)≈{float(D[0]):.1f}×；floor={floor:.2e}")
+
+
+# =====================================================================
 # Step 3 [B 阶段] 噪声建模 + η 时变图（待办 C）
 # =====================================================================
 def plot_noise_model(npz: dict):
@@ -993,6 +1049,114 @@ def plot_simulated_preprocessed_high_order_corr(npz: dict):
           f"{n_rows} 阶×3 序列；各阶谱峰={peak_txt if peak_txt else '无'}")
 
 
+# =====================================================================
+# [2026-10-13 导师口径] 物理域 SNR（B/D 两口径）+ 预加重曲线数组
+# ---------------------------------------------------------------------
+# 背景：目标带内 counts 噪声由不随 H 的仪器本底主导（实测 |N| 平坦、
+# 跨站不相干），逐频 1/H 反演会把低频本底放大 1e3~1e6 倍，故物理域 SNR
+# 远低于观测域 counts SNR（-20 dB 场景实测约 -87 dB）。物理域 SNR 仅作
+# 参考，counts 域 SNR 保持主指标（与 compute_snr_two_domains.py 同口径）。
+# 实现：用 npz 中目标带内 64 频点复 H 做频域反演（带外置 0 后再带通评估，
+# 与全频带反演带通后等价——带外噪声被带通滤掉），完全自包含（不依赖 obspy）。
+#   B 严格去 H：invH=conj(H)/(|H|^2+floor^2)（Wiener 稳定，与预加重 floor 同口径）
+#   D 对称去 K：K=rfft(clean)/rfft(s)（与合成正演链 A·P·H 严格对应），1/K 反演
+# =====================================================================
+def _db10(x: float) -> float:
+    return float(10.0 * np.log10(max(float(x), 1e-30)))
+
+
+def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray,
+                          resp_band: np.ndarray, freqs_band: np.ndarray,
+                          fs: float, n: int, floor_ratio: float = 1e-3) -> dict:
+    """计算物理域 SNR（B/D 两口径）与预加重曲线，返回可写入 npz/json 的 dict。
+
+    键：
+      preemph_freqs / preemph_H_amp / preemph_P / preemph_G_amp /
+      preemph_relD / preemph_floor        <- 预加重曲线（每站 (3,64)）
+      snr_phys_strict_dB / snr_phys_sym_dB (3,) 每站物理域 SNR
+      snr_phys_common_strict_dB / snr_phys_common_sym_dB 三站公共
+    """
+    out = {}
+    n_sta = clean.shape[0]
+    amps = np.abs(resp_band)                               # (3,64)
+    floors = amps.max(axis=1, keepdims=True) * floor_ratio  # (3,1)
+    P = 1.0 / np.maximum(amps, floors)                     # (3,64)
+    G = np.abs(P * resp_band)                              # (3,64)
+    i_ref = int(np.argmin(np.abs(freqs_band - 0.012)))
+    D = P / P[:, i_ref:i_ref + 1]                          # (3,64) 相对倍数
+    out.update({
+        "preemph_freqs": freqs_band,
+        "preemph_H_amp": amps,
+        "preemph_P": P,
+        "preemph_G_amp": G,
+        "preemph_relD": D,
+        "preemph_floor": floors[:, 0],
+    })
+
+    # ---- 物理域 SNR：目标带内 64 频点反演（带外置 0）----
+    nc = obs - clean                                        # counts 噪声
+    Nc = np.fft.rfft(nc, axis=1)                            # (3, n//2+1)
+    f_all = np.fft.rfftfreq(n, 1.0 / fs)
+    idx = np.searchsorted(f_all, freqs_band)                # 64 频点在整轴索引
+    n2 = n // 2 + 1
+    F0, F1 = FREQ_BAND[0], FREQ_BAND[1]
+    snr_strict, snr_sym = [], []
+    for j in range(n_sta):
+        Hj = resp_band[j]
+        aj = amps[j]
+        fl = float(floors[j, 0])
+        # B：严格去 H（Wiener 稳定）
+        invH = np.conj(Hj) / (aj ** 2 + fl ** 2)
+        Nj = np.zeros(n2, dtype=complex)
+        Nj[idx] = Nc[j][idx] * invH
+        n_phys = np.fft.irfft(Nj, n=n)
+        s_bp = bandpass_obspy_safe(s_phys[j], fs, F0, F1)
+        np_bp = bandpass_obspy_safe(n_phys, fs, F0, F1)
+        snr_strict.append(_db10(np.sum(s_bp ** 2) / np.sum(np_bp ** 2)))
+        # D：对称去 K（带内 K，与合成正演链对应）
+        Sspec = np.fft.rfft(s_phys[j])
+        eps_s = float(np.max(np.abs(Sspec[idx])) ** 2) * 1e-12
+        Kb = np.fft.rfft(clean[j])[idx] * np.conj(Sspec[idx]) / \
+            (np.abs(Sspec[idx]) ** 2 + eps_s)
+        kb = np.abs(Kb)
+        eps_k = float(np.max(kb) ** 2) * 1e-12
+        invK = np.conj(Kb) / (kb ** 2 + eps_k)
+        Nj = np.zeros(n2, dtype=complex)
+        Nj[idx] = Nc[j][idx] * invK
+        n_phys = np.fft.irfft(Nj, n=n)
+        np_bp = bandpass_obspy_safe(n_phys, fs, F0, F1)
+        snr_sym.append(_db10(np.sum(s_bp ** 2) / np.sum(np_bp ** 2)))
+
+    # ---- 三站公共物理 SNR（先平均再算；逐站 H 反演后取平均）----
+    sc_bp = bandpass_obspy_safe(s_phys.mean(axis=0), fs, F0, F1)
+    nc_c = obs.mean(axis=0) - clean.mean(axis=0)
+    Nc_c = np.fft.rfft(nc_c)
+    _strict_c, _sym_c = [], []
+    for j in range(n_sta):
+        Hj = resp_band[j]
+        aj = amps[j]
+        fl = float(floors[j, 0])
+        Nj = np.zeros(n2, dtype=complex)
+        Nj[idx] = Nc_c[idx] * (np.conj(Hj) / (aj ** 2 + fl ** 2))
+        _strict_c.append(_db10(np.sum(sc_bp ** 2) / np.sum(
+            bandpass_obspy_safe(np.fft.irfft(Nj, n=n), fs, F0, F1) ** 2)))
+        Sspec = np.fft.rfft(s_phys[j])
+        eps_s = float(np.max(np.abs(Sspec[idx])) ** 2) * 1e-12
+        Kb = np.fft.rfft(clean[j])[idx] * np.conj(Sspec[idx]) / \
+            (np.abs(Sspec[idx]) ** 2 + eps_s)
+        kb = np.abs(Kb)
+        eps_k = float(np.max(kb) ** 2) * 1e-12
+        Nj = np.zeros(n2, dtype=complex)
+        Nj[idx] = Nc_c[idx] * (np.conj(Kb) / (kb ** 2 + eps_k))
+        _sym_c.append(_db10(np.sum(sc_bp ** 2) / np.sum(
+            bandpass_obspy_safe(np.fft.irfft(Nj, n=n), fs, F0, F1) ** 2)))
+    out["snr_phys_strict_dB"] = np.array(snr_strict)
+    out["snr_phys_sym_dB"] = np.array(snr_sym)
+    out["snr_phys_common_strict_dB"] = float(np.mean(_strict_c))
+    out["snr_phys_common_sym_dB"] = float(np.mean(_sym_c))
+    return out
+
+
 def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
     """保存 v3 管线运行的最终结果数据（2026-09-17 用户要求）
 
@@ -1088,6 +1252,20 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
     }
     arrays.update(corr_spec)
     arrays.update(order_arrays)
+
+    # ---- [2026-10-13 导师口径] 物理域 SNR（B/D）+ 预加重曲线数组 ----
+    pe = _phys_snr_and_preemph(
+        npz["clean_counts"], npz["observations"], npz["signal_filtered"],
+        np.asarray(npz["response"]), np.asarray(npz["freqs"], dtype=float),
+        fs, n)
+    arrays.update({k: v for k, v in pe.items()
+                   if not k.startswith("snr_phys")})   # 预加重曲线进 npz
+    snr_phys_arrays = {k: v for k, v in pe.items()
+                       if k.startswith("snr_phys")}    # 物理域 SNR 单独取用
+    print(f"[保存] 物理域 SNR（B 严格去 H / D 对称去 K）："
+          f"{[f'{v:.1f}' for v in snr_phys_arrays['snr_phys_strict_dB']]} / "
+          f"{[f'{v:.1f}' for v in snr_phys_arrays['snr_phys_sym_dB']]} dB")
+
     npz_out = OUT_DIR / "v3_all_intermediate_results.npz"
     np.savez_compressed(npz_out, **arrays)
     print(f"[保存] 结果数据已落盘: {npz_out}")
@@ -1100,6 +1278,16 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
         "amplitude_scale": AMPLITUDE_SCALE,
         "evaluation_counts_domain": {k: float(v) for k, v in ev_c.items()},
         "evaluation_physical_corr_inband": corr_p,
+        "snr_phys_inband": {
+            "strict_dB": [float(v) for v in snr_phys_arrays["snr_phys_strict_dB"]],
+            "sym_dB": [float(v) for v in snr_phys_arrays["snr_phys_sym_dB"]],
+            "common_strict_dB": float(snr_phys_arrays["snr_phys_common_strict_dB"]),
+            "common_sym_dB": float(snr_phys_arrays["snr_phys_common_sym_dB"]),
+        },
+        "snr_phys_note": ("物理域 SNR（目标带内反演，低频 1/H 病态，仅作参考）："
+                          "B=噪声去真实 H（Wiener invH）；D=噪声按对称 K="
+                          "rfft(clean)/rfft(s) 反演（与合成正演链 A·P·H 对应）。"
+                          "counts 域 SNR 仍为主指标。"),
         "high_order_corr_peak_freqs": res["peak_freqs"],
         "high_order_corr_orders": order_names,
         "meta_from_exp014": {
@@ -1115,6 +1303,7 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
               encoding="utf-8") as f:
         json.dump(json_out, f, ensure_ascii=False, indent=2)
     print(f"[保存] 元数据已落盘: {OUT_DIR / 'v3_all_intermediate_results.json'}")
+    return json_out
 
 
 # =====================================================================
@@ -1259,6 +1448,9 @@ def main():
     # A-5 仪器响应（待办 A）
     print("\n[A-5] 仪器响应单位感知...")
     plot_response_units(npz)
+    # [2026-10-13 导师询问] 预加重乘子 P(f) 曲线（21 号图）
+    print("\n[A-5] 预加重乘子 P(f) 曲线...")
+    plot_preemphasis(npz)
 
     # B 阶段
     print("\n[B 阶段] 噪声建模 + η 时变图...")
@@ -1297,7 +1489,19 @@ def main():
 
     # 结果数据落盘（2026-09-17 用户要求：方便后续重新绘图与新的操作）
     print("\n[保存] 中间结果数据...")
-    save_v3_results(npz, meta)
+    json_out = save_v3_results(npz, meta)
+
+    # [2026-10-13] 物理域 SNR 写回数据目录 metadata.json（面板顶栏读取）
+    try:
+        with open(meta_path, encoding="utf-8") as f:
+            mm = json.load(f)
+        mm["snr_phys_inband"] = json_out["snr_phys_inband"]
+        mm["snr_phys_note"] = json_out["snr_phys_note"]
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(mm, f, ensure_ascii=False, indent=2)
+        print(f"[保存] 物理域 SNR 已写回 {meta_path.name}")
+    except Exception as e:
+        print(f"[警告] 写回 metadata.json 失败: {e}")
 
     # 汇总清单
     print("\n" + "=" * 60)

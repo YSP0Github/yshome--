@@ -81,6 +81,7 @@ IMAGE_GROUPS = [
     ]),
     ("A-5 仪器响应（待办 A）", [
         ("03", "03_response_units.png", "03 仪器响应幅度+相位，单位标注 counts/m（DISP 位移型）"),
+        ("21", "21_preemphasis_factor.png", "21 预加重乘子 P(f)（|H|/P/G/相对放大倍数，目标带内；低频相对高频放大约 24.6×，2026-10-13 导师询问）"),
     ]),
     ("B 噪声建模", [
         ("04", "04_noise_model.png", "04 噪声段 Welch PSD（B-2）+ ν/σ^2"),
@@ -141,7 +142,9 @@ def load_metrics():
                 per_station.append(float(v))
         # 目标输入 SNR（input_snr_control.target_snr_db；exp014 原始合成无此项）
         target = meta.get("input_snr_control", {}).get("target_snr_db")
-        return {
+        # [2026-10-13 导师口径] 物理域 SNR（管线 save_v3_results 写回 metadata）
+        _sp = meta.get("snr_phys_inband", {}) or {}
+        ret = {
             "stations": meta.get("stations", ["S12", "S15", "S16"]),
             "fs": meta.get("fs_hz", 6.625),
             "freq_band": meta.get("freq_band", [0.001, 0.012]),
@@ -153,12 +156,21 @@ def load_metrics():
             "n_active_atoms": meta.get("fsbl_info", {}).get("n_active_atoms", "N/A"),
             "target_snr_db": target,
             "snr_input_per_station": per_station,
+            "snr_phys_strict_db": _sp.get("strict_dB", []),
+            "snr_phys_sym_db": _sp.get("sym_dB", []),
+            "snr_phys_common_strict_db": _sp.get("common_strict_dB"),
+            "snr_phys_common_sym_db": _sp.get("common_sym_dB"),
+            "snr_phys_note": meta.get("snr_phys_note", ""),
         }
+        ret["snr_note"] = _snr_note_html(ret)
+        return ret
     except Exception:
         return {}
 
 def _snr_note_html(m: dict) -> str:
-    """[2026-09-22 SPA] 拼装 SNR 口径说明文本（页面渲染与 /api/metrics 共用）"""
+    """[2026-09-22 SPA] 拼装 SNR 口径说明文本（页面渲染与 /api/metrics 共用）
+    [2026-10-13 导师口径] 追加物理域 SNR 两口径说明。
+    """
     parts = []
     _target_v = m.get("target_snr_db")
     _sta_vals = m.get("snr_input_per_station") or []
@@ -167,7 +179,18 @@ def _snr_note_html(m: dict) -> str:
     if _sta_vals:
         _vals = " / ".join(f"{v:.2f}" for v in _sta_vals)
         parts.append(f"逐站实测 = {_vals} dB")
-    return "SNR 口径：" + "；".join(parts) + "。" if parts else ""
+    # [2026-10-13] 物理域 SNR（目标带内反演；低频 1/H 病态，仅作参考）
+    _sp_strict = m.get("snr_phys_strict_db") or []
+    _sp_sym = m.get("snr_phys_sym_db") or []
+    if _sp_strict:
+        parts.append("物理SNR(去H,Wiener) = "
+                     + " / ".join(f"{v:.1f}" for v in _sp_strict) + " dB")
+    if _sp_sym:
+        parts.append("物理SNR(去K,对称) = "
+                     + " / ".join(f"{v:.1f}" for v in _sp_sym) + " dB")
+    _note = ("。物理域 SNR 因目标带内噪声经 1/H 反演放大 1e3~1e6 倍而极低，"
+             "仅作参考；counts 域 SNR 为主指标") if _sp_strict else ""
+    return "SNR 口径：" + "；".join(parts) + _note + "." if parts else ""
 
 def run_pipeline_thread(input_snr: float | None = None,
                         out_root: str | None = None):
@@ -677,6 +700,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         _snr_in_val = _target_v if _target_v is not None else m.get("snr_input_db", 0)
         snr_improve = m.get("snr_output_db", 0) - _snr_in_val
         _snr_in_label = "SNR 输入 (dB)"
+        # [2026-10-13 导师口径] 物理域 SNR 卡片（优先公共值；缺省取逐站平均）
+        _ps_strict = m.get("snr_phys_common_strict_db")
+        if _ps_strict is None:
+            _pv = m.get("snr_phys_strict_db") or []
+            _ps_strict = (sum(_pv) / len(_pv)) if _pv else None
+        _ps_sym = m.get("snr_phys_common_sym_db")
+        if _ps_sym is None:
+            _pv = m.get("snr_phys_sym_db") or []
+            _ps_sym = (sum(_pv) / len(_pv)) if _pv else None
+        _ps_strict_txt = f"{_ps_strict:.1f}" if _ps_strict is not None else "—"
+        _ps_sym_txt = f"{_ps_sym:.1f}" if _ps_sym is not None else "—"
         metric_cards = ""
         # 事件日期（合成月震时间戳，格式 19760113_070152 → 1976-01-13 07:01:52）
         _et = m.get("event_token", "")
@@ -684,7 +718,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if _et and len(_et) >= 13:
             _et_disp = f"{_et[0:4]}-{_et[4:6]}-{_et[6:8]} {_et[9:11]}:{_et[11:13]}"
         _metric_ids = ["", "m-snr-in", "m-snr-out", "m-snr-gain",
-                       "m-corr", "m-iter", "m-atoms"]
+                       "m-corr", "m-iter", "m-atoms",
+                       "m-snr-phys-strict", "m-snr-phys-sym"]
         for _i, (label, value, fmt, good_when) in enumerate([
             ("事件日期", _et_disp or "—", "s", lambda v: True),
             (_snr_in_label, _snr_in_val, ".2f",
@@ -697,6 +732,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             ("FSBL 迭代", m.get("n_iterations", "N/A"), "s",
              lambda v: True),
             ("活跃原子", m.get("n_active_atoms", "N/A"), "s",
+             lambda v: True),
+            ("物理SNR(去H,dB)", _ps_strict_txt, "s",
+             lambda v: True),
+            ("物理SNR(去K,dB)", _ps_sym_txt, "s",
              lambda v: True),
         ]):
             v = value
@@ -1586,7 +1625,8 @@ function updateMetrics() {{
         const el = document.getElementById(id);
         if (!el) return;
         let txt = String(v);
-        if (fmt === 'f2') txt = Number(v).toFixed(2);
+        if (fmt === 'f1') txt = Number(v).toFixed(1);
+        else if (fmt === 'f2') txt = Number(v).toFixed(2);
         else if (fmt === 'f4') txt = Number(v).toFixed(4);
         el.textContent = txt;
         // 颜色：SNR >=0 / corr >0.5 为 good，否则 bad
@@ -1610,6 +1650,15 @@ function updateMetrics() {{
       setV('m-corr', mt.correlation, 'f4');
       setV('m-iter', mt.n_iterations, 's');
       setV('m-atoms', mt.n_active_atoms, 's');
+      // [2026-10-13 导师口径] 物理域 SNR（公共值；缺省显示 '—'）
+      setV('m-snr-phys-strict',
+           (mt.snr_phys_common_strict_db !== undefined &&
+            mt.snr_phys_common_strict_db !== null)
+             ? mt.snr_phys_common_strict_db : '—', 'f1');
+      setV('m-snr-phys-sym',
+           (mt.snr_phys_common_sym_db !== undefined &&
+            mt.snr_phys_common_sym_db !== null)
+             ? mt.snr_phys_common_sym_db : '—', 'f1');
       const cd = document.getElementById('curDataDir');
       if (cd && mt.data_dir) {{ cd.textContent = mt.data_dir; cd.title = mt.data_dir; }}
       const sn = document.getElementById('snrNote');
