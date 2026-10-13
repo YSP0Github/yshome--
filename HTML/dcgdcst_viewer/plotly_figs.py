@@ -1155,12 +1155,19 @@ def plot21_preemphasis_factor(npz: dict):
     # [2026-10-13 v4.2] y 轴显式标定：log 轴按数据动态定 range，D 线性轴
     # 跟随 max(D)（fallback 口径 D(0.001)≈1000×，固定 0–26 会截断曲线）。
     _f = np.isfinite(_amp)
-    _a_min, _a_max = float(np.min(_amp[_f])), float(np.max(_amp))
-    fig.update_yaxes(type="log", range=[np.log10(max(_a_min * 0.3, 1e-300)),
+    _a_max = float(np.max(_amp))
+    _a_min = float(np.min(_amp[_f]))
+    # [2026-10-13 v4.2 fix] 最低频处 |H| 数值下溢≈0 → log10 下限会算出 -300
+    # （y 轴从 1e-300 起、曲线全部压顶）。下限按 max(数据最小值, max*1e-6) 截断，
+    # 保证 y 轴覆盖 ~6 个数量级、曲线可辨。
+    _a_lo = max(_a_min, _a_max * 1e-6)
+    fig.update_yaxes(type="log", range=[np.log10(_a_lo),
                                         np.log10(_a_max * 3.0)], row=1, col=1)
     _f = np.isfinite(P)
-    _p_min, _p_max = float(np.min(P[_f])), float(P.max())
-    fig.update_yaxes(type="log", range=[np.log10(max(_p_min * 0.3, 1e-300)),
+    _p_max = float(P.max())
+    _p_min = float(np.min(P[_f]))
+    _p_lo = max(_p_min, _p_max * 1e-4)
+    fig.update_yaxes(type="log", range=[np.log10(_p_lo),
                                         np.log10(_p_max * 3.0)], row=1, col=2)
     fig.update_yaxes(type="linear", range=[0, 1.15], row=2, col=1)
     _d_max = float(np.max(D))
