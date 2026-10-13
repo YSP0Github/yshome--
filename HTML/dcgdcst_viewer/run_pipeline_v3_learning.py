@@ -1209,7 +1209,8 @@ def _db10(x: float) -> float:
 def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray,
                           resp_band: np.ndarray, freqs_band: np.ndarray,
                           fs: float, n: int, floor_ratio: float = 1e-3,
-                          resp_full: np.ndarray | None = None) -> dict:
+                          resp_full: np.ndarray | None = None,
+                          freqs_full: np.ndarray | None = None) -> dict:
     """计算物理域 SNR（B/D 两口径）与预加重曲线，返回可写入 npz/json 的 dict。
 
     键：
@@ -1247,6 +1248,25 @@ def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray
         "preemph_floor": floors[:, 0],
         "preemph_floor_src": floor_src,
     })
+    # [2026-10-13 v4] 额外注入**全频带**预加重曲线（0~0.05Hz，含 |H| 峰值
+    # 所在的 0.02Hz 附近），供面板 21 号交互图绘制到 0.02Hz、与 PNG 版
+    # plot_preemphasis_factor 完全对齐（横轴 log 0.0005~0.02Hz）。
+    # 无 resp_full/freqs_full（旧包）时跳过，plot21 自动回退带内曲线。
+    if resp_full is not None and freqs_full is not None:
+        mf = freqs_full <= 0.05                        # 只保留 0~0.05Hz 段（够画到 0.02）
+        f_full = np.asarray(freqs_full, dtype=float)[mf]
+        amp_full = np.abs(resp_full)[:, mf]            # (3, nf) counts/m
+        P_full = 1.0 / np.maximum(amp_full, floors)    # (3, nf)
+        G_full = P_full * amp_full                     # (3, nf) 有效算子
+        i_ref_full = int(np.argmin(np.abs(f_full - 0.012)))
+        D_full = P_full / P_full[:, i_ref_full:i_ref_full + 1]  # (3, nf)
+        out.update({
+            "preemph_freqs_full": f_full,
+            "preemph_H_amp_full": amp_full,
+            "preemph_P_full": P_full,
+            "preemph_G_amp_full": G_full,
+            "preemph_relD_full": D_full,
+        })
     print(f"[预加重] floor 口径: {floor_src}  floor={floors[0,0]:.3e}  "
           f"Pmax={float(P[:, 0].max()):.3e}  "
           f"D(0.001)={float(D[0, 0]):.1f}×")
@@ -1420,7 +1440,7 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None,
     pe = _phys_snr_and_preemph(
         npz["clean_counts"], npz["observations"], npz["signal_filtered"],
         np.asarray(npz["response"]), np.asarray(npz["freqs"], dtype=float),
-        fs, n, resp_full=resp_full)
+        fs, n, resp_full=resp_full, freqs_full=f_all)
     arrays.update({k: v for k, v in pe.items()
                    if not k.startswith("snr_phys")})   # 预加重曲线进 npz
     snr_phys_arrays = {k: v for k, v in pe.items()

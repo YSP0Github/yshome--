@@ -1046,21 +1046,23 @@ def plot21_preemphasis_factor(npz: dict):
       @0.02Hz）。优先读 npz['preemph_*']（管线注入的正确口径数组）；旧数据
       包无该字段时回退带内口径并提示（24.6× 会失真为 1000×）。
     """
-    # [2026-10-13 v3] 优先使用全带 floor 口径的预加重数组
-    if "preemph_P" in npz and "preemph_H_amp" in npz:
+    # [2026-10-13 v4] 优先读**全频带**预加重数组（横轴可画到 0.02Hz，
+    # 与 PNG 版 plot_preemphasis_factor 完全对齐）；次选带内 preemph_*；
+    # 旧包两者都缺时回退目标带内口径并提示。
+    _mode = "fullband"
+    if "preemph_P_full" in npz and "preemph_H_amp_full" in npz:
+        freqs = np.asarray(npz["preemph_freqs_full"], dtype=float)
+        _amp = np.asarray(npz["preemph_H_amp_full"])
+        P = np.asarray(npz["preemph_P_full"])
+        G = np.asarray(npz["preemph_G_amp_full"])
+        D = np.asarray(npz["preemph_relD_full"])
+    elif "preemph_P" in npz and "preemph_H_amp" in npz:
+        _mode = "inband"
         freqs = np.asarray(npz["preemph_freqs"], dtype=float)
         _amp = np.asarray(npz["preemph_H_amp"])
         P = np.asarray(npz["preemph_P"])
         G = np.asarray(npz["preemph_G_amp"])
         D = np.asarray(npz["preemph_relD"])
-        floor = float(np.asarray(npz["preemph_floor"])[0])
-        _floor_src = str(npz.get("preemph_floor_src", "fullband"))
-        _same = bool(_amp.ndim == 1 or
-                     (np.allclose(_amp[0], _amp[1]) and
-                      np.allclose(_amp[0], _amp[2])))
-        if _amp.ndim == 2:
-            # 三站同型号仪器：曲线一致，取第一站降为 1D（标注用标量）
-            _amp, P, G, D = _amp[0], P[0], G[0], D[0]
     else:
         freqs = np.asarray(npz["freqs"], dtype=float)       # (64,)
         resp = np.asarray(npz["response"])                  # (3,64) complex
@@ -1076,6 +1078,15 @@ def plot21_preemphasis_factor(npz: dict):
         print(f"[21号图警告] 数据包无 preemph_* 数组，回退目标带内口径 "
               f"(floor={floor:.2e}，24.6× 会失真为 {float(D[0]):.0f}×)；"
               f"请用新管线重跑并重新上传数据包")
+    if _mode != "inband":
+        floor = float(np.asarray(npz["preemph_floor"])[0])
+        _floor_src = str(npz.get("preemph_floor_src", "fullband"))
+    _same = bool(_amp.ndim == 1 or
+                 (np.allclose(_amp[0], _amp[1]) and
+                  np.allclose(_amp[0], _amp[2])))
+    if _amp.ndim == 2:
+        # 三站同型号仪器：曲线一致，取第一站降为 1D（标注用标量）
+        _amp, P, G, D = _amp[0], P[0], G[0], D[0]
     i_lo = int(np.argmin(np.abs(freqs - 0.001)))
     i_hi = int(np.argmin(np.abs(freqs - 0.012)))
     Pmax = float(P.max())
@@ -1083,7 +1094,7 @@ def plot21_preemphasis_factor(npz: dict):
     _name = "S12/S15/S16（同型号）" if _amp.ndim == 1 else "S12/S15/S16"
     _c = "#333333" if _amp.ndim == 1 else _COLORS["blue"]
     fig = make_subplots(
-        rows=2, cols=2, vertical_spacing=0.14, horizontal_spacing=0.10,
+        rows=2, cols=2, vertical_spacing=0.16, horizontal_spacing=0.11,
         subplot_titles=[
             "(a) 仪器位移响应幅度 |H(f)|（DISP, counts/m）",
             "(b) 预加重乘子 P(f)=1/max(|H|,floor)（低频人为乘大，纯幅度、相位不变）",
@@ -1092,7 +1103,7 @@ def plot21_preemphasis_factor(npz: dict):
     # (a) |H|
     fig.add_trace(go.Scatter(x=freqs, y=_amp, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=1, col=1)
-    fig.add_hline(y=floor, line_dash="dash", line_color=_c, line_width=1,
+    fig.add_hline(y=floor, line_dash="dash", line_color="#666666", line_width=1,
                   annotation_text=f"floor={floor:.2e}（{_floor_src}）", row=1, col=1)
     # (b) P
     fig.add_trace(go.Scatter(x=freqs, y=P, name=_name, mode="lines",
@@ -1109,17 +1120,31 @@ def plot21_preemphasis_factor(npz: dict):
                              line=dict(color=_c, width=2)), row=2, col=2)
     fig.add_hline(y=1.0, line_dash="dot", line_color="gray", line_width=1,
                   row=2, col=2)
+    if _mode == "fullband":
+        # 全带：横轴 log 0.0005~0.02Hz，与 PNG 版对齐
+        fig.update_xaxes(type="log", range=[np.log10(0.0005), np.log10(0.02)],
+                         row=1, col=1)
+        fig.update_xaxes(type="log", range=[np.log10(0.0005), np.log10(0.02)],
+                         row=1, col=2)
+        fig.update_xaxes(type="log", range=[np.log10(0.0005), np.log10(0.02)],
+                         title_text="频率 (Hz)", row=2, col=1)
+        fig.update_xaxes(type="log", range=[np.log10(0.0005), np.log10(0.02)],
+                         title_text="频率 (Hz)", row=2, col=2)
+    else:
+        # 带内：线性 0.001~0.012Hz
+        fig.update_xaxes(range=[0.001, 0.012], row=1, col=1)
+        fig.update_xaxes(range=[0.001, 0.012], row=1, col=2)
+        fig.update_xaxes(range=[0.001, 0.012], title_text="频率 (Hz)", row=2, col=1)
+        fig.update_xaxes(range=[0.001, 0.012], title_text="频率 (Hz)", row=2, col=2)
     fig.update_yaxes(type="log", row=1, col=1)
     fig.update_yaxes(type="log", row=1, col=2)
     fig.update_yaxes(type="linear", range=[0, 1.15], row=2, col=1)
     fig.update_yaxes(type="linear", range=[0, 26], row=2, col=2)
-    fig.update_xaxes(title_text="频率 (Hz)", row=2, col=1)
-    fig.update_xaxes(title_text="频率 (Hz)", row=2, col=2)
     # 目标频带高亮（4 个子图）
     for r, c_ in ((1, 1), (1, 2), (2, 1), (2, 2)):
         fig.add_vrect(x0=FREQ_BAND[0], x1=FREQ_BAND[1], fillcolor="orange",
                       opacity=0.08, line_width=0, row=r, col=c_)
-    # 数值标注
+    # 数值标注（颜色/文案与 PNG 版 plot_preemphasis_factor 对齐）
     fig.add_annotation(
         x=freqs[i_lo], y=Pmax,
         text=f"Pmax=1/floor={Pmax:.2e}",
@@ -1131,7 +1156,7 @@ def plot21_preemphasis_factor(npz: dict):
         text=f"P(0.001)={P[i_lo]:.2e}<br>P(0.012)={P[i_hi]:.2e}",
         xshift=-45, yshift=55, showarrow=True,
         arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor="#333",
-        font=dict(size=11), row=1, col=2)
+        font=dict(size=11, color="#333333"), row=1, col=2)
     fig.add_annotation(
         x=freqs[i_lo], y=G[i_lo],
         text=f"G(0.001)≈{G[i_lo]:.3f}（floor 截断未完全补偿）",
@@ -1150,8 +1175,24 @@ def plot21_preemphasis_factor(npz: dict):
         xshift=-40, yshift=30, showarrow=True,
         arrowhead=1, arrowsize=1.2, arrowwidth=1.4, arrowcolor="#b06a00",
         font=dict(size=12, color="#b06a00"), row=2, col=2)
-    fig.update_layout(**_base_layout(
-        "21 预加重乘子 P(f)（目标带内；三站同型号；低频相对高频放大约 24.6×）"))
+    # 全带模式下补充"目标带内 |H| 变化"标注（同 PNG）
+    if _mode == "fullband":
+        fig.add_annotation(
+            x=0.012, y=_amp[i_hi],
+            text="目标带内 |H| 变化 ≈ 8009×<br>(0.012Hz/0.001Hz)",
+            xshift=10, yshift=30, showarrow=False,
+            font=dict(size=11, color="#333333"), row=1, col=1)
+    # [2026-10-13 v4] 浅色主题（对齐 PNG 版），整体高度拉大避免子图挤压；
+    # 面板其余图为深色，本图按导师/用户偏好单独使用浅色干净风格。
+    fig.update_layout(
+        template="plotly_white",
+        paper_bgcolor="#FAFAF7", plot_bgcolor="#FAFAF7",
+        font=dict(color="#1A1B1C", size=12),
+        title=dict(text="21 预加重乘子 P(f)（目标带内；三站同型号；低频相对高频放大约 24.6×）",
+                   font=dict(size=15), x=0.5, xanchor="center"),
+        height=900, showlegend=False,
+        margin=dict(l=60, r=40, t=90, b=50),
+    )
     return fig
 
 
