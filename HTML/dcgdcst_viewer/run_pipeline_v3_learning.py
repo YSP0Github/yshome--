@@ -155,6 +155,69 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =====================================================================
+# [2026-10-13 修正] 全频带真实仪器响应（预加重 floor 的口径依据）
+# ---------------------------------------------------------------------
+# 预加重 floor=max|H|×1e-3 中的 max|H| 是**全频带**最大值（约 3.05e9，
+# 出现在 0.02Hz 附近），而不是目标带内最大值（0.012Hz 处仅 7.5e7）。
+# 若用带内 max，floor 会被低估约 40 倍，导致：P 平台（Pmax）、相对放大
+# 倍数（真实 24.6× 会被算成 1000×）、以及 B 口径物理 SNR 的 Wiener
+# 正则项（fl²）全部失真。
+# 因此预加重曲线与物理 SNR 都必须基于 XML evalresp 的全频带复 H。
+# 全带 |H| 仅在管线运行期从响应 XML 求取（本地/WSL 可用），随后把
+# 目标带内曲线数组（preemph_*，全带 floor 口径）写入 npz 供面板使用。
+# =====================================================================
+RESP_ROOT = Path(r"G:\PhD\02_数据资料\apollo_test_events\response_inventory")
+
+
+def _load_true_response_allband(freqs_all: np.ndarray):
+    """从响应 XML evalresp 求三站全频带复仪器响应 H(f)。
+
+    返回 (3, len(freqs_all)) complex；任何一站读取失败返回 None（调用方回退
+    到目标带内 response，并提示口径降级）。
+    """
+    from obspy import read_inventory
+    H_list = []
+    for sta in STATIONS:
+        if sta == "S16":
+            cands = ["response_bundle_19761114T230000_19760125T175958.xml",
+                     "response_bundle_19761114T230000_19760113T090150.xml"]
+        else:
+            cands = [f"response_XA.{sta}.01.MHZ.xml", f"XA.{sta}.01.MHZ.xml"]
+        ok = False
+        for c in cands:
+            p = RESP_ROOT / c
+            if not p.exists():
+                continue
+            try:
+                inv = read_inventory(str(p))
+                for net in inv:
+                    for s in net:
+                        if s.code != sta:
+                            continue
+                        for ch in s:
+                            if ch.code == "MHZ" and ch.location_code == "01":
+                                H = ch.response.get_evalresp_response_for_frequencies(
+                                    freqs_all, output="DISP",
+                                    hide_sensitivity_mismatch_warning=True)
+                                H_list.append(np.asarray(H, dtype=complex))
+                                ok = True
+                                break
+                        if ok:
+                            break
+                    if ok:
+                        break
+            except Exception as e:
+                print(f"[警告] 读取 {sta} 响应 XML 失败: {e}")
+            if ok:
+                break
+        if not ok:
+            print(f"[警告] 未找到 {sta} 的响应 XML，预加重/物理SNR 将回退"
+                  f"目标带内口径（数值失真，建议上传新数据包）")
+            return None
+    return np.stack(H_list, axis=0)
+
+
+# =====================================================================
 # 公共绘图小工具
 # =====================================================================
 def _save(fig, name: str, note: str = ""):
@@ -274,48 +337,126 @@ def plot_preemphasis(npz: dict):
       相对放大倍数 D(f)=P(f)/P(0.012Hz)（低频相对高频放大约 24.6×）。
     数据用 npz 中目标带内 64 频点复 H（npz['freqs']/['response']），
     三站同型号仪器响应一致时合并为一条曲线，避免重叠误导。
-    """
-    freqs = np.asarray(npz["freqs"], dtype=float)          # (64,)
-    resp = np.asarray(npz["response"])                     # (3,64) complex
-    amps = np.abs(resp)
-    # 三站同型号仪器：曲线相同则合并显示
-    same = bool(np.allclose(amps[0], amps[1]) and np.allclose(amps[0], amps[2]))
-    _amp = amps[0] if same else amps
-    floor = float(np.max(amps[0])) * 1e-3                  # floor=max|H|×1e-3
-    P = 1.0 / np.maximum(_amp, floor)
-    G = P * _amp
-    i_ref = int(np.argmin(np.abs(freqs - 0.012)))
-    D = P / P[i_ref]
 
-    fig, ax = plt.subplots(4, 1, figsize=(11, 13), sharex=True)
-    _label = "S12/S15/S16（同型号）" if same else "S12/S15/S16"
-    c = "#333333" if same else "#1f77b4"
-    ax[0].semilogy(freqs, _amp, color=c, lw=1.8, label=f"{_label} |H(f)|")
-    ax[0].axhline(floor, color=c, ls="--", lw=1.2, alpha=0.85,
-                  label=f"floor={floor:.2e}")
-    ax[1].semilogy(freqs, P, color=c, lw=1.8, label=f"{_label} P(f)")
-    ax[2].semilogy(freqs, G, color=c, lw=1.8, label=f"{_label} G=P·|H|")
-    ax[3].plot(freqs, D, color=c, lw=1.8,
+    [2026-10-13 v2] 按用户反馈"图挤在一起看不清 / 乘上算子反而变小"：
+      布局 4×1 -> 2×2；G 改用线性轴(0~1.15)直观显示"0.003→1 拉平"；
+      新增关键数值标注（Pmax、P(0.001)/P(0.012)、G 拉平频率、24.6×）。
+    [2026-10-13 v3 口径修正] floor 必须基于**全频带** max|H|（约 3e9
+      @0.02Hz），优先读 npz['preemph_*']（管线 save_v3_results 注入的正确
+      口径数组）；旧数据包无该字段时回退带内口径并打印警告（24.6× 会失真
+      为 1000×）。
+    """
+    # [2026-10-13 v3] 优先使用全带 floor 口径的预加重数组（由
+    # _phys_snr_and_preemph 计算并注入 all_intermediate_results.npz）
+    if "preemph_P" in npz and "preemph_H_amp" in npz:
+        freqs = np.asarray(npz["preemph_freqs"], dtype=float)
+        _amp = np.asarray(npz["preemph_H_amp"])
+        P = np.asarray(npz["preemph_P"])
+        G = np.asarray(npz["preemph_G_amp"])
+        D = np.asarray(npz["preemph_relD"])
+        floor = float(np.asarray(npz["preemph_floor"])[0])
+        _floor_src = str(npz.get("preemph_floor_src", "fullband"))
+        _same = bool(_amp.ndim == 1 or
+                     (np.allclose(_amp[0], _amp[1]) and
+                      np.allclose(_amp[0], _amp[2])))
+        if _amp.ndim == 2:
+            # 三站同型号仪器：曲线一致，取第一站降为 1D（标注用标量）
+            _amp, P, G, D = _amp[0], P[0], G[0], D[0]
+    else:
+        freqs = np.asarray(npz["freqs"], dtype=float)          # (64,)
+        resp = np.asarray(npz["response"])                     # (3,64) complex
+        amps = np.abs(resp)
+        same = bool(np.allclose(amps[0], amps[1]) and
+                    np.allclose(amps[0], amps[2]))
+        _amp = amps[0] if same else amps
+        floor = float(np.max(amps[0])) * 1e-3                  # 带内口径（旧）
+        P = 1.0 / np.maximum(_amp, floor)
+        G = P * _amp
+        i_ref = int(np.argmin(np.abs(freqs - 0.012)))
+        D = P / P[i_ref]
+        _floor_src = "inband(fallback)"
+        print(f"[21号图警告] 数据包无 preemph_* 数组，回退目标带内口径 "
+              f"(floor={floor:.2e}，24.6× 会失真为 {float(D[0]):.0f}×)；"
+              f"请用新管线重跑并重新上传数据包")
+    i_lo = int(np.argmin(np.abs(freqs - 0.001)))
+    i_hi = int(np.argmin(np.abs(freqs - 0.012)))
+    Pmax = float(P.max())
+    G_cross = float(freqs[np.argmin(np.abs(G - 1.0))])     # G 接近 1 的频率
+
+    fig, ax = plt.subplots(2, 2, figsize=(13.5, 10.5))
+    ax = ax.ravel()
+    _label = "S12/S15/S16（同型号）" if _amp.ndim == 1 else "S12/S15/S16"
+    c = "#333333" if _amp.ndim == 1 else "#1f77b4"
+    # (a) |H|
+    ax[0].semilogy(freqs, _amp, color=c, lw=2.0, label=f"{_label} |H(f)|")
+    ax[0].axhline(floor, color=c, ls="--", lw=1.3, alpha=0.9,
+                  label=f"floor={floor:.2e}（{_floor_src}）")
+    ax[0].set_title("(a) 仪器位移响应幅度 |H(f)|（DISP, counts/m）", fontsize=13)
+    ax[0].set_ylabel("|H(f)|  (counts/m)", fontsize=11)
+    ax[0].legend(loc="upper left", fontsize=9, ncol=2)
+    ax[0].text(0.55, 0.35,
+               f"目标带内 |H| 变化 ≈ {_amp[i_hi]/_amp[i_lo]:.0f}×\n(0.012Hz/0.001Hz)",
+               transform=ax[0].transAxes, fontsize=10, va="top",
+               bbox=dict(boxstyle="round,pad=0.35", fc="#fff8dc",
+                         ec="#d9b38c", lw=0.8))
+    # (b) P
+    ax[1].semilogy(freqs, P, color=c, lw=2.0, label=f"{_label} P(f)")
+    ax[1].axhline(Pmax, color="gray", ls=":", lw=1.0)
+    ax[1].set_title("(b) 预加重乘子 P(f)=1/max(|H|,floor)：低频人为乘大（纯幅度、相位不变）",
+                    fontsize=13)
+    ax[1].set_ylabel("P(f)  (无单位)", fontsize=11)
+    ax[1].legend(loc="upper right", fontsize=9)
+    ax[1].annotate(f"Pmax=1/floor={Pmax:.2e}",
+                   xy=(freqs[i_lo], Pmax), xytext=(0.0022, Pmax * 6.0),
+                   fontsize=9.5, color="#b06a00",
+                   arrowprops=dict(arrowstyle="->", color="#b06a00", lw=1.2))
+    ax[1].annotate(f"P(0.001)={P[i_lo]:.2e}\nP(0.012)={P[i_hi]:.2e}",
+                   xy=(freqs[i_lo], P[i_lo]), xytext=(0.0030, Pmax * 14.0),
+                   fontsize=9.5,
+                   arrowprops=dict(arrowstyle="->", color="#333", lw=1.1))
+    # (c) G（线性轴）
+    ax[2].plot(freqs, G, color=c, lw=2.0, label=f"{_label} G=P·|H|")
+    ax[2].axhline(1.0, color="gray", ls=":", lw=1.1)
+    ax[2].set_title("(c) 有效算子 G=P·|H|（线性轴）：0.003 → 0.0045Hz 起拉平到 1",
+                    fontsize=13)
+    ax[2].set_ylabel("G(f)  (无单位)", fontsize=11)
+    ax[2].set_xlabel("频率 (Hz)", fontsize=11)
+    ax[2].set_ylim(0, 1.15)
+    ax[2].legend(loc="lower right", fontsize=9)
+    ax[2].annotate(f"G(0.001Hz)≈{G[i_lo]:.3f}\n(floor 截断未完全补偿)",
+                   xy=(freqs[i_lo], G[i_lo]), xytext=(0.0015, 0.30),
+                   fontsize=9.5, color="#b06a00",
+                   arrowprops=dict(arrowstyle="->", color="#b06a00", lw=1.2))
+    ax[2].annotate(f"|H|≥floor，G≡1\n(自 {G_cross:.4f} Hz)",
+                   xy=(G_cross, 1.0), xytext=(0.0020, 0.88),
+                   fontsize=9.5, color="#1a6b1a",
+                   arrowprops=dict(arrowstyle="->", color="#1a6b1a", lw=1.2))
+    # (d) 相对放大倍数（线性轴）
+    ax[3].plot(freqs, D, color=c, lw=2.0,
                label=f"{_label} 相对倍数 P/P(0.012Hz)")
-    ax[0].set_title("仪器位移响应幅度 |H(f)|（DISP, counts/m）＋ floor=max|H|×1e-3",
-                    fontsize=12)
-    ax[1].set_title("预加重乘子 P(f)=1/max(|H|,floor)：低频人为乘大（纯幅度、相位不变）",
-                    fontsize=12)
-    ax[2].set_title("有效算子 G=P·|H|：|H|>floor 时 G=1（已拉平）；最低频 G<1（floor 截断）",
-                    fontsize=12)
-    ax[3].set_title("相对放大倍数 P(f)/P(0.012Hz)：低频比高频多放大约 24.6×",
-                    fontsize=12)
+    ax[3].set_title("(d) 相对放大倍数 P(f)/P(0.012Hz)：0.001Hz 约放大 24.6×",
+                    fontsize=13)
+    ax[3].set_ylabel("D(f)  (无单位)", fontsize=11)
     ax[3].set_xlabel("频率 (Hz)", fontsize=11)
-    ax[2].set_ylim(1e-3, 2.0)
-    ax[2].axhline(1.0, color="gray", ls=":", lw=1.0)
+    ax[3].set_ylim(0, 26)
     ax[3].axhline(1.0, color="gray", ls=":", lw=1.0)
+    ax[3].legend(loc="lower left", fontsize=9)
+    ax[3].annotate(f"D(0.001Hz)≈{D[i_lo]:.1f}×",
+                   xy=(freqs[i_lo], D[i_lo]), xytext=(0.0016, 13),
+                   fontsize=10, color="#b06a00", fontweight="bold",
+                   arrowprops=dict(arrowstyle="->", color="#b06a00", lw=1.4))
     for a in ax:
         a.axvspan(FREQ_BAND[0], FREQ_BAND[1], color="orange", alpha=0.10)
+        a.axvline(FREQ_BAND[0], color="orange", ls=":", lw=0.9)
+        a.axvline(FREQ_BAND[1], color="orange", ls=":", lw=0.9)
         a.grid(alpha=0.25, which="both")
-        a.legend(loc="upper left", fontsize=10)
-    fig.tight_layout()
+        a.tick_params(labelsize=10)
+    fig.suptitle("Apollo 低频反响应预加重：P(f)=1/max(|H|,floor)，floor=max|H|×1e-3"
+                 "（纯幅度保相位）", fontsize=14, y=0.995)
+    fig.tight_layout(rect=[0, 0, 1, 0.975])
     _save(fig, "21_preemphasis_factor.png",
-          f"P(0.001)/P(0.012)≈{float(D[0]):.1f}×；floor={floor:.2e}")
+          f"P(0.001)/P(0.012)≈{float(D[i_lo]):.1f}×；floor={floor:.2e} "
+          f"[{_floor_src}]")
 
 
 # =====================================================================
@@ -1067,19 +1208,32 @@ def _db10(x: float) -> float:
 
 def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray,
                           resp_band: np.ndarray, freqs_band: np.ndarray,
-                          fs: float, n: int, floor_ratio: float = 1e-3) -> dict:
+                          fs: float, n: int, floor_ratio: float = 1e-3,
+                          resp_full: np.ndarray | None = None) -> dict:
     """计算物理域 SNR（B/D 两口径）与预加重曲线，返回可写入 npz/json 的 dict。
 
     键：
       preemph_freqs / preemph_H_amp / preemph_P / preemph_G_amp /
-      preemph_relD / preemph_floor        <- 预加重曲线（每站 (3,64)）
+      preemph_relD / preemph_floor / preemph_floor_src
+        <- 预加重曲线（每站 (3,64)，目标带内；floor 用全频带口径）
       snr_phys_strict_dB / snr_phys_sym_dB (3,) 每站物理域 SNR
       snr_phys_common_strict_dB / snr_phys_common_sym_dB 三站公共
+
+    [2026-10-13 修正] floor=max|H|×1e-3 必须用**全频带** max|H|（resp_full，
+    约 3e9 @0.02Hz），不能用目标带内 max（7.5e7 @0.012Hz，会低估 40 倍、
+    把相对放大倍数 24.6× 算成 1000×、Wiener 正则失真）。resp_full 缺失时
+    回退带内并标记 preemph_floor_src='inband(fallback)'。
     """
     out = {}
     n_sta = clean.shape[0]
     amps = np.abs(resp_band)                               # (3,64)
-    floors = amps.max(axis=1, keepdims=True) * floor_ratio  # (3,1)
+    if resp_full is not None:
+        amp_full = np.abs(resp_full)                       # (3, nf_full)
+        floors = amp_full.max(axis=1, keepdims=True) * floor_ratio  # (3,1)
+        floor_src = "fullband"
+    else:
+        floors = amps.max(axis=1, keepdims=True) * floor_ratio
+        floor_src = "inband(fallback)"
     P = 1.0 / np.maximum(amps, floors)                     # (3,64)
     G = np.abs(P * resp_band)                              # (3,64)
     i_ref = int(np.argmin(np.abs(freqs_band - 0.012)))
@@ -1091,7 +1245,11 @@ def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray
         "preemph_G_amp": G,
         "preemph_relD": D,
         "preemph_floor": floors[:, 0],
+        "preemph_floor_src": floor_src,
     })
+    print(f"[预加重] floor 口径: {floor_src}  floor={floors[0,0]:.3e}  "
+          f"Pmax={float(P[:, 0].max()):.3e}  "
+          f"D(0.001)={float(D[0, 0]):.1f}×")
 
     # ---- 物理域 SNR：目标带内 64 频点反演（带外置 0）----
     nc = obs - clean                                        # counts 噪声
@@ -1157,7 +1315,8 @@ def _phys_snr_and_preemph(clean: np.ndarray, obs: np.ndarray, s_phys: np.ndarray
     return out
 
 
-def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
+def save_v3_results(npz: dict, meta: dict, extra: dict | None = None,
+                    data_dir: Path | None = None):
     """保存 v3 管线运行的最终结果数据（2026-09-17 用户要求）
 
     目的：监控面板"重新运行管线"后，最终结果（修正物理重建、各阶
@@ -1254,10 +1413,14 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
     arrays.update(order_arrays)
 
     # ---- [2026-10-13 导师口径] 物理域 SNR（B/D）+ 预加重曲线数组 ----
+    # [2026-10-13 修正] floor 必须基于全频带 |H|：先从响应 XML evalresp
+    # 求全带复 H（约 3e9 @0.02Hz），带内 64 点仅用于展示曲线与带内反演。
+    f_all = np.fft.rfftfreq(n, 1.0 / fs)
+    resp_full = _load_true_response_allband(f_all)
     pe = _phys_snr_and_preemph(
         npz["clean_counts"], npz["observations"], npz["signal_filtered"],
         np.asarray(npz["response"]), np.asarray(npz["freqs"], dtype=float),
-        fs, n)
+        fs, n, resp_full=resp_full)
     arrays.update({k: v for k, v in pe.items()
                    if not k.startswith("snr_phys")})   # 预加重曲线进 npz
     snr_phys_arrays = {k: v for k, v in pe.items()
@@ -1269,6 +1432,22 @@ def save_v3_results(npz: dict, meta: dict, extra: dict | None = None):
     npz_out = OUT_DIR / "v3_all_intermediate_results.npz"
     np.savez_compressed(npz_out, **arrays)
     print(f"[保存] 结果数据已落盘: {npz_out}")
+
+    # [2026-10-13 修正] 预加重/物理SNR 数组必须同步注入面板交互图数据源
+    # （all_intermediate_results.npz），否则 dashboard /api/plot/21 实时
+    # 计算仍会用旧口径（带内 floor → 24.6× 变 1000×）。
+    if data_dir is not None:
+        _p = data_dir / "all_intermediate_results.npz"
+        if _p.exists():
+            try:
+                with np.load(_p, allow_pickle=False) as _old:
+                    _items = {k: _old[k] for k in _old.files}
+                _items.update({k: v for k, v in pe.items()})
+                np.savez_compressed(_p, **_items)
+                print(f"[保存] 预加重/物理SNR 数组已注入面板数据源 {_p.name} "
+                      f"（floor 口径: {pe.get('preemph_floor_src', '?')}）")
+            except Exception as e:
+                print(f"[警告] 注入 {_p.name} 失败: {e}")
 
     json_out = {
         "source": str(EXP014_DIR),
@@ -1489,7 +1668,8 @@ def main():
 
     # 结果数据落盘（2026-09-17 用户要求：方便后续重新绘图与新的操作）
     print("\n[保存] 中间结果数据...")
-    json_out = save_v3_results(npz, meta)
+    # [2026-10-13 修正] 传 data_dir：预加重/物理SNR 数组同步注入面板数据源
+    json_out = save_v3_results(npz, meta, data_dir=DATA_DIR)
 
     # [2026-10-13] 物理域 SNR 写回数据目录 metadata.json（面板顶栏读取）
     try:

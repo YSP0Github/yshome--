@@ -1039,46 +1039,117 @@ def plot21_preemphasis_factor(npz: dict):
     G(f)=P·|H| 为有效算子（|H|>floor 时 G=1，最低频 G<1 由 floor 截断）；
     相对放大倍数 D(f)=P(f)/P(0.012Hz)（0.001Hz 处约 24.6×）。
     数据用 npz 中目标带内 64 频点复 H；三站同型号响应一致时合并为一条。
+
+    [2026-10-13 v2] 布局 4×1 -> 2×2；G 改线性轴(0~1.15)消除"乘了反而变小"
+      的观感；加关键数值标注（Pmax、P(0.001)/P(0.012)、G 拉平频率、24.6×）。
+    [2026-10-13 v3 口径修正] floor 必须基于**全频带** max|H|（约 3e9
+      @0.02Hz）。优先读 npz['preemph_*']（管线注入的正确口径数组）；旧数据
+      包无该字段时回退带内口径并提示（24.6× 会失真为 1000×）。
     """
-    freqs = np.asarray(npz["freqs"], dtype=float)       # (64,)
-    resp = np.asarray(npz["response"])                  # (3,64) complex
-    amps = np.abs(resp)
-    same = bool(np.allclose(amps[0], amps[1]) and np.allclose(amps[0], amps[2]))
-    _amp = amps[0] if same else amps
-    floor = float(np.max(amps[0])) * 1e-3
-    P = 1.0 / np.maximum(_amp, floor)
-    G = P * _amp
-    i_ref = int(np.argmin(np.abs(freqs - 0.012)))
-    D = P / P[i_ref]
-    _name = "S12/S15/S16（同型号）" if same else "S12/S15/S16"
-    _c = "#333333" if same else _COLORS["blue"]
+    # [2026-10-13 v3] 优先使用全带 floor 口径的预加重数组
+    if "preemph_P" in npz and "preemph_H_amp" in npz:
+        freqs = np.asarray(npz["preemph_freqs"], dtype=float)
+        _amp = np.asarray(npz["preemph_H_amp"])
+        P = np.asarray(npz["preemph_P"])
+        G = np.asarray(npz["preemph_G_amp"])
+        D = np.asarray(npz["preemph_relD"])
+        floor = float(np.asarray(npz["preemph_floor"])[0])
+        _floor_src = str(npz.get("preemph_floor_src", "fullband"))
+        _same = bool(_amp.ndim == 1 or
+                     (np.allclose(_amp[0], _amp[1]) and
+                      np.allclose(_amp[0], _amp[2])))
+        if _amp.ndim == 2:
+            # 三站同型号仪器：曲线一致，取第一站降为 1D（标注用标量）
+            _amp, P, G, D = _amp[0], P[0], G[0], D[0]
+    else:
+        freqs = np.asarray(npz["freqs"], dtype=float)       # (64,)
+        resp = np.asarray(npz["response"])                  # (3,64) complex
+        amps = np.abs(resp)
+        same = bool(np.allclose(amps[0], amps[1]) and np.allclose(amps[0], amps[2]))
+        _amp = amps[0] if same else amps
+        floor = float(np.max(amps[0])) * 1e-3
+        P = 1.0 / np.maximum(_amp, floor)
+        G = P * _amp
+        i_ref = int(np.argmin(np.abs(freqs - 0.012)))
+        D = P / P[i_ref]
+        _floor_src = "inband(fallback)"
+        print(f"[21号图警告] 数据包无 preemph_* 数组，回退目标带内口径 "
+              f"(floor={floor:.2e}，24.6× 会失真为 {float(D[0]):.0f}×)；"
+              f"请用新管线重跑并重新上传数据包")
+    i_lo = int(np.argmin(np.abs(freqs - 0.001)))
+    i_hi = int(np.argmin(np.abs(freqs - 0.012)))
+    Pmax = float(P.max())
+    G_cross = float(freqs[np.argmin(np.abs(G - 1.0))])
+    _name = "S12/S15/S16（同型号）" if _amp.ndim == 1 else "S12/S15/S16"
+    _c = "#333333" if _amp.ndim == 1 else _COLORS["blue"]
     fig = make_subplots(
-        rows=4, cols=1, shared_xaxes=True, vertical_spacing=0.07,
+        rows=2, cols=2, vertical_spacing=0.14, horizontal_spacing=0.10,
         subplot_titles=[
-            "仪器位移响应幅度 |H(f)|（DISP, counts/m）＋ floor=max|H|×1e-3",
-            "预加重乘子 P(f)=1/max(|H|,floor)（低频人为乘大，纯幅度、相位不变）",
-            "有效算子 G=P·|H|（|H|>floor 时 G=1；最低频 G<1 由 floor 截断）",
-            "相对放大倍数 P(f)/P(0.012Hz)（0.001Hz≈24.6×）"])
+            "(a) 仪器位移响应幅度 |H(f)|（DISP, counts/m）",
+            "(b) 预加重乘子 P(f)=1/max(|H|,floor)（低频人为乘大，纯幅度、相位不变）",
+            "(c) 有效算子 G=P·|H|（线性轴：0.003 → 0.0045Hz 起拉平到 1）",
+            "(d) 相对放大倍数 P(f)/P(0.012Hz)（0.001Hz≈24.6×）"])
+    # (a) |H|
     fig.add_trace(go.Scatter(x=freqs, y=_amp, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=1, col=1)
     fig.add_hline(y=floor, line_dash="dash", line_color=_c, line_width=1,
-                  annotation_text=f"floor={floor:.2e}", row=1, col=1)
+                  annotation_text=f"floor={floor:.2e}（{_floor_src}）", row=1, col=1)
+    # (b) P
     fig.add_trace(go.Scatter(x=freqs, y=P, name=_name, mode="lines",
-                             line=dict(color=_c, width=2)), row=2, col=1)
+                             line=dict(color=_c, width=2)), row=1, col=2)
+    fig.add_hline(y=Pmax, line_dash="dot", line_color="gray", line_width=1,
+                  row=1, col=2)
+    # (c) G（线性）
     fig.add_trace(go.Scatter(x=freqs, y=G, name=_name, mode="lines",
-                             line=dict(color=_c, width=2)), row=3, col=1)
+                             line=dict(color=_c, width=2)), row=2, col=1)
+    fig.add_hline(y=1.0, line_dash="dot", line_color="gray", line_width=1,
+                  row=2, col=1)
+    # (d) D（线性）
     fig.add_trace(go.Scatter(x=freqs, y=D, name=_name, mode="lines",
-                             line=dict(color=_c, width=2)), row=4, col=1)
+                             line=dict(color=_c, width=2)), row=2, col=2)
+    fig.add_hline(y=1.0, line_dash="dot", line_color="gray", line_width=1,
+                  row=2, col=2)
     fig.update_yaxes(type="log", row=1, col=1)
-    fig.update_yaxes(type="log", row=2, col=1)
-    fig.update_yaxes(type="log", range=[np.log10(1e-3), np.log10(2.0)],
-                     row=3, col=1)
-    fig.update_yaxes(type="linear", row=4, col=1)
-    fig.update_xaxes(title_text="频率 (Hz)", row=4, col=1)
-    # 目标频带高亮
-    for r in (1, 2, 3, 4):
+    fig.update_yaxes(type="log", row=1, col=2)
+    fig.update_yaxes(type="linear", range=[0, 1.15], row=2, col=1)
+    fig.update_yaxes(type="linear", range=[0, 26], row=2, col=2)
+    fig.update_xaxes(title_text="频率 (Hz)", row=2, col=1)
+    fig.update_xaxes(title_text="频率 (Hz)", row=2, col=2)
+    # 目标频带高亮（4 个子图）
+    for r, c_ in ((1, 1), (1, 2), (2, 1), (2, 2)):
         fig.add_vrect(x0=FREQ_BAND[0], x1=FREQ_BAND[1], fillcolor="orange",
-                      opacity=0.08, line_width=0, row=r, col=1)
+                      opacity=0.08, line_width=0, row=r, col=c_)
+    # 数值标注
+    fig.add_annotation(
+        x=freqs[i_lo], y=Pmax,
+        text=f"Pmax=1/floor={Pmax:.2e}",
+        xshift=-30, yshift=30, showarrow=True,
+        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor="#b06a00",
+        font=dict(size=11, color="#b06a00"), row=1, col=2)
+    fig.add_annotation(
+        x=freqs[i_lo], y=P[i_lo],
+        text=f"P(0.001)={P[i_lo]:.2e}<br>P(0.012)={P[i_hi]:.2e}",
+        xshift=-45, yshift=55, showarrow=True,
+        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor="#333",
+        font=dict(size=11), row=1, col=2)
+    fig.add_annotation(
+        x=freqs[i_lo], y=G[i_lo],
+        text=f"G(0.001)≈{G[i_lo]:.3f}（floor 截断未完全补偿）",
+        xshift=30, yshift=-20, showarrow=True,
+        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor="#b06a00",
+        font=dict(size=11, color="#b06a00"), row=2, col=1)
+    fig.add_annotation(
+        x=G_cross, y=1.0,
+        text=f"|H|≥floor，G≡1（自 {G_cross:.4f} Hz）",
+        xshift=-30, yshift=35, showarrow=True,
+        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor="#1a6b1a",
+        font=dict(size=11, color="#1a6b1a"), row=2, col=1)
+    fig.add_annotation(
+        x=freqs[i_lo], y=D[i_lo],
+        text=f"D(0.001)≈{D[i_lo]:.1f}×",
+        xshift=-40, yshift=30, showarrow=True,
+        arrowhead=1, arrowsize=1.2, arrowwidth=1.4, arrowcolor="#b06a00",
+        font=dict(size=12, color="#b06a00"), row=2, col=2)
     fig.update_layout(**_base_layout(
         "21 预加重乘子 P(f)（目标带内；三站同型号；低频相对高频放大约 24.6×）"))
     return fig
