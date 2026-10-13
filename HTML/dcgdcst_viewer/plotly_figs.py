@@ -1064,6 +1064,7 @@ def plot21_preemphasis_factor(npz: dict):
         G = np.asarray(npz["preemph_G_amp"])
         D = np.asarray(npz["preemph_relD"])
     else:
+        _mode = "fallback"                                  # 旧包：回退目标带内口径
         freqs = np.asarray(npz["freqs"], dtype=float)       # (64,)
         resp = np.asarray(npz["response"])                  # (3,64) complex
         amps = np.abs(resp)
@@ -1078,7 +1079,11 @@ def plot21_preemphasis_factor(npz: dict):
         print(f"[21号图警告] 数据包无 preemph_* 数组，回退目标带内口径 "
               f"(floor={floor:.2e}，24.6× 会失真为 {float(D[0]):.0f}×)；"
               f"请用新管线重跑并重新上传数据包")
-    if _mode != "inband":
+    # [2026-10-13 v4.1 修复] floor/来源只在 fullband/inband（数据包含
+    # preemph_floor）时从 npz 读取；fallback（旧包无 preemph_*）用 else
+    # 分支内已计算的带内 floor。此前 _mode 未标记 fallback 导致旧包读
+    # npz['preemph_floor'] 抛 KeyError → /api/plot/21 500 → 前端 SyntaxError。
+    if _mode in ("fullband", "inband"):
         floor = float(np.asarray(npz["preemph_floor"])[0])
         _floor_src = str(npz.get("preemph_floor_src", "fullband"))
     _same = bool(_amp.ndim == 1 or
