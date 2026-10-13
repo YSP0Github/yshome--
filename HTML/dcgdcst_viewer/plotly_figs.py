@@ -1097,7 +1097,18 @@ def plot21_preemphasis_factor(npz: dict):
     Pmax = float(P.max())
     G_cross = float(freqs[np.argmin(np.abs(G - 1.0))])
     _name = "S12/S15/S16（同型号）" if _amp.ndim == 1 else "S12/S15/S16"
-    _c = "#333333" if _amp.ndim == 1 else _COLORS["blue"]
+    # [2026-10-13 v4.2] 与其他交互图一致：暗色模板 + 亮色曲线（不再用浅色 #333）
+    _c = _COLORS["cyan"] if _amp.ndim == 1 else _COLORS["blue"]
+    # 标题按实际口径动态标注，避免"带内24.6×"与实际数据（fullband/fallback）矛盾
+    if _mode == "fullband":
+        _title = ("21 预加重乘子 P(f)（全频带 0.0005–0.02 Hz；三站同型号；"
+                  "低频相对高频放大 ≈24.6×，floor=3.05e+06 全带口径）")
+    elif _mode == "inband":
+        _title = ("21 预加重乘子 P(f)（目标带内 0.001–0.012 Hz；三站同型号；"
+                  "低频相对高频放大 ≈24.6×）")
+    else:
+        _title = (f"21 预加重乘子 P(f)（目标带内·旧包降级；D(0.001)≈{float(D[i_lo]):.0f}× "
+                  f"失真，建议用新管线重跑后重新上传）")
     fig = make_subplots(
         rows=2, cols=2, vertical_spacing=0.16, horizontal_spacing=0.11,
         subplot_titles=[
@@ -1108,22 +1119,22 @@ def plot21_preemphasis_factor(npz: dict):
     # (a) |H|
     fig.add_trace(go.Scatter(x=freqs, y=_amp, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=1, col=1)
-    fig.add_hline(y=floor, line_dash="dash", line_color="#666666", line_width=1,
+    fig.add_hline(y=floor, line_dash="dash", line_color=_COLORS["gray"], line_width=1,
                   annotation_text=f"floor={floor:.2e}（{_floor_src}）", row=1, col=1)
     # (b) P
     fig.add_trace(go.Scatter(x=freqs, y=P, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=1, col=2)
-    fig.add_hline(y=Pmax, line_dash="dot", line_color="gray", line_width=1,
+    fig.add_hline(y=Pmax, line_dash="dot", line_color=_COLORS["gray"], line_width=1,
                   row=1, col=2)
     # (c) G（线性）
     fig.add_trace(go.Scatter(x=freqs, y=G, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=2, col=1)
-    fig.add_hline(y=1.0, line_dash="dot", line_color="gray", line_width=1,
+    fig.add_hline(y=1.0, line_dash="dot", line_color=_COLORS["gray"], line_width=1,
                   row=2, col=1)
     # (d) D（线性）
     fig.add_trace(go.Scatter(x=freqs, y=D, name=_name, mode="lines",
                              line=dict(color=_c, width=2)), row=2, col=2)
-    fig.add_hline(y=1.0, line_dash="dot", line_color="gray", line_width=1,
+    fig.add_hline(y=1.0, line_dash="dot", line_color=_COLORS["gray"], line_width=1,
                   row=2, col=2)
     if _mode == "fullband":
         # 全带：横轴 log 0.0005~0.02Hz，与 PNG 版对齐
@@ -1141,61 +1152,68 @@ def plot21_preemphasis_factor(npz: dict):
         fig.update_xaxes(range=[0.001, 0.012], row=1, col=2)
         fig.update_xaxes(range=[0.001, 0.012], title_text="频率 (Hz)", row=2, col=1)
         fig.update_xaxes(range=[0.001, 0.012], title_text="频率 (Hz)", row=2, col=2)
-    fig.update_yaxes(type="log", row=1, col=1)
-    fig.update_yaxes(type="log", row=1, col=2)
+    # [2026-10-13 v4.2] y 轴显式标定：log 轴按数据动态定 range，D 线性轴
+    # 跟随 max(D)（fallback 口径 D(0.001)≈1000×，固定 0–26 会截断曲线）。
+    _f = np.isfinite(_amp)
+    _a_min, _a_max = float(np.min(_amp[_f])), float(np.max(_amp))
+    fig.update_yaxes(type="log", range=[np.log10(max(_a_min * 0.3, 1e-300)),
+                                        np.log10(_a_max * 3.0)], row=1, col=1)
+    _f = np.isfinite(P)
+    _p_min, _p_max = float(np.min(P[_f])), float(P.max())
+    fig.update_yaxes(type="log", range=[np.log10(max(_p_min * 0.3, 1e-300)),
+                                        np.log10(_p_max * 3.0)], row=1, col=2)
     fig.update_yaxes(type="linear", range=[0, 1.15], row=2, col=1)
-    fig.update_yaxes(type="linear", range=[0, 26], row=2, col=2)
+    _d_max = float(np.max(D))
+    fig.update_yaxes(type="linear", range=[0, max(_d_max * 1.15, 1.0)], row=2, col=2)
     # 目标频带高亮（4 个子图）
     for r, c_ in ((1, 1), (1, 2), (2, 1), (2, 2)):
         fig.add_vrect(x0=FREQ_BAND[0], x1=FREQ_BAND[1], fillcolor="orange",
-                      opacity=0.08, line_width=0, row=r, col=c_)
-    # 数值标注（颜色/文案与 PNG 版 plot_preemphasis_factor 对齐）
+                      opacity=0.12, line_width=0, row=r, col=c_)
+    # 数值标注（暗色模板下用亮色，颜色与 PNG 版 plot_preemphasis_factor 对齐）
     fig.add_annotation(
         x=freqs[i_lo], y=Pmax,
         text=f"Pmax=1/floor={Pmax:.2e}",
         xshift=-30, yshift=30, showarrow=True,
-        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor="#b06a00",
-        font=dict(size=11, color="#b06a00"), row=1, col=2)
+        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor=_COLORS["orange"],
+        font=dict(size=11, color=_COLORS["orange"]), row=1, col=2)
     fig.add_annotation(
         x=freqs[i_lo], y=P[i_lo],
         text=f"P(0.001)={P[i_lo]:.2e}<br>P(0.012)={P[i_hi]:.2e}",
         xshift=-45, yshift=55, showarrow=True,
-        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor="#333",
-        font=dict(size=11, color="#333333"), row=1, col=2)
+        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor=_COLORS["gray"],
+        font=dict(size=11, color="#E0E0E0"), row=1, col=2)
     fig.add_annotation(
         x=freqs[i_lo], y=G[i_lo],
         text=f"G(0.001)≈{G[i_lo]:.3f}（floor 截断未完全补偿）",
         xshift=30, yshift=-20, showarrow=True,
-        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor="#b06a00",
-        font=dict(size=11, color="#b06a00"), row=2, col=1)
+        arrowhead=1, arrowsize=1, arrowwidth=1.2, arrowcolor=_COLORS["orange"],
+        font=dict(size=11, color=_COLORS["orange"]), row=2, col=1)
     fig.add_annotation(
         x=G_cross, y=1.0,
         text=f"|H|≥floor，G≡1（自 {G_cross:.4f} Hz）",
         xshift=-30, yshift=35, showarrow=True,
-        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor="#1a6b1a",
-        font=dict(size=11, color="#1a6b1a"), row=2, col=1)
+        arrowhead=1, arrowsize=1, arrowwidth=1.1, arrowcolor=_COLORS["green"],
+        font=dict(size=11, color=_COLORS["green"]), row=2, col=1)
     fig.add_annotation(
         x=freqs[i_lo], y=D[i_lo],
         text=f"D(0.001)≈{D[i_lo]:.1f}×",
         xshift=-40, yshift=30, showarrow=True,
-        arrowhead=1, arrowsize=1.2, arrowwidth=1.4, arrowcolor="#b06a00",
-        font=dict(size=12, color="#b06a00"), row=2, col=2)
+        arrowhead=1, arrowsize=1.2, arrowwidth=1.4, arrowcolor=_COLORS["orange"],
+        font=dict(size=12, color=_COLORS["orange"]), row=2, col=2)
     # 全带模式下补充"目标带内 |H| 变化"标注（同 PNG）
     if _mode == "fullband":
         fig.add_annotation(
             x=0.012, y=_amp[i_hi],
             text="目标带内 |H| 变化 ≈ 8009×<br>(0.012Hz/0.001Hz)",
             xshift=10, yshift=30, showarrow=False,
-            font=dict(size=11, color="#333333"), row=1, col=1)
-    # [2026-10-13 v4] 浅色主题（对齐 PNG 版），整体高度拉大避免子图挤压；
-    # 面板其余图为深色，本图按导师/用户偏好单独使用浅色干净风格。
+            font=dict(size=11, color="#E0E0E0"), row=1, col=1)
+    # [2026-10-13 v4.2] 与其他交互图统一暗色模板（_TPL），不再单独浅色背景；
+    # 标题按实际口径（_title），居中；图例放标题下方一行（用户偏好）。
     fig.update_layout(
-        template="plotly_white",
-        paper_bgcolor="#FAFAF7", plot_bgcolor="#FAFAF7",
-        font=dict(color="#1A1B1C", size=12),
-        title=dict(text="21 预加重乘子 P(f)（目标带内；三站同型号；低频相对高频放大约 24.6×）",
-                   font=dict(size=15), x=0.5, xanchor="center"),
-        height=900, showlegend=False,
+        template=_TPL,
+        font=dict(size=12),
+        title=dict(text=_title, font=dict(size=15), x=0.5, xanchor="center"),
+        showlegend=False,
         margin=dict(l=60, r=40, t=90, b=50),
     )
     return fig
