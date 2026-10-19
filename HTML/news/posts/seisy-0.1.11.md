@@ -60,7 +60,12 @@
 
 ## 六、加入官方「云凇之家」QQ 群
 
-**群号：【QQ群号：__________】**（也可扫描群二维码加入）
+**官方 QQ 群号：`1062185505`**（群名「云凇之家」），QQ 内搜索群号即可加入；也可以直接扫描下方二维码：
+
+<div style="text-align:center;margin:1.2em 0 0.4em;">
+  <img src="news/images/qq-group-qr.png" alt="云凇之家 QQ 群二维码（群号 1062185505）" style="width:240px;max-width:72%;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.10);">
+  <div style="color:#64748b;font-size:14px;margin-top:.7em;">扫一扫，加入「云凇之家」QQ 群</div>
+</div>
 
 - 📦 **群文件第一时间放最新安装包**，国内下载更省心，不用和 GitHub 较劲；
 - 💬 **使用中遇到问题直接在群里问**，欢迎贴报错截图、交流月震 / 地震数据处理经验；
@@ -72,6 +77,6 @@
 
 - **官网下载**：https://yshome.top/HTML/SeisY.html
 - **GitHub Releases**：https://github.com/YSP0Github/SeisY-Releases/releases
-- **QQ 群**：【QQ群号：__________】
+- **QQ 群**：「云凇之家」，群号 `1062185505`
 
 —— 云凇之家 · SeisY
