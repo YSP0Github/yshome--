@@ -1033,6 +1033,15 @@
             const historyEl = document.getElementById('download-history');
             const releasePageEl = document.getElementById('download-release-page-link');
 
+            // 国内（腾讯云）静态镜像：存放与 GitHub Releases 同名的 Windows 安装包，
+            // 供国内网络或 GitHub 无法访问时加速下载。地址为「镜像目录基址 + 文件名」。
+            const MAINLAND_MIRROR_BASE = 'http://124.220.191.246/downloads/seisy/releases/';
+            const buildMainlandUrl = (filename) => {
+                if (!filename) return '';
+                return MAINLAND_MIRROR_BASE + encodeURIComponent(filename);
+            };
+            const isMirrorable = (filename) => /\.exe$/i.test(filename || '');
+
             const loadMarked = () => new Promise((resolve) => {
                 if (window.marked) return resolve(true);
                 const s = document.createElement('script');
@@ -1167,15 +1176,37 @@
                     meta.appendChild(v);
                     meta.appendChild(s);
                     card.appendChild(meta);
+                    const actions = document.createElement('div');
+                    actions.className = 'flex flex-col sm:flex-row gap-2 mt-auto';
                     const a = document.createElement('a');
                     a.href = artifact.url || '#';
                     a.download = '';
-                    a.className = 'inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-custom';
+                    a.className = 'flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-custom';
                     const icon = document.createElement('i');
-                    icon.className = 'fa fa-download mr-2';
+                    icon.className = 'fa-brands fa-github mr-2';
                     a.appendChild(icon);
-                    a.appendChild(document.createTextNode('下载'));
-                    card.appendChild(a);
+                    const ghLabel = document.createElement('span');
+                    ghLabel.setAttribute('data-i18n', 'download.gh_btn');
+                    ghLabel.textContent = 'GitHub 下载';
+                    a.appendChild(ghLabel);
+                    actions.appendChild(a);
+                    // 国内（腾讯云）镜像：仅对 Windows 安装包提供，文件名与 GitHub 一致
+                    if (isMirrorable(artifact.filename)) {
+                        const m = document.createElement('a');
+                        m.href = buildMainlandUrl(artifact.filename);
+                        m.download = '';
+                        m.title = '国内腾讯云服务器直链，国内网络更稳定（GitHub 打不开时可走这里）';
+                        m.className = 'flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg border border-primary text-primary font-medium hover:bg-primary/5 transition-custom';
+                        const mIcon = document.createElement('i');
+                        mIcon.className = 'fa fa-cloud-arrow-down mr-2';
+                        m.appendChild(mIcon);
+                        const mLabel = document.createElement('span');
+                        mLabel.setAttribute('data-i18n', 'download.mainland_btn');
+                        mLabel.textContent = '内地下载';
+                        m.appendChild(mLabel);
+                        actions.appendChild(m);
+                    }
+                    card.appendChild(actions);
                     cardsEl.appendChild(card);
                 });
             };
@@ -1227,6 +1258,8 @@
                 if (releasePageEl) releasePageEl.href = releasePage || 'https://github.com/YSP0Github/SeisY-Releases/releases';
                 setNotes(notes, rawBody);
                 renderCards(latest, artifacts);
+                // 动态卡片插入后，按当前语言刷新其 data-i18n 文本
+                if (window.SeisYApplyLang) window.SeisYApplyLang(localStorage.getItem('seisy_lang') || 'zh');
                 renderHistory(history);
             };
 
@@ -1701,6 +1734,8 @@
     'overview.stat_menus': 'Main Menus',
     'overview.plot_caption': 'Three independent plotting areas supporting waveform, spectrum, and before/after processing comparison',
     'download.intro': 'This page provides the SeisY Windows installer download. Future versions will continue to use the same page for updates.',
+    'download.gh_btn': 'GitHub Download',
+    'download.mainland_btn': 'China Mirror',
     'download.web_hint': "Don't want to install? Use the web version directly",
     'download.web_title': 'Download Seismic Data Online (No Installation)',
     'download.web_desc': 'Supports Earth earthquake and Apollo lunar seismic data (XA network), with automatic waveform preview after download',
@@ -1884,6 +1919,8 @@
     if (btn) btn.textContent = l === 'zh' ? 'EN' : '中文';
     localStorage.setItem('seisy_lang', l);
   }
+  // 供异步加载的下载卡片渲染后，按当前语言刷新一次动态插入的 data-i18n 文本
+  window.SeisYApplyLang = applyLang;
 
   function init() {
     collectZh();
