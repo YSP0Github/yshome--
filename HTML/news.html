@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻动态 · 云凇之家</title>
+    <meta name="description" content="云凇之家 · 新闻动态：SeisY 地震数据处理软件版本更新与项目公告。">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="云凇之家">
+    <meta property="og:title" content="新闻动态 · 云凇之家">
+    <meta property="og:description" content="SeisY 版本更新与云凇之家最新动态。">
+    <meta property="og:url" content="https://yshome.top/HTML/news.html">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="../static/images/YS.png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F52BA',
+                        secondary: '#3B82F6',
+                        accent: '#10B981',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        body { scroll-padding-top: 5rem; }
+
+        /* 列表卡片 */
+        .news-card {
+            border: 1px solid #e8edf3;
+            background: #fff;
+            border-radius: 16px;
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+        .news-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 44px -26px rgba(15, 82, 186, .45);
+            border-color: #bcd2f4;
+        }
+        .news-card.featured {
+            background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+            border-color: #d3e2fb;
+        }
+        .tag-chip {
+            display: inline-flex; align-items: center;
+            font-size: 12px; line-height: 1;
+            padding: 4px 10px; border-radius: 999px;
+            background: #eef4ff; color: #0F52BA; font-weight: 600;
+        }
+        .fade-in { animation: fadeUp .4s ease both; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 文章正文排版 */
+        .article-body { color: #334155; font-size: 17px; line-height: 1.9; }
+        .article-body h1 { font-size: 1.7rem; line-height: 1.35; }
+        .article-body h2 {
+            font-size: 1.32rem; font-weight: 700; color: #0f172a;
+            margin: 2em 0 .8em; padding-left: 12px;
+            border-left: 4px solid #0F52BA;
+            scroll-margin-top: 5rem;
+        }
+        .article-body h3 { font-size: 1.12rem; font-weight: 700; color: #0f172a; margin: 1.4em 0 .6em; }
+        .article-body p { margin: .85em 0; }
+        .article-body ul, .article-body ol { padding-left: 1.5em; margin: .8em 0; }
+        .article-body ul { list-style: disc; }
+        .article-body ol { list-style: decimal; }
+        .article-body li { margin: .4em 0; }
+        .article-body li::marker { color: #0F52BA; }
+        .article-body a { color: #0F52BA; text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+        .article-body a:hover { color: #1d4ed8; }
+        .article-body strong { color: #0f172a; font-weight: 700; }
+        .article-body code {
+            background: #f1f5f9; color: #be123c;
+            border-radius: 6px; padding: .15em .45em; font-size: .88em;
+            font-family: Consolas, Menlo, 'Courier New', monospace;
+        }
+        .article-body pre {
+            background: #0f172a; color: #e2e8f0; border-radius: 12px;
+            padding: 1em 1.2em; overflow-x: auto; margin: 1em 0; font-size: .9em;
+        }
+        .article-body pre code { background: none; color: inherit; padding: 0; }
+        .article-body table {
+            width: 100%; border-collapse: collapse; margin: 1.2em 0;
+            font-size: .95em; border-radius: 10px; overflow: hidden;
+            box-shadow: 0 0 0 1px #e5e7eb;
+        }
+        .article-body th, .article-body td {
+            border: 1px solid #e5e7eb; padding: .6em .85em; text-align: left; vertical-align: top;
+        }
+        .article-body th { background: #f1f5f9; color: #0f172a; font-weight: 700; }
+        .article-body tr:nth-child(even) td { background: #fafbfd; }
+        .article-body blockquote {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+            border-radius: 0 12px 12px 0;
+            padding: .8em 1.2em; margin: 1.2em 0;
+            color: #78350f;
+        }
+        .article-body blockquote p:first-child { margin-top: 0; }
+        .article-body blockquote p:last-child { margin-bottom: 0; }
+        .article-body blockquote a { color: #b45309; }
+        .article-body hr { border: 0; border-top: 1px solid #e5e7eb; margin: 2em 0; }
+        @media (max-width: 640px) {
+            .article-body { font-size: 16px; line-height: 1.85; }
+            .article-body table { font-size: .86em; }
+        }
+
+        #back-top {
+            position: fixed; right: 22px; bottom: 26px; z-index: 100;
+            width: 46px; height: 46px; border-radius: 14px;
+            background: rgba(15, 82, 186, .92); color: #fff; border: 1px solid rgba(255,255,255,.18);
+            font-size: 18px; line-height: 1; cursor: pointer;
+            box-shadow: 0 8px 26px rgba(0,0,0,.28);
+            opacity: 0; visibility: hidden; transform: translateY(12px);
+            transition: opacity .3s ease, transform .3s ease, visibility .3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #back-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #back-top:hover { background: #0a3d8f; }
+        @media (max-width: 768px) { #back-top { right: 14px; bottom: 18px; width: 42px; height: 42px; border-radius: 12px; } }
+    </style>
+</head>
+<body class="font-sans bg-light text-slate-800 antialiased">
+
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="../index.html" class="flex items-center gap-2">
+                    <img src="../static/images/YS.png" alt="云凇之家" class="w-8 h-8">
+                    <span class="font-bold text-lg text-slate-900">云凇之家</span>
+                    <span class="hidden sm:inline text-slate-300">/</span>
+                    <span class="hidden sm:inline font-semibold text-primary">新闻动态</span>
+                </a>
+                <div class="hidden md:flex items-center gap-7 text-sm">
+                    <a href="../index.html" class="text-slate-600 hover:text-primary transition-colors">首页</a>
+                    <a href="SeisY.html" class="text-slate-600 hover:text-primary transition-colors">SeisY 软件</a>
+                    <a href="SeisY.html#download" class="text-slate-600 hover:text-primary transition-colors">软件下载</a>
+                    <a href="news.html" class="text-primary font-semibold">新闻动态</a>
+                    <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa-brands fa-github mr-1"></i> GitHub
+                    </a>
+                </div>
+                <button id="menu-toggle" class="md:hidden text-slate-700 text-xl">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t shadow-md">
+            <div class="px-4 py-3 flex flex-col gap-1 text-sm">
+                <a href="../index.html" class="py-2.5 text-slate-700 border-b border-slate-100">首页</a>
+                <a href="SeisY.html" class="py-2.5 text-slate-700 border-b border-slate-100">SeisY 软件</a>
+                <a href="SeisY.html#download" class="py-2.5 text-slate-700 border-b border-slate-100">软件下载</a>
+                <a href="news.html" class="py-2.5 text-primary font-semibold border-b border-slate-100">新闻动态</a>
+                <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="py-2.5 text-slate-700">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== 列表视图 ========== -->
+    <main id="list-view" class="pt-16">
+        <section class="bg-gradient-to-b from-white to-blue-50/60 border-b border-slate-100">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+                <div class="text-xs font-semibold tracking-widest text-primary uppercase mb-3">News</div>
+                <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">新闻动态</h1>
+                <p class="text-slate-500 text-base sm:text-lg max-w-2xl">这里记录 SeisY 版本更新、使用提示与云凇之家的项目动态。微信公众号可直接引用下方文章链接，免去排版。</p>
+            </div>
+        </section>
+
+        <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+            <div id="news-list" class="flex flex-col gap-6"></div>
+            <div id="news-empty" class="hidden text-center py-20 text-slate-400">
+                <i class="fa-regular fa-newspaper text-5xl mb-4 block"></i>
+                <p>暂无新闻内容。</p>
+            </div>
+            <div id="news-loading" class="text-center py-20 text-slate-400">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-3 block"></i>
+                <p>加载中…</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== 详情视图 ========== -->
+    <main id="detail-view" class="pt-16 hidden">
+        <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+            <button id="back-btn" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors mb-8">
+                <i class="fa-solid fa-arrow-left"></i> 返回新闻列表
+            </button>
+
+            <header class="mb-8 fade-in">
+                <div id="detail-tags" class="flex flex-wrap gap-2 mb-4"></div>
+                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-slate-900 leading-snug"></h1>
+                <div class="flex items-center gap-3 mt-4 text-sm text-slate-400">
+                    <span class="inline-flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i><span id="detail-date"></span></span>
+                    <span class="text-slate-300">·</span>
+                    <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-feather"></i> 云凇之家</span>
+                </div>
+            </header>
+
+            <div id="detail-body" class="article-body fade-in"></div>
+
+            <!-- 相关操作（带 SeisY 标签的文章显示） -->
+            <div id="detail-cta" class="hidden mt-12 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 sm:p-8">
+                <h3 class="text-lg font-bold text-slate-900 mb-2">下载 SeisY 最新版本</h3>
+                <p class="text-slate-500 text-sm mb-5">Windows 64 位安装包，提供 GitHub 与国内腾讯云两条下载线路。</p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="SeisY.html#download" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
+                        <i class="fa-solid fa-download"></i> 前往下载页
+                    </a>
+                    <a href="https://github.com/YSP0Github/SeisY-Releases/releases" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-medium">
+                        <i class="fa-brands fa-github"></i> GitHub Releases
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-12 flex items-center justify-between border-t border-slate-100 pt-6">
+                <a href="news.html" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> 返回新闻列表
+                </a>
+                <a href="SeisY.html#download" class="text-sm text-primary font-medium hover:underline">获取 SeisY <i class="fa-solid fa-arrow-right ml-1"></i></a>
+            </div>
+        </article>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white pt-12 pb-8 mt-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <img src="../static/images/YS.png" alt="云凇之家" class="w-7 h-7">
+                    <span class="font-bold text-lg">云凇之家</span>
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/60">
+                    <a href="../index.html" class="hover:text-white transition-colors">首页</a>
+                    <a href="SeisY.html" class="hover:text-white transition-colors">SeisY 软件</a>
+                    <a href="SeisY.html#download" class="hover:text-white transition-colors">软件下载</a>
+                    <a href="https://github.com/YSP0Github" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-8 pt-6 text-center text-white/40 text-sm">
+                &copy; <span id="currentYear"></span> 云凇之家 · 新闻动态
+                <span class="mx-2">|</span>
+                <a href="https://beian.miit.gov.cn" target="_blank" class="hover:text-blue-300 transition-colors">鄂ICP备2026000757号-1</a>
+            </div>
+        </div>
+    </footer>
+
+    <button id="back-top" type="button" aria-label="回到顶部"><i class="fa-solid fa-arrow-up"></i></button>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <script>
+        (function () {
+            const MANIFEST = 'news/articles.json';
+
+            // 移动端菜单
+            const menuToggle = document.getElementById('menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuToggle.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+            // 回到顶部
+            const backTop = document.getElementById('back-top');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 400) backTop.classList.add('show');
+                else backTop.classList.remove('show');
+            });
+            backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            const listView = document.getElementById('list-view');
+            const detailView = document.getElementById('detail-view');
+            const newsList = document.getElementById('news-list');
+            const newsLoading = document.getElementById('news-loading');
+            const newsEmpty = document.getElementById('news-empty');
+
+            let allArticles = [];
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+            function formatDate(d) {
+                return String(d || '').replace(/-/g, '/');
+            }
+
+            function renderList() {
+                const list = [...allArticles].sort((a, b) => {
+                    if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+                    return String(b.date).localeCompare(String(a.date));
+                });
+                newsList.innerHTML = '';
+                if (!list.length) {
+                    newsLoading.classList.add('hidden');
+                    newsEmpty.classList.remove('hidden');
+                    return;
+                }
+                newsLoading.classList.add('hidden');
+
+                list.forEach((a, i) => {
+                    const featured = i === 0;
+                    const tags = (a.tags || []).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
+                    const card = document.createElement('a');
+                    card.href = 'news.html?id=' + encodeURIComponent(a.id);
+                    card.className = 'news-card fade-in group block p-6 sm:p-7' + (featured ? ' featured' : '');
+                    card.style.animationDelay = (i * 0.06) + 's';
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3 mb-3 flex-wrap">
+                            <span class="text-sm text-slate-400 inline-flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i>${formatDate(a.date)}</span>
+                            <span class="flex gap-2 flex-wrap">${tags}</span>
+                            ${a.pinned ? '<span class="tag-chip" style="background:#ecfdf5;color:#047857;"><i class="fa-solid fa-thumbtack mr-1" style="font-size:10px;"></i>置顶</span>' : ''}
+                        </div>
+                        <h2 class="${featured ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'} font-bold text-slate-900 leading-snug group-hover:text-primary transition-colors mb-2">${escapeHtml(a.title)}</h2>
+                        <p class="text-slate-500 text-sm sm:text-[15px] leading-relaxed line-clamp-3">${escapeHtml(a.summary || '')}</p>
+                        <div class="mt-4 text-primary text-sm font-medium inline-flex items-center gap-1.5">
+                            阅读全文 <i class="fa-solid fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
+                        </div>
+                    `;
+                    card.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        goDetail(a.id, true);
+                    });
+                    newsList.appendChild(card);
+                });
+            }
+
+            function renderMarkdownSafe(md) {
+                try {
+                    if (window.marked) {
+                        marked.setOptions({ gfm: true, breaks: false, headerIds: false, mangle: false });
+                        return marked.parse(md);
+                    }
+                } catch (err) { /* 回退到纯文本 */ }
+                return '<p>' + escapeHtml(md).replace(/\n/g, '<br>') + '</p>';
+            }
+
+            // 去掉文章首行的 H1（标题已在页头显示），避免重复
+            function stripLeadingH1(md) {
+                return md.replace(/^\s*#\s+.*(\r?\n)+/, '');
+            }
+
+            function renderDetail(a) {
+                document.getElementById('detail-title').textContent = a.title;
+                document.getElementById('detail-date').textContent = formatDate(a.date);
+                document.getElementById('detail-tags').innerHTML =
+                    (a.tags || []).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('') +
+                    (a.pinned ? '<span class="tag-chip" style="background:#ecfdf5;color:#047857;">置顶</span>' : '');
+
+                const cta = document.getElementById('detail-cta');
+                if ((a.tags || []).some(t => /seisy/i.test(t))) cta.classList.remove('hidden');
+                else cta.classList.add('hidden');
+
+                document.title = a.title + ' · 云凇之家';
+                const body = document.getElementById('detail-body');
+                body.innerHTML = '<p class="text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>正文加载中…</p>';
+
+                fetch(a.file, { cache: 'no-cache' })
+                    .then(r => {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.text();
+                    })
+                    .then(md => {
+                        body.innerHTML = renderMarkdownSafe(stripLeadingH1(md));
+                        // 外链新窗口
+                        body.querySelectorAll('a[href^="http"]').forEach(a => {
+                            a.target = '_blank'; a.rel = 'noopener noreferrer';
+                        });
+                    })
+                    .catch(() => {
+                        body.innerHTML = '<div class="text-red-600 bg-red-50 border border-red-100 rounded-xl p-5">文章正文加载失败，请稍后重试。</div>';
+                    });
+
+                listView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+            }
+
+            function goDetail(id, push) {
+                const a = allArticles.find(x => x.id === id);
+                if (!a) { goList(push); return; }
+                if (push) {
+                    const url = 'news.html?id=' + encodeURIComponent(id);
+                    history.pushState({ id: id }, '', url);
+                }
+                renderDetail(a);
+                mobileMenu.classList.add('hidden');
+            }
+            function goList(push) {
+                if (push) history.pushState({}, '', 'news.html');
+                detailView.classList.add('hidden');
+                listView.classList.remove('hidden');
+                document.title = '新闻动态 · 云凇之家';
+                window.scrollTo({ top: 0 });
+            }
+
+            document.getElementById('back-btn').addEventListener('click', () => goList(true));
+            window.addEventListener('popstate', function () {
+                const id = new URLSearchParams(location.search).get('id');
+                if (id) { const a = allArticles.find(x => x.id === id); if (a) renderDetail(a); else goList(false); }
+                else goList(false);
+            });
+
+            // 初始化
+            fetch(MANIFEST, { cache: 'no-cache' })
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(data => {
+                    allArticles = (data && data.articles) ? data.articles : [];
+                    const id = new URLSearchParams(location.search).get('id');
+                    if (id) {
+                        const a = allArticles.find(x => x.id === id);
+                        if (a) { renderDetail(a); return; }
+                    }
+                    renderList();
+                })
+                .catch(() => {
+                    newsLoading.classList.add('hidden');
+                    newsEmpty.classList.remove('hidden');
+                    newsEmpty.querySelector('p').textContent = '新闻列表加载失败，请检查网络后刷新。';
+                });
+        })();
+    </script>
+</body>
+</html>
