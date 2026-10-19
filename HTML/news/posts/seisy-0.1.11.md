@@ -63,7 +63,7 @@
 **官方 QQ 群号：`1062185505`**（群名「云凇之家」），QQ 内搜索群号即可加入；也可以直接扫描下方二维码：
 
 <div style="text-align:center;margin:1.2em 0 0.4em;">
-  <img src="news/images/qq-group-qr.png" alt="云凇之家 QQ 群二维码（群号 1062185505）" style="width:240px;max-width:72%;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.10);">
+  <img src="news/images/qq-group-qr.png" alt="云凇之家 QQ 群二维码（群号 1062185505）" style="display:block;margin:0 auto;width:240px;max-width:72%;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.10);">
   <div style="color:#64748b;font-size:14px;margin-top:.7em;">扫一扫，加入「云凇之家」QQ 群</div>
 </div>
 
