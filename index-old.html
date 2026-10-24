@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云凇之家</title>
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- <link href="YS.css" rel="stylesheet"> -->
+  <link rel="icon" href="static/images/YS.png" type="image/x-icon">
+  <!-- 配置Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            secondary: '#22D3EE',
+            dark: '#08111F',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          // 添加动画配置
+          keyframes: {
+            pulseSlow: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.05)' }
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulseSlow 4s infinite ease-in-out'
+          }
+        },
+      }
+    }
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer utilities {
+      /* 自定义工具类 */
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      }
+      .bg-gradient-tech {
+        background: url('../static/images/blackhole.jpg') center center / cover no-repeat;
+        position: relative;
+      }
+      .bg-gradient-tech::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(8,17,31,0.65) 0%, rgba(8,17,31,0.75) 100%);
+      }
+      .hover-lift {
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 40px -24px rgba(34, 211, 238, 0.45);
+      }
+      .project-card {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 17, 31, 0.98) 100%);
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+      }
+      .project-card:hover {
+        border-color: rgba(34, 211, 238, 0.35);
+      }
+      .project-card-extra {
+        display: none;
+      }
+      .projects-expanded .project-card-extra {
+        display: block;
+      }
+      #toggleProjects {
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      #toggleProjects .arrow {
+        display: inline-block;
+        transition: transform 0.3s;
+        margin-left: 6px;
+      }
+      .projects-expanded #toggleProjects .arrow {
+        transform: rotate(180deg);
+      }
+      .project-media {
+        position: relative;
+        padding: 0.875rem 0.875rem 0;
+        background:
+          radial-gradient(circle at top left, rgba(54, 207, 201, 0.16), transparent 34%),
+          radial-gradient(circle at top right, rgba(22, 93, 255, 0.22), transparent 30%),
+          linear-gradient(180deg, #101827 0%, #0b1220 100%);
+      }
+      .project-media::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 88px;
+        background: linear-gradient(180deg, rgba(11, 18, 32, 0) 0%, rgba(17, 24, 39, 0.96) 100%);
+        pointer-events: none;
+      }
+      .project-shot {
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(2, 6, 23, 0.84);
+        box-shadow: 0 22px 54px rgba(0, 0, 0, 0.32);
+      }
+      .project-shot-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 2rem;
+        padding: 0 0.875rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .project-shot-dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 9999px;
+      }
+      .project-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        background: rgba(59, 130, 246, 0.1);
+        color: #9CC1FF;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        line-height: 1;
+      }
+
+      .page-band {
+        position: relative;
+        overflow: hidden;
+      }
+      .page-band::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(34, 211, 238, 0.04), transparent 35%, rgba(59, 130, 246, 0.05)),
+          linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: auto, 48px 48px, 48px 48px;
+        mask-image: linear-gradient(180deg, transparent, black 12%, black 88%, transparent);
+        pointer-events: none;
+      }
+      .page-band > .container {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 导航链接高亮 */
+      .nav-active {
+        color: #3B82F6 !important;
+        position: relative;
+      }
+      .nav-active::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 2px;
+        background: #3B82F6;
+        border-radius: 1px;
+      }
+
+      /* 区块序号标签 */
+      .section-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.3);
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      .section-tag .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.22);
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #3B82F6;
+        letter-spacing: 0;
+      }
+      .section-tag::after {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(59,130,246,0.45), transparent);
+      }
+
+      /* 滚动进入动画 */
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .reveal-delay-1 { transition-delay: 0.1s; }
+      .reveal-delay-2 { transition-delay: 0.2s; }
+      .reveal-delay-3 { transition-delay: 0.3s; }
+
+      /* 技能条动画 */
+      .skill-bar-fill {
+        width: 0;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .skill-bar-fill.animate {
+        width: var(--target-width);
+      }
+
+      /* Hero 粒子画布 */
+      /* Hero 渐变动画背景 */
+      .hero-bg-animated {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background:
+          linear-gradient(90deg, rgba(8, 17, 31, 0.94) 0%, rgba(8, 17, 31, 0.74) 44%, rgba(8, 17, 31, 0.24) 100%),
+          linear-gradient(180deg, rgba(8, 17, 31, 0.22) 0%, rgba(8, 17, 31, 0.72) 100%),
+          url('static/images/space_to_earth.jpg') center / cover no-repeat;
+      }
+      .hero-layout {
+        min-height: calc(100vh - 5rem);
+        display: grid;
+        align-items: center;
+      }
+      .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 999px;
+        background: rgba(8, 17, 31, 0.35);
+        color: rgba(226, 232, 240, 0.86);
+        backdrop-filter: blur(12px);
+      }
+      .hero-kicker::before {
+        content: '';
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+        background: #22D3EE;
+        box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.12);
+      }
+      .hero-copy {
+        max-width: 48rem;
+      }
+      .hero-actions a,
+      .hero-social a,
+      #toggleProjects,
+      button[type="submit"] {
+        border-radius: 0.5rem;
+      }
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        max-width: 46rem;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(148, 163, 184, 0.16);
+        backdrop-filter: blur(16px);
+      }
+      .hero-stat {
+        padding: 1rem;
+        background: rgba(8, 17, 31, 0.54);
+      }
+      .hero-stat strong {
+        display: block;
+        color: #F8FAFC;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+      }
+      .hero-stat span {
+        color: rgba(203, 213, 225, 0.72);
+        font-size: 0.78rem;
+        line-height: 1.4;
+      }
+
+      /* 专业技能卡片渐变边框 */
+      .skill-card-glow {
+        position: relative;
+        overflow: hidden;
+      }
+      .skill-card-glow::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #3B82F6, #22D3EE, transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .skill-card-glow:hover::before {
+        opacity: 1;
+      }
+
+      /* 个人信息卡片 */
+      .info-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px;
+        transition: all 0.25s;
+      }
+      .info-card:hover {
+        background: rgba(59, 130, 246, 0.06);
+        border-color: rgba(59, 130, 246, 0.18);
+        transform: translateX(4px);
+      }
+      .info-card .icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3B82F6;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+      }
+      .info-card .info-text span {
+        display: block;
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.4);
+        margin-bottom: 2px;
+      }
+      .info-card .info-text p {
+        font-size: 0.92rem;
+        color: #e5eefc;
+        font-weight: 500;
+      }
+      .info-card .info-text p a {
+        color: #3B82F6;
+        font-weight: 400;
+        font-size: 0.82rem;
+        margin-left: 6px;
+      }
+
+      /* 联系表单玻璃风格 */
+      .glass-form {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+      .glass-form input,
+      .glass-form textarea {
+        background: rgba(255,255,255,0.04) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        color: #e5eefc;
+        transition: all 0.25s;
+      }
+      .glass-form input:focus,
+      .glass-form textarea:focus {
+        background: rgba(59, 130, 246, 0.06) !important;
+        border-color: rgba(59, 130, 246, 0.34) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      .glass-form input::placeholder,
+      .glass-form textarea::placeholder {
+        color: rgba(255,255,255,0.25);
+      }
+
+      /* 联系信息卡片 */
+      .contact-info-card {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+
+      /* 页脚渐变边框 */
+      .footer-gradient-border {
+        position: relative;
+      }
+      .footer-gradient-border::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(59,130,246,0.42), rgba(34,211,238,0.34), transparent);
+      }
+
+      /* 区块之间的分隔线 */
+      .section-divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.06) 50%, transparent 95%);
+      }
+      .section-rule {
+        width: 4rem;
+        height: 2px;
+        margin: 0 auto;
+        background: linear-gradient(90deg, #3B82F6, #22D3EE);
+      }
+      .about-portrait {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(15, 23, 42, 0.55);
+        padding: 0.75rem;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+      }
+      .about-portrait img {
+        border-radius: 0.35rem;
+        width: 100%;
+        max-height: 34rem;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .profile-badge {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(34,211,238,0.78));
+        box-shadow: 0 18px 36px rgba(37, 99, 235, 0.25);
+      }
+      .skill-panel {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(8, 17, 31, 0.62);
+        padding: 1.5rem;
+      }
+      .skill-card-glow {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(8, 17, 31, 0.7);
+      }
+      @media (max-width: 767px) {
+        .hero-bg-animated {
+          background:
+            linear-gradient(180deg, rgba(8, 17, 31, 0.88), rgba(8, 17, 31, 0.76)),
+            url('static/images/space_to_earth.jpg') center / cover no-repeat;
+        }
+        .hero-layout {
+          min-height: auto;
+          padding-top: 3rem;
+          padding-bottom: 5rem;
+        }
+        .hero-stats {
+          grid-template-columns: 1fr;
+        }
+        .section-tag {
+          letter-spacing: 0.12em;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hero-bg-animated,
+        .animate-bounce {
+          animation: none !important;
+        }
+        .reveal,
+        .skill-bar-fill,
+        .hover-lift {
+          transition: none !important;
+        }
+      }
+
+      /* ========== 全局美化增强 ========== */
+      /* 自定义滚动条 */
+      ::-webkit-scrollbar { width: 10px; }
+      ::-webkit-scrollbar-track { background: #08111F; }
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #1e3a8a, #0e7490);
+        border-radius: 999px;
+        border: 2px solid #08111F;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #2563eb, #06b6d4);
+      }
+
+      /* 选中文字 */
+      ::selection { background: rgba(34, 211, 238, 0.28); color: #fff; }
+
+      /* 导航链接下划线动画 */
+      .nav-link-anim { position: relative; }
+      .nav-link-anim::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -6px;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #3B82F6, #22D3EE);
+        border-radius: 2px;
+        transform: translateX(-50%);
+        transition: width 0.3s ease;
+      }
+      .nav-link-anim:hover::after { width: 100%; }
+
+      /* 技能图标渐变圆底 */
+      .skill-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(34,211,238,0.14));
+        border: 1px solid rgba(59,130,246,0.25);
+        color: #7ab7ff;
+        font-size: 1.15rem;
+        transition: all 0.3s;
+      }
+      .skill-card-glow:hover .skill-icon {
+        background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(34,211,238,0.28));
+        color: #fff;
+        transform: scale(1.08);
+      }
+
+      /* 项目卡片 hover 顶部光带 */
+      .project-card { position: relative; }
+      .project-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 8%;
+        right: 8%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(34,211,238,0.85), rgba(59,130,246,0.85), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 2;
+        pointer-events: none;
+      }
+      .project-card:hover::before { opacity: 1; }
+
+      /* 渐变主按钮 */
+      .btn-primary-grad {
+        background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+        background-size: 150% 150%;
+        transition: all 0.35s ease;
+        box-shadow: 0 12px 32px -12px rgba(37, 99, 235, 0.6);
+        cursor: pointer;
+      }
+      .btn-primary-grad:hover {
+        background-position: 100% 50%;
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px -14px rgba(34, 211, 238, 0.55);
+      }
+
+      /* 区块标题分割线发光 */
+      .section-rule::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -8px;
+        width: 2rem;
+        height: 2px;
+        border-radius: 2px;
+        background: rgba(34, 211, 238, 0.5);
+        filter: blur(3px);
+      }
+
+      /* 联系信息图标卡片 hover */
+      .contact-icon-box {
+        transition: all 0.3s;
+      }
+      .contact-info-card:hover .contact-icon-box {
+        background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(34,211,238,0.28)) !important;
+        transform: scale(1.06);
+        color: #fff;
+      }
+
+      /* 页脚快速链接 hover */
+      .footer-link {
+        transition: all 0.25s;
+        position: relative;
+      }
+      .footer-link:hover {
+        color: #22D3EE !important;
+        letter-spacing: 0.02em;
+      }
+
+      /* ========== 交互特效（参考优秀作品集，仅桌面端鼠标交互） ========== */
+      /* 鼠标光斑跟随 */
+      .cursor-glow {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 340px;
+        height: 340px;
+        margin-left: -170px;
+        margin-top: -170px;
+        border-radius: 9999px;
+        background: radial-gradient(circle, rgba(37,99,235,0.16) 0%, rgba(14,165,233,0.09) 38%, transparent 68%);
+        pointer-events: none;
+        z-index: 2;
+        transform: translate3d(0,0,0);
+        will-change: transform;
+      }
+
+      /* 项目卡片 3D 倾斜（perspective 由 JS 内联控制，防闪烁） */
+      .tilt-card {
+        transition: transform 0.12s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
+        transform-style: preserve-3d;
+        will-change: transform;
+      }
+      .tilt-card .tilt-inner {
+        transform: translateZ(18px);
+      }
+
+      /* 磁吸按钮 */
+      .magnetic {
+        transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+      }
+
+      /* 滚动进度条（顶部渐变细线） */
+      .scroll-progress-wrap {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        z-index: 70;
+        pointer-events: none;
+      }
+      .scroll-progress-bar {
+        height: 100%; width: 100%;
+        transform: scaleX(0);
+        transform-origin: left;
+        background: linear-gradient(90deg, #22D3EE, #3B82F6, #8B5CF6);
+        box-shadow: 0 0 8px rgba(34, 211, 238, 0.45);
+      }
+
+      /* hero 入场动画（依次浮现，副标题由打字机接管） */
+      .hero-kicker, .hero-copy h1, .hero-sub, .hero-actions, .hero-stats, .hero-social {
+        opacity: 0;
+        animation: heroFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      .hero-kicker { animation-delay: 0.05s; }
+      .hero-copy h1 { animation-delay: 0.15s; }
+      .hero-sub { animation-delay: 0.5s; }
+      .hero-actions { animation-delay: 0.95s; }
+      .hero-stats { animation-delay: 1.1s; }
+      .hero-social { animation-delay: 1.25s; }
+      @keyframes heroFadeUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      /* 打字机光标（细竖线，柔和呼吸） */
+      .type-cursor {
+        display: inline-block;
+        width: 2px;
+        height: 1em;
+        margin-left: 2px;
+        vertical-align: -0.1em;
+        background: #22D3EE;
+        border-radius: 1px;
+        box-shadow: 0 0 6px rgba(34, 211, 238, 0.7);
+        animation: typeBlink 0.9s steps(2, start) infinite;
+      }
+      @keyframes typeBlink { 50% { opacity: 0; } }
+      .type-cursor.cursor-done {
+        animation: cursorFade 0.6s ease forwards;
+      }
+      @keyframes cursorFade { to { opacity: 0; width: 0; margin-left: 0; } }
+
+      @media (pointer: coarse) {
+        .cursor-glow { display: none; }
+        .tilt-card { transition: none; }
+        .magnetic { transition: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hero-kicker, .hero-copy h1, .hero-sub, .hero-actions, .hero-stats, .hero-social {
+          opacity: 1 !important;
+          animation: none !important;
+        }
+        .type-cursor { display: none !important; }
+        .scroll-progress-bar { transition: none; }
+      }
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-dark text-light antialiased">
+  <!-- 交互特效层：鼠标光斑 + 滚动进度条 -->
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+  <div class="scroll-progress-wrap" aria-hidden="true"><div class="scroll-progress-bar" id="scrollProgress"></div></div>
+
+  <!-- 导航栏 - 固定顶部并在滚动时变化 -->
+  <header id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4">
+    <div class="container mx-auto px-4 md:px-6">
+      <nav class="flex items-center justify-between">
+        <!-- 网站Logo -->
+        <a href="#home" class="text-2xl font-bold text-white flex items-center">
+          <span class="text-primary mr-1">
+            <img src="static/images/YS.png" alt="Logo" class="w-6 h-6 ">
+          </span>
+          <span>云凇之家</span>
+        </a>
+        
+        <!-- 桌面端导航 -->
+        <ul class="hidden md:flex items-center space-x-8">
+          <li><a href="#home" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.home">Home</a></li>
+          <li><a href="#about" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.about">About</a></li>
+          <li><a href="#skills" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.skills">Skills</a></li>
+          <li><a href="#projects" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.projects">Projects</a></li>
+          <li><a href="#contact" class="nav-link-anim hover:text-primary transition-colors" data-i18n="nav.contact">Contact</a></li>
+        </ul>
+        
+        <!-- 移动端汉堡菜单 -->
+    <!-- 语言切换按钮 -->
+    <button id="lang-toggle" class="ml-4 px-3 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-all">EN</button>
+        <button id="menu-toggle" class="md:hidden text-white text-xl ml-2">
+          <i class="fa fa-bars"></i>
+        </button>
+      </nav>
+    </div>
+    
+    <!-- 移动端导航菜单 -->
+    <div id="mobile-menu" class="md:hidden hidden bg-dark/95 backdrop-blur-md mt-4 py-4 px-4 absolute w-full border-t border-gray-800">
+      <ul class="space-y-4">
+        <li><a href="#home" class="block hover:text-primary transition-colors" data-i18n="nav.home">Home</a></li>
+        <li><a href="#about" class="block hover:text-primary transition-colors" data-i18n="nav.about">About</a></li>
+        <li><a href="#skills" class="block hover:text-primary transition-colors" data-i18n="nav.skills">Skills</a></li>
+        <li><a href="#projects" class="block hover:text-primary transition-colors" data-i18n="nav.projects">Projects</a></li>
+        <li><a href="#contact" class="block hover:text-primary transition-colors" data-i18n="nav.contact">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- 英雄区域 -->
+  <section id="home" class="min-h-screen flex items-center pt-20 bg-gradient-tech overflow-hidden relative">
+    <div class="hero-bg-animated" style="z-index:0"></div>
+    <div class="container mx-auto px-4 md:px-6 relative z-10">
+      <div class="hero-layout">
+        <!-- 文字内容 -->
+        <div class="hero-copy space-y-7">
+          <div class="hero-kicker text-xs md:text-sm">
+            地球物理 · 科研工具 · 独立开发
+          </div>
+          <h1 class="text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[0.98] tracking-normal">
+            你好，我是<span class="text-primary">云凇</span>
+          </h1>
+          <p class="hero-sub text-slate-200 text-lg md:text-2xl max-w-2xl leading-relaxed" style="min-height:3.25em">
+            <span id="heroSubL1">我是研究月球内部结构的地球物理博士生，</span><br class="hidden md:block"><span id="heroSubL2">平时用 Python、Fortran 和 GMT 处理地震与月震数据，把这些工具慢慢做成了能用的软件。</span>
+          </p>
+          <div class="hero-actions flex flex-wrap gap-3 pt-2">
+            <a href="#projects" class="px-6 py-3 btn-primary-grad text-white transition-all rounded-lg magnetic">
+              查看项目
+            </a>
+            <a href="#contact" class="px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all backdrop-blur magnetic">
+              联系我
+            </a>
+          </div>
+
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong>科研工作流</strong>
+              <span>从文献检索、数据处理到出图，沉淀成一套自己的流程</span>
+            </div>
+            <div class="hero-stat">
+              <strong>地震学软件</strong>
+              <span data-i18n="hero.desc">From Waveform Processing to Real-time Monitoring</span>
+            </div>
+            <div class="hero-stat">
+              <strong>Web 实验室</strong>
+              <span>科学小实验和交互页面，写给自己也用给别人</span>
+            </div>
+          </div>
+          
+          <!-- 社交媒体图标 -->
+          <div class="hero-social flex items-center gap-3 pt-1">
+            <p class="text-slate-400 text-sm">关注我</p>
+            <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
+              <i class="fa fa-github"></i>
+            </a>
+            <a href="HTML/wechat_qrcode.html" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
+              <i class="fa fa-weixin"></i>
+            </a>
+            <a href="https://weibo.com/yunsong519" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
+              <i class="fa fa-weibo"></i>
+            </a>
+            <a href="https://user.qzone.qq.com/2542039659" target="_blank"  class="w-10 h-10 bg-white/10 border border-white/10 flex items-center justify-center text-slate-200 hover:bg-primary hover:text-white transition-all">
+              <i class="fa fa-qq"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 滚动指示器 -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <a href="#about" class="text-gray-400 hover:text-primary transition-colors">
+        <i class="fa fa-angle-down text-2xl"></i>
+      </a>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- 关于我区域 -->
+  <section id="about" class="py-20 bg-dark page-band">
+    <div class="container mx-auto px-4 md:px-6">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">02</span> ABOUT ME
+        </div>
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">关于我</h2>
+        <div class="section-rule"></div>
+      </div>
+      
+      <div class="flex flex-col md:flex-row gap-12 items-center">
+        <div class="md:w-1/3 reveal reveal-delay-1">
+          <div class="about-portrait relative">
+            <img src="static/images/YS/yunsong.png" alt="关于我的照片">
+            <div class="profile-badge absolute -bottom-5 -right-5 p-4">
+              <p class="text-xl font-bold">5+ 年</p>
+              <p class="text-sm">开发经验</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="md:w-2/3 space-y-6">
+          <h3 class="text-2xl font-bold text-white">在地球物理里做研究，常用的工具大多是自己写的</h3>
+          <p class="text-gray-300">
+            博士阶段主要研究月球内部结构与自由振荡，常和 Apollo 月震数据、长周期波形打交道。数据多了就想着让处理过程省点事，于是自己写了 SeisY、SeisRT 这些工具，用 Python、Fortran 和 GMT 把从读数据到出图这一套流程串了起来。
+          </p>
+          <p class="text-gray-300">
+            技术栈主要在科学计算和 Web 之间切换：ObsPy、Mineos 处理波形和本征模，Flask 加 SQLite 做文献管理这类小平台。代码写得多了，慢慢养成了先想清楚数据怎么组织、再动手做界面的习惯。
+          </p>
+          
+          <!-- 个人信息 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-user"></i></div>
+              <div class="info-text">
+                <span>姓名</span>
+                <p>云凇</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-envelope"></i></div>
+              <div class="info-text">
+                <span>邮箱</span>
+                <p>yusp519@qq.com <a href="mailto:yusp519@qq.com">发送邮件</a></p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-map-marker"></i></div>
+              <div class="info-text">
+                <span>地址</span>
+                <p>湖北省武汉市</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="icon-box"><i class="fa fa-code"></i></div>
+              <div class="info-text">
+                <span>职业</span>
+                <p>地球物理工作者 · 全栈开发者</p>
+              </div>
+            </div>
+          </div>
+          
+          <a href="mailto:yusp519@qq.com?subject=%E7%AE%80%E5%8E%86%E4%B8%8E%E5%90%88%E4%BD%9C%E6%B2%9F%E9%80%9A&body=%E4%BA%91%E5%87%87%EF%BC%8C%E4%BD%A0%E5%A5%BD%EF%BC%81%0A%0A%E6%88%91%E5%AF%B9%E4%BD%A0%E7%9A%84%E9%A1%B9%E7%9B%AE%E5%BE%88%E6%84%9F%E5%85%B4%E8%B6%A3%EF%BC%8C%E5%B8%8C%E6%9C%9B%E8%83%BD%E8%8E%B7%E5%8F%96%E4%BD%A0%E7%9A%84%E7%AE%80%E5%8E%86%E5%B9%B6%E4%BA%A4%E6%B5%81%E5%90%88%E4%BD%9C%E6%9C%BA%E4%BC%9A%E3%80%82%0A%0A%E6%AD%A4%E8%87%B4%EF%BC%81%0A%0A%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%0A%E5%90%8D%E7%A7%B0%EF%BC%9A%0A%E5%8D%95%E4%BD%8D%EF%BC%9A%0A%E8%81%8C%E4%BD%8D%EF%BC%9A%0A%E9%82%AE%E7%AE%B1%EF%BC%9A%0A%E7%94%B5%E8%AF%9D%EF%BC%9A" class="inline-block px-6 py-3 btn-primary-grad text-white rounded-lg mt-4 magnetic">
+            获取简历 <i class="fa fa-envelope-o ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- 技能区域 -->
+  <section id="skills" class="py-20 bg-gray-900 page-band">
+    <div class="container mx-auto px-4 md:px-6">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">03</span> SKILLS
+        </div>
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的技能</h2>
+        <div class="section-rule"></div>
+        <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
+          用的最多的还是 Python 和 Fortran，前端、后端、数据可视化都自己写，主要围绕科研数据处理这个场景来做
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <!-- 技术技能 -->
+        <div class="space-y-6 reveal reveal-delay-1 skill-panel">
+          <h3 class="text-xl font-bold text-white">技术技能</h3>
+
+          <!-- 技能条 -->
+          <div class="space-y-4">
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>Python</span>
+                <span>95%</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 95%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>Fortran</span>
+                <span>90%</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 90%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>HTML/CSS</span>
+                <span>90%</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 90%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>JavaScript</span>
+                <span>80%</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 80%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>GMT</span>
+                <span>75%</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="skill-bar-fill bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full" style="--target-width: 75%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 专业技能 -->
+        <div class="space-y-6 reveal reveal-delay-2">
+          <h3 class="text-xl font-bold text-white">专业技能</h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
+              <div class="skill-icon mb-4">
+                <i class="fa fa-laptop"></i>
+              </div>
+              <h4 class="text-lg font-semibold mb-2">前端开发</h4>
+              <p class="text-gray-400 text-sm">把波形、数据和结果画成能看的页面</p>
+            </div>
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
+              <div class="skill-icon mb-4">
+                <i class="fa fa-server"></i>
+              </div>
+              <h4 class="text-lg font-semibold mb-2">后端开发</h4>
+              <p class="text-gray-400 text-sm">用 Flask 这类框架搭文献管理、数据服务小平台</p>
+            </div>
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
+              <div class="skill-icon mb-4">
+                <i class="fa fa-database"></i>
+              </div>
+              <h4 class="text-lg font-semibold mb-2">地球物理软件开发</h4>
+              <p class="text-gray-400 text-sm">把 ObsPy、Mineos 这类数据处理流程封装成能直接用的工具</p>
+            </div>
+
+            <div class="p-6 rounded-lg hover-lift skill-card-glow">
+              <div class="skill-icon mb-4">
+                <i class="fa fa-cogs"></i>
+              </div>
+              <h4 class="text-lg font-semibold mb-2">数据分析系统</h4>
+              <p class="text-gray-400 text-sm">从原始波形到结论的整条链路，搭好一次能反复用</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- 项目展示 -->
+  <section id="projects" class="py-20 bg-dark page-band">
+    <div class="container mx-auto px-4 md:px-6">
+      <div class="text-center mb-16 reveal">
+        <div class="section-tag" style="margin:0 auto 16px">
+          <span class="num">04</span> PROJECTS
+        </div>
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">我的项目</h2>
+        <div class="section-rule"></div>
+        <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
+          下面这些是平时写的东西，大多在科研里用得上，做成能用的样子
+        </p>
+      </div>
+      
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- 项目卡片1 -->
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">YSXS Workspace</span>
+              </div>
+              <img src="static/images/project_covers/project_ysxs_st.png" alt="云凇学术界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              文献管理
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">云凇学术</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">YSXS</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              自己整理文献用的平台，把检索、分类、收藏和每日摘要放在一起，免得文献散得到处都是。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Flask</span>
+              <span class="project-chip">SQLite</span>
+              <span class="project-chip">文献管理</span>
+            </div>
+            <a href="YSXS" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- 项目卡片2 -->
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisY Desktop</span>
+              </div>
+              <img src="static/images/project_covers/SeisY-main.png" alt="SeisY 软件界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              桌面软件
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地震数据处理软件</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">SeisY</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              用 PyQt 写的桌面软件，读波形、看事件、整理数据、出图都在里面，做月震和地震数据分析时天天用。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Python</span>
+              <span class="project-chip">PyQt</span>
+              <span class="project-chip">波形分析</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <a href="HTML/SeisY.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+                查看详情 <i class="fa fa-arrow-right ml-2"></i>
+              </a>
+              <a href="HTML/news.html" target="_blank" class="text-gray-400 hover:text-primary flex items-center text-sm font-medium transition-colors">
+                <i class="fa fa-bullhorn mr-1.5"></i> 更新动态
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 项目卡片3 -->
+        <div class="project-card rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">MIMO Agent</span>
+              </div>
+              <img src="static/images/project_covers/project_mimoagent.png" alt="MIMO Agent 封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-orange-500/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              VS Code 插件
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">MIMO Agent</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-orange-400/80">MIMO</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              免费开源的 VS Code 编程助手，基于小米 MiMo 模型，支持多模型切换、MCP 协议和终端集成。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">VS Code</span>
+              <span class="project-chip">AI 编程</span>
+              <span class="project-chip">MCP 协议</span>
+            </div>
+            <a href="HTML/mimo/mimo.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 项目卡片4：地球物理公式大全 -->
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">GeoFormulas</span>
+              </div>
+              <img src="static/images/project_covers/project_geoformulas.svg" alt="地球物理公式大全封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-cyan-500/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              公式 · 可视化
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地球物理公式大全</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-cyan-300/90">GEOF</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              把地球物理和大学物理的公式推导、符号说明、参数化可视化串成知识网络，566 条公式从数学基础一路到重磁电震测井，点进去能交互调参。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">TypeScript</span>
+              <span class="project-chip">KaTeX</span>
+              <span class="project-chip">交互可视化</span>
+            </div>
+            <a href="geoformulas/" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 项目卡片5 -->
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">FunHome Playground</span>
+              </div>
+              <img src="static/images/project_covers/project_funhome.svg" alt="趣味屋项目封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-fuchsia-500/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              趣味互动
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">趣味屋</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-fuchsia-300">funhome</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              一个收集小游戏和互动页面的地方，写着玩，也当练手。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">小游戏</span>
+              <span class="project-chip">互动页面</span>
+              <span class="project-chip">创意 UI</span>
+            </div>
+            <a href="funhome/funhome.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div> 
+
+       <!-- 项目卡片6 -->
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">Yunji Editor</span>
+              </div>
+              <img src="static/images/project_covers/project_yunji.png" alt="云记编辑器封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              轻量工具
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">云记编辑器</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-primary/80">yunji</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              用 Python 写的轻量文本编辑器，不装插件也能快速改点小文件。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">Python</span>
+              <span class="project-chip">文本编辑</span>
+              <span class="project-chip">效率工具</span>
+            </div>
+            <a href="HTML/yunji.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
+       <!-- 项目卡片7 -->
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">Science Lab Collection</span>
+              </div>
+              <img src="static/images/project_covers/project_sciencelab.png" alt="科学小实验项目封面" class="w-full h-56 object-cover object-center transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              交互实验
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">科学小实验项目</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">ScienceLab</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              把几个交互式的物理小实验放在一起，摆锤、共振、瑞利波都能直接在页面上玩起来。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">PendulumLab</span>
+              <span class="project-chip">Resonance</span>
+              <span class="project-chip">WaveLab</span>
+            </div>
+            <a href="HTML/ScienceLab.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
+       <!-- 项目卡片8 -->
+        <div class="project-card project-card-extra rounded-lg overflow-hidden hover-lift tilt-card">
+          <div class="project-media">
+            <div class="project-shot">
+              <div class="project-shot-bar">
+                <span class="project-shot-dot bg-red-400"></span>
+                <span class="project-shot-dot bg-yellow-400"></span>
+                <span class="project-shot-dot bg-emerald-400"></span>
+                <span class="text-[11px] uppercase tracking-[0.24em] text-white/55">SeisRT Live Monitor</span>
+              </div>
+              <img src="static/images/project_covers/SeisRT.png" alt="SeisRT 监测界面截图" class="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-[1.04]">
+            </div>
+            <div class="absolute top-4 right-4 bg-secondary/90 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+              实时监测
+            </div>
+          </div>
+          <div class="p-6 pt-5">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-xl font-bold">地震实时监测系统</h3>
+              <span class="text-xs uppercase tracking-[0.24em] text-secondary/80">SeisRT</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-4 leading-6">
+              实时看波形的地震监测页面，接 SeedLink 数据流，自动处理并出图，也拿来当教学演示用。
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="project-chip">SeedLink</span>
+              <span class="project-chip">实时波形</span>
+              <span class="project-chip">台站地图</span>
+            </div>
+            <a href="HTML/SeisRT.html" target="_blank" class="text-primary hover:text-primary/80 flex items-center text-sm font-medium transition-colors">
+              查看详情 <i class="fa fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="text-center mt-12">
+        <button id="toggleProjects" class="inline-block px-6 py-3 border border-primary text-primary hover:bg-primary hover:text-white rounded-lg transition-all">
+          查看更多项目 <span class="arrow">▼</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- 联系区域 -->
+  <section id="contact" class="py-20 bg-gray-900 page-band">
+      <div class="container mx-auto px-4 md:px-6">
+          <div class="text-center mb-16 reveal">
+              <div class="section-tag" style="margin:0 auto 16px">
+                  <span class="num">05</span> CONTACT
+              </div>
+              <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold mb-4">联系我</h2>
+              <div class="section-rule"></div>
+              <p class="text-gray-400 mt-4 max-w-2xl mx-auto">
+                  想交流、想合作，或者对哪个工具有改进意见，都可以直接找我。
+              </p>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              <!-- 联系信息 -->
+              <div class="lg:col-span-2 space-y-6">
+                  <div class="contact-info-card p-6 rounded-lg">
+                      <h3 class="text-xl font-bold mb-6">联系信息</h3>
+
+                      <div class="space-y-4">
+                          <div class="flex items-start gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0 contact-icon-box">
+                                  <i class="fa fa-envelope"></i>
+                              </div>
+                              <div>
+                                  <h4 class="font-medium">邮箱</h4>
+                                  <p class="text-gray-400">yusp519@qq.com</p>
+                              </div>
+                          </div>
+
+                          <div class="flex items-start gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0 contact-icon-box">
+                                  <i class="fa fa-phone"></i>
+                              </div>
+                              <div>
+                                  <h4 class="font-medium">电话</h4>
+                                  <p class="text-gray-400">+86 173 7145 6519</p>
+                              </div>
+                          </div>
+
+                          <div class="flex items-start gap-4">
+                              <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary flex-shrink-0 contact-icon-box">
+                                  <i class="fa fa-map-marker"></i>
+                              </div>
+                              <div>
+                                  <h4 class="font-medium">地址</h4>
+                                  <p class="text-gray-400">湖北省武汉市洪山区鲁磨路388号</p>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="contact-info-card p-6 rounded-lg">
+                      <h3 class="text-xl font-bold mb-6">工作时间</h3>
+                      <div class="space-y-3">
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周一至周五</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary">9:00 - 17:00</span>
+                          </div>
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周六</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-secondary/10 text-secondary">10:00 - 16:00</span>
+                          </div>
+                          <div class="flex justify-between items-center">
+                              <span class="text-gray-400">周日</span>
+                              <span class="text-sm px-3 py-1 rounded-full bg-gray-800 text-gray-500">休息</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- 联系表单 -->
+              <div class="lg:col-span-3 glass-form p-6 md:p-8 rounded-lg">
+                  <h3 class="text-xl font-bold mb-6">发送消息</h3>
+
+                  <form id="contactForm">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                          <div>
+                              <label for="name" class="block text-sm font-medium mb-2 text-gray-400">姓名</label>
+                              <input type="text" id="name" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="你的姓名" required>
+                          </div>
+
+                          <div>
+                              <label for="email" class="block text-sm font-medium mb-2 text-gray-400">邮箱</label>
+                              <input type="email" id="email" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="你的邮箱" required>
+                          </div>
+                      </div>
+
+                      <div class="mb-5">
+                          <label for="subject" class="block text-sm font-medium mb-2 text-gray-400">主题</label>
+                          <input type="text" id="subject" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all" placeholder="消息主题" required>
+                      </div>
+
+                      <div class="mb-6">
+                          <label for="message" class="block text-sm font-medium mb-2 text-gray-400">消息</label>
+                          <textarea id="message" rows="5" class="w-full px-4 py-3 rounded-xl focus:outline-none transition-all resize-none" placeholder="你的消息内容" required></textarea>
+                      </div>
+
+                      <button type="submit" class="w-full md:w-auto px-8 py-3 btn-primary-grad text-white rounded-xl font-medium magnetic">
+                          发送消息 <i class="fa fa-paper-plane ml-2"></i>
+                      </button>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="py-12 bg-dark footer-gradient-border">
+    <div class="container mx-auto px-4 md:px-6">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-6 md:mb-0">
+          <a href="#home" class="text-2xl font-bold text-white flex items-center justify-center md:justify-start">
+            <span class="text-primary mr-1">
+              <img src="static/images/YS.png" alt="Logo" class="w-6 h-6">
+            </span>
+            <span>云凇之家</span>
+          </a>
+          <p class="text-gray-500 text-sm mt-2 text-center md:text-left">
+            波形、代码，慢慢琢磨
+          </p>
+        </div>
+        
+        <div class="flex gap-4">
+          <a href="https://github.com/YSP0Github" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <i class="fa fa-github"></i>
+          </a>
+          <a href="HTML/wechat_qrcode.html" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <i class="fa fa-weixin"></i>
+          </a>
+          <a href="https://user.qzone.qq.com/2542039659" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <i class="fa fa-qq"></i>
+          </a>
+          <a href="https://weibo.com/yunsong519" target="_blank" class="w-10 h-10 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary hover:text-white transition-all">
+            <i class="fa fa-weibo"></i>
+          </a>
+        </div>
+      </div>
+        <!-- 新增“关于我们”链接（可放在版权信息上方） -->
+      <div class="text-center my-6">
+        <a href="HTML/About_us.html" target="_blank" class="footer-link text-gray-400 hover:text-primary transition-colors text-sm">关于我们</a>
+        <span class="mx-2 text-gray-600">|</span>
+        <a href="HTML/Privacy_policy.html" target="_blank" class="footer-link text-gray-400 hover:text-primary transition-colors text-sm">隐私政策</a>
+        <span class="mx-2 text-gray-600">|</span>
+        <a href="HTML/report.html" target="_blank" class="footer-link text-gray-400 hover:text-primary transition-colors text-sm">举报入口</a>
+      </div>
+
+      
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+        <p>&copy; 2026 云凇之家 版权所有 All Rights Reserved
+        </p>
+        <p class="flex items-center justify-center gap-2 text-sm text-slate-500">
+          <img src="static/images/foot-beian.png" alt="" class="w-4 h-4">
+          <a href="https://beian.mps.gov.cn/#/query/webSearch?code=42011102005976" rel="noreferrer" target="_blank">鄂公网安备42011102005976号  </a>
+          <img src="static/images/foot-icp.png" alt="" class="w-4 h-4">
+          <a href="https://beian.miit.gov.cn" target="_blank" class="text-slate-500 hover:text-blue-600 transition-colors"> 鄂ICP备2026000757号-1</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+   <script>
+  // 获取表单元素
+  const contactForm = document.getElementById('contactForm');
+
+  // 表单提交事件处理
+  contactForm.addEventListener('submit', function(e) {
+    // 阻止表单默认提交行为
+    e.preventDefault();
+    
+    // 获取表单值
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
+    
+    // 简单验证
+    if (!name || !email || !subject || !message) {
+        alert('请填写所有必填字段');
+        return;
+    }
+    
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('请输入有效的邮箱地址');
+        return;
+    }
+    
+    // 收件人邮箱（你的邮箱）
+    const recipient = 'yusp519@qq.com';
+    
+    // 构建邮件内容
+    const body = `
+        发件人: ${name}
+        发件人邮箱: ${email}
+        消息内容:
+        ${message}
+    `.replace(/\n/g, '%0A'); // 替换换行符为URL编码
+    
+    // 构建mailto链接
+    const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    
+    // 触发邮件客户端
+    window.location.href = mailtoLink;
+    
+    // 显示提示信息
+    setTimeout(() => {
+        alert('如果你的邮件客户端已正确配置，将自动打开发送界面。\n若未打开，请手动发送邮件至：' + recipient);
+        // 重置表单
+        contactForm.reset();
+    }, 500);
+  });
+
+    // 导航栏滚动效果
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('bg-dark/95', 'backdrop-blur-md', 'shadow-lg', 'py-2');
+        navbar.classList.remove('py-4');
+      } else {
+        navbar.classList.remove('bg-dark/95', 'backdrop-blur-md', 'shadow-lg', 'py-2');
+        navbar.classList.add('py-4');
+      }
+    });
+    
+    // 移动端菜单切换
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      const icon = menuToggle.querySelector('i');
+      if (icon.classList.contains('fa-bars')) {
+        icon.classList.replace('fa-bars', 'fa-times');
+      } else {
+        icon.classList.replace('fa-times', 'fa-bars');
+      }
+    });
+    
+    // 平滑滚动
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 关闭移动菜单（如果打开）
+        if (!mobileMenu.classList.contains('hidden')) {
+          mobileMenu.classList.add('hidden');
+          const icon = menuToggle.querySelector('i');
+          icon.classList.replace('fa-times', 'fa-bars');
+        }
+        
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        
+        if (targetElement) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 80, // 考虑导航栏高度
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+    
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('opacity-100');
+      document.body.classList.remove('opacity-0');
+    });
+
+    // 展开/折叠项目卡片
+    const toggleBtn = document.getElementById('toggleProjects');
+    const projectsGrid = document.querySelector('#projects .grid');
+    if (toggleBtn && projectsGrid) {
+      toggleBtn.addEventListener('click', () => {
+        const expanded = projectsGrid.classList.toggle('projects-expanded');
+        toggleBtn.innerHTML = expanded
+          ? '收起项目 <span class="arrow">▼</span>'
+          : '查看更多项目 <span class="arrow">▼</span>';
+      });
+    }
+
+    // ========== 导航高亮 ==========
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.hidden.md\\:flex a[href^="#"]');
+    function updateNavHighlight() {
+      const scrollPos = window.scrollY + 120;
+      sections.forEach(section => {
+        const top = section.offsetTop;
+        const height = section.offsetHeight;
+        const id = section.getAttribute('id');
+        if (scrollPos >= top && scrollPos < top + height) {
+          navLinks.forEach(link => {
+            link.classList.remove('nav-active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('nav-active');
+            }
+          });
+        }
+      });
+    }
+    window.addEventListener('scroll', updateNavHighlight);
+
+    // ========== 滚动进入动画 ==========
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ========== 技能条动画 ==========
+    const skillObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.skill-bar-fill').forEach(bar => {
+            bar.classList.add('animate');
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const skillsSection = document.getElementById('skills');
+    if (skillsSection) skillObserver.observe(skillsSection);
+
+    // ========== 交互特效（桌面端鼠标，参考优秀作品集实现） ==========
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (finePointer && !reduceMotion) {
+
+      // 1. 鼠标光斑跟随（lerp 平滑缓动）
+      const glow = document.getElementById('cursorGlow');
+      if (glow) {
+        let tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+        let cx = tx, cy = ty;
+        window.addEventListener('mousemove', (e) => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+        (function glowLoop() {
+          cx += (tx - cx) * 0.12;
+          cy += (ty - cy) * 0.12;
+          glow.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0)';
+          requestAnimationFrame(glowLoop);
+        })();
+      }
+
+      // 2. 项目卡片 3D 倾斜（跟随鼠标视角）
+      document.querySelectorAll('.tilt-card').forEach(card => {
+        let raf = null;
+        card.addEventListener('mousemove', (e) => {
+          if (raf) return;
+          raf = requestAnimationFrame(() => {
+            const rect = card.getBoundingClientRect();
+            const px = (e.clientX - rect.left) / rect.width;
+            const py = (e.clientY - rect.top) / rect.height;
+            const rotY = (px - 0.5) * 10;
+            const rotX = (0.5 - py) * 10;
+            card.style.transform = 'perspective(1000px) rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg) translateY(-4px)';
+            raf = null;
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+        });
+      });
+
+      // 3. 磁吸按钮（鼠标靠近时轻微吸附）
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const relX = e.clientX - (rect.left + rect.width / 2);
+          const relY = e.clientY - (rect.top + rect.height / 2);
+          btn.style.transform = 'translate(' + (relX * 0.22).toFixed(1) + 'px,' + (relY * 0.28).toFixed(1) + 'px)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = '';
+        });
+      });
+
+      // 4. 滚动进度条（顶部渐变细线，scaleX 高性能更新）
+      const scrollBar = document.getElementById('scrollProgress');
+      if (scrollBar) {
+        let ticking = false;
+        const updateBar = () => {
+          const doc = document.documentElement;
+          const max = doc.scrollHeight - doc.clientHeight;
+          scrollBar.style.transform = 'scaleX(' + (max > 0 ? Math.min(doc.scrollTop / max, 1) : 0) + ')';
+          ticking = false;
+        };
+        window.addEventListener('scroll', () => {
+          if (!ticking) { ticking = true; requestAnimationFrame(updateBar); }
+        }, { passive: true });
+        updateBar();
+      }
+
+      // 5. hero 副标题打字机（去AI味升级：只把真实内容打一遍，不循环职业词，带真实打字节奏）
+      const typeL1 = document.getElementById('heroSubL1');
+      const typeL2 = document.getElementById('heroSubL2');
+      if (typeL1 && typeL2) {
+        const full1 = typeL1.textContent, full2 = typeL2.textContent;
+        const cursor = document.createElement('span');
+        cursor.className = 'type-cursor';
+        typeL1.textContent = ''; typeL2.textContent = '';
+        typeL1.appendChild(cursor);
+        let i1 = 0, i2 = 0;
+        const base = 48;
+        const type2 = () => {
+          if (i2 < full2.length) {
+            typeL2.insertBefore(document.createTextNode(full2[i2]), cursor);
+            i2++;
+            setTimeout(type2, base + Math.random() * 45);
+          } else {
+            setTimeout(() => cursor.classList.add('cursor-done'), 1200);
+          }
+        };
+        const type1 = () => {
+          if (i1 < full1.length) {
+            typeL1.insertBefore(document.createTextNode(full1[i1]), cursor);
+            i1++;
+            setTimeout(type1, base + Math.random() * 45);
+          } else {
+            setTimeout(() => { typeL2.appendChild(cursor); type2(); }, 320);
+          }
+        };
+        setTimeout(type1, 650);
+      }
+    }
+   </script>
+    <!-- </script> -->
+
+<script>
+const i18n = {
+  zh: {
+    'nav.home': '首页',
+    'nav.about': '关于我',
+    'nav.skills': '技能',
+    'nav.projects': '项目',
+    'nav.contact': '联系我',
+    'hero.desc': 'SeisY、SeisRT，波形处理到实时监测',
+    'project.research': '科研主页'
+  },
+  en: {
+    'nav.home': 'Home',
+    'nav.about': 'About',
+    'nav.skills': 'Skills',
+    'nav.projects': 'Projects',
+    'nav.contact': 'Contact',
+    'hero.desc': 'SeisY, SeisRT: From Waveform Processing to Real-time Monitoring',
+    'project.research': 'Research Homepage'
+  }
+};
+let currentLang = localStorage.getItem('lang') || 'zh';
+function applyLang(l) {
+  currentLang = l;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (i18n[l][k]) el.textContent = i18n[l][k];
+  });
+  document.getElementById('lang-toggle').textContent = l === 'zh' ? 'EN' : '中文';
+  localStorage.setItem('lang', l);
+}
+document.getElementById('lang-toggle').addEventListener('click', function() {
+  applyLang(currentLang === 'zh' ? 'en' : 'zh');
+});
+document.addEventListener('DOMContentLoaded', function() {
+  applyLang(currentLang);
+});
+</script>
+
+</body>
+</html>
