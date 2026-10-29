@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勘探地震 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html" class="active">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>勘探地震</h1>
+<div class="warn"><strong>这个模块是新增功能，处理流程尚未充分验证</strong>
+<p>勘探地震在 0.1.12 中首次提供，包含炮集浏览和一条十五阶段的二维反射处理流水线。
+<strong>炮集浏览是成熟的</strong>——读入 SEG-Y、翻看炮集、调增益和显示方式，这部分可以放心用。</p>
+<p><strong>处理工作流则仍在完善中</strong>。十五个阶段的算法都已接上，但：</p>
+<ul>
+<li>参数默认值没有针对不同采集条件做标定，多数情况需要你自己试；</li>
+<li>缺少与商业软件（如 ProMAX / Vista / SeisSpace）的对比验证，
+<strong>输出剖面不能直接当作最终成果</strong>；</li>
+<li>速度分析、剩余静校正这类需要迭代的环节，自动化程度低，结果依赖人工判断。</li>
+</ul>
+<p>建议把它当作<strong>学习流程、快速试验参数、或处理合成数据</strong>的工具。
+要做正式处理，请用成熟商业软件，或至少用本工具的结果与成熟软件交叉比对。</p>
+</div>
+<h2>炮集浏览</h2>
+<figure><a href="assets/img/exploration-gather.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/exploration-gather.png" alt="炮集浏览" loading="lazy"></a><figcaption><strong>炮集浏览</strong><span>左侧是炮集列表（按 FFID 与偏移距范围命名），右侧是当前炮的显示。顶部一行控制显示方式、增益、横轴与时间窗。</span></figcaption></figure>
+<p>入口：<kbd>数据</kbd> › <kbd>勘探地震</kbd> › <kbd>炮集浏览</kbd>。</p>
+<p>这是检查原始炮集的地方——在跑任何处理之前，先确认数据本身没问题。</p>
+<table>
+<thead>
+<tr>
+<th>控件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>显示方式</td>
+<td>波形 / 变面积 / 变密度，同一炮换着看，弱反射在变面积下更清楚</td>
+</tr>
+<tr>
+<td>增益</td>
+<td>AGC 自动增益 / 无增益。看深部弱信号开 AGC</td>
+</tr>
+<tr>
+<td>AGC 窗长</td>
+<td>自动增益的滑动窗长度，越小补偿越剧烈</td>
+</tr>
+<tr>
+<td>横轴</td>
+<td>偏移距（m）或道号</td>
+</tr>
+<tr>
+<td>方向</td>
+<td>横向 / 纵向排列道集</td>
+</tr>
+<tr>
+<td>道缩放</td>
+<td>相邻道的重叠程度，太密会糊成一片</td>
+</tr>
+<tr>
+<td>时间窗</td>
+<td>只显示某个时段的波形，用于放大目标层位</td>
+</tr>
+<tr>
+<td>重置</td>
+<td>回到默认视图</td>
+</tr>
+</tbody>
+</table>
+<div class="tip"><strong>先看这三件事</strong>
+<ul>
+<li><strong>初至是否连续</strong>：突然跳变说明有坏道或炮点问题。</li>
+<li><strong>有没有异常强的道</strong>：单道振幅明显突出，多半是坏道或耦合不良。</li>
+<li><strong>面波与反射是否分得开</strong>：分不开的话后面的滤波和切除会很吃力。</li>
+</ul>
+</div>
+<p>底部状态行给出当前炮的规模：道数、样点数、采样间隔、记录长度、偏移距范围。
+判断能不能做深部成像，先看记录长度够不够。</p>
+<h2>处理工作流</h2>
+<figure><a href="assets/img/exploration-workflow.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/exploration-workflow.png" alt="勘探地震处理工作流" loading="lazy"></a><figcaption><strong>勘探地震处理工作流</strong><span>左侧十五个阶段按方法顺序排列，每项可单独勾选。右侧是选中阶段的参数。</span></figcaption></figure>
+<p>入口：<kbd>数据</kbd> › <kbd>勘探地震</kbd> › <kbd>处理工作流</kbd>。</p>
+<div class="warn"><strong>需要先导入 SEG-Y 炮集</strong>
+从菜单打开时，如果工程里没有 SEG-Y 炮集，程序只会弹一句
+「Please import a SEG-Y shot gather first.」然后返回。
+先 <kbd>文件</kbd> › <kbd>导入文件</kbd> 读入炮集，再进这个窗口。
+</div>
+<h2>十五个阶段</h2>
+<p>左侧列表是完整的常规二维反射处理序列，每一项都可以单独勾选启用或跳过。</p>
+<table>
+<thead>
+<tr>
+<th>序</th>
+<th>阶段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>道编辑（坏道剔除）</td>
+<td>按 RMS 倍数与尖峰倍数剔掉坏道</td>
+</tr>
+<tr>
+<td>2</td>
+<td>真振幅恢复</td>
+<td>补偿球面扩散与吸收</td>
+</tr>
+<tr>
+<td>3</td>
+<td>切除（初至/顶切）</td>
+<td>切掉初至前的噪声与直达波</td>
+</tr>
+<tr>
+<td>4</td>
+<td>去野值</td>
+<td>压制离群采样</td>
+</tr>
+<tr>
+<td>5</td>
+<td>野外静校正</td>
+<td>校正炮点/检波点高程与风化层</td>
+</tr>
+<tr>
+<td>6</td>
+<td>带通滤波</td>
+<td>压制面波与高频噪声</td>
+</tr>
+<tr>
+<td>7</td>
+<td>F-K 视速度滤波</td>
+<td>按视速度分离线性同相轴</td>
+</tr>
+<tr>
+<td>8</td>
+<td>多道中值滤波</td>
+<td>压制非相干噪声</td>
+</tr>
+<tr>
+<td>9</td>
+<td>预测/脉冲反褶积</td>
+<td>提高垂向分辨率</td>
+</tr>
+<tr>
+<td>10</td>
+<td>CMP 分选</td>
+<td>按共中心点重组道集</td>
+</tr>
+<tr>
+<td>11</td>
+<td>速度分析</td>
+<td>求叠加速度谱</td>
+</tr>
+<tr>
+<td>12</td>
+<td>动校正 + 拉伸切除</td>
+<td>拉平同相轴，切掉拉伸畸变段</td>
+</tr>
+<tr>
+<td>13</td>
+<td>剩余静校正</td>
+<td>校正剩余时差</td>
+</tr>
+<tr>
+<td>14</td>
+<td>水平叠加</td>
+<td>得到叠后剖面</td>
+</tr>
+<tr>
+<td>15</td>
+<td>叠后时间偏移</td>
+<td>把倾斜界面归位</td>
+</tr>
+</tbody>
+</table>
+<p>顺序不能随便换。静校正必须在动校正之前，动校正必须在叠加之前，
+偏移必须在叠加之后——这是方法本身决定的，不是软件限制。</p>
+<h2>参数编辑</h2>
+<p>选中左侧某一阶段，右侧显示它的参数。以「道编辑（坏道剔除）」为例：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RMS 倍数</td>
+<td>8.000</td>
+<td>道振幅超过全炮 RMS 的这个倍数判为坏道</td>
+</tr>
+<tr>
+<td>尖峰倍数</td>
+<td>50.000</td>
+<td>单点振幅超过该倍数的判为尖峰</td>
+</tr>
+</tbody>
+</table>
+<p>每个阶段的参数不同，选中后逐项看。参数改了不影响已算出的结果，
+需要重新运行。</p>
+<h2>执行方式</h2>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运行</td>
+<td>从当前阶段开始跑完整个流程</td>
+</tr>
+<tr>
+<td>单步执行</td>
+<td>只跑一个阶段，看结果再决定</td>
+</tr>
+<tr>
+<td>查看结果</td>
+<td>打开结果图件</td>
+</tr>
+<tr>
+<td>导出 SEG-Y…</td>
+<td>把处理结果写成 SEG-Y</td>
+</tr>
+</tbody>
+</table>
+<div class="tip"><strong>先用「单步执行」把关键参数试对</strong>
+速度分析（第 11 阶段）和动校正（第 12 阶段）是最容易出错的两步。
+用单步执行逐段看速度谱和道集拉平情况，比整条跑完再回头找问题快得多。
+</div>
+<p>底部状态行显示「N 个阶段启用 · 已载入 M 个炮集」，进度条显示总体进度。</p>
+<h2>相关入口</h2>
+<table>
+<thead>
+<tr>
+<th>菜单</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据 › 勘探地震 › 正演模拟</td>
+<td>合成二维炮集，用于验证流程</td>
+</tr>
+<tr>
+<td>绘图 › 勘探地震模式（单画布）</td>
+<td>主画布切换成勘探显示方式</td>
+</tr>
+<tr>
+<td>绘图 › 旋转炮集方向（道集横/纵）</td>
+<td>横轴在偏移距与时间之间切换</td>
+</tr>
+</tbody>
+</table>
+<h2>常见问题</h2>
+<p><strong>导入炮集后还是提示没有炮集？</strong>
+炮集需要带 FFID（炮号）道头。没有炮号的 SEG-Y 会被当成一条普通波形，
+不会进入勘探模块。</p>
+<p><strong>速度谱是一团糊？</strong>
+道集里坏道太多。先做道编辑（第 1 阶段）和去野值（第 4 阶段），再回来做速度分析。</p>
+<p><strong>叠加剖面同相轴不连续？</strong>
+静校正没做干净。回头调第 5 和第 13 阶段的参数，用单步执行反复看。</p>
+<p><strong>处理结果看着不对 / 剖面不像地质结构？</strong>
+先别急着调参数——工作流本身仍在完善中，见本章开头的说明。建议拿同一份数据
+在成熟软件里跑一遍对照，再判断是本工具的问题还是参数没调对。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="16-lunar-map.html">← 三维地质图与行星地图</a><span><a href="99-appendix.html">附录：菜单索引与快捷键 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

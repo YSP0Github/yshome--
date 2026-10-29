@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 助手 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html" class="active">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>AI 助手</h1>
+<figure><a href="assets/img/ai-assistant.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/ai-assistant.png" alt="AI 助手面板" loading="lazy"></a><figcaption><strong>AI 助手面板</strong><span>顶部标签栏管理多个会话，底部一行是快捷提问而不是命令。首屏卡片已经把最常用的三个入口列出来了。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>AI 助手</kbd>，或工具栏上的 AI Assistant 按钮。</p>
+<p>面板停靠在窗口右侧，可以拖到左侧或拖出来变成独立窗口。默认隐藏，
+关闭后用同一入口重新打开。</p>
+<div class="note"><strong>它是上手向导，不是通用聊天机器人</strong>
+面板首屏的欢迎卡片写得很明白：问「怎么做」，它告诉你去点哪个菜单。
+它的价值在「知道 117 个菜单项分别在哪」这件事上——这正是新手最费时间的地方。
+</div>
+<h2>面板结构</h2>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>顶部标签栏</td>
+<td>每个会话一个标签，<code>+</code> 新建，<code>×</code> 关闭</td>
+</tr>
+<tr>
+<td>模型行</td>
+<td>当前模型名、连接状态点、历史记录按钮、设置齿轮</td>
+</tr>
+<tr>
+<td>会话区</td>
+<td>对话内容，首屏是欢迎卡片</td>
+</tr>
+<tr>
+<td>快捷按钮行</td>
+<td>清洗、去噪、绘图、导出、下载、事件、批处理、月震</td>
+</tr>
+<tr>
+<td>输入框</td>
+<td>描述你想让 SeisY 做什么</td>
+</tr>
+</tbody>
+</table>
+<p>底部那一行按钮不是命令，是<strong>快捷提问</strong>：点一下等于把对应的话题填进输入框，
+省去打字。例如点「下载」会把「怎么下载月震数据」类的问法直接送出去。</p>
+<h2>会话管理</h2>
+<ul>
+<li>标签栏 <code>+</code>：新建一个独立会话，上下文互不干扰</li>
+<li>标签上的 <code>×</code>：关闭该会话</li>
+<li>模型行右侧的时钟图标：历史记录，可以翻回以前的会话继续</li>
+</ul>
+<div class="tip"><strong>长任务分开建会话</strong>
+同一个会话里连续问十几轮之后，模型对早期的约束记得越来越模糊。做不同主题的
+任务时新建一个会话，比在一个长会话里继续问更可靠。
+</div>
+<h2>模型配置</h2>
+<p>点模型行右侧的齿轮打开 AI 配置。可配置项：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>服务商 / Provider</td>
+<td>提供模型的服务方</td>
+</tr>
+<tr>
+<td>base_url</td>
+<td>接口地址</td>
+</tr>
+<tr>
+<td>api_key</td>
+<td>密钥，只存在本机注册表里</td>
+</tr>
+<tr>
+<td>model</td>
+<td>模型名，例如 <code>glm-5.3-flash</code></td>
+</tr>
+<tr>
+<td>temperature</td>
+<td>随机性，0.2 偏稳定</td>
+</tr>
+<tr>
+<td>timeout</td>
+<td>单次请求超时（秒）</td>
+</tr>
+<tr>
+<td>max_tokens</td>
+<td>单次回复的最大长度</td>
+</tr>
+<tr>
+<td>system_prompt</td>
+<td>系统提示词，决定它的角色与回答风格</td>
+</tr>
+<tr>
+<td>use_agent_loop</td>
+<td>是否允许它连续多步调用工具</td>
+</tr>
+<tr>
+<td>agent_max_steps</td>
+<td>最多几步，默认 6</td>
+</tr>
+<tr>
+<td>enable_reflection</td>
+<td>是否让它在给出答案前自检一遍</td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>密钥保存在注册表里</strong>
+Windows 上这些设置写在 <code>HKCU\Software\SeisY\SeisY\ai</code>。
+共用电脑时注意这一点；换机器不会自动同步。
+</div>
+<h2>能做什么、不能做什么</h2>
+<p><strong>擅长</strong>：告诉你某个功能在哪个菜单、某个参数是什么意思、处理顺序该怎么排、
+报错信息对应什么问题。</p>
+<p><strong>不要指望</strong>：它看不到你的数据。它不知道你加载了哪条记录、波形长什么样、
+频谱峰在哪。任何涉及具体数值的判断都要你自己在面板里核对。</p>
+<div class="warn"><strong>AI 给出的参数值必须自己验证</strong>
+它给出的滤波通带、FFT 点数这类建议是基于通用经验的起点，不是针对你这条记录
+算出来的。用之前先看一眼数据全览里的采样率和奈奎斯特频率。
+</div>
+<h2>常见问题</h2>
+<p><strong>点发送没反应，状态点是灰色？</strong>
+密钥或接口地址不对。打开齿轮检查 <code>api_key</code> 和 <code>base_url</code>，改完点保存，
+状态点变绿才能用。</p>
+<p><strong>回答到一半停了？</strong>
+<code>max_tokens</code> 太小。调到 4096 以上再试。</p>
+<p><strong>它说要调用某个功能，但我这里没有这个菜单？</strong>
+版本不同。菜单项以你本机「帮助 › 关于」里的版本号为准，附录里的菜单索引也是
+从你本机运行时读出来的，可以直接对照。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="07-response.html">← 去仪器响应</a><span><a href="09-repair.html">异常修复与震相拾取 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

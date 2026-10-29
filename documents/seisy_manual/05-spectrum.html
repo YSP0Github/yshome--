@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>频谱分析 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html" class="active">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>频谱分析</h1>
+<p>频谱是 SeisY 里参数最容易设错、也最容易误读的部分。这一章先把入口讲清楚，
+再讲四个 FFT 参数怎么影响结果。</p>
+<h2>五个入口</h2>
+<table>
+<thead>
+<tr>
+<th>菜单</th>
+<th>画什么</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>绘图 › 绘制振幅谱</td>
+<td>当前事件的单边幅值谱</td>
+<td>最常用，看主频</td>
+</tr>
+<tr>
+<td>绘图 › 绘制多通道振幅谱</td>
+<td>三个分量各一条曲线</td>
+<td>比较分量差异</td>
+</tr>
+<tr>
+<td>绘图 › 绘制时域与振幅谱</td>
+<td>上图波形、下图频谱</td>
+<td>写报告、对照</td>
+</tr>
+<tr>
+<td>绘图 › 频谱分析查看器</td>
+<td>独立窗口，七种谱可切换</td>
+<td>批量对比多个事件</td>
+</tr>
+<tr>
+<td>画布上框选区域</td>
+<td>只对选中时段做频谱</td>
+<td>分离不同震相</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>框选频谱是最有用的一招</strong>
+月震的体波和面波主频差别很大，对整条记录做 FFT 得到的是一条混在一起的曲线。
+在画布上按住拖出一个框，再执行绘图命令，得到的就是那一段的频谱。
+</div>
+<h2>频谱分析查看器</h2>
+<figure><a href="assets/img/spectrum-analysis.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/spectrum-analysis.png" alt="频谱分析查看器" loading="lazy"></a><figcaption><strong>频谱分析查看器</strong><span>左侧选事件，上方七个按钮切换谱类型。横轴止于 3.3 Hz 是采样定理决定的，不是程序截断。</span></figcaption></figure>
+<p>菜单：<kbd>绘图</kbd> › <kbd>频谱分析查看器</kbd>。</p>
+<p>左侧列出当前工程的全部事件，右侧是绘图区。上方七个按钮切换谱的类型：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>纵轴含义</th>
+<th>什么时候用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单边幅值谱</td>
+<td>幅值（0 到奈奎斯特）</td>
+<td>看主频、找优势频段</td>
+</tr>
+<tr>
+<td>双边幅值谱</td>
+<td>幅值（−fs/2 到 +fs/2）</td>
+<td>检查信号是否实数、有无镜像</td>
+</tr>
+<tr>
+<td>单边 PSD</td>
+<td>功率谱密度</td>
+<td>比较不同采样率/长度的记录</td>
+</tr>
+<tr>
+<td>双边 PSD</td>
+<td>功率谱密度</td>
+<td>同上，需要负频率时</td>
+</tr>
+<tr>
+<td>复数谱</td>
+<td>实部与虚部</td>
+<td>检查相位关系</td>
+</tr>
+<tr>
+<td>相位谱</td>
+<td>相位（弧度）</td>
+<td>判断滤波器相位、检查是否零相位</td>
+</tr>
+<tr>
+<td>全部谱</td>
+<td>以上全部</td>
+<td>一次性导出图件</td>
+</tr>
+</tbody>
+</table>
+<p>勾选 <kbd>允许多选</kbd> 可以同时画多个事件的谱做对比，<kbd>颜色…</kbd> 指定配色。</p>
+<div class="warn"><strong>比较两条谱之前先对齐参数</strong>
+窗函数、FFT 点数、去趋势方式任意一项不同，两条谱就不可直接比较。
+用查看器对比时，先确认两边用的是同一套参数。
+</div>
+<h2>四个 FFT 参数</h2>
+<figure><a href="assets/img/settings-spectrum.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/settings-spectrum.png" alt="绘制频谱设置" loading="lazy"></a><figcaption><strong>绘制频谱设置</strong><span>上面一行只管画法，下面四个参数才影响数值。改任何一个，前后两次的谱就不再可比。</span></figcaption></figure>
+<p>菜单：<kbd>设置</kbd> › <kbd>绘制频谱设置</kbd>。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>窗函数</td>
+<td>矩形窗</td>
+<td>FFT 前乘的窗，减少频谱泄漏</td>
+</tr>
+<tr>
+<td>FFT 点数</td>
+<td>自动（数据点数）</td>
+<td>补零或截断到的长度</td>
+</tr>
+<tr>
+<td>去趋势</td>
+<td>去均值（常数）</td>
+<td>去掉直流分量</td>
+</tr>
+<tr>
+<td>平均方式</td>
+<td>不分段（单次 FFT）</td>
+<td>是否分段做 Welch 平均</td>
+</tr>
+</tbody>
+</table>
+<p>绘图形式（折线 / 火柴杆 / 折线 + 火柴杆）只影响观感，不影响数值。</p>
+<h3>频率分辨率</h3>
+<p><code>频率分辨率 = 采样率 / FFT 点数</code></p>
+<p>采样率 6.625 Hz、6000 点的记录，FFT 点数取自动时分辨率是
+6.625 / 6000 ≈ <strong>0.0011 Hz</strong>；把 FFT 点数改成 1024，分辨率就降到 0.0065 Hz。
+点数越多分辨率越细，但补零不会增加真实信息——补零只是把同一条曲线画得更密。</p>
+<h3>奈奎斯特频率</h3>
+<p><code>奈奎斯特频率 = 采样率 / 2</code></p>
+<p>6.625 Hz 采样对应上限 <strong>3.3125 Hz</strong>。频谱图的横轴到 3.3 Hz 左右就结束，这不是
+程序截断了数据，而是采样定理的硬限制。滤波截止频率超过这个值没有意义。</p>
+<h3>窗函数怎么选</h3>
+<table>
+<thead>
+<tr>
+<th>窗</th>
+<th>主瓣宽度</th>
+<th>旁瓣</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>矩形窗</td>
+<td>最窄</td>
+<td>最高</td>
+<td>整周期信号、瞬态；默认</td>
+</tr>
+<tr>
+<td>汉宁窗</td>
+<td>中等</td>
+<td>低</td>
+<td>连续信号做谱估计，通用首选</td>
+</tr>
+<tr>
+<td>汉明窗</td>
+<td>中等</td>
+<td>更低</td>
+<td>同上，旁瓣衰减更快</td>
+</tr>
+<tr>
+<td>布莱克曼窗</td>
+<td>宽</td>
+<td>极低</td>
+<td>强弱信号共存、需要压制泄漏</td>
+</tr>
+<tr>
+<td>巴特利特窗</td>
+<td>中等</td>
+<td>中</td>
+<td>较少用</td>
+</tr>
+<tr>
+<td>平顶窗</td>
+<td>最宽</td>
+<td>极低</td>
+<td><strong>测幅值</strong>，不测频率</td>
+</tr>
+</tbody>
+</table>
+<p>主瓣越窄频率分辨越好，旁瓣越低幅值越准。二者不可兼得。</p>
+<h2>切换 FFT / CZT</h2>
+<p><kbd>绘图</kbd> › <kbd>切换频谱方法 (FFT/CZT)</kbd>。</p>
+<p>FFT 给出等间隔的频率点；CZT（线性调频 z 变换）可以在<strong>指定频段内加密采样</strong>。
+低频段频率成分密集时（例如月球简正模、长周期面波），用 CZT 能在同样点数下把
+0.001–0.01 Hz 这一段画得清楚得多，而不必把整条记录补零到几十万点。</p>
+<h2>导出与传递</h2>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>绘图 › 导出当前频谱到文件</td>
+<td>存成数据文件，可再导入 Excel/Python</td>
+</tr>
+<tr>
+<td>绘图 › 发送频谱到简正模工作台</td>
+<td>把当前谱作为观测谱送进简正模反演</td>
+</tr>
+<tr>
+<td>绘图 › 自定义采样绘图</td>
+<td>指定采样点后绘图</td>
+</tr>
+</tbody>
+</table>
+<h2>常见问题</h2>
+<p><strong>频谱是一堆毛刺，看不出峰？</strong>
+记录太短或没加窗。6000 点在 6.625 Hz 下只有 15 分钟，低频端分辨率有限。
+换汉宁窗能显著减少泄漏造成的毛刺。</p>
+<p><strong>改了窗函数，峰的位置变了？</strong>
+窗函数会改变峰的<strong>宽度和高度</strong>，不应改变峰的位置。位置变了说明两次用的
+FFT 点数或去趋势方式不同，检查「绘制频谱设置」。</p>
+<p><strong>为什么纵轴数值这么小？</strong>
+幅值谱没有归一化，数值取决于记录长度和单位。要比绝对值，先做去仪器响应
+换成物理单位（见「去除仪器响应」一章）。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="03-overview-panel.html">← 数据全览</a><span><a href="06-process.html">预处理 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

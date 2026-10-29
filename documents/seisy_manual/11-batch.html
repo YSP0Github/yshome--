@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>批处理 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html" class="active">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>批处理</h1>
+<figure><a href="assets/img/batch-workflow.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/batch-workflow.png" alt="批处理工作流" loading="lazy"></a><figcaption><strong>批处理工作流</strong><span>从上到下三段：指定输入输出、搭流水线、运行。右侧「工作流水线」的顺序就是执行顺序。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>批处理工作流</kbd>。</p>
+<p>单个事件用菜单点几下就够了；几十上百个文件重复点，就需要批处理。它的本质是
+<strong>把一串处理步骤保存成工作流，然后对文件夹里每个文件依次执行</strong>。</p>
+<h2>三步走</h2>
+<h3>1. 指定输入输出</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入文件夹</td>
+<td>待处理文件的目录，可以拖拽进来</td>
+</tr>
+<tr>
+<td>输出格式</td>
+<td>默认 MSEED</td>
+</tr>
+<tr>
+<td>输出文件夹</td>
+<td>留空则写到 <code>&lt;输入目录&gt;/SeisY_output</code></td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>输出目录默认在输入目录下面</strong>
+如果不改输出文件夹，结果会写进输入目录的子目录里。下次再扫描输入目录时
+容易把上一次的产物也当成输入，跑出「处理后再次处理」的结果。
+把输出指到一个独立目录可以避免这个问题。
+</div>
+<h3>2. 搭流水线</h3>
+<p>左边「可用步骤」按类别分组，选中后点 <kbd>添加 &gt;&gt;</kbd> 移到右边
+「工作流水线」。右边就是执行顺序，从上到下。</p>
+<p>当前可用的预处理步骤：</p>
+<ul>
+<li>阿波罗数据缺失值插值</li>
+<li>De-mean（去均值）</li>
+<li>去趋势（线性）</li>
+<li>去趋势（多项式）</li>
+<li>去趋势（样条）</li>
+<li>Normalization（归一化）</li>
+<li>标准化（Z-score）</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>添加 &gt;&gt;</td>
+<td>把左侧选中步骤加入流水线</td>
+</tr>
+<tr>
+<td>移除</td>
+<td>从流水线删掉选中步骤</td>
+</tr>
+<tr>
+<td>上移 / 下移</td>
+<td>调整执行顺序</td>
+</tr>
+<tr>
+<td>编辑参数</td>
+<td>改选中步骤的参数（如多项式阶数）</td>
+</tr>
+</tbody>
+</table>
+<div class="tip"><strong>顺序和单条处理时一样</strong>
+去趋势要在滤波之前，滤波要在去响应之前。流水线里顺序反了，结果和手工做
+反顺序完全一样地错——批处理不会替你纠正。
+</div>
+<h3>3. 保存并运行</h3>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>保存工作流</td>
+<td>把当前流水线存成文件，下次直接载入</td>
+</tr>
+<tr>
+<td>加载工作流</td>
+<td>读回已保存的流水线</td>
+</tr>
+<tr>
+<td>运行</td>
+<td>开始批量处理</td>
+</tr>
+</tbody>
+</table>
+<p>进度条显示总体进度，下方日志区逐文件输出结果。状态行从「就绪」变为运行中，
+出错的文件会单独标出来，不会中断整个批次。</p>
+<h2>什么时候不该用批处理</h2>
+<ul>
+<li><strong>需要逐条看结果的</strong>：批处理不给你逐条确认的机会。异常修复、震相拾取
+这类需要人判断的步骤不要放进流水线。</li>
+<li><strong>参数还没定的</strong>：先用单条数据把参数试好，再固化成工作流。批处理里改参数
+要停下来重新跑。</li>
+<li><strong>文件采样率不一致的</strong>：同一条流水线上的滤波截止频率是按固定采样率设的，
+混着 6.625 Hz 和 100 Hz 的数据一起跑，结果不可用。</li>
+</ul>
+<h2>常见问题</h2>
+<p><strong>跑完输出目录是空的？</strong>
+检查输出格式和输入文件夹是否真的匹配到了文件。日志区第一行会写扫描到多少个文件。</p>
+<p><strong>某个文件失败，其余继续吗？</strong>
+继续。失败的文件在日志里单独标出，批次不会中断。</p>
+<p><strong>工作流文件能在别的机器上用吗？</strong>
+可以，它是纯参数文件。但步骤依赖的参数（如多项式阶数）在两边版本不同时
+可能有差异，换机器后先跑一个文件验证。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="10-settings.html">← 设置与偏好</a><span><a href="13-locate.html">震源定位 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

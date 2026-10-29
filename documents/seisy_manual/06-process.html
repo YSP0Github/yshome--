@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预处理 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html" class="active">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>预处理</h1>
+<p>预处理的作用是把「原始计数」变成「可分析的波形」。顺序很重要，做反了结果会失真，
+而且往往看起来「差不多」，不容易发现。</p>
+<h2>推荐顺序</h2>
+<div class="tip"><strong>标准流程</strong>
+<ol>
+<ul>
+<li><strong>去脉冲</strong>（有尖峰时）—— <kbd>数据</kbd> › <kbd>去脉冲并绘图</kbd></li>
+<li><strong>去趋势</strong> —— 去掉直流偏置和线性漂移</li>
+<li><strong>去均值</strong> —— 去趋势后仍有偏置时补做</li>
+<li><strong>滤波</strong> —— 带通 / 低通 / 高通</li>
+<li><strong>去仪器响应</strong> —— 把计数换成物理单位（详见下一章）</li>
+</ul>
+</ol>
+</div>
+<p>先滤波再去趋势是常见的错误做法：滤波器的瞬态响应会被去趋势当成漂移的一部分再扣掉一次，
+低频段幅度会被系统性压低。</p>
+<h2>去趋势</h2>
+<figure><a href="assets/img/menu-detrend.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/menu-detrend.png" alt="「数据 › 预处理 › 去趋势」子菜单" loading="lazy"></a><figcaption><strong>「数据 › 预处理 › 去趋势」子菜单</strong><span>带「绘图」的两项会先画对比图再让你确认，不确定阶数时先用它们。</span></figcaption></figure>
+<p>菜单：<kbd>数据</kbd> › <kbd>预处理</kbd> › <kbd>去趋势</kbd>。</p>
+<table>
+<thead>
+<tr>
+<th>菜单项</th>
+<th>做法</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>去趋势</td>
+<td>默认方式，去掉线性趋势</td>
+<td>大多数情况</td>
+</tr>
+<tr>
+<td>多项式去趋势</td>
+<td>拟合 n 阶多项式后减去</td>
+<td>存在明显弯曲漂移（如温度漂移）</td>
+</tr>
+<tr>
+<td>多项式去趋势绘图</td>
+<td>同上，但会先画对比图再确认</td>
+<td>不确定阶数时先用它试</td>
+</tr>
+<tr>
+<td>样条去趋势</td>
+<td>样条拟合基线后减去</td>
+<td>漂移形状不规则</td>
+</tr>
+<tr>
+<td>样条去趋势绘图</td>
+<td>同上，带对比图</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>自定义去趋势</td>
+<td>手工指定参数</td>
+<td>前几种都不理想时</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>这是立即执行的命令</strong>
+去趋势没有参数对话框，点了就作用于**当前选中事件**并立刻重绘。结果不满意用
+<kbd>编辑</kbd> 里的撤销回到上一步——每一步处理都会进撤销栈。
+</div>
+<h2>滤波</h2>
+<figure><a href="assets/img/menu-filter.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/menu-filter.png" alt="「数据 › 滤波」子菜单" loading="lazy"></a><figcaption><strong>「数据 › 滤波」子菜单</strong><span>滤波是立即执行的命令，点了就作用于当前选中事件，没有参数对话框。</span></figcaption></figure>
+<p>菜单：<kbd>数据</kbd> › <kbd>滤波</kbd>。</p>
+<table>
+<thead>
+<tr>
+<th>菜单项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>滤波</td>
+<td>带通滤波，参数在「选项」面板里设默认值</td>
+</tr>
+<tr>
+<td>中值滤波</td>
+<td>抑制孤立尖峰，对脉冲噪声有效</td>
+</tr>
+<tr>
+<td>修改中值滤波窗口大小</td>
+<td>调整中值滤波的窗口（默认 3 点）</td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>滤波上限不能超过奈奎斯特频率</strong>
+奈奎斯特频率 = 采样率 / 2。月震数据采样率 6.625 Hz，上限就是 3.3125 Hz。
+超过这个值的截止频率没有物理意义，只会得到空结果或报错。具体数值可以在
+「数据全览」的诊断信息里直接读到。
+</div>
+<h3>怎么选通带</h3>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>压制长周期漂移</td>
+<td>高通 0.05–0.2 Hz</td>
+</tr>
+<tr>
+<td>压制高频噪声</td>
+<td>低通 1–2 Hz（月震数据）</td>
+</tr>
+<tr>
+<td>突出月震体波</td>
+<td>带通 0.5–2 Hz</td>
+</tr>
+<tr>
+<td>分析背景噪声</td>
+<td>带通 0.1–1 Hz，配合 PSD</td>
+</tr>
+</tbody>
+</table>
+<p>参数没有通用最优值，判断依据是<strong>处理前后的频谱对比</strong>，而不是波形看起来是否「干净」。</p>
+<h2>加窗</h2>
+<p><kbd>数据</kbd> › <kbd>加窗</kbd>，提供汉明、汉宁、布莱克曼、矩形、巴特利特、平顶六种窗。</p>
+<p>加窗只影响<strong>频谱分析的边缘效应</strong>，不改变时域波形。做 FFT 之前加窗能显著减少频谱泄漏；
+如果只是看波形，不需要加窗。</p>
+<p><kbd>数据</kbd> › <kbd>加窗</kbd> › <kbd>绘制窗函数</kbd> 可以先把窗函数画出来对比形状，
+再决定用哪一个。</p>
+<h2>其他预处理项</h2>
+<table>
+<thead>
+<tr>
+<th>菜单项</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>去均值</td>
+<td>减去均值，消除直流偏置</td>
+</tr>
+<tr>
+<td>单位转换</td>
+<td>计数与物理单位之间换算</td>
+</tr>
+<tr>
+<td>归一化 / 自定义归一化</td>
+<td>按最大值或指定范围归一</td>
+</tr>
+<tr>
+<td>标准化</td>
+<td>减均值除标准差</td>
+</tr>
+<tr>
+<td>平滑</td>
+<td>移动平均类平滑</td>
+</tr>
+<tr>
+<td>共轭 / 反转</td>
+<td>复数共轭、幅值取反</td>
+</tr>
+<tr>
+<td>输出运行模式</td>
+<td>选择处理结果的输出方式</td>
+</tr>
+<tr>
+<td>ATT 时间矫正</td>
+<td>阿波罗数据的时间标记矫正</td>
+</tr>
+</tbody>
+</table>
+<h2>常见问题</h2>
+<p><strong>处理完波形变成一条直线？</strong>
+多半是滤波通带设错（上下限反了，或上限超过奈奎斯特频率）。先撤销，再看数据全览里的采样率。</p>
+<p><strong>提示「没有数据」？</strong>
+处理命令作用于<strong>事件列表里选中的事件</strong>。没选中时它会尝试作用于当前工作流，而那个是空的。</p>
+<p><strong>处理后原始数据被改了吗？</strong>
+内存里的 Stream 会被改，磁盘上的原始文件不会。想留底用 <kbd>文件</kbd> › <kbd>保存数据</kbd>
+另存一份。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="05-spectrum.html">← 频谱分析</a><span><a href="07-response.html">去仪器响应 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

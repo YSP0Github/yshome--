@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>异常修复与震相拾取 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html" class="active">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>异常修复与震相拾取</h1>
+<figure><a href="assets/img/anomaly-repair.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/anomaly-repair.png" alt="异常修复工具" loading="lazy"></a><figcaption><strong>异常修复工具</strong><span>最上方是原始波形，异常区间已被高亮标出；左侧「异常类型」是方法卡片列表，选中一个；右侧「去脉冲预览」区按「预览」后显示修复前后对比；底部是操作按钮。未选方法时预览区是空的。</span></figcaption></figure>
+<p>入口：<kbd>数据</kbd> › <kbd>去脉冲并绘图</kbd>，或工具栏的异常修复按钮。</p>
+<p>这个工具处理两类问题：<strong>脉冲型异常</strong>（个别采样点跳变）和<strong>缺样</strong>（记录里
+有成段的无效值）。它和普通的「滤波」不是一回事——滤波会改变整条波形的频谱，
+修复只替换掉那几个坏点。</p>
+<h2>十一种方法</h2>
+<p>左侧卡片是可选方法，点选后按 <kbd>预览</kbd> 看前后对比。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>原理</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>阈值截断</td>
+<td>超过阈值直接截到阈值</td>
+<td>幅度失控的孤立尖峰，最直接</td>
+</tr>
+<tr>
+<td>MAD 清理</td>
+<td>用中位数绝对偏差判异常</td>
+<td>通用首选，对少量尖峰稳</td>
+</tr>
+<tr>
+<td>移动平均清理</td>
+<td>与移动平均线偏差过大则替换</td>
+<td>尖峰成簇出现</td>
+</tr>
+<tr>
+<td>月震保护型局部尖峰修复</td>
+<td>局部判异常但保留真实震相</td>
+<td><strong>月震数据</strong>，避免削掉初动</td>
+</tr>
+<tr>
+<td>z 分数清理</td>
+<td>按标准差倍数判异常</td>
+<td>近似正态的噪声背景</td>
+</tr>
+<tr>
+<td>阿波罗数据缺失值插值</td>
+<td>对缺样段插值</td>
+<td>阿波罗数据里的 <code>-1</code> 哨兵段</td>
+</tr>
+<tr>
+<td>双侧参考频谱修复</td>
+<td>用两侧数据的频谱一致性判异常</td>
+<td>周期性干扰</td>
+</tr>
+<tr>
+<td>分层参考频谱修复</td>
+<td>同上，分频段处理</td>
+<td>干扰集中在某个频段</td>
+</tr>
+<tr>
+<td>孤立森林</td>
+<td>集成学习判离群</td>
+<td>复杂异常，需调参</td>
+</tr>
+<tr>
+<td>局部离群因子（LOF）</td>
+<td>按局部密度判离群</td>
+<td>异常点稀疏分布</td>
+</tr>
+<tr>
+<td>神经网络修复</td>
+<td>学习式修复</td>
+<td><strong>需要 PyTorch</strong>，环境不具备时不可用</td>
+</tr>
+</tbody>
+</table>
+<div class="tip"><strong>先试 MAD，再试月震保护型</strong>
+MAD 是无参数假设的稳健方法，绝大多数尖峰它能处理。只有在月震记录上削掉了
+真实初动时，才换「月震保护型局部尖峰修复」。
+</div>
+<h2>分段修复与整道修复</h2>
+<p>同一个工具在两处出现，语义不同：</p>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>作用范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>数据</kbd> › <kbd>去脉冲并绘图</kbd></td>
+<td><strong>整条 trace</strong></td>
+</tr>
+<tr>
+<td>画布上圈选后从右键进入</td>
+<td>只有圈选的时段</td>
+</tr>
+</tbody>
+</table>
+<p>从工具内部发起时，部分方法<strong>必须先圈选区间</strong>才能执行——它们的判据依赖
+「参考段」，没有圈选就没有参考段。</p>
+<h2>操作流程</h2>
+<ol>
+<li>在事件列表里选中事件</li>
+<li>打开异常修复工具，左侧选一个方法</li>
+<li>点 <kbd>预览</kbd>，右侧显示修复前后的对比图</li>
+<li>不满意就换方法重来；满意后点 <kbd>保存当前修复</kbd></li>
+<li>修错了用 <kbd>撤销上次修复</kbd> 逐步回退</li>
+</ol>
+<p>底部按钮：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>预览</td>
+<td>计算并显示前后对比，不改数据</td>
+</tr>
+<tr>
+<td>导出报告</td>
+<td>生成修复报告（图 + 参数 + 统计）</td>
+</tr>
+<tr>
+<td>截图</td>
+<td>保存当前预览图</td>
+</tr>
+<tr>
+<td>保存当前修复</td>
+<td>把结果写回工作流</td>
+</tr>
+<tr>
+<td>撤销上次修复</td>
+<td>退回上一次保存之前</td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>修复历史是栈，不是树</strong>
+「撤销上次修复」只能一步一步往回退，不能跳回任意一步。做过多次修复后想回到
+最初状态，最稳的办法是撤销到底，或者重新导入数据。
+</div>
+<h2>STA/LTA 拾取</h2>
+<figure><a href="assets/img/sta-lta.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/sta-lta.png" alt="STA/LTA 拾取" loading="lazy"></a><figcaption><strong>STA/LTA 拾取</strong><span>两个窗口长度决定灵敏度：STA 覆盖一个周期左右，LTA 覆盖背景噪声。</span></figcaption></figure>
+<p>入口在工具栏的拾取按钮。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>STA 窗口</td>
+<td>1.0 s</td>
+<td>短时窗，要覆盖一个周期左右</td>
+</tr>
+<tr>
+<td>LTA 窗口</td>
+<td>10.0 s</td>
+<td>长时窗，要覆盖背景噪声</td>
+</tr>
+</tbody>
+</table>
+<p>两个窗口的比值超过触发阈值就判为事件到达。STA 太短会把噪声当成信号，
+LTA 太短会让比值抖动。</p>
+<p>面板上 <kbd>选择文件</kbd> 读一个波形文件，<kbd>使用当前加载数据</kbd> 直接用
+工程里选中的事件，<kbd>计算并绘图</kbd> 出结果。</p>
+<div class="note"><strong>自动拾取只是起点</strong>
+STA/LTA 给的是「大致位置」，用于批量筛选。要发震时刻精度到 0.1 s 以内，
+需要人工核对初动，或者用震源定位器里的多台拾取（见「震源定位」一章）。
+</div>
+<h2>常见问题</h2>
+<p><strong>预览图是空白？</strong>
+没有给 <code>base_stream</code>。从菜单入口打开时工具会自动拿当前选中事件；
+如果事件列表里没选中，就没有波形可预览。</p>
+<p><strong>插值后波形出现台阶？</strong>
+缺样段太长。线性插值在长缺口上会退化成直线，改用样条类方法，
+或者干脆把那一段裁掉。</p>
+<p><strong>神经网络修复显示不可用？</strong>
+需要 PyTorch 环境。用 <code>seisy</code> 环境启动，而不是基础环境。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="08-ai.html">← AI 助手</a><span><a href="10-settings.html">设置与偏好 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

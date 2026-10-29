@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>目录 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>SeisY 用户手册</h1><p>面向 SeisY 使用者的操作手册。按左侧目录浏览，或按 <kbd>/</kbd> 全局搜索功能名、菜单路径、参数名。</p><ul class="toc"><li><a href="01-overview.html">总览与主界面</a><span>窗口分区、三块画布、事件列表与状态栏，以及第一次打开软件该做什么。</span></li><li><a href="02-data.html">数据获取</a><span>从 FDSN 下载波形、打开本地文件，以及用数据查看器核对元数据和采样点。</span></li><li><a href="03-overview-panel.html">数据全览</a><span>一次看清样本数、采样率、缺失比例与统计分布，处理前必做的一步。</span></li><li><a href="05-spectrum.html">频谱分析</a><span>五个入口、四个 FFT 参数、七种谱——以及为什么频率分辨率是 fs/N。</span></li><li><a href="06-process.html">预处理</a><span>去趋势、滤波、加窗、去均值——顺序、参数与常见坑。</span></li><li><a href="07-response.html">去仪器响应</a><span>把「计数」换成物理单位，以及为什么预滤波拐点比输出单位更重要。</span></li><li><a href="08-ai.html">AI 助手</a><span>面板结构、会话管理、模型配置，以及它到底能替你做什么。</span></li><li><a href="09-repair.html">异常修复与震相拾取</a><span>十一种去脉冲方法怎么选，分段修复与整道修复的区别，以及 STA/LTA 自动拾取。</span></li><li><a href="10-settings.html">设置与偏好</a><span>选项面板六个分类的作用，以及哪些设置会被记住、哪些不会。</span></li><li><a href="11-batch.html">批处理</a><span>把预处理流程存成工作流，一次跑完整个文件夹。</span></li><li><a href="13-locate.html">震源定位</a><span>台站元数据、波形拾取、走时模型与结果判读——从台站坐标到震源坐标。</span></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a><span>质量浏览器的十四列指标怎么读；月震工作流目前仍在开发中，暂不可用于正式处理。</span></li><li><a href="15-forward.html">正演与射线追踪</a><span>给定地球模型算走时与射线路径，以及四个正演入口的分工。</span></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a><span>把震源和台站放回月球上看，以及地质图层的显示控制。</span></li><li><a href="17-exploration.html">勘探地震</a><span>炮集浏览与十五阶段处理工作流的用法；工作流仍在完善中，结果需自行核验。</span></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a><span>全部 117 个菜单项的完整路径，以及常用快捷键与报错对照。</span></li></ul>
+<footer><span>SeisY 用户手册</span><span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

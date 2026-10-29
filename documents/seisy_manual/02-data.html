@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据获取 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html" class="active">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>数据获取</h1>
+<p>SeisY 的波形有三个来源：在线下载、本地文件、以及阿波罗数据系统（见专门的章节）。
+无论走哪条路，最终结果都是「事件列表里多一条记录」，之后的处理流程完全一致。</p>
+<h2>下载地震数据</h2>
+<figure><a href="assets/img/data-download.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/data-download.png" alt="下载地震数据面板" loading="lazy"></a><figcaption><strong>下载地震数据面板</strong><span>天体、台网、台站、通道、时间范围是必填的几组，位置码留空即用默认值。默认值取自设置面板，改这里不会改默认值。下方的月球台站地图可以直接点选台站，选中项在右侧列表里高亮。</span></figcaption></figure>
+<p>打开方式：<kbd>数据</kbd> › <kbd>下载地震数据</kbd>。</p>
+<h3>参数说明</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>天体</td>
+<td>决定默认台网和采样率。选「月球」时默认台网 <code>XA</code>、通道 <code>MHZ</code>、采样率 6.625 Hz</td>
+</tr>
+<tr>
+<td>台网 / 台站 / 通道 / 位置码</td>
+<td>标准 SEED 四元组。台站可以留空表示该台网全部台站</td>
+</tr>
+<tr>
+<td>地震开始时间 / 结束时间</td>
+<td>请求的时间窗。跨天请求建议分次下载，单次过大会被服务端截断</td>
+</tr>
+</tbody>
+</table>
+<h3>示例按钮</h3>
+<p>面板中部的六个示例按钮会一次性填好整套参数，是<strong>最不容易出错</strong>的起点：</p>
+<ul>
+<li><code>IU.ANMO 宽频带</code> / <code>IU.TARA 全球台</code> —— 地球数据</li>
+<li><code>XB.ELYSE 火星 InSight</code> —— 火震数据</li>
+<li><code>XA.S12 阿波罗 12 号月震</code> —— 月球数据</li>
+<li><code>G.CAN 地震台</code> —— 单台站示例</li>
+<li><code>跨网络搜索 ANMO</code> —— 只按台站名搜索，不限台网</li>
+</ul>
+<div class="tip"><strong>台站地图</strong>
+面板底部的「台站地图」可以展开，用地图方式选台站，适合不知道该用哪个台站代码的时候。
+</div>
+<h3>操作步骤</h3>
+<ol>
+<li>点一个示例按钮，或手工填四元组与时间窗；</li>
+<li>点 <kbd>开始下载</kbd>。下载在后台线程进行，可以继续操作界面；</li>
+<li>下载完成后，事件列表自动多出一条记录，状态栏「事件列表数量」加一；</li>
+<li><strong>在事件列表里单击这条记录</strong>，波形才会画到画布上。</li>
+</ol>
+<div class="warn"><strong>下载失败先看运行信息</strong>
+网络问题、参数不被服务端接受、时间窗内没有数据，这三种情况的报错文案不同。
+右上角「运行信息」里有完整原因，比弹窗里那一行字详细得多。
+</div>
+<h2>打开本地文件</h2>
+<p><kbd>文件</kbd> › <kbd>导入文件</kbd>，选择 <code>.mseed</code> / <code>.sac</code> / <code>.seed</code> 等格式。
+也可以直接在左侧文件浏览器里<strong>双击</strong>文件。</p>
+<p>导入时 SeisY 会按文件内容自动识别台网与通道，不需要手工指定。</p>
+<h2>数据查看器</h2>
+<figure><a href="assets/img/data-viewer.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/data-viewer.png" alt="数据查看器" loading="lazy"></a><figcaption><strong>数据查看器</strong><span>左侧列出事件，右侧是波形与道头信息。它只读不改，适合在动手处理之前先核对数据。</span></figcaption></figure>
+<p>打开方式：<kbd>数据</kbd> › <kbd>数据查看器</kbd>（需先在事件列表里选中事件）。</p>
+<p>这个面板用来<strong>核对原始采样值</strong>，不画图，只列数：</p>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>事件</td>
+<td>左侧列出已载入的事件，点一下切换</td>
+</tr>
+<tr>
+<td>元数据</td>
+<td>事件 ID、道数、起止时间、持续时间</td>
+</tr>
+<tr>
+<td>道 / 步长</td>
+<td>选择具体某一道；步长大于 1 时按间隔抽样显示，避免大文件卡顿</td>
+</tr>
+<tr>
+<td>表格</td>
+<td>时间（UTC）与振幅两列。<strong>振幅是原始值</strong>，未做任何处理</td>
+</tr>
+<tr>
+<td>导出 CSV</td>
+<td>把当前道按当前步长导出，便于在 Excel / Python 里复核</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>什么时候该用它</strong>
+怀疑「数据本身有问题」而不是「处理有问题」时。比如波形看着像一条直线，
+用数据查看器一看采样值全是同一个数，就能确定是数据源的问题，不必再去调滤波参数。
+</div>
+<h2>相关命令</h2>
+<p>偏好命令行的用户可以在 AI 助手或 CLI 里直接执行：</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download</code></td>
+<td>按当前参数下载波形</td>
+</tr>
+<tr>
+<td><code>load &lt;路径&gt;</code></td>
+<td>导入本地文件</td>
+</tr>
+<tr>
+<td><code>events</code></td>
+<td>列出事件列表</td>
+</tr>
+<tr>
+<td><code>use &lt;序号&gt;</code></td>
+<td>切换当前事件</td>
+</tr>
+</tbody>
+</table>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="01-overview.html">← 总览与主界面</a><span><a href="03-overview-panel.html">数据全览 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

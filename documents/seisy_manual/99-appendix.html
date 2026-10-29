@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>附录：菜单索引与快捷键 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html" class="active">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>附录</h1>
+<h2>完整菜单索引</h2>
+<p>下表由程序在运行时读取菜单栏自动生成，与软件里看到的完全一致（共 117 项）。
+按 <code>Ctrl+F</code> 或手册左上角的搜索框可以按名称查找。</p>
+<div class="note"><strong>为什么要有这张表</strong>
+SeisY 的功能分布在 9 个顶级菜单、47 个数据菜单项里。很多功能不在工具栏上，
+「知道有这个东西但找不到在哪」是新手最常见的卡点。这张表就是用来查路径的。
+</div>
+<h3>文件（12 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>导入文件</kbd></td>
+</tr>
+<tr>
+<td><kbd>用编辑器打开文件</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开云记编辑器</kbd></td>
+</tr>
+<tr>
+<td><kbd>配置文件</kbd> › <kbd>设置工作目录</kbd></td>
+</tr>
+<tr>
+<td><kbd>配置文件</kbd> › <kbd>加载配置</kbd></td>
+</tr>
+<tr>
+<td><kbd>配置文件</kbd> › <kbd>更新配置</kbd></td>
+</tr>
+<tr>
+<td><kbd>保存数据</kbd></td>
+</tr>
+<tr>
+<td><kbd>保存项目</kbd></td>
+</tr>
+<tr>
+<td><kbd>保存项目为</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开项目</kbd></td>
+</tr>
+<tr>
+<td><kbd>导出</kbd> › <kbd>导出事件列表</kbd></td>
+</tr>
+<tr>
+<td><kbd>退出</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>编辑（6 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>撤销</kbd></td>
+</tr>
+<tr>
+<td><kbd>重做</kbd></td>
+</tr>
+<tr>
+<td><kbd>查找</kbd></td>
+</tr>
+<tr>
+<td><kbd>视图</kbd></td>
+</tr>
+<tr>
+<td><kbd>全屏</kbd></td>
+</tr>
+<tr>
+<td><kbd>日志</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>数据（47 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>下载地震数据</kbd></td>
+</tr>
+<tr>
+<td><kbd>数据查看器</kbd></td>
+</tr>
+<tr>
+<td><kbd>勘探地震</kbd> › <kbd>正演模拟</kbd></td>
+</tr>
+<tr>
+<td><kbd>勘探地震</kbd> › <kbd>炮集浏览</kbd></td>
+</tr>
+<tr>
+<td><kbd>勘探地震</kbd> › <kbd>处理工作流</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去均值</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去趋势</kbd> › <kbd>去趋势</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去趋势</kbd> › <kbd>多项式去趋势</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去趋势</kbd> › <kbd>多项式去趋势绘图</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去趋势</kbd> › <kbd>样条去趋势</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去趋势</kbd> › <kbd>样条去趋势绘图</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去除仪器响应</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>输出运行模式</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>单位转换</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>ATT时间矫正</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>自定义去趋势</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>归一化</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>自定义归一化</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>标准化</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>共轭</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>反转</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>平滑</kbd></td>
+</tr>
+<tr>
+<td><kbd>预处理</kbd> › <kbd>去噪</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>线性</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>最近邻</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>多项式</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>Spline</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>重心</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>克罗格</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>分段多项式</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>分段三次Hermite插值</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>Akima样条</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗数据缺失值插值</kbd> › <kbd>三次样条</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>汉明窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>汉宁窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>布莱克曼窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>矩形窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>巴特利特窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>平顶窗</kbd></td>
+</tr>
+<tr>
+<td><kbd>加窗</kbd> › <kbd>绘制窗函数</kbd></td>
+</tr>
+<tr>
+<td><kbd>滤波</kbd> › <kbd>滤波</kbd></td>
+</tr>
+<tr>
+<td><kbd>滤波</kbd> › <kbd>中值滤波</kbd></td>
+</tr>
+<tr>
+<td><kbd>滤波</kbd> › <kbd>修改中值滤波窗口大小</kbd></td>
+</tr>
+<tr>
+<td><kbd>去脉冲并绘图</kbd></td>
+</tr>
+<tr>
+<td><kbd>GDCST 滤波</kbd></td>
+</tr>
+<tr>
+<td><kbd>地震数据相关性分析</kbd></td>
+</tr>
+<tr>
+<td><kbd>地震数据稀疏化</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>绘图（10 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>自定义采样绘图</kbd></td>
+</tr>
+<tr>
+<td><kbd>勘探地震模式（单画布）</kbd></td>
+</tr>
+<tr>
+<td><kbd>旋转炮集方向（道集横/纵）</kbd></td>
+</tr>
+<tr>
+<td><kbd>绘制振幅谱</kbd></td>
+</tr>
+<tr>
+<td><kbd>绘制多通道振幅谱</kbd></td>
+</tr>
+<tr>
+<td><kbd>绘制时域与振幅谱</kbd></td>
+</tr>
+<tr>
+<td><kbd>导出当前频谱到文件</kbd></td>
+</tr>
+<tr>
+<td><kbd>发送频谱到简正模工作台</kbd></td>
+</tr>
+<tr>
+<td><kbd>频谱分析查看器</kbd></td>
+</tr>
+<tr>
+<td><kbd>切换频谱方法 (FFT/CZT)</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>工具（18 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>AI 助手</kbd></td>
+</tr>
+<tr>
+<td><kbd>SeisRT 在线工具</kbd></td>
+</tr>
+<tr>
+<td><kbd>震源定位器</kbd></td>
+</tr>
+<tr>
+<td><kbd>行星台站地图</kbd></td>
+</tr>
+<tr>
+<td><kbd>3D月球地质图</kbd></td>
+</tr>
+<tr>
+<td><kbd>地质图图例</kbd></td>
+</tr>
+<tr>
+<td><kbd>射线追踪工作台</kbd></td>
+</tr>
+<tr>
+<td><kbd>月震工作流</kbd></td>
+</tr>
+<tr>
+<td><kbd>仪器响应管理器</kbd></td>
+</tr>
+<tr>
+<td><kbd>阿波罗系统</kbd></td>
+</tr>
+<tr>
+<td><kbd>Apollo 数据质量浏览器</kbd></td>
+</tr>
+<tr>
+<td><kbd>月震扫描器</kbd></td>
+</tr>
+<tr>
+<td><kbd>修复库对比查看器</kbd></td>
+</tr>
+<tr>
+<td><kbd>ULF-VLSNR-SE 重构器</kbd></td>
+</tr>
+<tr>
+<td><kbd>噪声提取器</kbd></td>
+</tr>
+<tr>
+<td><kbd>波形道合并工具</kbd></td>
+</tr>
+<tr>
+<td><kbd>滑动相关分析器</kbd></td>
+</tr>
+<tr>
+<td><kbd>批处理工作流</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>模拟（3 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>射线追踪工作台</kbd></td>
+</tr>
+<tr>
+<td><kbd>简正模工作台</kbd></td>
+</tr>
+<tr>
+<td><kbd>模型设计器</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>设置（11 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>选项</kbd></td>
+</tr>
+<tr>
+<td><kbd>绘制频谱设置</kbd></td>
+</tr>
+<tr>
+<td><kbd>天体地图设置</kbd></td>
+</tr>
+<tr>
+<td><kbd>设置阿波罗数据库路径</kbd></td>
+</tr>
+<tr>
+<td><kbd>主题</kbd> › <kbd>默认模式</kbd></td>
+</tr>
+<tr>
+<td><kbd>主题</kbd> › <kbd>亮色模式</kbd></td>
+</tr>
+<tr>
+<td><kbd>主题</kbd> › <kbd>暗色模式</kbd></td>
+</tr>
+<tr>
+<td><kbd>主题</kbd> › <kbd>自定义模式</kbd></td>
+</tr>
+<tr>
+<td><kbd>语言</kbd> › <kbd>简体中文</kbd></td>
+</tr>
+<tr>
+<td><kbd>语言</kbd> › <kbd>English</kbd></td>
+</tr>
+<tr>
+<td><kbd>显示内存使用情况</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>网络资源（5 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>打开Wilber 3</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开谷歌地图</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开SAGE工具</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开地震台网列表</kbd></td>
+</tr>
+<tr>
+<td><kbd>打开地学网站列表</kbd></td>
+</tr>
+</tbody>
+</table>
+<h3>帮助（5 项）</h3>
+<table>
+<thead>
+<tr>
+<th>菜单路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><kbd>使用指南 / User Guide</kbd></td>
+</tr>
+<tr>
+<td><kbd>去脉冲帮助</kbd></td>
+</tr>
+<tr>
+<td><kbd>插值帮助</kbd></td>
+</tr>
+<tr>
+<td><kbd>检查更新</kbd></td>
+</tr>
+<tr>
+<td><kbd>关于</kbd></td>
+</tr>
+</tbody>
+</table>
+<h2>常用快捷键</h2>
+<table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>在本手册中聚焦搜索框</td>
+</tr>
+<tr>
+<td><code>Ctrl+S</code></td>
+<td>保存当前数据</td>
+</tr>
+<tr>
+<td><code>Ctrl+O</code></td>
+<td>打开文件</td>
+</tr>
+<tr>
+<td><code>Ctrl+Z</code> / <code>Ctrl+Y</code></td>
+<td>撤销 / 重做上一步处理</td>
+</tr>
+<tr>
+<td>画布上的滚轮</td>
+<td>缩放</td>
+</tr>
+<tr>
+<td>画布上拖动</td>
+<td>平移</td>
+</tr>
+<tr>
+<td>画布上框选</td>
+<td>选中区域后绘制该区域的频谱</td>
+</tr>
+</tbody>
+</table>
+<h2>常见报错对照</h2>
+<table>
+<thead>
+<tr>
+<th>提示</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>No data loaded</code></td>
+<td>没有选中事件，或事件里没有波形</td>
+<td>在事件列表里单击事件</td>
+</tr>
+<tr>
+<td><code>No stream is loaded.</code></td>
+<td>当前工作流为空</td>
+<td>先导入或下载数据</td>
+</tr>
+<tr>
+<td><code>Event not found:</code></td>
+<td>事件 ID 不存在（可能已被删除）</td>
+<td>刷新事件列表</td>
+</tr>
+<tr>
+<td><code>Missing output path.</code></td>
+<td>导出时没给目标路径</td>
+<td>在对话框里选择保存位置</td>
+</tr>
+<tr>
+<td><code>Selected items do not contain stream data.</code></td>
+<td>选中的是分组节点而不是事件</td>
+<td>展开分组，选具体事件</td>
+</tr>
+<tr>
+<td>去响应后振幅异常放大</td>
+<td>低频噪声被反卷积放大</td>
+<td>提高预滤波 f1，或提高水位值</td>
+</tr>
+</tbody>
+</table>
+<h2>关于</h2>
+<figure><a href="assets/img/about.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/about.png" alt="关于 SeisY" loading="lazy"></a><figcaption><strong>关于 SeisY</strong></figcaption></figure>
+<p><kbd>帮助</kbd> › <kbd>关于</kbd> 显示版本号、构建信息与第三方组件许可。
+反馈问题时请附上这个版本号——不同版本的界面和参数名会有差异。</p>
+<p><kbd>帮助</kbd> › <kbd>检查更新</kbd> 会读取官方发布页的最新版本号并对比。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="17-exploration.html">← 勘探地震</a><span></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

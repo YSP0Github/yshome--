@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据全览 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html" class="active">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>数据全览</h1>
+<p>数据全览是<strong>处理之前的第一道检查</strong>。它把一条 trace 的质量指标集中在一屏里，
+让你在动手滤波、去响应之前就知道这份数据能不能用。</p>
+<h2>打开方式</h2>
+<p>先<strong>在事件列表里选中事件</strong>，然后 <kbd>数据</kbd> › <kbd>数据全览</kbd>。</p>
+<div class="warn"><strong>必须先选中事件</strong>
+没有选中时，菜单项会弹出一个提示框而不是打开面板——这是设计如此，不是故障。
+</div>
+<h2>界面构成</h2>
+<figure><a href="assets/img/data-overview-1.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/data-overview-1.png" alt="数据全览面板" loading="lazy"></a><figcaption><strong>数据全览面板</strong><span>左侧是主波形，右侧一列是各诊断小图，最右是诊断信息。这张图是默认视图，右侧只展开了一部分小图。</span></figcaption></figure>
+<figure><a href="assets/img/data-overview-2.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/data-overview-2.png" alt="数据全览：全部诊断图平铺" loading="lazy"></a><figcaption><strong>数据全览：全部诊断图平铺</strong><span>切到「全部」后，十二张诊断图会平铺在整块区域：波形、包络、累积、直方图、FFT、PSD、时频、自相关、振幅、过零率、峰度等。判读异常时用这个视图最快。</span></figcaption></figure>
+<div class="warn"><strong>打开后要等几秒</strong>
+面板是先把波形画出来，再在后台依次计算包络、FFT、PSD、时频、自相关这些小图。
+刚打开时右侧是空的或只出来一两张，<strong>等 3–5 秒</strong>才会填满——
+这不是卡死，也不要点「重置视图」打断它。点数越多、PSD 段长越大，等得越久。
+</div>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>位置</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>顶部工具条</td>
+<td>第一行</td>
+<td>切换 Trace、点数、数据模式（原始/其他）、视图模式（等分模式 / 全部）、帮助、设置、重置视图、导出、关闭</td>
+</tr>
+<tr>
+<td>波形参数</td>
+<td>第二行</td>
+<td>波形显示点数、分箱数、窗函数、PSD 段长、时频、重叠长度、dB 开关</td>
+</tr>
+<tr>
+<td>波形图</td>
+<td>左侧主区</td>
+<td>时域波形。<strong>红色段表示非有限值</strong>（NaN / 缺失 / <code>-1</code> 哨兵）</td>
+</tr>
+<tr>
+<td>辅助图</td>
+<td>右侧</td>
+<td>默认竖排显示波形、包络、累积、直方图、FFT、PSD、时频、自相关；切「全部」后平铺十二张</td>
+</tr>
+<tr>
+<td>诊断信息</td>
+<td>最右</td>
+<td>关键指标与统计信息，见下</td>
+</tr>
+</tbody>
+</table>
+<h3>关键指标</h3>
+<p>这一栏是判断数据可用性的核心：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义</th>
+<th>异常时怎么办</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>样本数</td>
+<td>trace 的总采样点数</td>
+<td>——</td>
+</tr>
+<tr>
+<td><strong>有限样本数</strong></td>
+<td>排除缺失后的有效点数</td>
+<td>明显小于样本数说明有缺口</td>
+</tr>
+<tr>
+<td>持续时间</td>
+<td>时间窗长度（秒）</td>
+<td>与请求的时间窗核对</td>
+</tr>
+<tr>
+<td>采样率</td>
+<td>每秒采样点数，月震数据为 6.625 Hz</td>
+<td>与台网标称值不符要查数据源</td>
+</tr>
+<tr>
+<td>奈奎斯特频率</td>
+<td>采样率的一半，可分析的最高频率</td>
+<td>滤波上限不能超过它</td>
+</tr>
+<tr>
+<td>均方根 / 标准差</td>
+<td>能量水平</td>
+<td>用于判断是否饱和或过小</td>
+</tr>
+<tr>
+<td><strong>缺失</strong></td>
+<td>缺失点数与占比，如 <code>300 (5.00%)</code></td>
+<td>占比高时先做缺样插值</td>
+</tr>
+</tbody>
+</table>
+<h3>统计信息</h3>
+<p>最小值、最大值、均值、中位数、中位绝对偏差、信噪比近似值、偏度、峰度，
+以及 1% / 5% / 25% / 75% / 95% / 99% 分位数、过零次数、过零率、峰值占比。</p>
+<div class="tip"><strong>怎么用这一栏</strong>
+<ul>
+<li><strong>偏度 / 峰度</strong>：远大于 0 说明分布有长尾，通常意味着存在尖峰异常，
+处理前先做去脉冲。</li>
+<li><strong>分位数 vs 最值</strong>：最值远大于 99% 分位数，同样说明有孤立尖峰。</li>
+<li><strong>过零率</strong>：突然变小可能是信号饱和或存在直流偏置。</li>
+</ul>
+</div>
+<h2>图上那条红线</h2>
+<p>波形中被打上红色的区段是<strong>非有限值</strong>——它可能来自：</p>
+<ol>
+<li>ObsPy 裁剪/合并后留下的掩码（真实时间缺口）；</li>
+<li>整型 trace 合并缺口时写入的 <code>dtype</code> 最小值（<code>int32</code> 为 <code>-2147483648</code>）；</li>
+<li>阿波罗数据的 <code>-1</code> 缺失标记（仅 <code>XA</code> 台网）；</li>
+<li>显式的 <code>NaN</code> / <code>inf</code>。</li>
+</ol>
+<p>这四类都会被识别为缺失，后续的缺样插值可以统一处理。地球台网里的 <code>-1</code> 是<strong>正常负样点</strong>，
+不会被误判——判断依据是台网代码。</p>
+<h2>导出与重置</h2>
+<ul>
+<li><kbd>导出</kbd>：把当前视图导出为图片，用于报告或论文插图；</li>
+<li><kbd>重置视图</kbd>：图表被缩放到看不清时，一键回到默认范围；</li>
+<li><kbd>设置</kbd>：调整该面板自己的显示参数，与全局设置互不影响。</li>
+</ul>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="02-data.html">← 数据获取</a><span><a href="05-spectrum.html">频谱分析 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

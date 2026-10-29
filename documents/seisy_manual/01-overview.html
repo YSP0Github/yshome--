@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>总览与主界面 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html" class="active">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>总览与主界面</h1>
+<p>SeisY 是行星地震数据的综合分析平台，主要处理阿波罗月震、火震（InSight）和地球台网数据。
+本章说明主窗口的每个区域负责什么，以及第一次打开软件时的推荐顺序。</p>
+<h2>窗口分区</h2>
+<figure><a href="assets/img/main-layout.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/main-layout.png" alt="SeisY 主界面，空工程状态" loading="lazy"></a><figcaption><strong>SeisY 主界面，空工程状态</strong><span>左侧是工程文件树，中间三块画布分别用于单道、多道与对比绘图，右侧上下是运行信息与事件工作区。工具栏按功能分组，最右一组是 AI 助手与工具窗口入口。</span></figcaption></figure>
+<p>主窗口由五块区域组成：</p>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>位置</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>菜单栏与工具栏</td>
+<td>顶部</td>
+<td>全部功能入口。菜单是<strong>功能最全</strong>的入口，工具栏只放高频操作</td>
+</tr>
+<tr>
+<td>文件浏览器</td>
+<td>左侧</td>
+<td>浏览工作目录，双击文件即导入</td>
+</tr>
+<tr>
+<td>绘图画布</td>
+<td>中间</td>
+<td>三块画布，可分别显示不同事件或不同处理阶段的结果</td>
+</tr>
+<tr>
+<td>运行信息</td>
+<td>右上</td>
+<td>运行日志。<strong>处理出错时先看这里</strong>，它保留了完整堆栈</td>
+</tr>
+<tr>
+<td>事件列表</td>
+<td>右下</td>
+<td>已导入的事件。绝大多数处理命令都作用于<strong>这里选中的事件</strong></td>
+</tr>
+</tbody>
+</table>
+<p>底部状态栏显示当前工作目录、已选事件数、事件列表数量和版本号。</p>
+<div class="note"><strong>三块画布的用途</strong>
+画布不是「备用窗口」，而是用来做对比的：常见的用法是一块放原始波形，一块放滤波后，
+一块放频谱。每块画布右上角有独立的工具栏，缩放和平移互不影响。</div>
+<h2>载入数据之后</h2>
+<figure><a href="assets/img/main-layout-with-data.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/main-layout-with-data.png" alt="载入事件后的主界面" loading="lazy"></a><figcaption><strong>载入事件后的主界面</strong><span>图中五个编号对应下表五块区域：① 文件浏览器 ② 菜单栏与工具栏 ③ 绘图画布 ④ 运行信息 ⑤ 事件列表与事件详情。</span></figcaption></figure>
+<p>导入事件后会发生三件事：</p>
+<ol>
+<li>事件列表出现一条记录，名字格式是 <code>event_001:台站_起始时间</code>；</li>
+<li>在事件列表里<strong>单击</strong>该记录，波形才会画到画布上（只导入不点击，画布是空的）；</li>
+<li>状态栏的「事件列表数量」变成实际条数。</li>
+</ol>
+<p>上图画布中是事件 <code>XA.S12.00.MHZ</code> 的一道波形：横轴是时间，纵轴是振幅（Counts）。
+真实数据里若存在缺样，波形会在缺口处断开留空——SeisY 用 <code>-1</code> 标记阿波罗数据的
+缺失样本，画图时跳过。怎么认出缺口、怎么判断占比，见「数据全览」一章的
+「图上那条红线」；怎么修，见「预处理」一章的缺样插值部分。</p>
+<h2>第一次使用的推荐顺序</h2>
+<div class="tip"><strong>建议路径</strong>
+<ol>
+<ul>
+<li><strong>设置工作目录</strong>：<kbd>文件</kbd> › <kbd>配置文件</kbd> › <kbd>设置工作目录</kbd>，
+选一个专门存放数据的文件夹。所有导入、导出默认都落在这里。</li>
+<li><strong>获取数据</strong>：<kbd>数据</kbd> › <kbd>下载地震数据</kbd>，或
+<kbd>文件</kbd> › <kbd>导入文件</kbd> 打开本地已有的文件。</li>
+<li><strong>看一眼数据全览</strong>：确认台站数、采样率、时间范围、缺失比例是否符合预期，
+再开始处理。</li>
+<li><strong>预处理</strong>：去趋势 → 滤波 → 去仪器响应。顺序不要颠倒。</li>
+<li><strong>绘图分析</strong>：画波形、画频谱，或用 <kbd>工具</kbd> 里的专业模块。</li>
+</ul>
+</ol>
+</div>
+<h2>界面约定</h2>
+<ul>
+<li><strong>菜单路径</strong>统一写成 <kbd>数据</kbd> › <kbd>滤波</kbd> › <kbd>滤波</kbd> 的形式，
+与软件里看到的完全一致。</li>
+<li>带 <code>&gt;</code> 的三级菜单（如 <kbd>数据</kbd> › <kbd>预处理</kbd> › <kbd>去趋势</kbd>）在
+软件里表现为子菜单，鼠标悬停即可展开。</li>
+<li>本章所有截图取自 0.1.12 版本。界面细节可能随版本变化，菜单路径基本稳定。</li>
+</ul>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><span><a href="02-data.html">数据获取 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

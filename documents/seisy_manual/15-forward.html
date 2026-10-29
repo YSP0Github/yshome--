@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正演与射线追踪 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html" class="active">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>正演与射线追踪</h1>
+<p>正演是反演的镜子：反演从观测推模型，正演从模型算观测。判读一条记录时，
+先用正演看看「按这个模型应该收到什么」，比直接猜要快得多。</p>
+<h2>射线追踪工作台</h2>
+<figure><a href="assets/img/raytracer.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/raytracer.png" alt="射线追踪工作台" loading="lazy"></a><figcaption><strong>射线追踪工作台</strong><span>右侧剖面图里，同心圆是速度界面，曲线是射线。射线在哪一段弯折，就反映那一段的速度结构。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>射线追踪工作台</kbd>，或
+<kbd>模拟</kbd> › <kbd>射线追踪工作台</kbd>。</p>
+<h3>左侧控制面板</h3>
+<table>
+<thead>
+<tr>
+<th>分区</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>震源 / 台站</td>
+<td>震源距、台站距、震源深度、台站方位</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>选地球模型（如 iasp91），<kbd>导入模型</kbd>、<kbd>导出当前模型</kbd></td>
+</tr>
+<tr>
+<td>计算距离</td>
+<td>模型、坐标、距离设定、方位角、射线参数、扫描范围、扫描步长</td>
+</tr>
+<tr>
+<td>计算结果</td>
+<td>计算状态、震中距、震源深度、走时、射线路径、TAUP 输出</td>
+</tr>
+<tr>
+<td>运行日志</td>
+<td>执行过程记录</td>
+</tr>
+</tbody>
+</table>
+<h3>右侧画布</h3>
+<p>按 <kbd>计算</kbd> 之后画出<strong>地球剖面射线路径图</strong>：同心圆是速度界面
+（地表、地幔、核幔边界、内核边界），曲线是从震源到台站的射线。</p>
+<p>图上会标出各主要界面的深度：410 km、660 km 不连续面、核幔边界（CMB）、
+内核边界（ICB）。射线在哪一段发生弯折，直接反映该段的速度结构。</p>
+<div class="tip"><strong>看射线路径比看走时更能发现问题</strong>
+走时只有一个数，射线路径是几十条曲线。如果某条射线在核幔边界附近
+反复折射，说明它进入了核影区，那个距离上的 P 波不该出现——
+这通常是模型选错或距离范围设错。
+</div>
+<h3>震相与距离</h3>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>距离增大走时单调增加</td>
+<td>正常，直达波或一次折射波</td>
+</tr>
+<tr>
+<td>某个距离区间没有 P 波</td>
+<td>核影区（约 103°–143°）</td>
+</tr>
+<tr>
+<td>走时突然跳变</td>
+<td>跨过一个速度不连续面</td>
+</tr>
+</tbody>
+</table>
+<p><kbd>导入模型</kbd> 可以读自定义的速度模型文件，用来对比不同模型下同一距离的
+走时差——这个差值就是模型分辨能力的下限。</p>
+<h2>四个正演入口的分工</h2>
+<table>
+<thead>
+<tr>
+<th>菜单</th>
+<th>算什么</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具 › 射线追踪工作台</td>
+<td>走时、射线路径</td>
+<td>震相识别、距离-走时对照</td>
+</tr>
+<tr>
+<td>模拟 › 简正模工作台</td>
+<td>自由振荡频率与振型</td>
+<td>长周期、行星内部结构</td>
+</tr>
+<tr>
+<td>模拟 › 模型设计器</td>
+<td>一维速度模型编辑</td>
+<td>改模型再算</td>
+</tr>
+<tr>
+<td>数据 › 勘探地震 › 正演模拟</td>
+<td>二维炮集合成</td>
+<td>勘探流程验证</td>
+</tr>
+</tbody>
+</table>
+<h2>简正模工作台</h2>
+<p>月球和地球的自由振荡频率对最深层结构极其敏感。简正模工作台可以从模型算出
+各阶振型的频率，再和观测谱对比——频谱一章里「发送频谱到简正模工作台」
+就是把这个对比的输入端接上。</p>
+<h2>常见问题</h2>
+<p><strong>点计算没反应？</strong>
+先确认模型已选、震源深度和距离在合理范围。日志区会写具体缺什么。</p>
+<p><strong>走时和观测差几秒？</strong>
+模型是平均地球模型，实际路径有三维结构。几秒的偏差正常；要更准就得用
+区域模型或做三维校正。</p>
+<p><strong>射线图画出来是空白的？</strong>
+扫描范围或步长设得太窄，导致没有满足条件的射线。把扫描范围放宽再试。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="14-apollo.html">← 阿波罗数据与月震工作流</a><span><a href="16-lunar-map.html">三维地质图与行星地图 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

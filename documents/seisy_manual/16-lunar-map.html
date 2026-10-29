@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三维地质图与行星地图 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html" class="active">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>三维地质图与行星地图</h1>
+<p>地震学的结果最终要落到空间上：震源在哪、台站怎么分布、和地质单元什么关系。
+这一章的两个窗口负责这件事。</p>
+<h2>3D 月球地质图</h2>
+<figure><a href="assets/img/lunar-geology-3d.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/lunar-geology-3d.png" alt="3D 月球地质图" loading="lazy"></a><figcaption><strong>3D 月球地质图</strong><span>绿色是经纬网，灰白色是地质单元与接触线。左下角四个数字描述的是图层规模，不是你的数据。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>3D月球地质图</kbd>。</p>
+<h3>显示控制</h3>
+<table>
+<thead>
+<tr>
+<th>开关</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>显示地质图层</td>
+<td>叠加地质单元色块与接触线</td>
+</tr>
+<tr>
+<td>显示经纬网格</td>
+<td>叠加经纬网（图中绿色网格）</td>
+</tr>
+<tr>
+<td>自动旋转</td>
+<td>月球自转，用于演示和检查背面</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>控件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>透明度</td>
+<td>地质图层的透明度，默认 60%。看底图纹理时调低，看地质边界时调高</td>
+</tr>
+<tr>
+<td>纹理</td>
+<td>底图分辨率（标准纹理 2K 等），高分辨率更清晰但更吃显存</td>
+</tr>
+</tbody>
+</table>
+<h3>地质图信息</h3>
+<p>面板底部给出当前图层的规模：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>地质单元</td>
+<td>多边形单元数量</td>
+</tr>
+<tr>
+<td>接触线</td>
+<td>单元之间的边界线数量</td>
+</tr>
+<tr>
+<td>线性特征</td>
+<td>线性构造（如月堑、月溪）数量</td>
+</tr>
+<tr>
+<td>单元类型</td>
+<td>地质单元的分类数</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>这些数字是图层规模，不是你的数据</strong>
+它们描述的是加载的地质图本身，和当前工程里的地震事件无关。
+用它们判断图层是否完整加载——数字明显偏小说明文件没读全。
+</div>
+<h3>操作</h3>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>重置视图</td>
+<td>回到默认视角</td>
+</tr>
+<tr>
+<td>截图</td>
+<td>把当前视角存成图片</td>
+</tr>
+</tbody>
+</table>
+<p>鼠标拖动旋转，滚轮缩放。</p>
+<div class="tip"><strong>先关掉地质图层再定位</strong>
+地质色块会盖住底图的月海与高地边界。要在图上找某个台站的位置，
+先取消勾选「显示地质图层」，定位完再打开看地质关系。
+</div>
+<h2>行星台站地图</h2>
+<figure><a href="assets/img/planetary-map.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/planetary-map.png" alt="行星台站地图" loading="lazy"></a><figcaption><strong>行星台站地图</strong><span>左侧是三个设置分组：背景与标题、月球地图图层、标记样式。右侧地图上用三角形标台站、五角星标震源，连线上的 d 是台站到震源的角距（度）。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>行星台站地图</kbd>。</p>
+<p>和三维地质图不同，这是一个<strong>平面投影的台站与事件分布图</strong>，用于回答
+「这些台站覆盖了哪些区域、有没有偏到背面、震源离台站多远」。
+震源定位器里的 <kbd>打开完整地图</kbd> 就是跳到这个窗口。</p>
+<h3>左侧设置</h3>
+<table>
+<thead>
+<tr>
+<th>分组</th>
+<th>控件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>背景与标题</td>
+<td>语言</td>
+<td>图内标注语言（中文 / English）</td>
+</tr>
+<tr>
+<td></td>
+<td>背景天体</td>
+<td>月球 / 火星 / 地球等，决定底图</td>
+</tr>
+<tr>
+<td></td>
+<td>贴图 / 清晰度</td>
+<td>底图分辨率，标准纹理 2K 等</td>
+</tr>
+<tr>
+<td></td>
+<td>图件标题</td>
+<td>留空则用默认学术标题</td>
+</tr>
+<tr>
+<td></td>
+<td>地图区取点</td>
+<td>在地图上点选坐标</td>
+</tr>
+<tr>
+<td></td>
+<td>框选模式</td>
+<td>拖框选择区域</td>
+</tr>
+<tr>
+<td></td>
+<td>重置视图 / 恢复默认标题</td>
+<td>撤销前面的改动</td>
+</tr>
+<tr>
+<td>月球地图图层</td>
+<td>显示地质单元</td>
+<td>叠加地质单元色块</td>
+</tr>
+<tr>
+<td></td>
+<td>显示地质接触线</td>
+<td>叠加单元边界</td>
+</tr>
+<tr>
+<td></td>
+<td>显示线性特征</td>
+<td>叠加月堑、月溪等线性构造</td>
+</tr>
+<tr>
+<td></td>
+<td>透明度</td>
+<td>地质图层的透明度，默认 0.60</td>
+</tr>
+<tr>
+<td></td>
+<td>地质图图例</td>
+<td>打开图例窗口查颜色对应</td>
+</tr>
+<tr>
+<td>标记样式</td>
+<td>台站 / 震源 大小</td>
+<td>标记的像素尺寸</td>
+</tr>
+<tr>
+<td></td>
+<td>填充色 / 边颜色</td>
+<td>分别设置，深色底图下建议用亮色填充</td>
+</tr>
+</tbody>
+</table>
+<h3>图上怎么读</h3>
+<ul>
+<li><strong>三角形</strong>是台站，<strong>五角星</strong>是震源；</li>
+<li>连线上的 <code>d=105.21°</code> 是台站到震源的<strong>角距</strong>（度），不是公里数。
+月球半径 1737 km，1° 约等于 30.3 km，换算一下就能估距离；</li>
+<li>右上角 <kbd>Lon-Lat</kbd> 可切换投影方式。</li>
+</ul>
+<div class="tip"><strong>先看台站是不是挤在一侧</strong>
+如果所有台站都在月球正面、震源却在背面，定位的方位约束会很弱。
+这张图最大的用处就是一眼看出这种几何缺陷——比看坐标表快得多。
+</div>
+<p><kbd>设置</kbd> › <kbd>天体地图设置</kbd> 里可以配置默认显示的天体、
+投影方式和标注样式，改完对之后每次打开都生效。</p>
+<h2>地质图图例</h2>
+<p>入口：<kbd>工具</kbd> › <kbd>地质图图例</kbd>。</p>
+<p>图例把颜色和地质单元类型对应起来。写图件说明时从这里抄颜色，
+不要凭肉眼比色——同一套色在不同显示器上差别很大。</p>
+<h2>常见问题</h2>
+<p><strong>三维图打开是黑屏或纯白？</strong>
+显卡不支持所需的 OpenGL 版本。更新显卡驱动；远程桌面环境下这类窗口
+经常渲染不出来，需要在本机运行。</p>
+<p><strong>地质图层打开了但看不到色块？</strong>
+透明度调到了 0，或者图层文件没加载完整。看「地质图信息」里的单元数量。</p>
+<p><strong>地图上找不到我的台站？</strong>
+台站坐标可能是经纬度顺序填反了（纬度在前）。检查台站元数据表。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="15-forward.html">← 正演与射线追踪</a><span><a href="17-exploration.html">勘探地震 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

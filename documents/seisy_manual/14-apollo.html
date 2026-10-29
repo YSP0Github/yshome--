@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阿波罗数据与月震工作流 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html" class="active">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>阿波罗数据与月震工作流</h1>
+<p>阿波罗被动地震数据有两个别处没有的特点：<strong>记录里带 <code>-1</code> 缺样哨兵</strong>，
+以及<strong>时间标记需要 ATT 矫正</strong>。这一章的两个工具就是为这两件事准备的。</p>
+<h2>Apollo 数据质量浏览器</h2>
+<figure><a href="assets/img/apollo-quality.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/apollo-quality.png" alt="Apollo 数据质量浏览器" loading="lazy"></a><figcaption><strong>Apollo 数据质量浏览器</strong><span>扫描分两级：先读文件清单，再按需解码波形做质检。表格里指标列为空说明只做了第一级。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>Apollo 数据质量浏览器</kbd>。</p>
+<p>它的用途是<strong>批量筛选</strong>：给一个数据目录，扫一遍，按质量指标排出来，先把坏文件
+挑掉再进入分析。</p>
+<h3>工具栏</h3>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>选择文件夹</td>
+<td>指定要扫描的目录</td>
+</tr>
+<tr>
+<td>重新扫描</td>
+<td>目录内容变了之后重扫</td>
+</tr>
+<tr>
+<td>检查全部波形</td>
+<td>对全部文件做波形级质检（慢）</td>
+</tr>
+<tr>
+<td>检查选中</td>
+<td>只查选中的那些</td>
+</tr>
+<tr>
+<td>全部展开 / 展开选中</td>
+<td>树视图展开</td>
+</tr>
+<tr>
+<td>还原文件夹视图</td>
+<td>回到按目录分组的视图</td>
+</tr>
+<tr>
+<td>绘制波形</td>
+<td>画出选中文件的波形</td>
+</tr>
+<tr>
+<td>导出结果</td>
+<td>把质检表导出成文件</td>
+</tr>
+<tr>
+<td>打开文件位置</td>
+<td>在资源管理器里定位</td>
+</tr>
+<tr>
+<td>强制停止</td>
+<td>中断正在进行的扫描</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>扫描分两级</strong>
+第一级只读文件名、路径和大小，很快；波形级质检要真正解码数据，慢得多。
+所以「重新扫描」之后表格里的指标列可能还是空的，要点「检查全部波形」或
+「检查选中」才有数值。
+</div>
+<h3>筛选条件</h3>
+<p>Type / 分类 / 状态 / Channel 四个下拉加一个搜索框。搜索框接受路径片段或
+日期，例如 <code>19760113 / S12 / gap</code>。</p>
+<p>勾选 <kbd>完整读取数据做质检</kbd> 会在扫描阶段就解码；
+<kbd>合成数据友好评分</kbd> 用于人工合成或测试数据，避免它们因为「不像真实月震」
+被判定为低分。</p>
+<h3>指标列怎么读</h3>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>含义</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>状态</td>
+<td>质检结论</td>
+<td>优先处理非正常状态</td>
+</tr>
+<tr>
+<td>评分</td>
+<td>综合得分</td>
+<td>排序用</td>
+</tr>
+<tr>
+<td>频带 SNR(dB)</td>
+<td>有效频带内的信噪比</td>
+<td>低于 0 dB 基本不可用</td>
+</tr>
+<tr>
+<td>稳定性 Gamma</td>
+<td>噪声平稳性</td>
+<td>越大越不平稳</td>
+</tr>
+<tr>
+<td>异常敏感度</td>
+<td>对尖峰的敏感程度</td>
+<td>高说明有脉冲干扰</td>
+</tr>
+<tr>
+<td>有效频带(Hz)</td>
+<td>信号真正占用的频段</td>
+<td>和采样率对照看</td>
+</tr>
+<tr>
+<td>缺口</td>
+<td>缺样情况</td>
+<td>有缺口就要插值</td>
+</tr>
+<tr>
+<td>Duration (s)</td>
+<td>记录长度</td>
+<td>太短的做不了低频分析</td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>有效频带比采样率更值得看</strong>
+标称采样率 6.625 Hz 只说明理论上限是 3.31 Hz。真实阿波罗数据的有效频带往往
+窄得多，用「有效频带(Hz)」这一列决定滤波通带，比按采样率猜要靠谱。
+</div>
+<h2>月震工作流（开发中，暂不可用）</h2>
+<div class="warn"><strong>这个模块还在开发优化中，请暂时不要用于正式处理</strong>
+<p>月震工作流是一个<strong>尚未完成</strong>的实验性工具。界面上的标签页和按钮
+大多已经搭好，但处理链路并未打通，也<strong>没有经过有效性验证</strong>——
+它的输出目前不可信。</p>
+<p>具体来说：</p>
+<ul>
+<li>各标签页之间的数据传递不完整，跨标签页操作可能拿不到上一步的结果；</li>
+<li>去噪 / 重建算法尚未针对月震数据的低信噪比特性调优；</li>
+<li>没有可复现的验证案例，无法说明结果好坏。</li>
+</ul>
+<p><strong>现在请用其它工具替代</strong>：单条记录的质量检查用上面的
+Apollo 数据质量浏览器；去噪用 <kbd>数据</kbd> › <kbd>预处理</kbd> › <kbd>去噪</kbd>；
+批量处理用 <kbd>工具</kbd> › <kbd>批处理工作流</kbd>；缺样修复用
+<kbd>工具</kbd> › <kbd>异常修复</kbd>。</p>
+<p>这个模块会在后续版本中重做，届时手册会同步更新。</p>
+</div>
+<figure><a href="assets/img/moonquake-workflow.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/moonquake-workflow.png" alt="月震工作流" loading="lazy"></a><figcaption><strong>月震工作流</strong><span>界面结构已搭好，但处理链路未打通、结果未经校验。当前仅作界面预览，不要据此下结论。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>月震工作流</kbd>。</p>
+<p>下面列出各标签页的<strong>设计意图</strong>，方便你了解这个模块将来会提供什么，
+<strong>不代表这些功能当前可用</strong>。</p>
+<h3>标签页（设计意图）</h3>
+<table>
+<thead>
+<tr>
+<th>标签</th>
+<th>计划承担的工作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>会话</td>
+<td>当前会话的数据与摘要</td>
+</tr>
+<tr>
+<td>工作流向导</td>
+<td>按步骤引导完成一次处理</td>
+</tr>
+<tr>
+<td>有效频带</td>
+<td>分析信号真正占用的频段</td>
+</tr>
+<tr>
+<td>Recovery</td>
+<td>恢复/重建处理</td>
+</tr>
+<tr>
+<td>流程比较</td>
+<td>不同方法的结果对比</td>
+</tr>
+<tr>
+<td>质量检查</td>
+<td>处理前后的质量指标</td>
+</tr>
+<tr>
+<td>1D Modes</td>
+<td>一维简正模</td>
+</tr>
+<tr>
+<td>3D Boundary</td>
+<td>三维边界相关</td>
+</tr>
+<tr>
+<td>批处理</td>
+<td>批量执行</td>
+</tr>
+<tr>
+<td>报告</td>
+<td>汇总成报告</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>可以看，别当真</strong>
+如果你只是想了解这个模块长什么样，点进去看看无妨；但不要把它接进真实的分析流程，
+也不要用它的输出去支撑结论。遇到报错或结果异常，属于已知情况。
+</div>
+<h2>月震扫描器</h2>
+<figure><a href="assets/img/moonquake-scanner.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/moonquake-scanner.png" alt="月震扫描器" loading="lazy"></a><figcaption><strong>月震扫描器</strong><span>按目录批量扫描月震事件，表格列出识别到的候选与对应参数。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>月震扫描器</kbd>。</p>
+<p>与质量浏览器不同，扫描器的目标是<strong>从长记录里找出事件</strong>，而不是评价已知事件的质量。
+给它一个目录，它按滑动窗 + 触发条件扫一遍，把候选事件列出来。</p>
+<div class="note"><strong>扫描结果是候选，不是目录</strong>
+自动扫描会同时给出误检（噪声包络、仪器脉冲）和漏检（弱事件）。把结果当作
+「值得人工看一眼的清单」，逐条核对后再进事件列表。
+</div>
+<h2>常见问题</h2>
+<p><strong>扫描出上千个文件，但表格是空的？</strong>
+只做了第一级扫描。点「检查全部波形」或「检查选中」生成指标。</p>
+<p><strong>去噪后波形看着干净了，但频谱低端被削平？</strong>
+去噪算法常带高通特性。检查「有效频带」标签页，确认你要分析的频段还在。</p>
+<p><strong>月震工作流点了没反应 / 报错？</strong>
+该模块仍在开发中，属已知情况，见本节开头的说明。请改用质量浏览器、
+异常修复或批处理工作流。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="13-locate.html">← 震源定位</a><span><a href="15-forward.html">正演与射线追踪 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

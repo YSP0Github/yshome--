@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>震源定位 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html" class="active">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>震源定位</h1>
+<div class="warn"><strong>先说清楚：这个工具的效果很依赖你喂进去的东西</strong>
+<p>震源定位器不是「导入波形、点一下、出震源」的自动化工具。它的结果好坏几乎
+完全由两件事决定：<strong>初至拾取准不准</strong>、<strong>速度模型合不合适</strong>。
+两者都需要你手工介入，而程序无法判断你给的对不对。</p>
+<p>实际使用中常见的状况：</p>
+<ul>
+<li><strong>自动拾取基本只能当起点</strong>。STA/LTA 在低信噪比、初动不清晰、
+或存在前兆噪声时会把包络当成初至，必须逐台看预览图手工改。</li>
+<li><strong>速度模型一改，位置就动</strong>。用 iasp91 这类全球平均模型定位区域地震，
+本身就有系统性偏差；模型参数（P/S 速度）填得随意，解出来的深度可能完全不可信。</li>
+<li><strong>台站少于 4 个时三维定位欠定</strong>，深度尤其不可靠，可能解出负深度或贴地表。</li>
+</ul>
+<p>所以请把它当作<strong>快速估计、教学演示、或与专业定位软件交叉验证</strong>的工具，
+不要直接拿它的输出当作正式定位结果发表。要做生产级定位，建议用
+SeisComP / HYPOINVERSE / NonLinLoc 这类专门软件，并配合人工震相拾取。</p>
+</div>
+<figure><a href="assets/img/hypocenter-locator.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/hypocenter-locator.png" alt="震源定位器" loading="lazy"></a><figcaption><strong>震源定位器</strong><span>左上「台站元数据」、左中「波形输入」、左下「波形预览与拾取」、右上「结果」、右下「台站几何与定位震源」。前四块缺一不可，第五块用于判读。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>震源定位器</kbd>。</p>
+<p>定位做的是这件事：已知几个台站的位置和它们收到震相的<strong>时刻</strong>，反推震源在哪、
+什么时候发的震。整个过程分四块，缺一块都算不出来。</p>
+<h2>1. 台站元数据</h2>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>台站</td>
+<td>台站代码，必须和波形文件里的台站名一致</td>
+</tr>
+<tr>
+<td>纬度 / 经度</td>
+<td>台站坐标，度</td>
+</tr>
+<tr>
+<td>高程（米）</td>
+<td>台站海拔，影响走时</td>
+</tr>
+<tr>
+<td>权重</td>
+<td>该台在反演中的权重，0 到 1</td>
+</tr>
+<tr>
+<td>修正（秒）</td>
+<td>该台的钟差修正</td>
+</tr>
+</tbody>
+</table>
+<p>两种填法：</p>
+<ul>
+<li>手工 <kbd>添加台站</kbd> 后逐格输入</li>
+<li><kbd>加载 CSV…</kbd> 一次导入（CSV 需包含台站代码、纬度、经度等列）</li>
+</ul>
+<div class="tip"><strong>用波形文件夹自动匹配</strong>
+填好台站表后，在「波形文件夹」指定一个目录，程序会按台站代码自动把波形文件
+和台站对应起来，不必在下面的波形输入表里一个个点。
+</div>
+<h2>2. 波形输入</h2>
+<p>「波形输入」表列出 台站 / 震相 / 波形路径。震相写 <code>P</code> 或 <code>S</code>——
+同一个台站可以有两行，一行 P 一行 S。</p>
+<h2>3. 预览与拾取</h2>
+<p>选中一行后点 <kbd>预览所选波形并拾取</kbd>，下方画布显示该道波形，
+自动拾取的结果会标在图上。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>半径</td>
+<td>搜索半径，决定初动拾取的窗口范围</td>
+</tr>
+<tr>
+<td>TauP 模型</td>
+<td>走时计算用的地球模型（如 iasp91）</td>
+</tr>
+<tr>
+<td>P 波速度 / S 波速度</td>
+<td>用于定位的初始速度，影响反演收敛</td>
+</tr>
+<tr>
+<td>LTA 窗口</td>
+<td>拾取的长时窗长度</td>
+</tr>
+<tr>
+<td>最小频率 / 最大频率</td>
+<td>拾取前的滤波频带</td>
+</tr>
+<tr>
+<td>触发上限 / 触发下限</td>
+<td>STA/LTA 比值的上下阈值</td>
+</tr>
+<tr>
+<td>Window half-width</td>
+<td>拾取窗口半宽</td>
+</tr>
+</tbody>
+</table>
+<div class="warn"><strong>自动拾取必须人工核对</strong>
+STA/LTA 在低信噪比下会把噪声包络当成初动。定位误差对走时非常敏感——
+一个台拾错 0.5 s，震源位置可能偏出几十公里。逐台看一遍预览图再往下走。
+</div>
+<h2>4. 求解与判读</h2>
+<p>点底部的 <kbd>运行震源定位</kbd>，右侧「结果」面板给出解和残差。</p>
+<table>
+<thead>
+<tr>
+<th>看什么</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>震源坐标与深度</td>
+<td>反演结果</td>
+</tr>
+<tr>
+<td>发震时刻</td>
+<td>反演结果</td>
+</tr>
+<tr>
+<td>残差</td>
+<td>各台观测走时与理论走时之差</td>
+</tr>
+<tr>
+<td>台站/震源地图</td>
+<td>台站分布与震源位置的空间关系</td>
+</tr>
+</tbody>
+</table>
+<p><kbd>打开完整地图</kbd> 在行星台站地图里查看更大范围的空间关系。</p>
+<div class="note"><strong>残差看分布，不只看均方根</strong>
+所有台的残差都在同一方向偏，说明速度模型整体偏快或偏慢；残差分散且个别台
+特别大，说明那个台的拾取或坐标有问题。先修个别台，再调模型。
+</div>
+<h2>常见问题</h2>
+<p><strong>定位不收敛？</strong>
+常见三个原因：台站数少于 4 个（三维定位的最低要求）、初始速度与模型差太多、
+拾取里有明显错点。先减少台站数量做子集试算，能定位说明是某个台的问题。</p>
+<p><strong>深度解出来是负数或贴在地表？</strong>
+深度约束弱。只有近台时深度几乎不可解，需要至少一个震中距小于震源深度的台站。</p>
+<p><strong>结果里某台残差特别大？</strong>
+检查该台的钟差修正和坐标。阿波罗数据尤其要注意 ATT 时间矫正
+（<kbd>数据</kbd> › <kbd>预处理</kbd> › <kbd>ATT时间矫正</kbd>）。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="11-batch.html">← 批处理</a><span><a href="14-apollo.html">阿波罗数据与月震工作流 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>去仪器响应 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html" class="active">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>去仪器响应</h1>
+<p>地震仪记录的是电压/计数，不是地面运动。去仪器响应（也叫响应校正）就是把这个转换补回来，
+让振幅具有物理意义——位移（m）、速度（m/s）或加速度（m/s²）。</p>
+<p><strong>不做这一步，幅值比较就没有意义</strong>：不同台站的仪器灵敏度不同，直接比较计数等于在比较仪器。</p>
+<h2>打开方式</h2>
+<p><kbd>数据</kbd> › <kbd>预处理</kbd> › <kbd>去除仪器响应</kbd>（需先选中事件）。</p>
+<h2>界面</h2>
+<figure><a href="assets/img/response-removal.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/response-removal.png" alt="去除仪器响应对话框" loading="lazy"></a><figcaption><strong>去除仪器响应对话框</strong><span>上图看目标频带是否落在绿色可用区内，下图看拐点有没有切进信号能量峰。</span></figcaption></figure>
+<h3>顶部参数</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出</td>
+<td>DISP</td>
+<td>输出物理量：<code>DISP</code> 位移 / <code>VEL</code> 速度 / <code>ACC</code> 加速度。<strong>月震研究通常用 DISP</strong></td>
+</tr>
+<tr>
+<td>水位</td>
+<td>30</td>
+<td>反卷积的水位值（dB），越大越稳定但会削弱低频</td>
+</tr>
+<tr>
+<td>预滤波 f1–f4</td>
+<td>0.0005 / 0.005 / 0.005 / 0.03</td>
+<td>四个拐点频率（Hz）。<strong>这是最容易设错、也最影响结果的地方</strong></td>
+</tr>
+<tr>
+<td>按目标频带推荐</td>
+<td>—</td>
+<td>根据当前数据的可用频带自动填 f1–f4</td>
+</tr>
+</tbody>
+</table>
+<h3>目标频带提示条</h3>
+<p>参数下方一行小字是这块面板最有价值的信息：</p>
+<blockquote>
+<p>可用频带 0.2489 – 1.48 Hz（−20 dB）｜响应峰值 0.4557 Hz｜奈奎斯特 3.312 Hz
+｜已按目标频带收窄到 0.2489 – 1 Hz</p>
+</blockquote>
+<ul>
+<li><strong>可用频带</strong>：仪器响应在 −20 dB 以内、结果可信的频率范围；</li>
+<li><strong>响应峰值</strong>：仪器最灵敏的频率；</li>
+<li><strong>已收窄到</strong>：预滤波拐点与可用频带的交集。落在这个范围外的频率，去响应后的数据不可信。</li>
+</ul>
+<div class="warn"><strong>预滤波拐点不要设得比可用频带更宽</strong>
+把 f1 设到 0.001 Hz 看起来「保留更多低频」，实际上那一段的信噪比极低，
+反卷积会把噪声放大成巨大的假信号。点「按目标频带推荐」是最稳的做法。
+</div>
+<h3>两张图怎么看</h3>
+<p><strong>上图：仪器响应与预滤波拐点。</strong> 蓝线是仪器响应曲线 <code>|H(f)|</code>，绿色区是可用频带，
+蓝色竖带是目标频带，虚线是预滤波拐点。要检查的是<strong>目标频带是否落在绿色区内</strong>。</p>
+<p><strong>下图：振幅谱对比（各自归一化）。</strong> 判断「拐点有没有切进信号能量」——
+如果目标频带的边界正好压在信号能量峰上，说明通带切掉了真实信号，需要放宽。</p>
+<div class="note"><strong>「没有可用的预览」是什么意思</strong>
+当事件没有加载 StationXML 响应文件时，中间区域会显示这句话。此时去响应无法进行，
+需要先在 <kbd>工具</kbd> › <kbd>仪器响应管理器</kbd> 里下载或绑定响应文件。
+</div>
+<h2>操作步骤</h2>
+<ol>
+<li>在事件列表里选中事件；</li>
+<li>打开面板，先看「目标频带提示条」给出的可用频带；</li>
+<li>点 <kbd>按目标频带推荐</kbd>，让预滤波拐点自动对齐；</li>
+<li>检查下图——目标频带边界是否切在信号能量峰上，是则手工放宽；</li>
+<li>确认 <kbd>输出</kbd> 与 <kbd>水位</kbd>（一般 30 即可）；</li>
+<li>点 <kbd>确认应用</kbd>。处理后幅值单位变为物理单位，可撤销。</li>
+</ol>
+<h2>仪器响应管理器</h2>
+<figure><a href="assets/img/instrument-manager.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/instrument-manager.png" alt="仪器响应管理器" loading="lazy"></a><figcaption><strong>仪器响应管理器</strong><span>左侧是事件响应计划（每个台站/通道一行，列出响应时段、绑定状态与关联事件），中间是最近文件列表，右侧绑定响应文件后显示响应曲线（上）与相位曲线（下）。三栏都填满，说明响应已经绑定好了。</span></figcaption></figure>
+<p>入口：<kbd>工具</kbd> › <kbd>仪器响应管理器</kbd>。</p>
+<p>去响应的前提是<strong>手上有响应文件</strong>。这个窗口负责三件事：查看已绑定的响应、
+从台网下载缺失的响应、把响应和工程里的事件对应起来。</p>
+<table>
+<thead>
+<tr>
+<th>做什么</th>
+<th>在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查看某台站/通道的响应曲线与灵敏度</td>
+<td>左侧列表选中后看右侧</td>
+</tr>
+<tr>
+<td>下载响应文件</td>
+<td>从台网拉取（需要网络与台网权限）</td>
+</tr>
+<tr>
+<td>绑定到工程</td>
+<td>让去响应面板能读到这条响应</td>
+</tr>
+</tbody>
+</table>
+<div class="tip"><strong>先去这里看一眼再回去响应</strong>
+去响应面板显示「没有可用的预览」，几乎总是因为这个管理器里还没绑定响应。
+先在管理器里确认台站、通道、时间段三者都对得上，再回去响应，
+比在去响应面板里反复试参数省时间。
+</div>
+<div class="warn"><strong>响应文件有时间段</strong>
+同一个台站不同时期的仪器可能换过，响应也随更换时间变化。
+绑定时段和事件时段不重叠，去响应会用错仪器，结果看起来「正常」但幅值是错的。
+</div>
+<h2>常见问题</h2>
+<p><strong>去响应后振幅变成天文数字？</strong>
+低频段噪声被反卷积放大了。把 f1 提高（比如 0.01 Hz），或提高水位值。</p>
+<p><strong>去响应后波形整体变平？</strong>
+预滤波把有效信号一起滤掉了。检查上图的目标频带是否与绿色可用频带错位。</p>
+<p><strong>多个台站要去响应，能批量吗？</strong>
+可以，用 <kbd>工具</kbd> › <kbd>批处理工作流</kbd>，或直接对整个事件列表执行。
+每个事件的响应文件需要事先绑定，见「仪器响应管理器」章节。</p>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="06-process.html">← 预处理</a><span><a href="08-ai.html">AI 助手 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设置与偏好 · SeisY 用户手册</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side">
+  <div class="brand">SeisY 用户手册<small>行星地震综合分析平台</small></div>
+  <div id="searchbox"><input id="q" type="search" placeholder="搜索功能、面板、菜单…" title="按 / 聚焦搜索框" autocomplete="off"></div>
+  <div id="searchhint">按 <kbd>/</kbd> 聚焦 · 结果按标题命中排序</div>
+  <div id="results"></div>
+  <ol><li><a href="01-overview.html">总览与主界面</a></li><li><a href="02-data.html">数据获取</a></li><li><a href="03-overview-panel.html">数据全览</a></li><li><a href="05-spectrum.html">频谱分析</a></li><li><a href="06-process.html">预处理</a></li><li><a href="07-response.html">去仪器响应</a></li><li><a href="08-ai.html">AI 助手</a></li><li><a href="09-repair.html">异常修复与震相拾取</a></li><li><a href="10-settings.html" class="active">设置与偏好</a></li><li><a href="11-batch.html">批处理</a></li><li><a href="13-locate.html">震源定位</a></li><li><a href="14-apollo.html">阿波罗数据与月震工作流</a></li><li><a href="15-forward.html">正演与射线追踪</a></li><li><a href="16-lunar-map.html">三维地质图与行星地图</a></li><li><a href="17-exploration.html">勘探地震</a></li><li><a href="99-appendix.html">附录：菜单索引与快捷键</a></li></ol>
+</nav>
+<main>
+<h1>设置与偏好</h1>
+<p>SeisY 的设置分两层：<strong>偏好</strong>（会记住，存在 <code>Config.ini</code> 的 <code>[Preferences]</code> 段）和
+<strong>当前事件参数</strong>（不记住，每次下载或加载都会覆盖）。</p>
+<div class="note"><strong>为什么当前事件参数不保存</strong>
+台网、台站、通道、位置码、起止时间这些值每换一个事件就会变。把它们存成「默认值」
+看起来方便，实际上下次打开时是一份过期参数，更容易出错。所以它们只跟着「下载地震数据」
+面板走，不进偏好。
+</div>
+<h2>打开方式</h2>
+<p><kbd>设置</kbd> › <kbd>选项</kbd>。工具栏上也有同名按钮。</p>
+<h2>选项面板</h2>
+<figure><a href="assets/img/settings-options.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/settings-options.png" alt="选项面板" loading="lazy"></a><figcaption><strong>选项面板</strong></figcaption></figure>
+<p>左侧六个分类，右侧是该分类下的全部设置项。改动<strong>不会立即生效</strong>，
+点右下角 <kbd>应用</kbd> 后才写入并生效。</p>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>包含</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>常规</td>
+<td>相关计算方式、中值滤波窗口、响应输出换算为米、启用高级功能、启用通知</td>
+</tr>
+<tr>
+<td>频谱与绘图</td>
+<td>频谱方法（FFT/CZT）、分析模式、横轴模式、最大优势频带</td>
+</tr>
+<tr>
+<td>数据与响应</td>
+<td>去响应的默认输出单位、水位线、预滤波拐点</td>
+</tr>
+<tr>
+<td>路径与存储</td>
+<td>工作目录、阿波罗数据库路径、导出目录</td>
+</tr>
+<tr>
+<td>下载与数据源</td>
+<td>FDSN 服务地址、超时、重试次数</td>
+</tr>
+<tr>
+<td>内存</td>
+<td>缓存上限、清理策略</td>
+</tr>
+</tbody>
+</table>
+<h3>几个值得说明的项</h3>
+<p><strong>相关计算方式</strong>：<code>Scipy</code> 或 <code>Numpy</code>。结果一致，<code>Scipy</code> 在某些平台上更快。一般不用改。</p>
+<p><strong>中值滤波窗口</strong>：<kbd>数据</kbd> › <kbd>滤波</kbd> › <kbd>中值滤波</kbd> 使用的窗口大小。
+窗口越大去尖峰越强，但也越容易削掉真实的高频成分。默认 3 点。</p>
+<p><strong>启用高级功能</strong>：打开后会出现一些实验性模块。不确定是否需要时保持关闭。</p>
+<p><strong>启用通知</strong>：长任务（批量下载、批处理）完成时弹出系统通知。</p>
+<div class="warn"><strong>「恢复初始设置」会重置全部偏好</strong>
+包括路径与存储里的工作目录。点之前先确认没有自定义过的路径，或先备份
+<code>Config.ini</code>。
+</div>
+<h2>绘制频谱设置</h2>
+<figure><a href="assets/img/settings-spectrum.png" target="_blank" rel="noopener" title="点击查看原尺寸"><img src="assets/img/settings-spectrum.png" alt="绘制频谱设置" loading="lazy"></a><figcaption><strong>绘制频谱设置</strong></figcaption></figure>
+<p><kbd>设置</kbd> › <kbd>绘制频谱设置</kbd> 是频谱分析专用的参数面板，与「选项」里的
+频谱分类是同一份数据，只是入口不同、展开得更完整。</p>
+<p>主要参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>频谱方法</td>
+<td>FFT（等间隔）或 CZT（可指定任意频率范围，适合窄带细看）</td>
+</tr>
+<tr>
+<td>分析模式</td>
+<td>全部道 / 当前道</td>
+</tr>
+<tr>
+<td>横轴模式</td>
+<td>自适应 / 均匀 / 全频带 / 自定义范围</td>
+</tr>
+<tr>
+<td>最大优势频带</td>
+<td>自适应模式下用于确定显示范围的频带</td>
+</tr>
+</tbody>
+</table>
+<div class="note"><strong>横轴模式存的是英文规范值</strong>
+配置文件里这一项必须是 <code>Adaptive</code> / <code>Uniform</code> / <code>Full Band</code> /
+<code>Custom Fill</code>，不能存中文。界面上的中文是显示层的翻译，直接改配置文件时要写英文。
+</div>
+<h2>配置文件在哪</h2>
+<p><code>Config.ini</code> 与程序可执行文件同目录。它是纯文本，可以直接编辑，但要注意：</p>
+<ul>
+<li>程序在按「应用」时会<strong>整段重写</strong>这个文件，注释会丢失；</li>
+<li>手工改完需要重启程序；</li>
+<li>里面不应该出现绝对路径（换机器会失效），路径项由「设置工作目录」维护。</li>
+</ul>
+
+<footer><span>SeisY 用户手册</span><span><span class="pager"><a href="09-repair.html">← 异常修复与震相拾取</a><span><a href="11-batch.html">批处理 →</a></span></span></span></footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
