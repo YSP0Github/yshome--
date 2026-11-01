@@ -204,6 +204,7 @@ body.go .hero-social{opacity:1}
 .moon-scene{position:relative;display:flex;align-items:center;justify-content:center;opacity:0;
   transform:translateY(26px);transition:opacity 1s var(--ease) .5s,transform 1s var(--ease) .5s}
 body.go .moon-scene{opacity:1;transform:none}
+.moon-scene canvas{display:block;pointer-events:none;max-width:100%}
 .moon-svg{width:100%;max-width:520px;height:auto;overflow:visible}
 .moon-rotate{transform-origin:260px 260px;transition:transform .2s linear}
 .moon-grid{fill:none;stroke:rgba(147,207,191,.18);stroke-width:1}
@@ -498,25 +499,7 @@ body.go .moon-scene{opacity:1;transform:none}
       </div>
     </div>
     <div class="moon-scene">
-      <svg class="moon-svg" viewBox="0 0 520 520" role="img" aria-label="Lunar interior">
-        <g class="moon-rotate" id="moonRotate">
-          <line class="moon-grid" x1="20" y1="260" x2="500" y2="260"/>
-          <line class="moon-grid" x1="260" y1="20" x2="260" y2="500"/>
-          <circle class="moon-grid" cx="260" cy="260" r="240"/>
-          <circle class="moon-grid" cx="260" cy="260" r="190" stroke-dasharray="2 6"/>
-          <circle class="moon-crust" cx="260" cy="260" r="220"/>
-          <circle class="moon-mantle" cx="260" cy="260" r="150"/>
-          <circle class="moon-core" cx="260" cy="260" r="70"/>
-          <circle class="moon-grid" cx="260" cy="260" r="255" stroke-dasharray="1 10"/>
-        </g>
-        <circle class="moon-ripple" cx="260" cy="260" r="70"/>
-        <circle class="moon-ripple r2" cx="260" cy="260" r="70"/>
-        <circle class="moon-ripple r3" cx="260" cy="260" r="70"/>
-        <circle class="moon-dot" cx="260" cy="40" r="4.5"/>
-        <text class="moon-label" x="260" y="256" text-anchor="middle">CORE<tspan x="260" dy="15" style="font-size:9px">月核</tspan></text>
-        <text class="moon-label" x="420" y="250" text-anchor="middle">MANTLE<tspan x="420" dy="15" style="font-size:9px">月幔</tspan></text>
-        <text class="moon-label" x="150" y="78" text-anchor="middle">CRUST<tspan x="150" dy="15" style="font-size:9px">月壳</tspan></text>
-      </svg>
+      <canvas id="globe" role="img" aria-label="月球质点模型"></canvas>
     </div>
   </div>
   <div class="scroll-hint"><span data-i18n="hero.scroll">SCROLL</span><span class="rail"></span></div>
@@ -1107,7 +1090,7 @@ function onScroll(){
   nav.classList.toggle("stuck", y > 40);
   nav.classList.toggle("hero-nav", y < hero.offsetHeight - 90);
   const m = Math.min(1, Math.max(0, y / hero.offsetHeight));
-  moonRotate.style.transform = "rotate(" + (m * 130) + "deg)";
+  if (moonRotate) moonRotate.style.transform = "rotate(" + (m * 130) + "deg)";
   ticking = false;
 }
 addEventListener("scroll", () => {
@@ -1165,6 +1148,199 @@ $("#contactForm").addEventListener("submit", e => {
   showToast("form.ok");
   f.reset();
 });
+
+/* ============================== LUNAR GLOBE (particle) ============================== */
+(function(){
+  const cv = $("#globe");
+  if (!cv || !cv.getContext) return;
+  const ctx = cv.getContext("2d");
+  let W = 0, H = 0, DPR = 1, CX = 0, CY = 0, R = 0;
+
+  /* 斐波那契球面均匀分布：1500 个质点 */
+  const N = 1500, PTS = [];
+  for (let i = 0; i < N; i++){
+    const yy = 1 - (i + 0.5) / N * 2;
+    const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+    const aa = i * 2.39996323;                 /* 黄金角 */
+    PTS.push([Math.cos(aa) * rr, yy, Math.sin(aa) * rr]);
+  }
+
+  /* 按深度分 5 档，前亮后暗 */
+  const ALPHA = [0.10, 0.20, 0.34, 0.55, 0.90];
+  const SIZE  = [0.70, 0.95, 1.20, 1.45, 1.85];
+  const COL   = ["84,140,128","112,180,164","146,208,190","190,235,222","228,250,242"];
+  const FOV   = 860;
+
+  let mx = 0, my = 0, smx = 0, smy = 0;
+  addEventListener("mousemove", e => {
+    mx = e.clientX / innerWidth - 0.5;
+    my = e.clientY / innerHeight - 0.5;
+  }, { passive: true });
+
+  function fit(){
+    const box = cv.parentElement;
+    const size = Math.max(220, Math.min(box.clientWidth || 420, 560));
+    if (size === W) return;
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    W = H = size;
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    cv.style.width = W + "px";
+    cv.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2; R = Math.min(W, H) * 0.40;
+  }
+
+  function rot3(x, y, z, cX, sX, cY, sY){
+    const y1 = y * cX - z * sX, z1 = y * sX + z * cX;
+    return [x * cY + z1 * sY, y1, -x * sY + z1 * cY];
+  }
+  function perp(e){
+    const a = Math.abs(e[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0];
+    let u = [a[1]*e[2] - a[2]*e[1], a[2]*e[0] - a[0]*e[2], a[0]*e[1] - a[1]*e[0]];
+    const L = Math.hypot(u[0], u[1], u[2]) || 1;
+    u = [u[0]/L, u[1]/L, u[2]/L];
+    const v = [e[1]*u[2] - e[2]*u[1], e[2]*u[0] - e[0]*u[2], e[0]*u[1] - e[1]*u[0]];
+    return [u, v];
+  }
+
+  /* 月震波前：随机点在球面扩散一圈 */
+  const quakes = [];
+  let nextQ = 0;
+  function spawnQuake(now){
+    const u = Math.random() * 2 - 1, th = Math.random() * 6.2832;
+    const r = Math.sqrt(Math.max(0, 1 - u * u));
+    const e = [Math.cos(th) * r, u, Math.sin(th) * r];
+    const pv = perp(e);
+    quakes.push({ e, u: pv[0], v: pv[1], t: 0 });
+    nextQ = now + 1500 + Math.random() * 1900;
+  }
+
+  const T0 = performance.now();
+  let last = T0;
+
+  function draw(now){
+    const dt = Math.min(60, now - last); last = now;
+    smx += (mx - smx) * 0.045;
+    smy += (my - smy) * 0.045;
+
+    const T = (now - T0) / 1000;
+    const spin = T * 0.11 + smx * 0.7;
+    const cY = Math.cos(spin), sY = Math.sin(spin);
+    const ax = -0.38 + smy * 0.5;
+    const cX = Math.cos(ax), sX = Math.sin(ax);
+
+    ctx.clearRect(0, 0, W, H);
+
+    /* 外层辉光 */
+    const gh = ctx.createRadialGradient(CX, CY, R * 0.08, CX, CY, R * 1.85);
+    gh.addColorStop(0, "rgba(147,207,191,0.13)");
+    gh.addColorStop(0.42, "rgba(93,168,150,0.065)");
+    gh.addColorStop(1, "rgba(7,13,17,0)");
+    ctx.fillStyle = gh;
+    ctx.beginPath(); ctx.arc(CX, CY, R * 1.85, 0, 6.2832); ctx.fill();
+
+    /* 经纬网 */
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(147,207,191,0.085)";
+    let lat, lon, k, q, pr, px, py;
+    for (lat = -60; lat <= 60; lat += 30){
+      const lr = Math.cos(lat * Math.PI / 180), ly = Math.sin(lat * Math.PI / 180);
+      ctx.beginPath();
+      for (k = 0; k <= 72; k++){
+        q = rot3(Math.cos(k / 72 * 6.2832) * lr, ly, Math.sin(k / 72 * 6.2832) * lr, cX, sX, cY, sY);
+        pr = FOV / (FOV + q[2] * R);
+        px = CX + q[0] * R * pr; py = CY + q[1] * R * pr;
+        k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    for (lon = 0; lon < 180; lon += 30){
+      ctx.beginPath();
+      for (k = 0; k <= 60; k++){
+        const th2 = k / 60 * Math.PI - Math.PI / 2;
+        q = rot3(Math.cos(th2) * Math.cos(lon * Math.PI / 180), Math.sin(th2),
+                 Math.cos(th2) * Math.sin(lon * Math.PI / 180), cX, sX, cY, sY);
+        pr = FOV / (FOV + q[2] * R);
+        px = CX + q[0] * R * pr; py = CY + q[1] * R * pr;
+        k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    /* 质点：按深度分桶批量绘制，避免 1500 次状态切换 */
+    const buckets = [[], [], [], [], []];
+    for (let i = 0; i < N; i++){
+      const p0 = PTS[i];
+      const rp = rot3(p0[0], p0[1], p0[2], cX, sX, cY, sY);
+      const sc = FOV / (FOV + rp[2] * R);
+      const X = CX + rp[0] * R * sc, Y = CY + rp[1] * R * sc;
+      const d = (rp[2] + 1) / 2;
+      buckets[d < 0.2 ? 0 : d < 0.4 ? 1 : d < 0.6 ? 2 : d < 0.8 ? 3 : 4].push(X, Y);
+    }
+    for (let b = 0; b < 5; b++){
+      const arr = buckets[b];
+      if (!arr.length) continue;
+      ctx.fillStyle = "rgba(" + COL[b] + "," + ALPHA[b] + ")";
+      ctx.beginPath();
+      for (let j = 0; j < arr.length; j += 2){
+        ctx.moveTo(arr[j] + SIZE[b], arr[j + 1]);
+        ctx.arc(arr[j], arr[j + 1], SIZE[b], 0, 6.2832);
+      }
+      ctx.fill();
+    }
+
+    /* 月震波前 */
+    if (now > nextQ && quakes.length < 4) spawnQuake(now);
+    for (let qi = quakes.length - 1; qi >= 0; qi--){
+      const qq = quakes[qi];
+      qq.t += dt / 1000;
+      const theta = qq.t * 0.95;
+      if (theta > 1.55){ quakes.splice(qi, 1); continue; }
+      const al = 1 - theta / 1.55;
+      const SEG = 76;
+      let started = false;
+      ctx.beginPath();
+      const cp = Math.cos(theta), sp = Math.sin(theta);
+      for (let k2 = 0; k2 <= SEG; k2++){
+        const phh = k2 / SEG * 6.2832;
+        const wx = qq.e[0] * cp + (qq.u[0] * Math.cos(phh) + qq.v[0] * Math.sin(phh)) * sp;
+        const wy = qq.e[1] * cp + (qq.u[1] * Math.cos(phh) + qq.v[1] * Math.sin(phh)) * sp;
+        const wz = qq.e[2] * cp + (qq.u[2] * Math.cos(phh) + qq.v[2] * Math.sin(phh)) * sp;
+        const rq = rot3(wx, wy, wz, cX, sX, cY, sY);
+        const sr = FOV / (FOV + rq[2] * R);
+        const sx2 = CX + rq[0] * R * sr, sy2 = CY + rq[1] * R * sr;
+        if (rq[2] < -0.02){ started = false; continue; }
+        if (!started){ ctx.moveTo(sx2, sy2); started = true; } else ctx.lineTo(sx2, sy2);
+      }
+      ctx.strokeStyle = "rgba(147,207,191," + (al * 0.14).toFixed(3) + ")";
+      ctx.lineWidth = 5; ctx.stroke();
+      ctx.strokeStyle = "rgba(214,245,236," + (al * 0.75).toFixed(3) + ")";
+      ctx.lineWidth = 1.3; ctx.stroke();
+    }
+  }
+
+  let raf = 0, visible = true;
+  function frame(now){
+    if (visible) draw(now);
+    raf = requestAnimationFrame(frame);
+  }
+
+  fit();
+  if (reduceMotion) {
+    draw(performance.now());
+  } else {
+    raf = requestAnimationFrame(frame);
+    /* 首屏滚出视野后停画，别白烧 CPU */
+    if (window.IntersectionObserver) {
+      new IntersectionObserver(es => { visible = es[0].isIntersecting; }, { threshold: 0 })
+        .observe(cv);
+    }
+  }
+
+  addEventListener("resize", fit, { passive: true });
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(cv.parentElement);
+})();
 
 /* ============================== INIT ============================== */
 applyLang(lang);
