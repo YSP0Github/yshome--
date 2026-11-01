@@ -7,7 +7,7 @@
     <title>{% block title %}云凇学术 - 个人文献管理系统{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="icon" href="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" type="image/png">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='images/YSXS-deepblue.png') }}">
     <style>
         /* 基础动画定义 */
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -1479,7 +1479,7 @@
                     <a href="{{ url_for('index') }}" class="flex items-center space-x-2 whitespace-nowrap">
                         <!-- <i class="fa fa-book text-blue-600 text-2xl"></i> -->
                         <span class="text-xl font-bold text-blue-700">
-                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" class="w-10 h-10 ">
+                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" width="40" height="40" style="width:40px;height:40px;max-width:none;display:block">
                         </span>
                         <span class="text-xl font-bold text-blue-700">云凇学术</span>
                     </a>
@@ -2104,7 +2104,7 @@
                 <div class="mb-6 md:mb-0">
                     <div class="flex items-center justify-center md:justify-start">
                         <span class="text-xl font-bold text-blue-700">
-                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" class="w-10 h-10 ">
+                            <img src="{{ url_for('static', filename='images/YSXS-deepblue.png') }}" alt="Logo" width="40" height="40" style="width:40px;height:40px;max-width:none;display:block">
                         </span>
                         <span class="text-xl font-bold text-blue-700">云凇学术</span>
                     </div>
