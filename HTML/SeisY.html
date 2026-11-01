@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeisY - 地震数据处理与分析平台</title>
+    <script>
+        /* 主题预置：必须在样式表之前执行，避免刷新时先白后黑 */
+        (function () {
+            try {
+                var saved = localStorage.getItem('seisy_theme');
+                var dark = saved ? saved === 'dark'
+                    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="../static/css/seisy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="../static/images/SeisY/SeisY-3D-rad.ico">
@@ -118,6 +131,138 @@
             #back-top { right: 14px; bottom: 18px; width: 42px; height: 42px; border-radius: 12px; }
         }
     </style>
+    <style id="theme-css">
+        /* ============================================================
+           深色模式
+           seisy.css 是编译好的静态 Tailwind，无法加 dark: 变体，
+           这里用 html[data-theme="dark"] 作用域整层覆盖工具类。
+           选择器优先级 (0,2,1) > 工具类 (0,1,0)，且本表在 seisy.css 之后加载。
+           ============================================================ */
+        html { color-scheme: light; }
+        html[data-theme="dark"] { color-scheme: dark; }
+
+        body { transition: background-color .28s ease, color .28s ease; }
+
+        /* ---------- 底色分层：页面 / 区块 / 卡片 ---------- */
+        html[data-theme="dark"] body,
+        html[data-theme="dark"] .bg-light { background-color: #080e18; color: #e3eaf3; }
+
+        /* 区块交替底色（原来是 bg-white / bg-gray-50 交替） */
+        html[data-theme="dark"] section.bg-white { background-color: #0b1322; }
+        html[data-theme="dark"] section.bg-gray-50 { background-color: #070c15; }
+
+        /* 卡片：始终比所在区块亮一档 */
+        html[data-theme="dark"] .bg-white { background-color: #141d2e; }
+        html[data-theme="dark"] .bg-gray-50 { background-color: #101827; }
+        html[data-theme="dark"] .bg-gray-100 { background-color: #1b2536; }
+
+        /* 卡片描边：用 outline 不影响盒模型，避免 1px 抖动 */
+        html[data-theme="dark"] section .bg-white,
+        html[data-theme="dark"] section .bg-gray-50 {
+            outline: 1px solid rgba(255, 255, 255, .055);
+            outline-offset: -1px;
+        }
+
+        /* ---------- 文字 ---------- */
+        html[data-theme="dark"] .text-dark { color: #e3eaf3; }
+        html[data-theme="dark"] .text-dark\/80 { color: rgba(227, 234, 243, .84); }
+        html[data-theme="dark"] .text-dark\/75 { color: rgba(227, 234, 243, .78); }
+        html[data-theme="dark"] .text-dark\/70 { color: rgba(227, 234, 243, .72); }
+        html[data-theme="dark"] .text-dark\/60 { color: rgba(227, 234, 243, .62); }
+        html[data-theme="dark"] .text-dark\/50 { color: rgba(227, 234, 243, .48); }
+
+        html[data-theme="dark"] .text-primary { color: #79a9ff; }
+        html[data-theme="dark"] .text-primary\/70 { color: rgba(121, 169, 255, .8); }
+        html[data-theme="dark"] .text-accent { color: #3ddba0; }
+        html[data-theme="dark"] .text-gray-700 { color: #cbd5e1; }
+        html[data-theme="dark"] .text-gray-500 { color: #93a2b6; }
+        html[data-theme="dark"] .hover\:text-primary:hover { color: #8fb6ff; }
+
+        /* ---------- 品牌色浅底 ---------- */
+        html[data-theme="dark"] .bg-primary\/10 { background-color: rgba(121, 169, 255, .13); }
+        html[data-theme="dark"] .bg-accent\/10 { background-color: rgba(61, 219, 160, .13); }
+        html[data-theme="dark"] .bg-primary\/5 { background-color: rgba(121, 169, 255, .07); }
+        html[data-theme="dark"] .bg-secondary\/5 { background-color: rgba(59, 130, 246, .07); }
+
+        /* ---------- 边框 ---------- */
+        html[data-theme="dark"] .border-gray-100 { border-color: rgba(255, 255, 255, .08); }
+        html[data-theme="dark"] .border-orange-200 { border-color: rgba(251, 146, 60, .4); }
+
+        /* ---------- 状态徽标（这两个类原本就没编译进 CSS，深色下补齐） ---------- */
+        html[data-theme="dark"] .bg-amber-100 { background-color: rgba(245, 183, 80, .15); }
+        html[data-theme="dark"] .text-amber-700 { color: #f2c078; }
+        html[data-theme="dark"] .bg-gray-200 { background-color: #202a3a; }
+
+        /* ---------- 阴影：深色下减淡并加深 ---------- */
+        html[data-theme="dark"] .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+        html[data-theme="dark"] .shadow-md { box-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .7); }
+        html[data-theme="dark"] .shadow-lg { box-shadow: 0 2px 6px rgba(0, 0, 0, .5), 0 20px 44px -14px rgba(0, 0, 0, .75); }
+
+        /* ---------- 导航栏 ---------- */
+        html[data-theme="dark"] .bg-white\/95 { background-color: rgba(9, 14, 23, .9); }
+        html[data-theme="dark"] #mobile-menu { background-color: #0d1524; }
+
+        /* ---------- 页脚 ---------- */
+        html[data-theme="dark"] footer.bg-dark {
+            background-color: #05090f;
+            border-top: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        /* ---------- 主题切换按钮 ---------- */
+        .theme-toggle {
+            width: 34px; height: 34px; padding: 0; flex: none;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 10px; cursor: pointer; font-size: 14px; line-height: 1;
+            background: #f1f5f9; color: #475569;
+            border: 1px solid rgba(15, 23, 42, .12);
+            transition: background-color .22s ease, color .22s ease, border-color .22s ease, transform .22s ease;
+        }
+        .theme-toggle:hover { background: #e2e8f0; color: #0f172a; }
+        .theme-toggle:active { transform: scale(.94); }
+        html[data-theme="dark"] .theme-toggle { background: #1b2536; color: #cbd5e1; border-color: rgba(255, 255, 255, .12); }
+        html[data-theme="dark"] .theme-toggle:hover { background: #26313f; color: #fff; }
+
+        /* ---------- 首屏窗口菜单栏 / 下拉菜单：改由 data-theme 驱动 ---------- */
+        html[data-theme="dark"] .shot-mbar .sm-btn { color: #dbe2ea; }
+        html[data-theme="dark"] .shot-mbar .sm-btn:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+        html[data-theme="dark"] .shot-mbar .sm-wbtn { color: #c3ccd6; }
+        html[data-theme="dark"] .shot-mbar .sm-wbtn:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+        html[data-theme="light"] .shot-mbar .sm-btn { color: #334155; }
+        html[data-theme="light"] .shot-mbar .sm-btn:hover { background: rgba(15, 23, 42, .09); color: #0f172a; }
+        html[data-theme="light"] .shot-mbar .sm-wbtn { color: #526071; }
+        html[data-theme="light"] .shot-mbar .sm-wbtn:hover { background: rgba(15, 23, 42, .12); color: #0f172a; }
+        html[data-theme="dark"] .shot-menu {
+            background: rgba(15, 23, 42, .97); border-color: rgba(255, 255, 255, .14);
+            color: #e2e8f0; box-shadow: 0 14px 34px rgba(0, 0, 0, .5);
+        }
+        html[data-theme="light"] .shot-menu {
+            background: rgba(255, 255, 255, .98); border-color: rgba(15, 23, 42, .14);
+            color: #1f2937; box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
+        }
+        html[data-theme="light"] .shot-menu .mi:hover { background: rgba(37, 99, 235, .9); color: #fff; }
+        html[data-theme="light"] .shot-menu .mi .acc { color: #6b7280; }
+        html[data-theme="light"] .shot-menu .mi-sep { background: rgba(15, 23, 42, .12); }
+
+        /* ---------- 版本说明弹窗（lightbox 里的 markdown 渲染） ---------- */
+        html[data-theme="dark"] .md-body h1,
+        html[data-theme="dark"] .md-body h2,
+        html[data-theme="dark"] .md-body h3,
+        html[data-theme="dark"] .md-body h4 { color: #e6edf6; }
+        html[data-theme="dark"] .md-body code {
+            background: rgba(255, 255, 255, .09); color: #fca5a5;
+        }
+        html[data-theme="dark"] .md-body pre { background: rgba(255, 255, 255, .06); }
+        html[data-theme="dark"] .md-body pre code { background: none; color: #e6edf6; }
+        html[data-theme="dark"] .md-body th,
+        html[data-theme="dark"] .md-body td { border-color: rgba(255, 255, 255, .12); }
+        html[data-theme="dark"] .md-body th { background: rgba(255, 255, 255, .05); }
+        html[data-theme="dark"] .md-body tr:nth-child(even) td { background: rgba(255, 255, 255, .02); }
+        html[data-theme="dark"] .md-body a { color: #79a9ff; }
+        html[data-theme="dark"] .md-body blockquote {
+            border-left-color: rgba(255, 255, 255, .14); color: #94a3b8;
+        }
+        html[data-theme="dark"] .md-body hr { border-top-color: rgba(255, 255, 255, .12); }
+    </style>
 </head>
 <body class="font-sans bg-light text-dark antialiased">
     <!-- 导航栏 -->
@@ -139,6 +284,7 @@
                 <a href="/dcgdcst/" target="_blank" class="text-dark/80 hover:text-primary transition-custom"><i class="fa fa-folder-open mr-1"></i> <span data-i18n="nav.viewer">数据包查看器</span></a>
                 <a href="news.html" class="text-dark/80 hover:text-primary transition-custom"><i class="fa-solid fa-newspaper mr-1"></i><span data-i18n="nav.news">新闻动态</span></a>
       <button id="lang-toggle" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-custom">EN</button>
+                    <button class="theme-toggle" type="button" aria-label="切换到深色模式" title="切换到深色模式"><i class="fa-solid fa-moon"></i></button>
                     <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="px-5 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom">
                         <i class="fa-brands fa-github mr-1"></i> GitHub
                     </a>
@@ -160,6 +306,9 @@
                 <a href="https://github.com/YSP0Github/SeisY" target="_blank" class="block py-2 px-4 bg-primary text-white rounded-lg text-center hover:bg-primary/90 transition-custom">
                     <i class="fa-brands fa-github mr-1"></i> GitHub
                 </a>
+                <div class="flex items-center justify-center pt-1">
+                    <button class="theme-toggle" type="button" aria-label="切换到深色模式" title="切换到深色模式"><i class="fa-solid fa-moon"></i></button>
+                </div>
             </div>
         </div>
     </nav>
@@ -1943,6 +2092,78 @@
     init();
   }
 })();
+</script>
+
+<script>
+    /* ============================================================
+       深浅色主题切换
+       - 优先级：localStorage 记忆 > 系统偏好
+       - 首屏截图 <picture> 的 media 查询只认系统偏好，这里改由
+         data-theme 驱动，保证「浅色系统 + 手动深色」也显示深色截图
+       ============================================================ */
+    (function () {
+        var root = document.documentElement;
+        var btns = Array.prototype.slice.call(document.querySelectorAll('.theme-toggle'));
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+        var pic = document.getElementById('hero-shot');
+        var shotImg = pic ? pic.querySelector('img') : null;
+        var shotSource = pic ? pic.querySelector('source') : null;
+        var shotDark = shotSource ? (shotSource.getAttribute('srcset') || '') : '';
+        var shotLight = shotImg ? (shotImg.getAttribute('src') || '') : '';
+
+        function current() {
+            return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        }
+
+        function paintButtons(t) {
+            var isDark = t === 'dark';
+            var label = isDark ? '切换到浅色模式' : '切换到深色模式';
+            btns.forEach(function (b) {
+                var i = b.querySelector('i');
+                if (i) i.className = 'fa-solid ' + (isDark ? 'fa-sun' : 'fa-moon');
+                b.setAttribute('aria-label', label);
+                b.setAttribute('title', label);
+            });
+        }
+
+        function paintShot(t) {
+            if (!shotImg || !shotDark || !shotLight) return;
+            if (shotSource) shotSource.setAttribute('media', 'not all');
+            var want = t === 'dark' ? shotDark : shotLight;
+            if (shotImg.getAttribute('src') !== want) shotImg.setAttribute('src', want);
+        }
+
+        function apply(t) {
+            root.setAttribute('data-theme', t);
+            paintButtons(t);
+            paintShot(t);
+        }
+
+        function set(t, save) {
+            apply(t);
+            if (save) {
+                try { localStorage.setItem('seisy_theme', t); } catch (e) {}
+            }
+        }
+
+        btns.forEach(function (b) {
+            b.addEventListener('click', function () {
+                set(current() === 'dark' ? 'light' : 'dark', true);
+            });
+        });
+
+        apply(current());
+
+        // 用户未手动选择过时，跟随系统切换
+        function onSystemChange(e) {
+            var saved = null;
+            try { saved = localStorage.getItem('seisy_theme'); } catch (err) {}
+            if (!saved) apply(e.matches ? 'dark' : 'light');
+        }
+        if (mq.addEventListener) mq.addEventListener('change', onSystemChange);
+        else if (mq.addListener) mq.addListener(onSystemChange);
+    })();
 </script>
 
 </body>
