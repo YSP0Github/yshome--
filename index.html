@@ -204,7 +204,7 @@ body.go .hero-social{opacity:1}
 .moon-scene{position:relative;display:flex;align-items:center;justify-content:center;opacity:0;
   transform:translateY(26px);transition:opacity 1s var(--ease) .5s,transform 1s var(--ease) .5s}
 body.go .moon-scene{opacity:1;transform:none}
-.moon-scene canvas{display:block;pointer-events:none;max-width:100%}
+.moon-scene canvas{display:block;pointer-events:none}
 .moon-svg{width:100%;max-width:520px;height:auto;overflow:visible}
 .moon-rotate{transform-origin:260px 260px;transition:transform .2s linear}
 .moon-grid{fill:none;stroke:rgba(147,207,191,.18);stroke-width:1}
@@ -1179,7 +1179,12 @@ $("#contactForm").addEventListener("submit", e => {
 
   function fit(){
     const box = cv.parentElement;
-    const size = Math.max(220, Math.min(box.clientWidth || 420, 560));
+    const colW = box.clientWidth || 420;
+    const stacked = innerWidth <= 980;
+    /* 单列时跟随容器；双列时允许溢出栅格，按视口高度放大，避免大屏上显得小 */
+    const size = stacked
+      ? Math.max(220, Math.min(colW, 430))
+      : Math.max(320, Math.min(colW * 1.32, innerHeight * 0.70, 900));
     if (size === W) return;
     DPR = Math.min(devicePixelRatio || 1, 2);
     W = H = size;
@@ -1187,8 +1192,9 @@ $("#contactForm").addEventListener("submit", e => {
     cv.height = Math.round(H * DPR);
     cv.style.width = W + "px";
     cv.style.height = H + "px";
+    cv.style.transform = stacked ? "" : "translateX(" + Math.round(size * 0.055) + "px)";
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    CX = W / 2; CY = H / 2; R = Math.min(W, H) * 0.40;
+    CX = W / 2; CY = H / 2; R = Math.min(W, H) * 0.44;
   }
 
   function rot3(x, y, z, cX, sX, cY, sY){
@@ -1232,13 +1238,21 @@ $("#contactForm").addEventListener("submit", e => {
 
     ctx.clearRect(0, 0, W, H);
 
-    /* 外层辉光 */
-    const gh = ctx.createRadialGradient(CX, CY, R * 0.08, CX, CY, R * 1.85);
-    gh.addColorStop(0, "rgba(147,207,191,0.13)");
-    gh.addColorStop(0.42, "rgba(93,168,150,0.065)");
-    gh.addColorStop(1, "rgba(7,13,17,0)");
+    /* 球体本身压暗一点：否则背景照片会从质点之间透出来，看着像线框球而不是实心月球 */
+    const gb = ctx.createRadialGradient(CX, CY - R * 0.1, R * 0.1, CX, CY, R);
+    gb.addColorStop(0, "rgba(7,13,17,0.90)");
+    gb.addColorStop(0.72, "rgba(7,13,17,0.86)");
+    gb.addColorStop(0.94, "rgba(7,13,17,0.55)");
+    gb.addColorStop(1, "rgba(7,13,17,0)");
+    ctx.fillStyle = gb;
+    ctx.beginPath(); ctx.arc(CX, CY, R, 0, 6.2832); ctx.fill();
+
+    /* 贴边辉光：只在球缘外侧一点，不做整块底盘，避免在背景照片上留下圆斑 */
+    const gh = ctx.createRadialGradient(CX, CY, R * 0.86, CX, CY, R * 1.14);
+    gh.addColorStop(0, "rgba(147,207,191,0.10)");
+    gh.addColorStop(1, "rgba(147,207,191,0)");
     ctx.fillStyle = gh;
-    ctx.beginPath(); ctx.arc(CX, CY, R * 1.85, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, R * 1.14, 0, 6.2832); ctx.fill();
 
     /* 经纬网 */
     ctx.lineWidth = 1;
@@ -1281,11 +1295,13 @@ $("#contactForm").addEventListener("submit", e => {
     for (let b = 0; b < 5; b++){
       const arr = buckets[b];
       if (!arr.length) continue;
+      /* 点径随球体半径等比放大，大屏上不会显得稀疏 */
+      const sr = SIZE[b] * R / 224;
       ctx.fillStyle = "rgba(" + COL[b] + "," + ALPHA[b] + ")";
       ctx.beginPath();
       for (let j = 0; j < arr.length; j += 2){
-        ctx.moveTo(arr[j] + SIZE[b], arr[j + 1]);
-        ctx.arc(arr[j], arr[j + 1], SIZE[b], 0, 6.2832);
+        ctx.moveTo(arr[j] + sr, arr[j + 1]);
+        ctx.arc(arr[j], arr[j + 1], sr, 0, 6.2832);
       }
       ctx.fill();
     }
